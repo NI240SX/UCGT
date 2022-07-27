@@ -1,6 +1,17 @@
 package binstuff;
 
-public class Hasher {
+public class Hash {
+	
+	public String label;
+	public int binHash;
+	
+	
+	public Hash(String label) {
+		this.label = label;
+		this.binHash = findBinHash(label);
+		System.out.println(label + "=" + Integer.toHexString(this.binHash));
+	}
+	
 	//                         0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
 	static char[] binChars = {'!','"','#','ù','%','&','\'','(',')','*','+','ù','-','.','/','0',	//0
 							  '1','2','3','4','5','6','7','8','9',':',';','<','=','>','?','@',	//1
@@ -18,20 +29,26 @@ public class Hasher {
 		return i;
 	}
 
+	public static char reverseCharHash(byte search) {
+		if (search<binChars.length)return binChars[search];
+		else return 'ù';
+	}
 	
-	public static int bin(String s) {
+	
+	public static int findBinHash(String s) {
 		s = s.strip();
 		if (!s.isBlank()) {
 			int l = getCharHash(s.charAt(0));
 			for (int i=1; i<s.length(); i++) {
 				l = getCharHash(s.charAt(i))+33*l+33;
 			}
-			return l;
+//			System.out.println(Integer.toHexString(l));
+			return Integer.reverseBytes(l);
 			
 		} else return 0;	
 	}
 	
 	public static void main(String[] a) {
-		System.out.println(Integer.toHexString(bin("      test ")));
+		System.out.println(Integer.toHexString(findBinHash("      test ")));
 	}
 }
