@@ -128,12 +128,70 @@ public class GeomDump extends Application {
 			
 			ArrayList<Hash> Hashlist = generateHashes("BMW_M3_E92_08", new int[]{0, 1, 4, 6, 11}, new int[]{1});
 			
-			while (bb.position()<2048) {//65536
-				for (int i=0; i<4; i++) {
+			while (bb.position()<65536) {//65536
+/*				for (int i=0; i<4; i++) {
 					int current = bb.getInt();
 					
-					hex.appendText(Integer.toHexString(current)+" ");					
-					dmp.appendText(tryDecode4B(bb, current, Hashlist)+ " ");
+					hex.appendText(Integer.toHexString(current)+" ");
+					
+					String s;
+					if ((s = decodeSimple4B(current, Hashlist)) != null) dmp.appendText(s+ " ");
+					else dmp.appendText(Integer.toHexString(current)+ " ");
+					
+				}
+*/				
+				byte off = 0;
+				for (int i=0; i<4; i++) {
+					
+					//TODO work on an array of 7 or 8 bytes !!!!!!!!!!! this is dogshit !!!
+					int current = bb.getInt();
+					hex.appendText(Integer.toHexString(current)+" ");
+					
+					String s;
+					if ((s = decodeSimple4B(current, Hashlist)) != null) dmp.appendText(s+ " ");
+					else {
+						//if off alignment hash
+						String t = "";
+						bb.position(bb.position()-4);
+						if (off<1) t=t+Integer.toHexString(bb.get());
+						if ((s = decodeSimple4B(bb.getInt(), Hashlist)) != null) {
+							dmp.appendText(t+s);
+							bb.position(bb.position()-1);
+							off=1;
+						}else {
+							bb.position(bb.position()-4);
+							if (off<2) t=t+Integer.toHexString(bb.get());
+							if ((s = decodeSimple4B(bb.getInt(), Hashlist)) != null) {
+								dmp.appendText(t+s);
+								bb.position(bb.position()-2);
+								off=2;
+							}else {
+								bb.position(bb.position()-4);
+								if (off<3) t=t+Integer.toHexString(bb.get());
+								if ((s = decodeSimple4B(bb.getInt(), Hashlist)) != null) {
+									dmp.appendText(t+s);
+									bb.position(bb.position()-3);
+									off=3;
+								}else {
+									off=0;
+									bb.position(bb.position()-7);
+									dmp.appendText(Integer.toHexString(bb.getInt())+" ");
+
+//									bb.position(bb.position()-3);
+//									byte[] bytes = new byte[4];
+//									bb.get(bb.position()-4, bytes);
+//									dmp.appendText(new String(bytes, StandardCharsets.ISO_8859_1)+" ");
+								}
+								
+								
+								
+							}
+							
+							
+							
+						}
+					}
+					
 					
 					
 				}
@@ -281,5 +339,14 @@ public class GeomDump extends Application {
 		if (!v)r = Integer.toHexString(integer);
 		
 		return r;
+	}
+	
+	public static String decodeSimple4B(int integer, ArrayList<Hash> Hashlist) {
+		for (Hash h: Hashlist) {
+			if (h.binHash == Integer.reverseBytes(integer)) {
+				return h.label;
+			}
+		}
+		return null;
 	}
 }
