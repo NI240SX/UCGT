@@ -43,7 +43,7 @@ public class Hash {
 				l = getCharHash(s.charAt(i))+33*l+33;
 			}
 //			System.out.println(Integer.toHexString(l));
-			return Integer.reverseBytes(l);
+			return l;
 			
 		} else return 0;	
 	}

@@ -13,11 +13,16 @@ import java.util.ArrayList;
 
 import binstuff.Hash;
 import javafx.application.Application;
+import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
@@ -25,7 +30,9 @@ public class GeomDump extends Application {
 
 	TextArea hex = new TextArea();
 	TextArea dmp = new TextArea();
-	ScrollBar s = new ScrollBar();
+	
+	String hexSearch = "";
+	String dmpSearch = "";
 	
 	File f = new File("C:\\Program Files (x86)\\EA Games\\Need for Speed Undercover\\CARS\\BMW_M3_E92_08\\GEOMETRY.BIN");
 	
@@ -33,14 +40,74 @@ public class GeomDump extends Application {
 	public void start(Stage primaryStage) {
 		BorderPane root = new BorderPane();
 		root.setLeft(hex);
-		root.setCenter(s);
-		root.setRight(dmp);
-		s.setOrientation(Orientation.VERTICAL);
+		root.setCenter(dmp);
 		Scene scene = new Scene(root,1280,720);
 		primaryStage.setScene(scene);
-		hex.setPrefWidth(scene.getWidth()/2-10);
-		dmp.setPrefWidth(scene.getWidth()/2-10);
-		primaryStage.show();
+		hex.setPrefWidth(400);
+		
+
+		hex.setOnKeyPressed(new EventHandler<KeyEvent>() {
+			public void handle(KeyEvent event) {
+				dmp.setScrollTop(hex.getScrollTop());
+				if(event.isControlDown() && event.getCode().equals(KeyCode.F)) {
+					hexSearch = hex.getSelectedText();
+					System.out.println("new search : "+hexSearch);
+				}
+				if(event.getCode().equals(KeyCode.F3)) {
+					int search;
+					System.out.println("searched "+hexSearch);
+					if ((search = hex.getText(hex.getSelection().getEnd(), hex.getLength()).indexOf(hexSearch)) != -1 ) {
+						hex.selectRange(hex.getSelection().getEnd()+search, hex.getSelection().getEnd()+search+hexSearch.length());
+					}
+				}
+				
+			}
+		});
+		hex.setOnMouseMoved(new EventHandler<MouseEvent>() {
+			public void handle(MouseEvent event) {
+				dmp.setScrollTop(hex.getScrollTop());
+			}
+		});
+		hex.setOnScroll(new EventHandler<ScrollEvent>() {
+			public void handle(ScrollEvent event) {
+				dmp.setScrollTop(hex.getScrollTop());
+			}
+			
+		});
+		
+		
+		dmp.setOnKeyPressed(new EventHandler<KeyEvent>() {
+			public void handle(KeyEvent event) {
+				hex.setScrollTop(dmp.getScrollTop());
+				if(event.isControlDown() && event.getCode().equals(KeyCode.F)) {
+					dmpSearch = dmp.getSelectedText();
+					System.out.println("new search : "+dmpSearch);
+				}
+				if(event.getCode().equals(KeyCode.F3)) {
+					int search;
+					System.out.println("searched "+dmpSearch);
+					if ((search = dmp.getText(dmp.getSelection().getEnd(), dmp.getLength()).indexOf(dmpSearch)) != -1 ) {
+						dmp.selectRange(dmp.getSelection().getEnd()+search, dmp.getSelection().getEnd()+search+dmpSearch.length());
+					}
+				}
+				
+			}
+		});
+		dmp.setOnMouseMoved(new EventHandler<MouseEvent>() {
+			public void handle(MouseEvent event) {
+				hex.setScrollTop(dmp.getScrollTop());
+			}
+		});
+		dmp.setOnScroll(new EventHandler<ScrollEvent>() {
+			public void handle(ScrollEvent event) {
+				hex.setScrollTop(dmp.getScrollTop());
+			}
+		});
+		
+		
+		
+		
+		primaryStage.show();	
 		dumpGeom(f,hex,dmp);
 	}
 
@@ -61,12 +128,12 @@ public class GeomDump extends Application {
 			
 			ArrayList<Hash> Hashlist = generateHashes("BMW_M3_E92_08", new int[]{0, 1, 4, 6, 11}, new int[]{1});
 			
-			while (bb.position()<65536) {
+			while (bb.position()<2048) {//65536
 				for (int i=0; i<4; i++) {
 					int current = bb.getInt();
 					
 					hex.appendText(Integer.toHexString(current)+" ");					
-					dmp.appendText(tryDecode4B(bb,current, Hashlist)+ " ");
+					dmp.appendText(tryDecode4B(bb, current, Hashlist)+ " ");
 					
 					
 				}
@@ -188,7 +255,7 @@ public class GeomDump extends Application {
 		boolean v=false;
 		String r = Integer.toHexString(integer);
 		for (Hash h: Hashlist) {
-			if (h.binHash == integer) {
+			if (h.binHash == Integer.reverseBytes(integer)) {
 				r = h.label;
 				v=true;
 			}
