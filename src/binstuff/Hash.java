@@ -12,6 +12,13 @@ public class Hash {
 		System.out.println(label + "=" + Integer.toHexString(this.binHash));
 	}
 	
+	public Hash(String label, int hex) {
+		this.label = label;
+		this.binHash = hex;
+		System.out.println(label + "=" + Integer.toHexString(this.binHash));
+		
+	}
+	
 	//                         0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
 	static char[] binChars = {'!','"','#','ù','%','&','\'','(',')','*','+','ù','-','.','/','0',	//0
 							  '1','2','3','4','5','6','7','8','9',':',';','<','=','>','?','@',	//1
@@ -50,5 +57,6 @@ public class Hash {
 	
 	public static void main(String[] a) {
 		System.out.println(Integer.toHexString(findBinHash("      test ")));
+		new Hash("[texture]",-1367985330);
 	}
 }

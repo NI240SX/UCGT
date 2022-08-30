@@ -127,7 +127,7 @@ public class GeomDump extends Application {
 			
 			
 			ArrayList<Hash> Hashlist = generateHashes("BMW_M3_E92_08", new int[]{0, 1, 4, 6, 11}, new int[]{1});
-			
+			bb.position(65536-8192);
 			while (bb.position()<65536) {//65536
 /*				for (int i=0; i<4; i++) {
 					int current = bb.getInt();
@@ -143,6 +143,32 @@ public class GeomDump extends Application {
 				byte off = 0;
 				for (int i=0; i<4; i++) {
 					
+					
+				/*	byte[] current = new byte[7];
+					bb.get(current, bb.position(), 7);
+					bb.position(bb.position()-3);
+					
+					ByteBuffer curr = ByteBuffer.wrap(current);
+					
+					hex.appendText(Integer.toHexString(curr.getInt(0))+" ");
+					
+					String unh = "";
+					byte j;
+					for (j=0; j<4;j++) {
+						if ((unh = decodeSimple4B(curr.getInt(j), Hashlist)) != null ){							
+							break;
+						}
+					}
+					if (unh == null) {
+						for (byte k=off;k<4;k++) System.out.print(Integer.toHexString(curr.get(k))+" ");
+						off = 0;
+						dmp.appendText(" ");
+					}else {
+						for (byte k=off;k<j;k++) System.out.print(Integer.toHexString(curr.get(k)));
+						System.out.print(unh + " ");
+						off = j;
+					}			
+					*/
 					//TODO work on an array of 7 or 8 bytes !!!!!!!!!!! this is dogshit !!!
 					int current = bb.getInt();
 					hex.appendText(Integer.toHexString(current)+" ");
@@ -174,9 +200,24 @@ public class GeomDump extends Application {
 									off=3;
 								}else {
 									off=0;
-									bb.position(bb.position()-7);
-									dmp.appendText(Integer.toHexString(bb.getInt())+" ");
+									bb.position(bb.position()-3);
+									
 
+									
+									boolean v=true;
+									byte[] bytes = new byte[4];
+									bb.get(bb.position()-4, bytes);
+									String str = new String(bytes, StandardCharsets.ISO_8859_1);
+									System.out.println(str);
+									for (char c :str.toCharArray()) {
+										if (!(Character.isLetterOrDigit(c) || c =='_' || c==' ' || c=='.' || c=='\00')) v=false;
+									}
+									if(v) {
+										dmp.appendText(str+" ");
+									}else {
+										dmp.appendText(Integer.toHexString(current)+" ");
+									}
+									
 //									bb.position(bb.position()-3);
 //									byte[] bytes = new byte[4];
 //									bb.get(bb.position()-4, bytes);
@@ -218,6 +259,7 @@ public class GeomDump extends Application {
 		
 		ArrayList<Hash> l = new ArrayList<Hash>();
 		l.add(new Hash(carname));
+		
 		try {
 			for (int k : kits) {
 				BufferedReader br = new BufferedReader(new FileReader(new File("data/parts")));
@@ -298,6 +340,9 @@ public class GeomDump extends Application {
 		} catch (NullPointerException e) {
 			e.printStackTrace();
 		}
+
+		l.add(new Hash("[texture]",1311995566));
+		l.add(new Hash("[normalmap]",43354773));
 		
 		return l;
 	}
