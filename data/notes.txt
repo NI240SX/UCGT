@@ -1,0 +1,188 @@
+
+
+1140 
+13008a80 avant de déclarer la pièce
+
+part name 020c number of tris
+
+
+
+
+
+
+eb120123 marque le début des déclarations de matériaux (NON)
+
+
+9502040b utilisé pour carskin
+
+
+
+
+==================== FILE HEADER ====================
+
+401380 3c64b000   
+1401380 pz 2401300 90000000 
+ 3000000 1e000000 ce030000 
+GEOM ETRY .BIN  
+    
+    
+  DEFA ULT 
+    
+    
+80000000    
+88304300 88304300 90304300 90304300 
+3401300 701e0000 BMW_M3_E92_08_KIT06_BUMPER_FRONT_A  
+BMW_M3_E92_08_KIT06_BUMPER_FRONT_B  BMW_M3_E92_08_KIT06_BUMPER_FRONT_C  
+
+------------------------------------------------------------------------
+
+401380 90129000   
+1401380 Pz 2401300 90000000 
+ 3000000 1e000000 cd030000 
+GEOM ETRY .BIN  
+    
+    
+  DEFA ULT 
+    
+    
+80000000    
+88304300 88304300 90304300 90304300 
+3401300 681e0000 NIS_370_Z_09_KIT11_MUFFLER_05_T0_A  
+NIS_370_Z_09_KIT11_MUFFLER_05_T0_B  NIS_370_Z_09_KIT11_MUFFLER_05_T0_C  
+
+
+
+
+
+
+
+
+
+
+==================== PARTS HEADERS ====================
+
+RFPK 1100000 800000 f93a0000 
+10fb0080 e21040 1380a045 1001140 
+13008a80 äá [PART DECLARATION] BMW_M3_E92_08_KIT00_BASE_A 
+20c 1d07[1821 tris] 50409e2 6ea5 dc063b0 
+63bf8fd0 60f903d e0e73e0e 40000fe0 
+3ff7f1a0 d353f11 7808800 ae0013 
+b030874 e1400e1 c0d01541 b37a4243 
+8e003392 0000e6 B MW_M 3_E9                   26/28 e6 (1b 6B 3b)
+2_08 _KIT 00_B ASE_ 
+A 000001 eb120123 6ce1BMW_M3_E92_08_INTERIOR [texture]
+
+RFPK 1100000 800000 9a550000 
+10fb0080 e21040 138024c2 1140 
+13008a80 äá [PART DECLARATION] BMW_M3_E92_08_KIT00_HOOD_A 
+20c 7405[1396 tris] a130803 e2d73655 3f60ea45 
+bfecebfc 3e040fe0 a6450e40 fe03f 
+a3d9500d 353f1107 80880000 ae00130b 
+308740e 1400e162 17313f07 41fc448e 
+339200 00e6 BM W_M3 _E92                       26/28 e6 (2b 6B 2b)
+_08_ KIT0 0_HO OD_A 
+000001eb 12012360 e1CARBONFIBRE_PLACEHOLDER [texture]
+
+RFPK 1100000 800000 c350000 
+10fb0080 e21040 138024b6 1001140 
+13008a80 ðá [PART DECLARATION] BMW_M3_E92_08_KIT00_WHEEL_TIRE_FRONT_A 
+20c 9505[1429 tris] a130403 e2afb7ae be94d44b 
+bc5ca4ad be040fe2 86baae3e afdf803e 
+5df4ad3e c358b80 46803fb1 130b03 
+8740e14 e1ffa9 fa3d6d6d 36468e00 
+33920000 e9 BMW _M3_ E92_                      38/39 e9 (3b ?)
+
+RFPK 1100000 40110000 80b0000 
+10fb0011 40e21040 13803811 1140 
+13008a80 ôá [PART DECLARATION] BMW_M3_E92_08_KIT00_BRAKELIGHT_GLASS_LEFT_A 
+50c 85[133 tris] 0a 130201e2 18040bc0 69a7f63e 
+98840e3f 40fe197 5aeabf33 cb473f0b 
+fd5e140 13070000 80880000 ae00130b 
+308740e 1400e12b 45a43cae 44cf458e 
+339200 00ea BM W_M3 _E92                       43/44 ea (2b 10B 2b)
+
+RFPK 1100000 800000 5a4a0000 
+10fb0080 e21040 1380a497 1001140 
+13008a80 ðá [PART DECLARATION] BMW_M3_E92_08_KITW01_BUMPER_FRONT_T1_A 
+20c 3c09[2364 tris] a130b07 e28b88d2 3f59f57e 
+bf6bd6a7 bd040fe2 83fe2340 5df57e3f 
+40760c3f c351107 80880000 ae00130b 
+308740e 1400e1f3 89933fe5 2e00458e 
+339200 00e9 BM W_M3 _E92                     38/40 e9 (2b 9B 2b)
+_08_ KITW 01_B UMPE 
+R_FR ONT_ T1_A 000001f7 
+12012f84 e1CARBONFIBRE_PLACEHOLDER [texture]
+
+RFPK 1100000 14090000 1d030000 
+10fb0009 14e21040 13800c09 1140 
+13008a80 ìá [PART DECLARATION] BMW_M3_E92_08_KIT00_BRAKE_FRONT_C 
+50c 10[16 tris] 0a 130202e2 fdb85cbe d73ca03c 
+f88e3bbe 40fe1f7 8e3b3e35 e0ba3d01 
+7f60c35 8b804680 3fb10013 b030874 
+e1400e1 c78c2b3c ef02bf44 8e003392 
+e7B MW_M 3_E9 2_08                            35 e7 (1b 8B 3b)
+_KIT 00_B RAKE _FRO 
+4e545f01 234301f3 12010718 e1ROTOR_01
+
+
+
+
+
+[RFPK/BEGINNING OF ???] 1100000 4c070000 cb030000 
+10fb0007 4ce21040 13804407 1140 
+13008a80 ôá [PART DECLARATION] BMW_M3_E92_08_KIT00_WINDOW_FRONT_RIGHT_A 
+50c170a 130301e2 bb630abf eae245bf 
+a29a3d3f 40fe1f2 d30b3f5a b611bf0b 
+f10ed92 13070000 80880000 ae00130b 
+308740e 1400e1a7 b8b83d18 7f438e 
+339200 éBM W_M3 _E92                          42 e9 (2b 10B)
+_08_ KIT0 0_WI NDOW 
+_FRO NT_R IGHT 5f41042b 
+1fb1201 724e1WINDOW_RIGHT_FRONT [texture]
+
+
+
+
+
+RFPK 1100000 800000 e43c0000 
+10fb0080 e21040 1380544e 1001140 
+13008a80 äá [PART DECLARATION] NIS_370_Z_09_KIT00_BASE_A 
+20cc607 a130603 e2112500 c00e8f67 
+bf012dd3 3d040fe2 646a0340 68f673f 
+32a7903f c351107 80880000 ae00130b 
+308740e 1400e19f 1df14083 d84438e 
+339200 e5NI S_37 0_Z_                        25/27 e5 (2b 5B 2b)
+09_K IT00 _BAS E_ 011b 
+A 01eb12 10748e1 NIS_370_Z_09_INTERIOR [texture] 
+
+
+000001eb 12012360 e1
+
+
+
+-------------------- GENERIC PART HEADER --------------------
+
+5246504b 01100000 ????0000 ????0000          often 0080 / ?
+10fb00?? ??e21040 1380???? ----1140          ? / ? / 0000 or 01000       
+13008a80 00??00e1 19004000 [part binhash]    ?
+--0c---- ???????? ???????? ????????          02 or 05 depending on next is 1 or 2 bytes / number of tris
+???????? ???????? ???????? ????????
+???????? ???????? !!!!!!!! !!!!!!!!           very often 80880000 ae00130b 
+!!!!!!!! !!!!!!?? ???????? ????????           very often 0308740e 1400e1
+--8e0033920000-- [part in plain text]         often 45,44,46,43 / e9,ea,e6  6,9,a = number of bytes to jump ? |note : not always the same place
+????01-- 1201???? e1 [textures...]            ? / eb or fb / sometimes 2360 or 23xx for the e92
+
+
+
+
+
+
+cartoolshit
+
+JDLZ 2100000 802b0100 ãÁ 
+6b1040 1380782b 1004011 401300e4 
+b19 4000 NIS_350_Z_05_KIT00_BASE_A ce12060c 
+70402 3de2504 c023c1 65bfc386 
+bd023d0f 2110440 229965a0 3fcc5490 
+3f032580 704c700 91f03a6 d030874 
+e030200 5NI S_35 0_Z 

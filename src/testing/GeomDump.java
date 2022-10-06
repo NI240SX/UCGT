@@ -34,7 +34,52 @@ public class GeomDump extends Application {
 	String hexSearch = "";
 	String dmpSearch = "";
 	
-	File f = new File("C:\\Program Files (x86)\\EA Games\\Need for Speed Undercover\\CARS\\BMW_M3_E92_08\\GEOMETRY.BIN");
+	static String car = "BMW_M3_E92_08";
+	static int[] art = new int[]{0, 1, 4, 6, 11};
+	static int[] wart = new int[]{1};
+
+	
+//	static String car = "NIS_350_Z_05";
+
+	
+	
+//	static String car = "NIS_370_Z_09";
+//	static int[] art = new int[]{0, 1, 3, 4, 11};
+//	static int[] wart = new int[]{1};
+	
+	
+	
+	
+	static int startFrom = 801560;
+	static int length = 4096;//2048 recommended
+	// M3 E92
+	//base : 63440
+	//hood : 725944
+	//wheel : 963800
+	//brakelight left : 181784
+	//w01 bumper front t1 : 5006288
+	//brake front c : 9304216
+	//window front right : 1559960
+	//left mirror : 801560
+	
+	// 350Z ctk
+	//base : 4774424
+	
+	
+	// 370Z
+	//base : 61732
+	
+	
+	
+	
+	
+	
+	
+	
+	
+//	File f = new File("C:\\Program Files (x86)\\EA Games\\Need for Speed Undercover\\CARS\\BMW_M3_E92_08\\GEOMETRY.BIN"); //vanilla
+	File f = new File("D:\\Jeux\\UCEtesting\\CARS\\" + car + "\\GEOMETRY.BIN"); //vanilla
+//	File f = new File("D:\\Jeux\\UCEtesting\\CARS\\NIS_350_Z_05\\GEOMETRY.BIN"); //ctk
 	
 	@Override
 	public void start(Stage primaryStage) {
@@ -126,9 +171,12 @@ public class GeomDump extends Application {
 			
 			
 			
-			ArrayList<Hash> Hashlist = generateHashes("BMW_M3_E92_08", new int[]{0, 1, 4, 6, 11}, new int[]{1});
-			bb.position(65536-8192);
-			while (bb.position()<65536) {//65536
+			
+//			ArrayList<Hash> Hashlist = generateHashes("BMW_M3_E92_08", new int[]{0, 1, 4, 6, 11}, new int[]{1});
+			ArrayList<Hash> Hashlist = generateHashes(car, art, wart);
+//			ArrayList<Hash> Hashlist = generateHashes("NIS_350_Z_05", new int[]{0, 1, 4, 6, 11}, new int[]{1});
+			bb.position(startFrom);
+			while (bb.position()<startFrom+length) {//65536
 /*				for (int i=0; i<4; i++) {
 					int current = bb.getInt();
 					
@@ -192,7 +240,7 @@ public class GeomDump extends Application {
 								bb.position(bb.position()-2);
 								off=2;
 							}else {
-								bb.position(bb.position()-4);
+								bb.position(bb.position()-4);								
 								if (off<3) t=t+Integer.toHexString(bb.get());
 								if ((s = decodeSimple4B(bb.getInt(), Hashlist)) != null) {
 									dmp.appendText(t+s);
@@ -201,14 +249,11 @@ public class GeomDump extends Application {
 								}else {
 									off=0;
 									bb.position(bb.position()-3);
-									
-
-									
 									boolean v=true;
 									byte[] bytes = new byte[4];
 									bb.get(bb.position()-4, bytes);
 									String str = new String(bytes, StandardCharsets.ISO_8859_1);
-									System.out.println(str);
+//									System.out.println(str);
 									for (char c :str.toCharArray()) {
 										if (!(Character.isLetterOrDigit(c) || c =='_' || c==' ' || c=='.' || c=='\00')) v=false;
 									}
@@ -343,6 +388,11 @@ public class GeomDump extends Application {
 
 		l.add(new Hash("[texture]",1311995566));
 		l.add(new Hash("[normalmap]",43354773));
+		l.add(new Hash("[PART DECLARATION]",4194329)); // 19004000
+		l.add(new Hash("[RFPK/BEGINNING OF ???]",1263552082)); // 5246504b
+//		l.add(new Hash("[before carskin]",2499937291));
+//		l.add(new Hash("[???]",3943825699));
+		
 		
 		return l;
 	}
@@ -367,7 +417,7 @@ public class GeomDump extends Application {
 			byte[] bytes = new byte[4];
 			bb.get(bb.position()-4, bytes);
 			String s = new String(bytes, StandardCharsets.ISO_8859_1);
-			System.out.println(s);
+//			System.out.println(s);
 			r=s;
 			v=true;
 			for (char c :s.toCharArray()) {
