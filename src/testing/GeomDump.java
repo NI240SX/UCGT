@@ -35,8 +35,9 @@ public class GeomDump extends Application {
 	String dmpSearch = "";
 	
 	static String car = "BMW_M3_E92_08";
-	static int[] art = new int[]{0, 1, 4, 6, 11};
-	static int[] wart = new int[]{1};
+//	static String car = "240SX";
+	static int[] art = new int[]{0, 1, 2, 3, 4, 5, 6, 11, 12};
+	static int[] wart = new int[]{1, 2, 3, 4, 5};
 
 	
 //	static String car = "NIS_350_Z_05";
@@ -50,8 +51,8 @@ public class GeomDump extends Application {
 	
 	
 	
-	static int startFrom = 801560;
-	static int length = 4096;//2048 recommended
+	static int startFrom = 447104;
+	static int length = 2048;//2048 recommended
 	// M3 E92
 	//base : 63440
 	//hood : 725944
@@ -78,8 +79,24 @@ public class GeomDump extends Application {
 	
 	
 //	File f = new File("C:\\Program Files (x86)\\EA Games\\Need for Speed Undercover\\CARS\\BMW_M3_E92_08\\GEOMETRY.BIN"); //vanilla
-	File f = new File("D:\\Jeux\\UCEtesting\\CARS\\" + car + "\\GEOMETRY.BIN"); //vanilla
+	File f = new File("D:\\Jeux\\UCEtesting\\CARS\\" + car + "\\GEOMETRY.BIN"); //ctk
+//	File f = new File("C:\\Users\\NI240SX\\Downloads\\240SX\\GEOMETRY.BIN"); //vanilla
+//	File f = new File("D:\\Jeux\\Need for Speed Carbon Endgame V2\\CARS\\240SX\\GEOMETRY.BIN"); //vanilla
 //	File f = new File("D:\\Jeux\\UCEtesting\\CARS\\NIS_350_Z_05\\GEOMETRY.BIN"); //ctk
+	
+	/* had to add 
+	FRONT_BUMPER
+	REAR_BUMPER
+	LEFT_SKIRT
+	RIGHT_SKIRT
+	DOORLINE
+	DAMAGE0_FRONT
+	DAMAGE0_FRONT_LEFT
+	DAMAGE0_FRONT_RIGHT
+	DAMAGE0_REAR
+	DAMAGE0_REAR_LEFT
+	DAMAGE0_REAR_RIGHT
+	for UC PS2/Carbon models (still incomplete because of STYLExx naming) */
 	
 	@Override
 	public void start(Stage primaryStage) {
@@ -134,6 +151,10 @@ public class GeomDump extends Application {
 					if ((search = dmp.getText(dmp.getSelection().getEnd(), dmp.getLength()).indexOf(dmpSearch)) != -1 ) {
 						dmp.selectRange(dmp.getSelection().getEnd()+search, dmp.getSelection().getEnd()+search+dmpSearch.length());
 					}
+				}
+				if(event.getCode().equals(KeyCode.F4)) {
+					System.out.println(hexSearch = Integer.toHexString(Integer.reverseBytes(new Hash(dmp.getSelectedText()).binHash)));
+					System.out.println("new search : "+hexSearch);
 				}
 				
 			}
@@ -227,21 +248,21 @@ public class GeomDump extends Application {
 						//if off alignment hash
 						String t = "";
 						bb.position(bb.position()-4);
-						if (off<1) t=t+Integer.toHexString(bb.get());
+						if (off<1) t=t+Integer.toHexString(bb.get() & 0xFF);
 						if ((s = decodeSimple4B(bb.getInt(), Hashlist)) != null) {
 							dmp.appendText(t+s);
 							bb.position(bb.position()-1);
 							off=1;
 						}else {
 							bb.position(bb.position()-4);
-							if (off<2) t=t+Integer.toHexString(bb.get());
+							if (off<2) t=t+Integer.toHexString(bb.get() & 0xFF);
 							if ((s = decodeSimple4B(bb.getInt(), Hashlist)) != null) {
 								dmp.appendText(t+s);
 								bb.position(bb.position()-2);
 								off=2;
 							}else {
 								bb.position(bb.position()-4);								
-								if (off<3) t=t+Integer.toHexString(bb.get());
+								if (off<3) t=t+Integer.toHexString(bb.get() & 0xFF);
 								if ((s = decodeSimple4B(bb.getInt(), Hashlist)) != null) {
 									dmp.appendText(t+s);
 									bb.position(bb.position()-3);
@@ -408,7 +429,7 @@ public class GeomDump extends Application {
 		boolean v=false;
 		String r = Integer.toHexString(integer);
 		for (Hash h: Hashlist) {
-			if (h.binHash == Integer.reverseBytes(integer)) {
+			if (h.reversedBinHash == integer) {
 				r = h.label;
 				v=true;
 			}
@@ -438,7 +459,7 @@ public class GeomDump extends Application {
 	
 	public static String decodeSimple4B(int integer, ArrayList<Hash> Hashlist) {
 		for (Hash h: Hashlist) {
-			if (h.binHash == Integer.reverseBytes(integer)) {
+			if (h.reversedBinHash == integer) {
 				return h.label;
 			}
 		}

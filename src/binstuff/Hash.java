@@ -4,17 +4,22 @@ public class Hash {
 	
 	public String label;
 	public int binHash;
-	
+	public int reversedBinHash;
+	public byte[] reversedBinHashBytes;
 	
 	public Hash(String label) {
 		this.label = label;
 		this.binHash = findBinHash(label);
+		this.reversedBinHash = Integer.reverseBytes(this.binHash);
+		this.reversedBinHashBytes = intToBytes(reversedBinHash);
 		System.out.println(label + "=" + Integer.toHexString(this.binHash));
 	}
 	
 	public Hash(String label, int hex) {
 		this.label = label;
 		this.binHash = hex;
+		this.reversedBinHash = Integer.reverseBytes(this.binHash);
+		this.reversedBinHashBytes = intToBytes(reversedBinHash);
 		System.out.println(label + "=" + Integer.toHexString(this.binHash));
 		
 	}
@@ -55,8 +60,24 @@ public class Hash {
 		} else return 0;	
 	}
 	
+	
+	
+	@Override
+	public String toString() {
+		return "["+label + "=" + Integer.toHexString(this.binHash)+"]";
+	}
+
 	public static void main(String[] a) {
 		System.out.println(Integer.toHexString(findBinHash("      test ")));
 		new Hash("[texture]",-1367985330);
+	}
+
+	private static byte[] intToBytes(final int data) {
+	    return new byte[] {
+	        (byte)((data >> 24) & 0xff),
+	        (byte)((data >> 16) & 0xff),
+	        (byte)((data >> 8) & 0xff),
+	        (byte)((data >> 0) & 0xff),
+	    };
 	}
 }
