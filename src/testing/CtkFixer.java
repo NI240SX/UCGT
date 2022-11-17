@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -24,7 +25,7 @@ public class CtkFixer {
 			FileInputStream fis = new FileInputStream(f);
 			byte [] fileToBytes = new byte[(int)f.length()];
 			fis.read(fileToBytes);
-
+			fis.close();
 			
 			
 			String carname = br.readLine();
@@ -45,7 +46,6 @@ public class CtkFixer {
 			System.out.println(replacements);
 			
 			
-			Hash currentpart = null;
 			Hash potentialpart = null;
 			int potentialpartoff = 0;
 			byte step = 0;
@@ -76,8 +76,6 @@ public class CtkFixer {
 							//potential last byte of a part to replace found
 							if (potentialpartoff <= off-4) potentialpart = null;
 							if (potentialpart !=null) {
-								//part found
-								currentpart = potentialpart;
 								potentialpart = null;
 								if (r.seen == 1) {
 									r.position = ((fileToBytes[off+4] & 0xFF) << 24) | ((fileToBytes[off+3] & 0xFF) << 16)
@@ -102,25 +100,112 @@ public class CtkFixer {
 				
 			}
 			
-			
-			
-			
-			
-			//stop searching when 4a444c5a (JDLZ) is found
-			
+			byte cut = 0;
 			
 			for (Replacements r: replacements) {
+				
+
+				System.out.println("Starting to replace part " + r.part + " at " + (r.position+32));
+				
 				int off = r.position + 32;
 				while (1514947658 != (((fileToBytes[off+4] & 0xFF) << 24) | ((fileToBytes[off+3] & 0xFF) << 16)
-				        | ((fileToBytes[off+2] & 0xFF) << 8) | (fileToBytes[off+1] & 0xFF))) {
+				        | ((fileToBytes[off+2] & 0xFF) << 8) | (fileToBytes[off+1] & 0xFF))) {	//stop searching when 4a444c5a (JDLZ) is found
 					
-					
-					
+					for(int i=0; i<r.toReplace.length; i++) {
+						
+						
+						
+						
+						
+						if (fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[0]) {
+							//potential beginning of a hash to replace found
+							potentialpart = r.toReplace[i];
+							potentialpartoff = off;
+							step = 0;
+							cut = 0;
+//							System.out.println("1st byte loop triggered for shader/texture/normalmap " + r.toReplace[i].label +" | "+off);
+						}
+						if (potentialpart != null) {
+							if (step == 0 && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[1] && potentialpart == r.toReplace[i]) {
+								//potential second byte of a part to replace found
+								if (potentialpartoff == off-2) cut = 1;
+								if (potentialpartoff <= off-3) {
+									potentialpart = null;
+									step = 0;
+								}
+								else {
+									step = 1;
+//									System.out.println("2nd byte loop triggered for shader/texture/normalmap " + r.toReplace[i].label +" | "+off + " right after " + potentialpartoff);
+								}
+							}else if (step == 1 && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[2] && potentialpart == r.toReplace[i]) {
+								//potential 3rd byte of a part to replace found
+								if (cut == 0 && potentialpartoff == off-3) cut = 2;
+								if (potentialpartoff <= off-4) {
+									potentialpart = null;
+									step = 0;
+								}
+								else {
+									step = 2;
+//									System.out.println("3rd byte loop triggered for shader/texture/normalmap " + r.toReplace[i].label +" | "+off);
+								}
+							}else if (step == 2 && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[3] && potentialpart == r.toReplace[i] /*misses one more condition ?*/) {
+								//potential last byte of a part to replace found
+								if (cut == 0 && potentialpartoff == off-4) cut = 3;
+								if (potentialpartoff <= off-5) {
+									potentialpart = null;
+									step = 0;
+								}
+								if (potentialpart !=null) {
+									potentialpart = null;
+									System.out.println("shader/texture/normalmap " + r.toReplace[i].label + " found | " + (off+1));
+									fileToBytes[potentialpartoff] = r.replacements[i].reversedBinHashBytes[0];
+									switch (cut) {
+									case 1:
+										System.out.println("Hash cut after 1 byte; replaced "+potentialpartoff+ "," + (potentialpartoff+2) +","+ (potentialpartoff+3)+","+(potentialpartoff+4));
+										fileToBytes[potentialpartoff+2] = r.replacements[i].reversedBinHashBytes[1];
+										fileToBytes[potentialpartoff+3] = r.replacements[i].reversedBinHashBytes[2];
+										fileToBytes[potentialpartoff+4] = r.replacements[i].reversedBinHashBytes[3];
+										break;
+									case 2:
+										System.out.println("Hash cut after 2 bytes; replaced "+potentialpartoff+ "," + (potentialpartoff+1) +","+ (potentialpartoff+3)+","+(potentialpartoff+4));
+										fileToBytes[potentialpartoff+1] = r.replacements[i].reversedBinHashBytes[1];
+										fileToBytes[potentialpartoff+3] = r.replacements[i].reversedBinHashBytes[2];
+										fileToBytes[potentialpartoff+4] = r.replacements[i].reversedBinHashBytes[3];
+										break;
+									case 3:
+										System.out.println("Hash cut after 3 bytes; replaced "+potentialpartoff+ "," + (potentialpartoff+1) +","+ (potentialpartoff+2)+","+(potentialpartoff+4));
+										fileToBytes[potentialpartoff+1] = r.replacements[i].reversedBinHashBytes[1];
+										fileToBytes[potentialpartoff+2] = r.replacements[i].reversedBinHashBytes[2];
+										fileToBytes[potentialpartoff+4] = r.replacements[i].reversedBinHashBytes[3];
+										break;
+									case 0:
+										System.out.println("Hash not cut; replaced "+potentialpartoff+ "," + (potentialpartoff+1) +","+ (potentialpartoff+2)+","+(potentialpartoff+3));
+										fileToBytes[potentialpartoff+1] = r.replacements[i].reversedBinHashBytes[1];
+										fileToBytes[potentialpartoff+2] = r.replacements[i].reversedBinHashBytes[2];
+										fileToBytes[potentialpartoff+3] = r.replacements[i].reversedBinHashBytes[3];
+									}
+								}
+							}
+						}
+						
+						
+						
+						
+						
+						
+						
+					}
 					
 					off++;
 				}
 				System.out.println("End of part " + r.part + " at " + off);
 			}
+			System.out.println("All replacements done.");
+			
+			FileOutputStream fos = new FileOutputStream(f);
+			fos.write(fileToBytes);
+			fos.close();
+			System.out.println("File saved.");
 			
 			
 		} catch (FileNotFoundException e) {
