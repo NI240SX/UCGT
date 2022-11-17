@@ -50,14 +50,16 @@ public class CtkFixer {
 			int potentialpartoff = 0;
 			byte step = 0;
 			boolean allPartsFound = false;
+			int off=0;
 //			int progressstep = (int) (f.length()/20);
 			
-			for (int off=0; off<f.length(); off++) {
+			while (1514947658 != (((fileToBytes[off+4] & 0xFF) << 24) | ((fileToBytes[off+3] & 0xFF) << 16)
+			        | ((fileToBytes[off+2] & 0xFF) << 8) | (fileToBytes[off+1] & 0xFF))) {	//stop searching when 4a444c5a (JDLZ) is found
 				
 //				if (off%progressstep == 0) System.out.println("Progress "+ (100*off/f.length() +1)+"%");
 				
 				for (Replacements r : replacements) { //optimization has to be done probably
-					if (fileToBytes[off] == r.part.reversedBinHashBytes[0]) {
+/*					if (fileToBytes[off] == r.part.reversedBinHashBytes[0]) {
 						//potential beginning of a part to replace found
 						potentialpart = r.part;
 						potentialpartoff = off;
@@ -72,7 +74,7 @@ public class CtkFixer {
 							//potential 3rd byte of a part to replace found
 							if (potentialpartoff <= off-3) potentialpart = null;
 							else step = 2;
-						}else if (step == 2 && fileToBytes[off] == r.part.reversedBinHashBytes[3] && potentialpart == r.part /*misses one more condition ?*/) {
+						}else if (step == 2 && fileToBytes[off] == r.part.reversedBinHashBytes[3] && potentialpart == r.part) { //misses one more condition ?
 							//potential last byte of a part to replace found
 							if (potentialpartoff <= off-4) potentialpart = null;
 							if (potentialpart !=null) {
@@ -83,22 +85,35 @@ public class CtkFixer {
 
 									System.out.println("part " + r.part.label + " found | offset (decimal) = " + r.position);
 								}
-								if (r.seen == 2) {
-									allPartsFound = true;
-									System.out.println("All parts found.");
-								}
 								r.seen++;
 							}
 						}
-					}
+					}*/
+					if (fileToBytes[off] == r.part.reversedBinHashBytes[0] 
+						&& fileToBytes[off+1] == r.part.reversedBinHashBytes[1] 
+						&& fileToBytes[off+2] == r.part.reversedBinHashBytes[2] 
+						&& fileToBytes[off+3] == r.part.reversedBinHashBytes[3]) {
 						
+						if (r.seen == 1) {
+							r.position = ((fileToBytes[off+7] & 0xFF) << 24) | ((fileToBytes[off+6] & 0xFF) << 16)
+							        | ((fileToBytes[off+5] & 0xFF) << 8) | (fileToBytes[off+4] & 0xFF);
+
+							System.out.println("part " + r.part.label + " found | offset (decimal) = " + r.position);
+						}
+						r.seen++;
+						
+						
+						
+						
+						
+					}
+					
 					
 				}
-				
-				
-				if (allPartsFound) break;
-				
+				off++;
 			}
+
+			System.out.println("All parts found.");
 			
 			byte cut = 0;
 			
@@ -107,7 +122,7 @@ public class CtkFixer {
 
 				System.out.println("Starting to replace part " + r.part + " at " + (r.position+32));
 				
-				int off = r.position + 32;
+				off = r.position + 32;
 				while (1514947658 != (((fileToBytes[off+4] & 0xFF) << 24) | ((fileToBytes[off+3] & 0xFF) << 16)
 				        | ((fileToBytes[off+2] & 0xFF) << 8) | (fileToBytes[off+1] & 0xFF))) {	//stop searching when 4a444c5a (JDLZ) is found
 					

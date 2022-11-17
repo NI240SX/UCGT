@@ -51,7 +51,7 @@ public class GeomDump extends Application {
 	
 	
 	
-	static int startFrom = 34688;
+	static int startFrom = 10490496;
 	static int length = 2048;//2048 recommended
 	// M3 E92
 	//base : 63440
