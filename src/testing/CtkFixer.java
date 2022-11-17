@@ -202,6 +202,60 @@ public class CtkFixer {
 			}
 			System.out.println("All replacements done.");
 			
+			//important crash fix
+			fileToBytes[48]=67;
+			fileToBytes[49]=97;
+			fileToBytes[50]=114;
+			fileToBytes[51]=84;
+			fileToBytes[52]=111;
+			fileToBytes[53]=111;
+			fileToBytes[54]=108;
+			fileToBytes[55]=83;
+			fileToBytes[56]=104;
+			fileToBytes[57]=105;
+			fileToBytes[58]=116;
+			fileToBytes[59]=32;
+			fileToBytes[60]=102;
+			fileToBytes[61]=105;
+			fileToBytes[62]=120;
+			fileToBytes[63]=101;
+			fileToBytes[64]=100;
+			fileToBytes[65]=32;
+			fileToBytes[66]=98;
+			fileToBytes[67]=121;
+			fileToBytes[68]=32;
+			fileToBytes[69]=85;
+			fileToBytes[70]=67;
+			fileToBytes[71]=71;
+			fileToBytes[72]=84;
+			fileToBytes[73]=32;
+			fileToBytes[74]=45;
+			fileToBytes[75]=32;
+			fileToBytes[76]=78;
+			fileToBytes[77]=73;
+			fileToBytes[78]=50;
+			fileToBytes[79]=52;
+			fileToBytes[80]=48;
+			fileToBytes[81]=83;
+			fileToBytes[82]=88;
+			fileToBytes[83]=32;
+			fileToBytes[84]=50;
+			fileToBytes[85]=48;
+			fileToBytes[86]=50;
+			fileToBytes[87]=50;
+			fileToBytes[104]=68;
+			fileToBytes[105]=69;
+			fileToBytes[106]=70;
+			fileToBytes[107]=65;
+			fileToBytes[108]=85;
+			fileToBytes[109]=76;
+			
+			
+			
+			
+			
+			
+			
 			FileOutputStream fos = new FileOutputStream(f);
 			fos.write(fileToBytes);
 			fos.close();
