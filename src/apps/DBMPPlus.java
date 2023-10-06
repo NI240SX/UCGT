@@ -47,7 +47,8 @@ public class DBMPPlus {
 		testDBMP.parts.add(p2);
 		System.out.println(testDBMP);
 
-		DBMP loadTest = loadDBMP(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\dbmp step 8.bin"));
+		//DBMP loadTest = loadDBMP(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\dbmp step 8.bin"));
+		DBMP loadTest = loadDBMP(new File("\"C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\a UCE\\!CARS- ECLIPSE GT\\dbmp temp.bin\""));
 		
 	}
 
