@@ -1,13 +1,14 @@
 package testing;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -19,16 +20,19 @@ public class CtkFixer {
 
 	public static void main(String[] args) {
 		try {
-			BufferedReader br = new BufferedReader(new FileReader(new File("tofix.txt")));
+			BufferedReader br = new BufferedReader(new FileReader(new File("CTKFixer.ini")));
 
-			File f = new File(br.readLine());
+			
+			
+			File f = new File(br.readLine().strip());
 			FileInputStream fis = new FileInputStream(f);
 			byte [] fileToBytes = new byte[(int)f.length()];
 			fis.read(fileToBytes);
 			fis.close();
+
 			
-			
-			String carname = br.readLine();
+			String s = br.readLine();
+			String carname = s.replaceAll(" the zmod lock is real", "").strip();
 			String l;
 			ArrayList<Replacements> replacements = new ArrayList<Replacements>();
 			while ((l = br.readLine()) != null) { //config reading loop
@@ -40,16 +44,25 @@ public class CtkFixer {
 						toReplace[i-1] = new Hash(line[i].split(">")[0].replaceAll("%", carname));
 						replacement[i-1] = new Hash(line[i].split(">")[1].replaceAll("%", carname));
 					}
-					replacements.add(new Replacements(new Hash(carname + "_" + line[0]), toReplace, replacement));
+					if (line[0].endsWith("_A") || line[0].endsWith("_B") ||line[0].endsWith("_C") || line[0].endsWith("_D")) {
+						replacements.add(new Replacements(new Hash(carname + "_" + line[0]), toReplace, replacement));
+					} else {
+						replacements.add(new Replacements(new Hash(carname + "_" + line[0] + "_A"), toReplace, replacement));
+						replacements.add(new Replacements(new Hash(carname + "_" + line[0] + "_B"), toReplace, replacement));
+						replacements.add(new Replacements(new Hash(carname + "_" + line[0] + "_C"), toReplace, replacement));
+						replacements.add(new Replacements(new Hash(carname + "_" + line[0] + "_D"), toReplace, replacement));
+					}
+					
 				}
 			}
 			System.out.println(replacements);
 			
 			
+			
+			
 			Hash potentialpart = null;
 			int potentialpartoff = 0;
 			byte step = 0;
-			boolean allPartsFound = false;
 			int off=0;
 //			int progressstep = (int) (f.length()/20);
 			
@@ -114,6 +127,13 @@ public class CtkFixer {
 			}
 
 			System.out.println("All parts found.");
+			
+			for (int i=0; i<replacements.size(); i++) {
+				if (replacements.get(i).position == 0) {
+					replacements.remove(i);
+					i--;
+				}
+			}
 			
 			byte cut = 0;
 			
@@ -265,6 +285,11 @@ public class CtkFixer {
 			fileToBytes[108]=85;
 			fileToBytes[109]=76;
 			
+
+			if (!s.equals(s.replaceAll(" the zmod lock is real", ""))) {
+				fileToBytes[0] = 1;
+				System.out.println("The zmod lock is indeed real.");
+			}
 			
 			
 			
@@ -276,10 +301,34 @@ public class CtkFixer {
 			fos.close();
 			System.out.println("File saved.");
 			
-			
 		} catch (FileNotFoundException e) {
-			System.out.println("Please create and fill the tofix.txt configuration file");
-			e.printStackTrace();
+			try {
+				if (!new File("CTKFixer.ini").exists()) {
+					BufferedWriter bw = new BufferedWriter(new FileWriter(new File("CTKFixer.ini")));
+					
+					bw.write("C:\\Program Files (x86)\\EA Games\\Need for Speed Undercover\\CARS\\AAA_AAA_AAA_01\\GEOMETRY.BIN\r\n"
+							+ "AAA_AAA_AAA_01\r\n"
+							+ "#	^ ALWAYS PUT THE CAR FOLDER THEN XNAME HERE\r\n"
+							+ "#\r\n"
+							+ "#	FORMATTING : put raw parts then textures/normalmaps/shaders to swap with new shaders\r\n"
+							+ "#\r\n"
+							+ "#	SMALL EXAMPLE :\r\n"
+							+ "# \r\n"
+							+ "#	KITW04_BODY_A BADGING_UNIVERSAL>DOORLINE BADGING>%_BADGING_KITW04\r\n"
+							+ "#	KITW04_BODY_B BADGING_UNIVERSAL>DOORLINE BADGING>%_BADGING_KITW04\r\n"
+							+ "#	KITW04_BODY_C BADGING_UNIVERSAL>DOORLINE BADGING>%_BADGING_KITW04\r\n"
+							+ "#\r\n"
+							+ "#	KIT01_BRAKELIGHT_LEFT %_KIT00_BRAKELIGHT_OFF>%_KIT01_BRAKELIGHT_OFF %_KIT00_BRAKELIGHT_ON>%_KIT01_BRAKELIGHT_ON\r\n"
+							+ "#	KIT01_BRAKELIGHT_RIGHT %_KIT00_BRAKELIGHT_OFF>%_KIT01_BRAKELIGHT_OFF %_KIT00_BRAKELIGHT_ON>%_KIT01_BRAKELIGHT_ON\r\n"
+							+ "#");
+					bw.close();
+					System.out.println("Missing configuration, it has been generated.");
+				} else System.out.println("Invalid configuration, check the car's path.");
+				
+				
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -22,7 +22,7 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
-public class GeomDump extends Application {
+public class GeomDumpTest extends Application {
 
 	TextArea hex = new TextArea();
 	TextArea dmp = new TextArea();
@@ -30,69 +30,16 @@ public class GeomDump extends Application {
 	String hexSearch = "";
 	String dmpSearch = "";
 	
-	static String car = "NIS_240_SX_89";
+	static String car = "UCGT";
 //	static String car = "240SX";
-	static int[] art = new int[]{0, 1, 2, 3, 4, 5, 6, 11, 12};
-	static int[] wart = new int[]{1, 2, 3, 4, 5};
+	static int[] art = new int[]{0};
+	static int[] wart = new int[]{};
 
 	
-//	static String car = "NIS_350_Z_05";
+	static int startFrom = 0;
+	static int length = 6384;//2048 recommended
 
-	
-	
-//	static String car = "NIS_370_Z_09";
-//	static int[] art = new int[]{0, 1, 3, 4, 11};
-//	static int[] wart = new int[]{1};
-	
-	
-	
-	
-	static int startFrom = 10375040;
-	static int length = 2048;//2048 recommended
-	// M3 E92
-	//base : 63440
-	//hood : 725944
-	//wheel : 963800
-	//brakelight left : 181784
-	//w01 bumper front t1 : 5006288
-	//brake front c : 9304216
-	//window front right : 1559960
-	//left mirror : 801560
-	
-	// 350Z ctk
-	//base : 4774424
-	
-	
-	// 370Z
-	//base : 61732
-	
-	
-	
-	
-	
-	
-	
-	
-	
-//	File f = new File("C:\\Program Files (x86)\\EA Games\\Need for Speed Undercover\\CARS\\BMW_M3_E92_08\\GEOMETRY.BIN"); //vanilla
-	File f = new File("D:\\Jeux\\UCEtesting\\CARS\\" + car + "\\GEOMETRY.BIN"); //ctk
-//	File f = new File("C:\\Users\\NI240SX\\Downloads\\240SX\\GEOMETRY.BIN"); //vanilla
-//	File f = new File("D:\\Jeux\\Need for Speed Carbon Endgame V2\\CARS\\240SX\\GEOMETRY.BIN"); //vanilla
-//	File f = new File("D:\\Jeux\\UCEtesting\\CARS\\NIS_350_Z_05\\GEOMETRY.BIN"); //ctk
-	
-	/* had to add 
-	FRONT_BUMPER
-	REAR_BUMPER
-	LEFT_SKIRT
-	RIGHT_SKIRT
-	DOORLINE
-	DAMAGE0_FRONT
-	DAMAGE0_FRONT_LEFT
-	DAMAGE0_FRONT_RIGHT
-	DAMAGE0_REAR
-	DAMAGE0_REAR_LEFT
-	DAMAGE0_REAR_RIGHT
-	for UC PS2/Carbon models (still incomplete because of STYLExx naming) */
+	File f = new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT.BIN");
 	
 	@Override
 	public void start(Stage primaryStage) {
@@ -175,7 +122,6 @@ public class GeomDump extends Application {
 
 	public static void main(String[] args) {
 		launch(args);
-//		System.out.println(tryDecode4B(-869258610, generateHashes("BMW_M3_E92_08", new int[]{0, 1, 4, 6, 11}, new int[]{1})));
 	}
 	
 	public static void dumpGeom(File f, TextArea hex, TextArea dmp) {
@@ -187,55 +133,11 @@ public class GeomDump extends Application {
 			fis.close();
 			ByteBuffer bb = ByteBuffer.wrap(arr);
 			
-			
-			
-			
-//			ArrayList<Hash> Hashlist = generateHashes("BMW_M3_E92_08", new int[]{0, 1, 4, 6, 11}, new int[]{1});
 			ArrayList<Hash> Hashlist = generateHashes(car, art, wart);
-//			ArrayList<Hash> Hashlist = generateHashes("NIS_350_Z_05", new int[]{0, 1, 4, 6, 11}, new int[]{1});
 			bb.position(startFrom);
 			while (bb.position()<startFrom+length) {//65536
-/*				for (int i=0; i<4; i++) {
-					int current = bb.getInt();
-					
-					hex.appendText(Integer.toHexString(current)+" ");
-					
-					String s;
-					if ((s = decodeSimple4B(current, Hashlist)) != null) dmp.appendText(s+ " ");
-					else dmp.appendText(Integer.toHexString(current)+ " ");
-					
-				}
-*/				
 				byte off = 0;
 				for (int i=0; i<4; i++) {
-					
-					
-				/*	byte[] current = new byte[7];
-					bb.get(current, bb.position(), 7);
-					bb.position(bb.position()-3);
-					
-					ByteBuffer curr = ByteBuffer.wrap(current);
-					
-					hex.appendText(Integer.toHexString(curr.getInt(0))+" ");
-					
-					String unh = "";
-					byte j;
-					for (j=0; j<4;j++) {
-						if ((unh = decodeSimple4B(curr.getInt(j), Hashlist)) != null ){							
-							break;
-						}
-					}
-					if (unh == null) {
-						for (byte k=off;k<4;k++) System.out.print(Integer.toHexString(curr.get(k))+" ");
-						off = 0;
-						dmp.appendText(" ");
-					}else {
-						for (byte k=off;k<j;k++) System.out.print(Integer.toHexString(curr.get(k)));
-						System.out.print(unh + " ");
-						off = j;
-					}			
-					*/
-					//TODO work on an array of 7 or 8 bytes !!!!!!!!!!! this is dogshit !!!
 					int current = bb.getInt();
 					hex.appendText(Integer.toHexString(current)+" ");
 					
@@ -280,11 +182,6 @@ public class GeomDump extends Application {
 									}else {
 										dmp.appendText(Integer.toHexString(current)+" ");
 									}
-									
-//									bb.position(bb.position()-3);
-//									byte[] bytes = new byte[4];
-//									bb.get(bb.position()-4, bytes);
-//									dmp.appendText(new String(bytes, StandardCharsets.ISO_8859_1)+" ");
 								}
 								
 								
@@ -325,7 +222,7 @@ public class GeomDump extends Application {
 		
 		try {
 			for (int k : kits) {
-				BufferedReader br = new BufferedReader(new FileReader(new File("data/parts")));
+				BufferedReader br = new BufferedReader(new FileReader(new File("data/parts_test")));
 
 				String part;
 				while ((part = br.readLine())!=null){
@@ -348,7 +245,7 @@ public class GeomDump extends Application {
 			}
 			
 			for (int k : widebodies) {
-				BufferedReader br = new BufferedReader(new FileReader(new File("data/parts")));
+				BufferedReader br = new BufferedReader(new FileReader(new File("data/parts_test")));
 
 				String part;
 				while ((part = br.readLine())!=null){

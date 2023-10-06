@@ -12,7 +12,7 @@ public class Hash {
 		this.binHash = findBinHash(label);
 		this.reversedBinHash = Integer.reverseBytes(this.binHash);
 		this.reversedBinHashBytes = intToBytes(reversedBinHash);
-		System.out.println(label + "=" + Integer.toHexString(this.binHash));
+//		System.out.println(label + "=" + Integer.toHexString(this.binHash));
 	}
 	
 	public Hash(String label, int hex) {
@@ -20,7 +20,7 @@ public class Hash {
 		this.binHash = hex;
 		this.reversedBinHash = Integer.reverseBytes(this.binHash);
 		this.reversedBinHashBytes = intToBytes(reversedBinHash);
-		System.out.println(label + "=" + Integer.toHexString(this.binHash));
+//		System.out.println(label + "=" + Integer.toHexString(this.binHash));
 		
 	}
 	
