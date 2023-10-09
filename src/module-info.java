@@ -5,4 +5,5 @@ module UCGT {
 	
 	opens application to javafx.graphics, javafx.fxml;
 	opens testing to javafx.graphics, javafx.fxml;
+	opens dbmpPlus to javafx.graphics, javafx.fxml;
 }

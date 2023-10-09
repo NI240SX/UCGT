@@ -57,7 +57,7 @@ class DBMP{
 		return s;
 	}
 	
-	public void updatePartNames() {
+	public void updateAll() {
 		for (Part p : parts) {
 			p.update();
 		}
@@ -154,7 +154,6 @@ class DBMP{
 
 					if (attributeHash == PARTID_UPGRADE_GROUP.binHash) p.attributes.add(new AttributeCarPartID(PARTID_UPGRADE_GROUP, bb));
 
-					// recheck par rapport au fichier
 					if (attributeHash == PART_NAME_SELECTOR.binHash) p.attributes.add(new AttributeInteger(PART_NAME_SELECTOR, bb));
 					if (attributeHash == LOD_NAME_PREFIX_SELECTOR.binHash) p.attributes.add(new AttributeInteger(LOD_NAME_PREFIX_SELECTOR, bb));
 					if (attributeHash == MAX_LOD.binHash) p.attributes.add(new AttributeInteger(MAX_LOD, bb));

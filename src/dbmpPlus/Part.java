@@ -2,13 +2,45 @@ package dbmpPlus;
 
 import java.util.ArrayList;
 
-class Part {
+import javafx.event.EventHandler;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.HBox;
+
+class Part extends HBox {
 	public ArrayList<Attribute> attributes = new ArrayList<Attribute>();
 	public String displayName = "MISSING ATTRIBUTES";
 	
 	public int kitnumber = 99;
 	public boolean isWidebody = false;
 	public int autosculptTargets = 0;
+	
+	CheckBox uiCheckBox;
+	Label uiLabel;
+	
+	public Part() {
+		uiCheckBox = new CheckBox();
+		uiLabel = new Label(displayName);
+
+        this.getChildren().addAll(uiCheckBox, uiLabel);
+        this.setOnMousePressed(new EventHandler<MouseEvent>() {
+			public void handle(MouseEvent arg0) {
+				DBMPPlus.attributesDisplay.getChildren().clear();
+				for (Attribute a : attributes) {
+					DBMPPlus.attributesDisplay.getChildren().addAll(a);
+				}
+				if (!arg0.isControlDown()) {
+					for (Part p : DBMPPlus.mainDBMP.parts) {
+						p.uiCheckBox.setSelected(false);
+					}
+				}
+				if (!uiCheckBox.isSelected()) uiCheckBox.setSelected(true); else uiCheckBox.setSelected(false);
+				arg0.consume();
+			}
+        });
+	}
 	
 	public void update() {
 		String name1 = "MISSING ATTRIBUTES";
@@ -24,12 +56,17 @@ class Part {
 				AttributeTwoString att2S = (AttributeTwoString)attribute;
 				name2 = att2S.value1 + "_" + att2S.value2;
 			}
+			if (attribute.Key.label.equals("MORPHTARGET_NUM")) {
+				AttributeInteger attI = (AttributeInteger)attribute;
+				autosculptTargets = attI.value;
+			}
 		}
 		if (name2.equals(name1)) {
 			displayName = name1;
 		} else {
 			displayName = name1 + " (reference to " + name2 + ")";
 		}
+		uiLabel.setText(displayName);
 	}
 	
 	public void addAttribute(Attribute a) {

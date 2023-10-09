@@ -3,16 +3,24 @@ package dbmpPlus;
 import java.nio.ByteBuffer;
 
 import binstuff.Hash;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
 
-abstract class Attribute{
+abstract class Attribute extends HBox{
+	
 	public static String AttributeIdentifier = null;
 	public Hash Key = null;
+
+	Label uiLabel = new Label("MISSING");
+	
 	public Attribute(String key) {
 		Key = new Hash(key);
+        this.getChildren().addAll(uiLabel);
 	}
 	
 	public Attribute(Hash key) {
 		Key = key;
+        this.getChildren().addAll(uiLabel);
 	}
 
 	public void writeToFile(ByteBuffer bb) {
@@ -35,6 +43,7 @@ class AttributeString extends Attribute{
 		super(key);
 		value1Exists = bb.get();
 		value1 = DBMP.readString(bb);
+		uiLabel.setText(this.toString());
 	}
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
@@ -61,6 +70,7 @@ class AttributeTwoString extends Attribute{
 		value2 = string2;
 		value1Exists = 1;
 		value2Exists = 1;
+		uiLabel.setText(this.toString());
 	}
 	public AttributeTwoString(Hash key, ByteBuffer bb) {
 		super(key);
@@ -68,6 +78,7 @@ class AttributeTwoString extends Attribute{
 		value2Exists = bb.get();
 		value1 = DBMP.readString(bb);
 		value2 = DBMP.readString(bb);
+		uiLabel.setText(this.toString());
 	}
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
@@ -90,6 +101,7 @@ class AttributeInteger extends Attribute{
 	public AttributeInteger(Hash key, ByteBuffer bb) {
 		super(key);
 		value = bb.getInt();
+		uiLabel.setText(this.toString());
 	}
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
@@ -111,6 +123,7 @@ class AttributeCarPartID extends Attribute{
 		super(key);
 		level = bb.get();
 		ID = SlotUndercover.get(bb.get());
+		uiLabel.setText(this.toString());
 	}
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
@@ -131,6 +144,7 @@ class AttributeKey extends Attribute{
 	public AttributeKey(Hash key, ByteBuffer bb) {
 		super(key);
 		value = new Hash(DBMP.readString(bb));
+		uiLabel.setText(this.toString());
 	}
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);

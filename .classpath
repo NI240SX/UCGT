@@ -43,31 +43,5 @@
 			<attribute name="maven.scope" value="compile"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/gaupp/.m2/repository/org/openjfx/javafx-graphics/17.0.1/javafx-graphics-17.0.1-win.jar" sourcepath="C:/Users/gaupp/.m2/repository/org/openjfx/javafx-graphics/17.0.1/javafx-graphics-17.0.1-sources.jar">
-		<attributes>
-			<attribute name="module" value="true"/>
-			<attribute name="maven.pomderived" value="true"/>
-			<attribute name="maven.groupId" value="org.openjfx"/>
-			<attribute name="maven.artifactId" value="javafx-graphics"/>
-			<attribute name="maven.version" value="17.0.1"/>
-			<attribute name="maven.classifier" value="win"/>
-			<attribute name="maven.scope" value="compile"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/gaupp/.m2/repository/org/openjfx/javafx-fxml/17.0.1/javafx-fxml-17.0.1-win.jar">
-		<attributes>
-			<attribute name="module" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/gaupp/.m2/repository/org/openjfx/javafx-controls/17.0.1/javafx-controls-17.0.1-win.jar">
-		<attributes>
-			<attribute name="module" value="true"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/gaupp/.m2/repository/org/openjfx/javafx-base/17.0.1/javafx-base-17.0.1-win.jar">
-		<attributes>
-			<attribute name="module" value="true"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
