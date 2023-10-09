@@ -15,8 +15,7 @@ import binstuff.Hash;
 public class DBMPPlus {
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		
+		/*
 		System.out.println(new AttributeTwoString("PART_NAME_OFFSETS"));
 		System.out.println(new AttributeCarPartID("PARTID_UPGRADE_GROUP"));
 		System.out.println(new AttributeKey("CV"));
@@ -25,11 +24,11 @@ public class DBMPPlus {
 		p.attributes.add(new AttributeTwoString("PART_NAME_OFFSETS","KIT00","BUMPER_FRONT"));
 		p.attributes.add(new AttributeTwoString("LOD_BASE_NAME","KIT00","BUMPER_FRONT"));
 		System.out.println(p);
-		p.updateName();
+		p.update();
 		System.out.println(p);
 		((AttributeTwoString)p.editAttribute("PART_NAME_OFFSETS")).value2 = "BUMP";
 		System.out.println(p);
-		p.updateName();
+		p.update();
 		System.out.println(p);
 
 		Part p2 = new Part();
@@ -39,16 +38,17 @@ public class DBMPPlus {
 		p2.addAttribute(new AttributeTwoString("LOD_BASE_NAME","KIT00","BODY"));
 		System.out.println(p2);
 		((AttributeTwoString)p2.editAttribute("PART_NAME_OFFSETS")).value1 = "KIT11";
-		p2.updateName();
+		p2.update();
 		System.out.println(p2);
 		
 		DBMP testDBMP = new DBMP("NIS_240_SX_89");
 		testDBMP.parts.add(p);
 		testDBMP.parts.add(p2);
-		System.out.println(testDBMP);
+		System.out.println(testDBMP); */
 
 		//DBMP loadTest = loadDBMP(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\dbmp step 8.bin"));
-		DBMP loadTest = loadDBMP(new File("\"C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\a UCE\\!CARS- ECLIPSE GT\\dbmp temp.bin\""));
+		DBMP loadTest = loadDBMP(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\LOT_ELI_111_06.bin"));
+		System.out.println(loadTest.displayName());
 		
 	}
 
@@ -80,20 +80,6 @@ public class DBMPPlus {
 			
 			Hash CV = new Hash("CV");
 			
-/*			PART_NAME_OFFSETS=TwoString
-			LOD_BASE_NAME=TwoString
-			PARTID_UPGRADE_GROUP=CarPartID
-			PART_NAME_SELECTOR=Integer
-			LOD_NAME_PREFIX_SELECTOR=Integer
-			MAX_LOD=Integer
-			LOD_CHARACTERS_OFFSET=String
-			NAME_OFFSET=String
-			MORPHTARGET_NUM=Integer
-			CV=Key							*/
-		
-			
-			
-			
 			ByteBuffer bb = ByteBuffer.wrap(fileToBytes);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
 			bb.position(36);
@@ -105,18 +91,26 @@ public class DBMPPlus {
 				int partAttribCount = bb.getInt();
 				for (int j=0; j<partAttribCount; j++) { //loop on attributes
 					int attributeHash = bb.getInt();
-					if (attributeHash == PART_NAME_OFFSETS.reversedBinHash) p.attributes.add(new AttributeTwoString(PART_NAME_OFFSETS, bb));
-					if (attributeHash == LOD_BASE_NAME.reversedBinHash) p.attributes.add(new AttributeTwoString(LOD_BASE_NAME, bb));
+					if (attributeHash == PART_NAME_OFFSETS.binHash) p.attributes.add(new AttributeTwoString(PART_NAME_OFFSETS, bb));
+					if (attributeHash == LOD_BASE_NAME.binHash) p.attributes.add(new AttributeTwoString(LOD_BASE_NAME, bb));
 
-					if (attributeHash == PARTID_UPGRADE_GROUP.reversedBinHash) p.attributes.add(new AttributeCarPartID(PARTID_UPGRADE_GROUP, bb));
+					if (attributeHash == PARTID_UPGRADE_GROUP.binHash) p.attributes.add(new AttributeCarPartID(PARTID_UPGRADE_GROUP, bb));
+
+					// recheck par rapport au fichier
+					if (attributeHash == PART_NAME_SELECTOR.binHash) p.attributes.add(new AttributeInteger(PART_NAME_SELECTOR, bb));
+					if (attributeHash == LOD_NAME_PREFIX_SELECTOR.binHash) p.attributes.add(new AttributeInteger(LOD_NAME_PREFIX_SELECTOR, bb));
+					if (attributeHash == MAX_LOD.binHash) p.attributes.add(new AttributeInteger(MAX_LOD, bb));
+					if (attributeHash == MORPHTARGET_NUM.binHash) p.attributes.add(new AttributeInteger(MORPHTARGET_NUM, bb));
 					
-					//continue this shit
+					if (attributeHash == LOD_CHARACTERS_OFFSET.binHash) p.attributes.add(new AttributeString(LOD_CHARACTERS_OFFSET, bb));
+					if (attributeHash == NAME_OFFSET.binHash) p.attributes.add(new AttributeString(NAME_OFFSET, bb));
+
+					if (attributeHash == CV.binHash) p.attributes.add(new AttributeKey(CV, bb));
 					
+					//cheap ass code moment
 				}
-			}
-
-
-			
+				p.update();
+			}			
 		} catch (FileNotFoundException e) {
 			//dbmp to load not found
 			// TODO Auto-generated catch block
@@ -174,9 +168,19 @@ class DBMP{
 		s += "\n== End of DBMP  ==";
 		return s;
 	}
+	
+	public String displayName() {
+		String s = "== DBModelParts ==\nCar=" + carname.label;
+		for (Part p : parts) {
+			s += "\n" + p.displayName;
+		}
+		s += "\n== End of DBMP  ==";
+		return s;
+	}
+	
 	public void updatePartNames() {
 		for (Part p : parts) {
-			p.updateName();
+			p.update();
 		}
 	}
 }
@@ -184,7 +188,7 @@ class DBMP{
 class Part {
 	public ArrayList<Attribute> attributes = new ArrayList<Attribute>();
 	public String displayName = "MISSING ATTRIBUTES";
-	public void updateName() {
+	public void update() {
 		String name1 = "MISSING ATTRIBUTES";
 		String name2 = "MISSING ATTRIBUTES";
 		for (Attribute attribute : attributes) {
@@ -206,7 +210,7 @@ class Part {
 	
 	public void addAttribute(Attribute a) {
 		attributes.add(a);
-		updateName();
+		update();
 	}
 	public Attribute editAttribute(String a) {
 		Attribute att = null;
@@ -223,7 +227,7 @@ class Part {
 				attributes.remove(attribute);
 			}
 		}
-		updateName();
+		update();
 	}
 	
 	public String toString() {
@@ -264,6 +268,11 @@ class AttributeString extends Attribute{
 	public AttributeString(String key) {
 		super(key);
 	}
+	public AttributeString(Hash key, ByteBuffer bb) {
+		super(key);
+		value1Exists = bb.get()==1;
+		value1 = DBMPPlus.readString(bb);
+	}
 	public String toString() {
 		return "String" + Key + ": " + value1 + "," + value1Exists;
 	}
@@ -303,6 +312,10 @@ class AttributeInteger extends Attribute{
 	public AttributeInteger(String key) {
 		super(key);
 	}
+	public AttributeInteger(Hash key, ByteBuffer bb) {
+		super(key);
+		value = bb.getInt();
+	}
 	public String toString() {
 		return "Integer" + Key + ": " + value;
 	}
@@ -330,6 +343,10 @@ class AttributeKey extends Attribute{
 	public Hash value = new Hash("");
 	public AttributeKey(String key) {
 		super(key);
+	}
+	public AttributeKey(Hash key, ByteBuffer bb) {
+		super(key);
+		value = new Hash(DBMPPlus.readString(bb));
 	}
 	public String toString() {
 		return "CarPartID" + Key + ": " + value;
