@@ -1,10 +1,14 @@
 package apps;
 
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -49,6 +53,13 @@ public class DBMPPlus {
 		//DBMP loadTest = loadDBMP(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\dbmp step 8.bin"));
 		DBMP loadTest = loadDBMP(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\LOT_ELI_111_06.bin"));
 		System.out.println(loadTest.displayName());
+		loadTest.saveToFile(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\DBMP EXPORT LOT_ELI_111_06.bin"));
+		
+		loadTest = loadDBMP(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\MIT_EVO_X_08.bin"));
+		loadTest.saveToFile(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\DBMP EXPORT MIT_EVO_X_08.bin"));
+		
+		loadTest = loadDBMP(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\BMW_M3_E92_08.bin"));
+		loadTest.saveToFile(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\DBMP EXPORT BMW_M3_E92_08.bin"));
 		
 	}
 
@@ -122,7 +133,7 @@ public class DBMPPlus {
 		return loadDBMP;
 		
 	}
-	
+		
 	public static String readString(ByteBuffer bb) {
 		byte[] stringBytesOversize = new byte[64];
 		byte b;
@@ -134,9 +145,17 @@ public class DBMPPlus {
 		return new String(Arrays.copyOf(stringBytesOversize, i));
 	}
 	
+	public static void writeString(String s, ByteBuffer bb) {
+		bb.put(s.getBytes());
+		bb.put((byte)0);
+	}
+	
 }
 
 class DBMP{
+	
+	public static final int maxPartLength = 200; //200 bytes for each part should be more than enough when exporting
+	
 	public Hash carname;
 	public ArrayList<Part> parts;
 	public DBMP() {
@@ -183,6 +202,53 @@ class DBMP{
 			p.update();
 		}
 	}
+	
+
+	public void saveToFile(File f) {
+		FileOutputStream fos;
+		try {
+			fos = new FileOutputStream(f);
+			
+			ByteBuffer bb = ByteBuffer.wrap(new byte[maxPartLength*this.parts.size()]);
+			
+			bb.order(ByteOrder.LITTLE_ENDIAN);
+			bb.position(36);
+			DBMPPlus.writeString(carname.label, bb);
+			bb.putInt(parts.size());
+			for (Part p : parts) { //loop on parts
+				bb.putInt(p.attributes.size());
+				for (Attribute a : p.attributes) { //loop on attributes
+					a.writeToFile(bb);
+				}
+			}
+			int fileLength = bb.position();
+			bb.position(0);
+			bb.putInt(Integer.reverseBytes(0x674d7042));
+			bb.putInt(fileLength-8);
+			bb.putInt(Integer.reverseBytes(0x06000000));
+			bb.putInt(Integer.reverseBytes(0xc0368c76));
+			bb.putInt(fileLength-20);
+			bb.putInt(Integer.reverseBytes(0x52415757));
+			bb.putInt(Integer.reverseBytes(0x01100000));
+			bb.putInt(fileLength-36);
+			bb.putInt(fileLength-20);
+			
+			Integer.reverseBytes(0);
+			
+			
+			fos.write(Arrays.copyOfRange(bb.array(), 0, fileLength));			
+			fos.close();
+			System.out.println("File saved to " + f);
+			
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
+	}
+
 }
 
 class Part {
@@ -253,7 +319,8 @@ abstract class Attribute{
 		Key = key;
 	}
 
-	public void writeToFile() {
+	public void writeToFile(ByteBuffer bb) {
+		bb.putInt(Key.binHash);
 	}
 	
 	public String toString() {
@@ -264,26 +331,31 @@ abstract class Attribute{
 class AttributeString extends Attribute{
 	public static String AttributeIdentifier = "String";
 	public String value1 = "";
-	public boolean value1Exists = false;
+	public byte value1Exists = 0;
 	public AttributeString(String key) {
 		super(key);
 	}
 	public AttributeString(Hash key, ByteBuffer bb) {
 		super(key);
-		value1Exists = bb.get()==1;
+		value1Exists = bb.get();
 		value1 = DBMPPlus.readString(bb);
 	}
+	public void writeToFile(ByteBuffer bb) {
+		super.writeToFile(bb);
+		bb.put(value1Exists);
+		DBMPPlus.writeString(value1, bb);
+	}
 	public String toString() {
-		return "String" + Key + ": " + value1 + "," + value1Exists;
+		return "String" + Key + ": " + value1 + "," + (value1Exists==1);
 	}
 }
 
 class AttributeTwoString extends Attribute{
 	public static String AttributeIdentifier = "TwoString";
 	public String value1 = "";
-	public boolean value1Exists = false;
+	public byte value1Exists = 0;
 	public String value2 = "";
-	public boolean value2Exists = false;
+	public byte value2Exists = 0;
 	public AttributeTwoString(String key) {
 		super(key);
 	}
@@ -291,18 +363,25 @@ class AttributeTwoString extends Attribute{
 		super(key);
 		value1 = string1;
 		value2 = string2;
-		value1Exists = true;
-		value2Exists = true;
+		value1Exists = 1;
+		value2Exists = 1;
 	}
 	public AttributeTwoString(Hash key, ByteBuffer bb) {
 		super(key);
-		value1Exists = bb.get()==1;
-		value2Exists = bb.get()==1;
+		value1Exists = bb.get();
+		value2Exists = bb.get();
 		value1 = DBMPPlus.readString(bb);
 		value2 = DBMPPlus.readString(bb);
 	}
+	public void writeToFile(ByteBuffer bb) {
+		super.writeToFile(bb);
+		bb.put(value1Exists);
+		bb.put(value2Exists);
+		DBMPPlus.writeString(value1, bb);
+		DBMPPlus.writeString(value2, bb);
+	}
 	public String toString() {
-		return "TwoString" + Key + ": " + value1 + "," + value1Exists + "," + value2 + "," + value2Exists;
+		return "TwoString" + Key + ": " + value1 + "," + (value1Exists==1) + "," + value2 + "," + (value2Exists==1);
 	}
 }
 
@@ -315,6 +394,10 @@ class AttributeInteger extends Attribute{
 	public AttributeInteger(Hash key, ByteBuffer bb) {
 		super(key);
 		value = bb.getInt();
+	}
+	public void writeToFile(ByteBuffer bb) {
+		super.writeToFile(bb);
+		bb.putInt(value);
 	}
 	public String toString() {
 		return "Integer" + Key + ": " + value;
@@ -333,6 +416,11 @@ class AttributeCarPartID extends Attribute{
 		level = bb.get();
 		ID = SlotUndercover.get(bb.get());
 	}
+	public void writeToFile(ByteBuffer bb) {
+		super.writeToFile(bb);
+		bb.put(level);
+		bb.put(ID.getValue());
+	}
 	public String toString() {
 		return "CarPartID" + Key + ": " + ID + ", level " + level;
 	}
@@ -347,6 +435,10 @@ class AttributeKey extends Attribute{
 	public AttributeKey(Hash key, ByteBuffer bb) {
 		super(key);
 		value = new Hash(DBMPPlus.readString(bb));
+	}
+	public void writeToFile(ByteBuffer bb) {
+		super.writeToFile(bb);
+		DBMPPlus.writeString(value.label, bb);
 	}
 	public String toString() {
 		return "CarPartID" + Key + ": " + value;
@@ -490,7 +582,7 @@ enum SlotUndercover {
         this.value = (byte)value;
     }
 
-    public int getValue() {
+    public byte getValue() {
         return value;
     }
 
