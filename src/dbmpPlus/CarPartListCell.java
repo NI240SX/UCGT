@@ -19,7 +19,8 @@ public class CarPartListCell extends ListCell<Part> {
     BorderPane cellPane;
     HBox asHBox;
     HBox partHBox;
-    
+
+	public static Part previousPartClicked = null;
 
     public CarPartListCell() {
         checkBox = new CheckBox();
@@ -46,28 +47,54 @@ public class CarPartListCell extends ListCell<Part> {
             	DBMPPlus.attributesDisplay.getChildren().clear();
 				for (Attribute a : getItem().attributes) DBMPPlus.attributesDisplay.getChildren().addAll(a);
 				
-				//Multiselect
-				if (!e.isControlDown()) {
-					for (CarPartListCell c : DBMPPlus.carPartListCells) c.checkBox.setSelected(false);
+//				//Multiselect
+//				if (e.isShiftDown()) {
+//					if(previousPartClicked != null) {
+//						int index0 = DBMPPlus.mainDBMP.parts.indexOf(previousPartClicked);
+//						int index1 = DBMPPlus.mainDBMP.parts.indexOf(this.getItem());
+//						if(index1<index0) {
+//							index0=index1;
+//							index1=DBMPPlus.mainDBMP.parts.indexOf(previousPartClicked);
+//						}
+//						if(!this.getItem().selected) {
+//							for(int i=index0; i<index1+1; i++) DBMPPlus.mainDBMP.parts.get(i).selected = true;
+//						} else {
+//							for(int i=index0; i<index1+1; i++) DBMPPlus.mainDBMP.parts.get(i).selected = false;
+//						}
+//					}
+//				} else if (!e.isControlDown()) {
+//					for (Part p : DBMPPlus.mainDBMP.parts) p.selected = false;
+//				}
+				
+				//link with the checkbox
+				if (!checkBox.isSelected()) {
+//					this.getItem().selected = true;
+//					previousPartClicked = this.getItem();
 				}
-				if (!checkBox.isSelected()) checkBox.setSelected(true);
-				else checkBox.setSelected(false);
-               e.consume();
+				else {
+//					this.getItem().selected = false;
+				}
+
+				//checkbox display updating
+//				for (CarPartListCell c : DBMPPlus.carPartListCells) if(c!=null && c.getItem()!=null) c.checkBox.setSelected(c.getItem().selected);
+
+				for (CarPartListCell c : DBMPPlus.carPartListCells) if(c!=null && c.getItem()!=null) c.checkBox.setSelected(DBMPPlus.partsDisplay.getSelectionModel().getSelectedItems().contains(c.getItem()));
+				e.consume();
             }
         });
         
-        this.setOnKeyPressed(e -> {
-        	//TODO doesnt worj
-        	if (e.getCode().equals(KeyCode.DELETE)) {
-        		System.out.println("Part " + getItem() + " deleted");
-        		DBMPPlus.mainDBMP.parts.remove(getItem());
-        	}
-        	e.consume();
+        this.setOnScroll(e -> {
+//        	for (CarPartListCell c : DBMPPlus.carPartListCells) if(c!=null && c.getItem()!=null) c.checkBox.setSelected(c.getItem().selected);
+        	for (CarPartListCell c : DBMPPlus.carPartListCells) if(c!=null && c.getItem()!=null) c.checkBox.setSelected(DBMPPlus.partsDisplay.getSelectionModel().getSelectedItems().contains(c.getItem()));
+        });
+        this.setOnMouseMoved(e -> {
+        	for (CarPartListCell c : DBMPPlus.carPartListCells) if(c!=null && c.getItem()!=null) c.checkBox.setSelected(DBMPPlus.partsDisplay.getSelectionModel().getSelectedItems().contains(c.getItem()));
+//        	for (CarPartListCell c : DBMPPlus.carPartListCells) if(c!=null && c.getItem()!=null) c.checkBox.setSelected(c.getItem().selected);
         });
         
         autosculptMorph.setOnAction(e -> {
         	getItem().getAttributeInteger("MORPHTARGET_NUM").value = Integer.valueOf(autosculptMorph.getText());
-        	System.out.println("Part " + getItem() + " morphtarget number changed to " + getItem().getAttributeInteger("MORPHTARGET_NUM").value);
+        	if (DBMPPlus.debug) System.out.println("Part " + getItem() + " morphtarget number changed to " + getItem().getAttributeInteger("MORPHTARGET_NUM").value);
         	e.consume();
         });
         

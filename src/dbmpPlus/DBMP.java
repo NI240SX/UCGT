@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import binstuff.Hash;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 
 class DBMP{
 	
@@ -112,6 +114,8 @@ class DBMP{
 	
 	public static DBMP loadDBMP(File f) {
 
+		if (f==null) return null;
+		
 		DBMP loadDBMP = null;
 		
 		//File f = new File("...");
@@ -171,10 +175,13 @@ class DBMP{
 		} catch (FileNotFoundException e) {
 			//dbmp to load not found
 			// TODO Auto-generated catch block
+			new Alert(Alert.AlertType.ERROR, "File not found", ButtonType.OK).show();
 			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			loadDBMP = null;
+		} catch (Exception e) {
 			e.printStackTrace();
+			new Alert(Alert.AlertType.ERROR, "Error while loading file", ButtonType.OK).show();
+			loadDBMP = null;
 		}
 		return loadDBMP;
 		

@@ -1,14 +1,21 @@
 package dbmpPlus;
 
 import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.NoSuchElementException;
 
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
+import javafx.scene.text.Text;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
@@ -22,9 +29,13 @@ public class DBMPPlus extends Application {
 	
 	public static ArrayList<CarPartListCell> carPartListCells = new ArrayList<CarPartListCell>();
 
+	public static boolean debug = true;
+	
+	
 	public static void main(String[] args) {
 
-		mainDBMP = DBMP.loadDBMP(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\LOT_ELI_111_06.bin"));
+//		mainDBMP = DBMP.loadDBMP(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\LOT_ELI_111_06.bin"));
+		mainDBMP = DBMP.loadDBMP(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\dbmp step 8.bin"));
         launch(args);
 	}
 	
@@ -42,11 +53,24 @@ public class DBMPPlus extends Application {
         MenuItem fileLoad = new MenuItem("Load");
         fileLoad.setOnAction(new EventHandler<ActionEvent>(){
 			public void handle(ActionEvent arg0) {
-				//TODO proper file dialog lol
-//				mainDBMP = DBMP.loadDBMP(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\dbmp step 8.bin"));
-				mainDBMP = DBMP.loadDBMP(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\LOT_ELI_111_06.bin"));
-//				System.out.println(mainDBMP);
-				updateAllPartsDisplay();
+				FileChooser fc = new FileChooser();
+				fc.setInitialDirectory(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\"));
+//				fc.setInitialDirectory(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\"));
+//				fc.setInitialDirectory(new File(Paths.get(".").toAbsolutePath().toString()));
+				fc.setInitialFileName("DBModelParts.bin");
+				fc.getExtensionFilters().addAll(
+			        new FileChooser.ExtensionFilter("BIN files", "*.bin"),
+			        new FileChooser.ExtensionFilter("All files", "*.*"));
+				fc.setTitle("Load an existing DBModelParts");
+				DBMP loadDBMP;
+				if ((loadDBMP = DBMP.loadDBMP(fc.showOpenDialog(null)))!=null) {
+					mainDBMP = loadDBMP;
+//					  System.out.println(mainDBMP);
+					updateAllPartsDisplay();
+					new Alert(Alert.AlertType.INFORMATION, "Database loaded successfully", ButtonType.OK).show();
+				} else {
+//					new Alert(Alert.AlertType.INFORMATION, "Nothing to load", ButtonType.OK).show();
+				}
 			}
         });
         fileMenu.getItems().addAll(fileLoad, fileExit);
@@ -54,18 +78,73 @@ public class DBMPPlus extends Application {
 
         // Custom Shortcuts Bar (You can expand this as needed)
         HBox shortcutsBar = new HBox();
-        Button buttonCopyPart = new Button("Copy");
-        Button buttonCopyPartAdvanced = new Button("Copy...");
-        shortcutsBar.getChildren().addAll(buttonCopyPart, buttonCopyPartAdvanced, new Button("Shortcut 2"));
+        Button buttonCopy = new Button("Copy");
+        Button buttonCopyAdvanced = new Button("Copy...");
+        Button buttonDelete = new Button("Delete");
+        shortcutsBar.getChildren().addAll(buttonCopy, buttonCopyAdvanced, buttonDelete);
 
-        buttonCopyPart.setOnAction(e -> {
-        	System.out.println("not implemented");
+        buttonCopy.setOnAction(e -> {
+        	Part sel = partsDisplay.getSelectionModel().getSelectedItem();
+        	for(Part p: partsDisplay.getSelectionModel().getSelectedItems()) {
+            	Part p2 = new Part(p);
+            	mainDBMP.parts.add(mainDBMP.parts.indexOf(p)+1, p2);
+            }
+        	updateAllPartsDisplay();
+        	partsDisplay.getSelectionModel().select(sel);
         	e.consume();
         });
-        buttonCopyPartAdvanced.setOnAction(e -> {
-        	System.out.println("not implemented");
+        
+        buttonCopyAdvanced.setOnAction(e -> {
+        	Stage st = new Stage();
+			st.setTitle("Advanced copying");
+			
+			Label label = new Label("not implemented");
+			
+			HBox hb = new HBox();
+			hb.getChildren().addAll(label);
+			
+			Scene sc = new Scene(hb);
+			st.setScene(sc);
+			st.setResizable(false);
+			st.show();
+			
         	e.consume();
         });
+        
+        buttonDelete.setOnAction(e -> {
+        	deleteSelectedParts();
+        });
+        
+        if(debug) {
+        	Button debugListCheckedParts = new Button("LIST CHECKED PARTS");
+        	Button debugInfoCheckedParts = new Button("INFO ABOUT CHECKED PARTS");
+        	Button debugDBMPDisplay = new Button("DISPLAY DBMP");
+            shortcutsBar.getChildren().addAll(debugListCheckedParts, debugInfoCheckedParts, debugDBMPDisplay);
+        	
+        	debugListCheckedParts.setOnAction(e -> {
+        		System.out.println("[DEBUG] CHECKED PARTS :");
+                for(Part p: partsDisplay.getSelectionModel().getSelectedItems()) {
+                	System.out.println(p.displayName);
+                }
+        		e.consume();
+        	});
+        	debugInfoCheckedParts.setOnAction(e -> {
+        		for(Part p: partsDisplay.getSelectionModel().getSelectedItems()) {
+                	System.out.println("- "+p.displayName);
+                	for (Attribute a:p.attributes) {
+                		System.out.println(a);
+                	}
+                }
+        		e.consume();
+        	});
+        	debugDBMPDisplay.setOnAction(e->{
+        		System.out.println(mainDBMP);
+        		e.consume();
+        	});
+        	
+        }
+
+        
         
         windowTop.getChildren().addAll(menuBar, shortcutsBar);
         
@@ -91,13 +170,22 @@ public class DBMPPlus extends Application {
 //            }
         });
         
+        partsDisplay.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        
+        partsDisplay.setOnKeyPressed(e -> {
+        	if (e.getCode().equals(KeyCode.DELETE)) {
+        		deleteSelectedParts();
+        	}
+        	for (CarPartListCell c : DBMPPlus.carPartListCells) if(c!=null && c.getItem()!=null) c.checkBox.setSelected(DBMPPlus.partsDisplay.getSelectionModel().getSelectedItems().contains(c.getItem()));
+        	e.consume();
+        });
+        
         
         attributesDisplay = new VBox();
         ScrollPane scrollPaneAttrib = new ScrollPane(attributesDisplay);
         scrollPaneAttrib.setFitToWidth(true);
         scrollPaneAttrib.setFitToHeight(true);
 
-        // Add sample items to the special zone (you can dynamically add items later)
         for (Part p : mainDBMP.parts) {
 //            partsDisplay.getChildren().add(p);
         	partsDisplay.getItems().add(p);
@@ -137,7 +225,21 @@ public class DBMPPlus extends Application {
        	partsDisplay.getItems().add(p);
        	
        }
+    	
+    	
     }
+    
+    public void deleteSelectedParts() {
+		Part[] toDelete =  (Part[]) partsDisplay.getSelectionModel().getSelectedItems().toArray(new Part[0]);
+		
+		for(int i=0; i<toDelete.length; i++) {
+			partsDisplay.getItems().remove(toDelete[i]);
+    		if (DBMPPlus.debug) System.out.println("Part " + toDelete[i].displayName + " deleted");
+    		DBMPPlus.mainDBMP.parts.remove(toDelete[i]);
+		}
+		for (CarPartListCell c : DBMPPlus.carPartListCells) if(c!=null && c.getItem()!=null) c.checkBox.setSelected(DBMPPlus.partsDisplay.getSelectionModel().getSelectedItems().contains(c.getItem()));
+
+	}
 /*    	partsDisplay.getChildren().clear();
     	for (Part p : mainDBMP.parts) {
     		partsDisplay.getChildren().add(p);

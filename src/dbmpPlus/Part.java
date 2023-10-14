@@ -16,6 +16,8 @@ class Part {//extends HBox {
 	public int kitnumber = 99;
 	public boolean isWidebody = false;
 	
+//	public boolean selected = false;
+	
 //	CheckBox uiCheckBox;
 //	Label uiLabel;
 	
