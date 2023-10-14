@@ -1,6 +1,7 @@
 package dbmpPlus;
 
 import java.io.File;
+import java.util.ArrayList;
 
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -9,58 +10,21 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 
 public class DBMPPlus extends Application {
 	
 	public static DBMP mainDBMP = new DBMP();
 	
-	public static VBox partsDisplay;
+//	public static VBox partsDisplay;
+	public static ListView<Part>  partsDisplay;
 	public static VBox attributesDisplay;
+	
+	public static ArrayList<CarPartListCell> carPartListCells = new ArrayList<CarPartListCell>();
 
 	public static void main(String[] args) {
-		/*
-		System.out.println(new AttributeTwoString("PART_NAME_OFFSETS"));
-		System.out.println(new AttributeCarPartID("PARTID_UPGRADE_GROUP"));
-		System.out.println(new AttributeKey("CV"));
-		
-		Part p = new Part();
-		p.attributes.add(new AttributeTwoString("PART_NAME_OFFSETS","KIT00","BUMPER_FRONT"));
-		p.attributes.add(new AttributeTwoString("LOD_BASE_NAME","KIT00","BUMPER_FRONT"));
-		System.out.println(p);
-		p.update();
-		System.out.println(p);
-		((AttributeTwoString)p.editAttribute("PART_NAME_OFFSETS")).value2 = "BUMP";
-		System.out.println(p);
-		p.update();
-		System.out.println(p);
 
-		Part p2 = new Part();
-		System.out.println(p2);
-		p2.addAttribute(new AttributeTwoString("PART_NAME_OFFSETS","KIT00","BODY"));
-		System.out.println(p2);
-		p2.addAttribute(new AttributeTwoString("LOD_BASE_NAME","KIT00","BODY"));
-		System.out.println(p2);
-		((AttributeTwoString)p2.editAttribute("PART_NAME_OFFSETS")).value1 = "KIT11";
-		p2.update();
-		System.out.println(p2);
-		
-		DBMP testDBMP = new DBMP("NIS_240_SX_89");
-		testDBMP.parts.add(p);
-		testDBMP.parts.add(p2);
-		System.out.println(testDBMP); */
-
-		//DBMP loadTest = DBMP.loadDBMP(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\dbmp step 8.bin"));
-		/*
-		DBMP loadTest = loadDBMP(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\LOT_ELI_111_06.bin"));
-		System.out.println(loadTest.displayName());
-		loadTest.saveToFile(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\DBMP EXPORT LOT_ELI_111_06.bin"));
-		
-		loadTest = loadDBMP(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\MIT_EVO_X_08.bin"));
-		loadTest.saveToFile(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\DBMP EXPORT MIT_EVO_X_08.bin"));
-		
-		loadTest = loadDBMP(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\BMW_M3_E92_08.bin"));
-		loadTest.saveToFile(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\DBMP EXPORT BMW_M3_E92_08.bin")); */
-
+		mainDBMP = DBMP.loadDBMP(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\LOT_ELI_111_06.bin"));
         launch(args);
 	}
 	
@@ -79,8 +43,9 @@ public class DBMPPlus extends Application {
         fileLoad.setOnAction(new EventHandler<ActionEvent>(){
 			public void handle(ActionEvent arg0) {
 				//TODO proper file dialog lol
-				mainDBMP = DBMP.loadDBMP(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\dbmp step 8.bin"));
-				System.out.println(mainDBMP);
+//				mainDBMP = DBMP.loadDBMP(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\dbmp step 8.bin"));
+				mainDBMP = DBMP.loadDBMP(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\LOT_ELI_111_06.bin"));
+//				System.out.println(mainDBMP);
 				updateAllPartsDisplay();
 			}
         });
@@ -89,15 +54,43 @@ public class DBMPPlus extends Application {
 
         // Custom Shortcuts Bar (You can expand this as needed)
         HBox shortcutsBar = new HBox();
-        shortcutsBar.getChildren().addAll(new Button("Shortcut 1"), new Button("Shortcut 2"));
+        Button buttonCopyPart = new Button("Copy");
+        Button buttonCopyPartAdvanced = new Button("Copy...");
+        shortcutsBar.getChildren().addAll(buttonCopyPart, buttonCopyPartAdvanced, new Button("Shortcut 2"));
 
+        buttonCopyPart.setOnAction(e -> {
+        	System.out.println("not implemented");
+        	e.consume();
+        });
+        buttonCopyPartAdvanced.setOnAction(e -> {
+        	System.out.println("not implemented");
+        	e.consume();
+        });
+        
         windowTop.getChildren().addAll(menuBar, shortcutsBar);
         
         // Car parts zone
-        partsDisplay = new VBox();
-        ScrollPane scrollPaneParts = new ScrollPane(partsDisplay);
-        scrollPaneParts.setFitToWidth(true);
-        scrollPaneParts.setFitToHeight(true);
+//        partsDisplay = new VBox();
+//        ScrollPane scrollPaneParts = new ScrollPane(partsDisplay);
+//        scrollPaneParts.setFitToWidth(true);
+//        scrollPaneParts.setFitToHeight(true);
+
+        partsDisplay = new ListView<Part>();
+        partsDisplay.setCellFactory( lv -> {//new Callback<ListView<Part>, ListCell<Part>>() {
+        	 CarPartListCell cell = new CarPartListCell() {
+                 @Override
+                 protected void updateItem(Part item, boolean empty) {
+                     super.updateItem(item, empty);
+//                     setText(item);
+                 }
+             };
+             return cell;
+//            @Override
+//            public CarPartListCell call(ListView<Part> listView) {
+//                return new CarPartListCell();
+//            }
+        });
+        
         
         attributesDisplay = new VBox();
         ScrollPane scrollPaneAttrib = new ScrollPane(attributesDisplay);
@@ -106,7 +99,9 @@ public class DBMPPlus extends Application {
 
         // Add sample items to the special zone (you can dynamically add items later)
         for (Part p : mainDBMP.parts) {
-            partsDisplay.getChildren().add(p);
+//            partsDisplay.getChildren().add(p);
+        	partsDisplay.getItems().add(p);
+        	
         }
 
         // Status Bar
@@ -115,7 +110,8 @@ public class DBMPPlus extends Application {
         // Layout
         BorderPane root = new BorderPane();
         root.setTop(windowTop);
-        root.setCenter(scrollPaneParts);
+//        root.setCenter(scrollPaneParts);
+        root.setCenter(partsDisplay);
         root.setRight(scrollPaneAttrib);
         root.setBottom(statusBar);
 
@@ -136,9 +132,15 @@ public class DBMPPlus extends Application {
     }*/
 	
     public void updateAllPartsDisplay() {
-    	partsDisplay.getChildren().clear();
+    	partsDisplay.getItems().clear();
+    	for (Part p : mainDBMP.parts) {
+       	partsDisplay.getItems().add(p);
+       	
+       }
+    }
+/*    	partsDisplay.getChildren().clear();
     	for (Part p : mainDBMP.parts) {
     		partsDisplay.getChildren().add(p);
     	}
-    }
+    }*/
 }

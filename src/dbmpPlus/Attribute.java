@@ -23,6 +23,11 @@ abstract class Attribute extends HBox{
         this.getChildren().addAll(uiLabel);
 	}
 
+	public Attribute(Attribute copyFrom) {
+		Key = copyFrom.Key;
+        this.getChildren().addAll(uiLabel);
+	}
+	
 	public void writeToFile(ByteBuffer bb) {
 		bb.putInt(Key.binHash);
 	}
@@ -39,11 +44,21 @@ class AttributeString extends Attribute{
 	public AttributeString(String key) {
 		super(key);
 	}
+	public AttributeString(String key, String value1) {
+		super(key);
+		this.value1 = value1.strip();
+		if(!value1.isBlank()) value1Exists = 1;
+	}
 	public AttributeString(Hash key, ByteBuffer bb) {
 		super(key);
 		value1Exists = bb.get();
 		value1 = DBMP.readString(bb);
 		uiLabel.setText(this.toString());
+	}
+	public AttributeString(AttributeString copyFrom) {
+		super(copyFrom);
+		this.value1Exists = copyFrom.value1Exists;
+		this.value1 = copyFrom.value1;
 	}
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
@@ -66,10 +81,10 @@ class AttributeTwoString extends Attribute{
 	}
 	public AttributeTwoString(String key, String string1, String string2) {
 		super(key);
-		value1 = string1;
-		value2 = string2;
-		value1Exists = 1;
-		value2Exists = 1;
+		value1 = string1.strip();
+		value2 = string2.strip();
+		if(!value1.isBlank()) value1Exists = 1;
+		if(!value2.isBlank()) value2Exists = 1;
 		uiLabel.setText(this.toString());
 	}
 	public AttributeTwoString(Hash key, ByteBuffer bb) {
@@ -79,6 +94,13 @@ class AttributeTwoString extends Attribute{
 		value1 = DBMP.readString(bb);
 		value2 = DBMP.readString(bb);
 		uiLabel.setText(this.toString());
+	}
+	public AttributeTwoString(AttributeTwoString copyFrom) {
+		super(copyFrom);
+		this.value1Exists = copyFrom.value1Exists;
+		this.value1 = copyFrom.value1;
+		this.value2Exists = copyFrom.value2Exists;
+		this.value2 = copyFrom.value2;
 	}
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
@@ -98,10 +120,18 @@ class AttributeInteger extends Attribute{
 	public AttributeInteger(String key) {
 		super(key);
 	}
+	public AttributeInteger(String key, int value) {
+		super(key);
+		this.value = value;
+	}
 	public AttributeInteger(Hash key, ByteBuffer bb) {
 		super(key);
 		value = bb.getInt();
 		uiLabel.setText(this.toString());
+	}
+	public AttributeInteger(AttributeInteger copyFrom) {
+		super(copyFrom);
+		this.value = copyFrom.value;
 	}
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
@@ -119,11 +149,21 @@ class AttributeCarPartID extends Attribute{
 	public AttributeCarPartID(String key) {
 		super(key);
 	}
+	public AttributeCarPartID(String key, SlotUndercover ID, int level) {
+		super(key);
+		this.ID = ID;
+		this.level = (byte)level;
+	}
 	public AttributeCarPartID(Hash key, ByteBuffer bb) {
 		super(key);
 		level = bb.get();
 		ID = SlotUndercover.get(bb.get());
 		uiLabel.setText(this.toString());
+	}
+	public AttributeCarPartID(AttributeCarPartID copyFrom) {
+		super(copyFrom);
+		this.ID = copyFrom.ID;
+		this.level = copyFrom.level;
 	}
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
@@ -141,10 +181,18 @@ class AttributeKey extends Attribute{
 	public AttributeKey(String key) {
 		super(key);
 	}
+	public AttributeKey(String key, String value) {
+		super(key);
+		this.value = new Hash(value);
+	}
 	public AttributeKey(Hash key, ByteBuffer bb) {
 		super(key);
 		value = new Hash(DBMP.readString(bb));
 		uiLabel.setText(this.toString());
+	}
+	public AttributeKey(AttributeKey copyFrom) {
+		super(copyFrom);
+		this.value = copyFrom.value;
 	}
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
