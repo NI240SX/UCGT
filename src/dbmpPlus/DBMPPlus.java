@@ -34,8 +34,9 @@ public class DBMPPlus extends Application {
 	
 	public static void main(String[] args) {
 
-//		mainDBMP = DBMP.loadDBMP(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\LOT_ELI_111_06.bin"));
-		mainDBMP = DBMP.loadDBMP(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\dbmp step 8.bin"));
+		//if wrong that will throw an exception due to trying to spawn an error window without having initialized javafx 
+		mainDBMP = DBMP.loadDBMP(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\LOT_ELI_111_06.bin"));
+//		mainDBMP = DBMP.loadDBMP(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\dbmp step 8.bin"));
         launch(args);
 	}
 	
@@ -47,36 +48,48 @@ public class DBMPPlus extends Application {
         
         // MenuBar
         MenuBar menuBar = new MenuBar();
-        Menu fileMenu = new Menu("File");
+        Menu menuFile = new Menu("File");
+        
         MenuItem fileExit = new MenuItem("Exit");
         fileExit.setOnAction(e -> primaryStage.close());
         MenuItem fileLoad = new MenuItem("Load");
         fileLoad.setOnAction(new EventHandler<ActionEvent>(){
 			public void handle(ActionEvent arg0) {
-				FileChooser fc = new FileChooser();
-				fc.setInitialDirectory(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\"));
-//				fc.setInitialDirectory(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\"));
-//				fc.setInitialDirectory(new File(Paths.get(".").toAbsolutePath().toString()));
-				fc.setInitialFileName("DBModelParts.bin");
-				fc.getExtensionFilters().addAll(
-			        new FileChooser.ExtensionFilter("BIN files", "*.bin"),
-			        new FileChooser.ExtensionFilter("All files", "*.*"));
-				fc.setTitle("Load an existing DBModelParts");
-				DBMP loadDBMP;
-				if ((loadDBMP = DBMP.loadDBMP(fc.showOpenDialog(null)))!=null) {
-					mainDBMP = loadDBMP;
-//					  System.out.println(mainDBMP);
-					updateAllPartsDisplay();
-					new Alert(Alert.AlertType.INFORMATION, "Database loaded successfully", ButtonType.OK).show();
-				} else {
-//					new Alert(Alert.AlertType.INFORMATION, "Nothing to load", ButtonType.OK).show();
+		        ButtonType sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to load a new DBMP ? Any changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
+				if (ButtonType.YES.equals(sure)) {
+					FileChooser fc = new FileChooser();
+//					fc.setInitialDirectory(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\"));
+					fc.setInitialDirectory(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\"));
+//					fc.setInitialDirectory(new File(Paths.get(".").toAbsolutePath().toString()));
+					fc.setInitialFileName("DBModelParts.bin");
+					fc.getExtensionFilters().addAll(
+				        new FileChooser.ExtensionFilter("BIN files", "*.bin"),
+				        new FileChooser.ExtensionFilter("All files", "*.*"));
+					fc.setTitle("Load an existing DBModelParts");
+					DBMP loadDBMP;
+					if ((loadDBMP = DBMP.loadDBMP(fc.showOpenDialog(null)))!=null) {
+						mainDBMP = loadDBMP;
+//						  System.out.println(mainDBMP);
+						updateAllPartsDisplay();
+						new Alert(Alert.AlertType.INFORMATION, "Database loaded successfully", ButtonType.OK).show();
+					} else {
+//						new Alert(Alert.AlertType.INFORMATION, "Nothing to load", ButtonType.OK).show();
+					}
 				}
 			}
         });
-        fileMenu.getItems().addAll(fileLoad, fileExit);
-        menuBar.getMenus().addAll(fileMenu);
+        menuFile.getItems().addAll(fileLoad, fileExit);
 
-        // Custom Shortcuts Bar (You can expand this as needed)
+        Menu menuEdit = new Menu("Edit");
+        
+        MenuItem editUndo = new MenuItem("Undo");
+        editUndo.setOnAction(e -> {
+        	Undo.undo();
+        });
+        menuEdit.getItems().addAll(editUndo);
+        
+        menuBar.getMenus().addAll(menuFile, menuEdit);
+
         HBox shortcutsBar = new HBox();
         Button buttonCopy = new Button("Copy");
         Button buttonCopyAdvanced = new Button("Copy...");
@@ -176,6 +189,7 @@ public class DBMPPlus extends Application {
         	if (e.getCode().equals(KeyCode.DELETE)) {
         		deleteSelectedParts();
         	}
+        	if (e.getCode().equals(KeyCode.Z) && e.isControlDown()) Undo.undo();
         	for (CarPartListCell c : DBMPPlus.carPartListCells) if(c!=null && c.getItem()!=null) c.checkBox.setSelected(DBMPPlus.partsDisplay.getSelectionModel().getSelectedItems().contains(c.getItem()));
         	e.consume();
         });
@@ -219,7 +233,7 @@ public class DBMPPlus extends Application {
         return listItem;
     }*/
 	
-    public void updateAllPartsDisplay() {
+    public static void updateAllPartsDisplay() {
     	partsDisplay.getItems().clear();
     	for (Part p : mainDBMP.parts) {
        	partsDisplay.getItems().add(p);
@@ -229,10 +243,11 @@ public class DBMPPlus extends Application {
     	
     }
     
-    public void deleteSelectedParts() {
+    public static void deleteSelectedParts() {
 		Part[] toDelete =  (Part[]) partsDisplay.getSelectionModel().getSelectedItems().toArray(new Part[0]);
 		
 		for(int i=0; i<toDelete.length; i++) {
+			new UndoPartDelete(toDelete[i], DBMPPlus.mainDBMP.parts.indexOf(toDelete[i]));
 			partsDisplay.getItems().remove(toDelete[i]);
     		if (DBMPPlus.debug) System.out.println("Part " + toDelete[i].displayName + " deleted");
     		DBMPPlus.mainDBMP.parts.remove(toDelete[i]);
