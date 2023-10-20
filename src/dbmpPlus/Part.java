@@ -2,49 +2,14 @@ package dbmpPlus;
 
 import java.util.ArrayList;
 
-import javafx.event.EventHandler;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.HBox;
-
-class Part {//extends HBox {
+class Part {
 	public ArrayList<Attribute> attributes = new ArrayList<Attribute>();
 	public String displayName = "MISSING ATTRIBUTES";
 	
 	public int kitnumber = 99;
 	public boolean isWidebody = false;
 	
-//	public boolean selected = false;
-	
-//	CheckBox uiCheckBox;
-//	Label uiLabel;
-	
 	CarPartListCell listCell = new CarPartListCell();
-	
-/*	public Part() {
-		uiCheckBox = new CheckBox();
-		uiLabel = new Label(displayName);
-
-        this.getChildren().addAll(uiCheckBox, uiLabel);
-        this.setOnMousePressed(new EventHandler<MouseEvent>() {
-			public void handle(MouseEvent arg0) {
-				DBMPPlus.attributesDisplay.getChildren().clear();
-				for (Attribute a : attributes) {
-					DBMPPlus.attributesDisplay.getChildren().addAll(a);
-				}
-				if (!arg0.isControlDown()) {
-					for (Part p : DBMPPlus.mainDBMP.parts) {
-						p.uiCheckBox.setSelected(false);
-					}
-				}
-				if (!uiCheckBox.isSelected()) uiCheckBox.setSelected(true); else uiCheckBox.setSelected(false);
-				arg0.consume();
-			}
-        });
-        
-	}*/
 	
 	public Part() {
 		
@@ -89,7 +54,6 @@ class Part {//extends HBox {
 		} else {
 			displayName = name1 + " (reference to " + name2 + ")";
 		}
-//		uiLabel.setText(displayName);
 		listCell.update();
 	}
 	

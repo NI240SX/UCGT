@@ -34,6 +34,35 @@ class UndoPartDelete extends Undo{
 	
 	public void undoThis() {
 		DBMPPlus.mainDBMP.parts.add(index, p);
-		DBMPPlus.updateAllPartsDisplay();
+		DBMPPlus.partsDisplay.getItems().add(index, p);
+//		DBMPPlus.updateAllPartsDisplay();
+	}
+}
+
+class UndoAttributeChange extends Undo{
+	Attribute backup;
+	Attribute altered;
+	public UndoAttributeChange(Attribute a) {
+		super();
+		this.altered = a;
+		if (a.getAttribType().equals("String")) {
+			this.backup = new AttributeString((AttributeString)a);
+		}
+		if (a.getAttribType().equals("TwoString")) {
+			this.backup = new AttributeTwoString((AttributeTwoString)a);
+		}
+		if (a.getAttribType().equals("Integer")) {
+			this.backup = new AttributeInteger((AttributeInteger)a);
+		}
+		if (a.getAttribType().equals("CarPartID")) {
+			this.backup = new AttributeCarPartID((AttributeCarPartID)a);
+		}
+		if (a.getAttribType().equals("Key")) {
+			this.backup = new AttributeKey((AttributeKey)a);
+		}
+	}
+	
+	public void undoThis() {
+		this.altered.revertFrom(this.backup);
 	}
 }
