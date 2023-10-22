@@ -12,6 +12,40 @@ class Part {
 	CarPartListCell listCell = new CarPartListCell();
 	
 	public Part() {
+	}
+	
+	public Part(String kit, String name) {
+		AttributeCarPartID id;
+		AttributeTwoString partName;
+		addAttribute(new AttributeInteger("PART_NAME_SELECTOR", 0));
+		addAttribute(new AttributeInteger("LOD_NAME_PREFIX_SELECTOR", 0));
+		addAttribute(new AttributeInteger("MAX_LOD", 4));
+		addAttribute(new AttributeString("LOD_CHARACTERS_OFFSET", "ABCDE"));
+		addAttribute(new AttributeString("NAME_OFFSET", kit.replace("KIT", "").replace("W", "")));
+		addAttribute(id = new AttributeCarPartID("PARTID_UPGRADE_GROUP", PartUndercover.get(name.replace("WIDEBODY_", "")), 0));
+		addAttribute(partName = new AttributeTwoString("PART_NAME_OFFSETS", kit, name));
+		addAttribute(new AttributeTwoString("LOD_BASE_NAME", kit, name));
+		if (name.equals("BODY")) addAttribute(new AttributeKey("CV", DBMPPlus.mainDBMP.carname.label + "_CV"));
+
+		//PartID autodetect (problematic : exhausts, driver_female, brake and brakerotor, rollcage, seat, spoiler drag/lip/evo, widebody)
+		if (name.equals("WIDEBODY")) id.ID = PartUndercover.BODY;
+		else if (name.contains("BRAKEROTOR")) id.ID = PartUndercover.BRAKEROTOR;
+		else if (name.contains("BRAKE_")) id.ID = PartUndercover.BRAKE;
+		else if (name.contains("EXHAUST_TIPS_LEFT")) id.ID = PartUndercover.EXHAUST_TIPS_LEFT;
+		else if (name.contains("EXHAUST_TIPS_RIGHT")) id.ID = PartUndercover.EXHAUST_TIPS_RIGHT;
+		else if (name.contains("EXHAUST_TIPS_CENTER")) id.ID = PartUndercover.EXHAUST_TIPS_CENTER;
+		else if (name.contains("EXHAUST_")) id.ID = PartUndercover.EXHAUST;
+		else if (name.contains("MUFFLER")) id.ID = PartUndercover.EXHAUST;
+		else if (name.contains("DRIVER")) id.ID = PartUndercover.DRIVER;
+		else if (name.contains("ROLL_CAGE")) id.ID = PartUndercover.ROLL_CAGE;
+		else if (name.contains("SEAT")) id.ID = PartUndercover.SEAT;
+		else if (name.contains("SPOILER")) id.ID = PartUndercover.SPOILER;
+		
+		//Widebody fixes for user input
+		if (kit.contains("W")) {
+			if (name.equals("BODY")) partName.value2 = "WIDEBODY";
+			else if (name.contains("BUMPER") || name.contains("DOOR") || name.contains("FENDER") || name.contains("SKIRT")) partName.value2 = "WIDEBODY_" + name;
+		}
 		
 	}
 	
@@ -38,6 +72,7 @@ class Part {
 		String name1 = "MISSING ATTRIBUTES";
 		String name2 = "MISSING ATTRIBUTES";
 		for (Attribute attribute : attributes) {
+			attribute.update();
 			if (attribute.Key.label.equals("PART_NAME_OFFSETS")) {
 				AttributeTwoString att2S = (AttributeTwoString)attribute;
 				name1 = att2S.value1 + "_" + att2S.value2;
