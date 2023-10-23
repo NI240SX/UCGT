@@ -1,6 +1,12 @@
 package dbmpPlus;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -9,7 +15,6 @@ import binstuff.Hash;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -33,24 +38,44 @@ public class DBMPPlus extends Application {
 	private static Menu menuDBMP;
 
 	//stuff to put in a config file
-	public static String lastFileLoaded = "C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\dbmp step 8.bin";
+	public static String lastDirectoryLoaded = Paths.get("").toAbsolutePath().toString();
+	public static String lastFileLoaded = "";
 //	  public static String lastFileLoaded = "C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\LOT_ELI_111_06.bin"
+	public static String lastFileSaved = Paths.get("").toAbsolutePath().toString();
+	public static boolean useDarkMode = false;
+	
+	public static final String programName = "fire";
+	public static final String programVersion = "indev";
 	
 	public static void main(String[] args) {
-		//if wrong that will throw an exception due to trying to spawn an error window without having initialized javafx 
-
 		try {
-			mainDBMP = DBMP.loadDBMP(new File(lastFileLoaded));
-		} catch (Exception e){
-			
-		}
+			BufferedReader br = new BufferedReader(new FileReader(new File("fire.dat")));
+			br.readLine();
+			lastDirectoryLoaded = br.readLine();
+			lastFileLoaded = br.readLine();
+			lastFileSaved = br.readLine();
+			useDarkMode = Boolean.valueOf(br.readLine());
+			br.close();
+		} catch (Exception e) {}
+		
+		try {
+			mainDBMP = DBMP.loadDBMP(new File(lastDirectoryLoaded + lastFileLoaded));
+		} catch (Exception e){}
 		
 		
         launch(args);
+        try {
+			BufferedWriter bw = new BufferedWriter(new FileWriter(new File("fire.dat")));
+			bw.write("DO NOT MANUALLY EDIT THIS FILE\n" + lastDirectoryLoaded + "\n" + lastFileLoaded + "\n" + lastFileSaved + "\n" + Boolean.toString(useDarkMode) + "\n");
+			bw.close();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			System.out.println("Could not save config");
+		}
 	}
 	
     public void start(Stage primaryStage) {
-        primaryStage.setTitle("fire - "+mainDBMP.carname.label);
+        primaryStage.setTitle(programName + " - " + mainDBMP.carname.label);
 
         VBox windowTop = new VBox();
         
@@ -72,20 +97,21 @@ public class DBMPPlus extends Application {
 		        ButtonType sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to load a new DBMP ? Any changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
 				if (ButtonType.YES.equals(sure)) {
 					FileChooser fc = new FileChooser();
-					fc.setInitialDirectory(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\voitures\\z done\\car bmw e92\\"));
-//					fc.setInitialDirectory(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\"));
-//					fc.setInitialDirectory(new File(Paths.get(".").toAbsolutePath().toString()));
-					fc.setInitialFileName("DBModelParts.bin");
+					fc.setInitialDirectory(new File(lastDirectoryLoaded));
+					fc.setInitialFileName(lastFileLoaded);
 					fc.getExtensionFilters().addAll(
 				        new FileChooser.ExtensionFilter("BIN files", "*.bin"),
 				        new FileChooser.ExtensionFilter("All files", "*.*"));
 					fc.setTitle("Load an existing DBModelParts");
 					DBMP loadDBMP;
-					if ((loadDBMP = DBMP.loadDBMP(fc.showOpenDialog(null)))!=null) {
+					File selected = fc.showOpenDialog(null);
+					if ((loadDBMP = DBMP.loadDBMP(selected))!=null) {
 						mainDBMP = loadDBMP;
+						lastFileLoaded = selected.getName();
+						lastDirectoryLoaded = selected.getAbsolutePath().replace(lastFileLoaded, "");
 //						  System.out.println(mainDBMP);
 						updateAllPartsDisplay();
-						primaryStage.setTitle("fire - "+mainDBMP.carname.label);
+						primaryStage.setTitle(programName + " - " + mainDBMP.carname.label);
 						menuDBMP.setText(mainDBMP.carname.label);
 						new Alert(Alert.AlertType.INFORMATION, "Database loaded successfully.", ButtonType.OK).show();
 					} else {
@@ -281,7 +307,34 @@ public class DBMPPlus extends Application {
         
         menuAttributes.getItems().addAll(attributeAddAS, attributeRemoveAS, attributeAddCV, attributeRemoveCV, attributeSort);
         
-        menuBar.getMenus().addAll(menuFile, menuEdit, menuDBMP, menuAttributes);
+        Menu menuSettings = new Menu(programName);
+        
+        CheckMenuItem settingsDark = new CheckMenuItem("Dark mode");
+        MenuItem settingsAbout = new MenuItem("About " + programName + "...");
+        settingsAbout.setOnAction(e -> {
+			Stage st = new Stage();
+			st.setTitle("About " + programName);
+			Scene sc = new Scene(new Label(programName + " version " + programVersion + "\n\n"
+					+ "Advanced DBModelParts editor for NFS Undercover.\n"
+					+ "Aims to make the creation of such data less of a hassle for modders.\n"
+					+ "This software has been originally created for the mod Undercover Exposed.\n\n"
+					+ "Not affiliated with EA, MaxHwoy, nfsu360, etc.\n\n"
+					+ "NI240SX 2023 - No rights reserved"));
+			st.setScene(sc);
+			if (useDarkMode) sc.getRoot().setStyle("-fx-base:black");
+			st.setResizable(false);
+			st.setAlwaysOnTop(true);
+			sc.setOnMouseClicked(evt -> {
+				evt.consume();
+				st.close();
+			});
+			st.show();
+        });
+        
+        menuSettings.getItems().addAll(settingsDark, settingsAbout);
+        
+        
+        menuBar.getMenus().addAll(menuFile, menuEdit, menuDBMP, menuAttributes, menuSettings);
         
         
         
@@ -510,6 +563,7 @@ public class DBMPPlus extends Application {
 			});
 
 			Scene sc = new Scene(vb);
+			if (useDarkMode) sc.getRoot().setStyle("-fx-base:black");
 			st.setScene(sc);
 			st.setResizable(false);
 						
@@ -613,6 +667,21 @@ public class DBMPPlus extends Application {
         Scene scene = new Scene(root, 1024, 600);
         primaryStage.setScene(scene);
         primaryStage.show();
+        
+        //minor inconvenience
+        if (useDarkMode) {
+            scene.getRoot().setStyle("-fx-base:black");
+            settingsDark.setSelected(true);
+        }
+        settingsDark.selectedProperty().addListener((obs, wasSelected, isSelected) -> {
+            if (isSelected) {
+                scene.getRoot().setStyle("-fx-base:black");
+                useDarkMode = true;
+            } else {
+                scene.getRoot().setStyle("");
+                useDarkMode = false;
+                }
+        });
     }
 
     public static void updateAllPartsDisplay() { //broken for undo only for some weird reason
