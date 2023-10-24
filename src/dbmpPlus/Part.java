@@ -25,7 +25,7 @@ class Part {
 		addAttribute(id = new AttributeCarPartID("PARTID_UPGRADE_GROUP", PartUndercover.get(name.replace("WIDEBODY_", "")), 0));
 		addAttribute(partName = new AttributeTwoString("PART_NAME_OFFSETS", kit, name));
 		addAttribute(new AttributeTwoString("LOD_BASE_NAME", kit, name));
-		if (name.equals("BODY")) addAttribute(new AttributeKey("CV", DBMPPlus.mainDBMP.carname.label + "_CV"));
+		if (name.equals("BODY") || name.equals("WIDEBODY")) addAttribute(new AttributeKey("CV", DBMPPlus.mainDBMP.carname.label + "_CV"));
 
 		//PartID autodetect (problematic : exhausts, driver_female, brake and brakerotor, rollcage, seat, spoiler drag/lip/evo, widebody)
 		if (name.equals("WIDEBODY")) id.ID = PartUndercover.BODY;
@@ -69,6 +69,24 @@ class Part {
 	}
 	
 	public void update() {
+		if (DBMPPlus.widebodyAutoCorrect && ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )) != null){
+			if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value1.contains("W")
+					&& !((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("WIDEBODY")) {
+				if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.equals("BODY")) ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2 = "WIDEBODY";
+				else if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("BUMPER") 
+						|| ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("DOOR") 
+						|| ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("FENDER") 
+						|| ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("SKIRT")) {
+					((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2 = "WIDEBODY_" + ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2;
+				}
+			} else {
+				if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.equals("WIDEBODY")) ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2 = "BODY";
+				else {
+					((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2 = ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.replace("WIDEBODY_", "");
+				}
+			}
+		}
+		
 		String name1 = "MISSING ATTRIBUTES";
 		String name2 = "MISSING ATTRIBUTES";
 		for (Attribute attribute : attributes) {
