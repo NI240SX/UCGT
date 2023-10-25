@@ -44,9 +44,21 @@ public class DBMPPlus extends Application {
 	public static String lastFileSaved = Paths.get("").toAbsolutePath().toString();
 	public static boolean useDarkMode = false;
 	public static boolean widebodyAutoCorrect = true;
+
+	static String currentKitTemplate = "UC-KIT00";
+	static String currentKitASZones = "11";
+	static String currentExhRange = "00-05";
+	static String currentExhMainPart = "MUFFLER";
+	static String currentExhLeftTip = "EXHAUST_TIPS_LEFT";
+	static boolean currentExhLeftTipEnabled = true;
+	static String currentExhRightTip = "EXHAUST_TIPS_RIGHT";
+	static boolean currentExhRightTipEnabled = true;
+	static String currentExhCenterTip = "EXHAUST_TIPS_CENTER";
+	static boolean currentExhCenterTipEnabled = true;
+	static String currentExhASZones = "11";
 	
 	public static final String programName = "fire";
-	public static final String programVersion = "indev";
+	public static final String programVersion = "1.0.0";
 	
 	public static void main(String[] args) {
 		try {
@@ -95,7 +107,7 @@ public class DBMPPlus extends Application {
 
         MenuItem fileLoad = new MenuItem("Load");
         MenuItem fileNew = new MenuItem("New");
-        MenuItem fileGenerateNew = new MenuItem("Generate new");
+//        MenuItem fileGenerateNew = new MenuItem("Generate new");
         MenuItem fileSave = new MenuItem("Save");
         MenuItem fileExit = new MenuItem("Exit");
         
@@ -137,16 +149,32 @@ public class DBMPPlus extends Application {
 				menuDBMP.setText(mainDBMP.carname.label);
 			}
         });
-        fileGenerateNew.setOnAction(e -> {
-//        	ButtonType sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to create a new DBMP ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
-//			if (ButtonType.YES.equals(sure)) {
-//				
-//			}
-        	new Alert(Alert.AlertType.WARNING, "Not implemented").show();
-        });
-        fileGenerateNew.setAccelerator(KeyCombination.keyCombination("Ctrl+N"));
+        fileNew.setAccelerator(KeyCombination.keyCombination("Ctrl+N"));
+//        fileGenerateNew.setOnAction(e -> {
+////        	ButtonType sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to create a new DBMP ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
+////			if (ButtonType.YES.equals(sure)) {
+////				
+////			}
+//        	new Alert(Alert.AlertType.WARNING, "Not implemented").show();
+//        });
+//        fileGenerateNew.setAccelerator(KeyCombination.keyCombination("Ctrl+N"));
         fileSave.setOnAction(e -> {
-        	new Alert(Alert.AlertType.WARNING, "Not implemented").show();
+    		FileChooser fc = new FileChooser();
+			fc.setInitialDirectory(new File(lastFileSaved));
+			fc.setInitialFileName(mainDBMP.carname.label);
+			fc.getExtensionFilters().addAll(
+			        new FileChooser.ExtensionFilter("BIN files", "*.bin"),
+			        new FileChooser.ExtensionFilter("All files", "*.*"));
+			fc.setTitle("Save " + mainDBMP.carname.label + "");
+			
+
+			try {
+				mainDBMP.saveToFile(fc.showSaveDialog(null));
+				new Alert(Alert.AlertType.INFORMATION, "Database saved successfully.", ButtonType.OK).show();
+	    		e.consume();        
+			} catch (IOException e1) {
+            	new Alert(Alert.AlertType.WARNING, "Error saving DBModelParts, please try again !").show();
+			}
         });
         fileSave.setAccelerator(KeyCombination.keyCombination("Ctrl+S"));
         fileExit.setOnAction(e -> {
@@ -156,7 +184,7 @@ public class DBMPPlus extends Application {
 			}
         });
         
-        menuFile.getItems().addAll(fileLoad, fileNew, fileGenerateNew, fileSave, fileExit);
+        menuFile.getItems().addAll(fileLoad, fileNew, /*fileGenerateNew,*/ fileSave, fileExit);
 
         
         Menu menuEdit = new Menu("Edit");
@@ -267,7 +295,7 @@ public class DBMPPlus extends Application {
         attributeAddAS.setOnAction(e -> {
         	for(Part p: partsDisplay.getSelectionModel().getSelectedItems()) {
         		if (p.getAttribute("MORPHTARGET_NUM") == null) {
-        			p.addAttribute(new AttributeInteger("MORPHTARGET_NUM", 11));
+        			p.addAttribute(new AttributeInteger("MORPHTARGET_NUM", Integer.valueOf(currentKitASZones)));
         			p.update();
         		}
         	}
@@ -386,12 +414,18 @@ public class DBMPPlus extends Application {
         Button kitGenerate = new Button("Generate kit...");
         Button kitCopy = new Button("Copy kit...");
         Button kitExhausts = new Button("Exhausts...");
-        Button kitSavePreset = new Button("Save kit preset...");
+        Button kitSaveTemplate = new Button("Save kit as template...");
         Button kitDelete = new Button("Delete kit");
+
+        Button partsHoods = new Button("Hoods...");
+        Button partsSpoilers = new Button("Spoilers...");
+        Button partsRims = new Button("Rims...");
 
         Separator infSep = new Separator();
         HBox.setHgrow(infSep, Priority.ALWAYS);
-        shortcutsBar.getChildren().addAll(partAdd, partCopy, partCopyAdvanced, partDelete, new Separator(), kitGenerate, kitCopy, kitExhausts, kitSavePreset, kitDelete);
+        shortcutsBar.getChildren().addAll(partAdd, partCopy, partCopyAdvanced, partDelete, 
+        		new Separator(), kitGenerate, kitCopy, kitExhausts, kitSaveTemplate, kitDelete,
+        		new Separator(), partsHoods, partsSpoilers, partsRims);
 
         partAdd.setOnAction(e-> {
         	TextInputDialog td = new TextInputDialog("KIT00_BASE");
@@ -442,12 +476,12 @@ public class DBMPPlus extends Application {
 			st.setTitle("Advanced copying");
 			
 			CheckBox copyTo = new CheckBox("Copy to kit(s) : ");
-			TextField copyToInput = new TextField("KITW01, KIT03-KIT04");
+			TextField copyToInput = new TextField("");
 			
 			CheckBox toAnotherKitReference = new CheckBox("Point to model parts from kit : ");
 			TextField referenceKitInput = new TextField("KIT00");
 			CheckBox autosculptZones = new CheckBox("Harmonize Autosculpt zones : ");
-			TextField autosculptZonesInput = new TextField("11");
+			TextField autosculptZonesInput = new TextField(currentKitASZones);
 			
 			copyToInput.setDisable(true);
 			referenceKitInput.setDisable(true);
@@ -488,6 +522,7 @@ public class DBMPPlus extends Application {
 			
 			Button ok = new Button("OK");
 			ok.setOnAction(evh -> {
+				currentKitASZones = autosculptZonesInput.getText();
 				Part sel = partsDisplay.getSelectionModel().getSelectedItem();
 	        	for(Part p: partsDisplay.getSelectionModel().getSelectedItems()) {
 	            	if(copyTo.isSelected()) {
@@ -555,11 +590,238 @@ public class DBMPPlus extends Application {
         });
         
         kitGenerate.setOnAction(e -> {
-        	//TODO
-        	new Alert(Alert.AlertType.WARNING, "Not implemented").show();
-        	//load parts from the stuff in .\\kits\\
-        	//and think to add exhausts
-        	//for generic dbmp generation, pay attention to spoilers and hoods that are already included in kits
+        	Stage st = new Stage();
+			st.setTitle("Full kit generation");
+			
+			Button kitTemplate = new Button("Use template");
+			TextField kitTemplateInput = new TextField(currentKitTemplate);
+			Label kitsToGenerate = new Label("Generate kit(s) : ");
+			TextField kitsToGenerateInput = new TextField("");
+			CheckBox autosculptZones = new CheckBox("Add Autosculpt zones : ");
+			TextField autosculptZonesInput = new TextField(currentKitASZones);
+			
+			autosculptZonesInput.setDisable(true);
+			autosculptZones.setOnAction(evh -> {
+				if(autosculptZones.isSelected()) autosculptZonesInput.setDisable(false); else autosculptZonesInput.setDisable(true);
+				evh.consume();
+			});
+			GridPane gp = new GridPane();
+			gp.add(kitTemplate, 0, 0);
+			gp.add(kitTemplateInput, 1, 0);
+			gp.add(kitsToGenerate, 0, 1);
+			gp.add(kitsToGenerateInput, 1, 1);
+			gp.add(autosculptZones, 0, 2);
+			gp.add(autosculptZonesInput, 1, 2);
+			
+			Label range = new Label("Range of exhausts to add : ");
+			TextField rangeInput = new TextField(currentExhRange);
+			Label partsToGen = new Label("Parts to generate");
+			Label muffler = new Label("Main part : ");
+			TextField mufflerInput = new TextField(currentExhMainPart);
+			CheckBox rightTips = new CheckBox("Right tips : ");
+			TextField rightTipsInput = new TextField(currentExhRightTip);
+			CheckBox leftTips = new CheckBox("Left tips : ");
+			TextField leftTipsInput = new TextField(currentExhLeftTip);
+			CheckBox centerTips = new CheckBox("Center tips : ");
+			TextField centerTipsInput = new TextField(currentExhCenterTip);
+
+			CheckBox pointToKit = new CheckBox("Point to model kit : ");
+			TextField pointToKitInput = new TextField("KIT00");
+			CheckBox autosculptZonesExhaust = new CheckBox("Add Autosculpt zones : ");
+			TextField autosculptZonesExhaustInput = new TextField(currentExhASZones);
+			CheckBox removePreExisting = new CheckBox("Remove pre-existing parts");
+
+			rightTips.setSelected(currentExhRightTipEnabled);
+			rightTips.setOnAction(evh -> {
+				if(rightTips.isSelected()) rightTipsInput.setDisable(false); else rightTipsInput.setDisable(true);
+				evh.consume();
+			});
+			leftTips.setSelected(currentExhLeftTipEnabled);
+			leftTips.setOnAction(evh -> {
+				if(leftTips.isSelected()) leftTipsInput.setDisable(false); else leftTipsInput.setDisable(true);
+				evh.consume();
+			});
+			centerTips.setSelected(currentExhCenterTipEnabled);
+			centerTips.setOnAction(evh -> {
+				if(centerTips.isSelected()) centerTipsInput.setDisable(false); else centerTipsInput.setDisable(true);
+				evh.consume();
+			});
+			pointToKitInput.setDisable(true);
+			pointToKit.setOnAction(evh -> {
+				if(pointToKit.isSelected()) pointToKitInput.setDisable(false); else pointToKitInput.setDisable(true);
+				evh.consume();
+			});
+			autosculptZonesExhaustInput.setDisable(true);
+			autosculptZonesExhaust.setOnAction(evh -> {
+				if(autosculptZonesExhaust.isSelected()) autosculptZonesExhaustInput.setDisable(false); else autosculptZonesExhaustInput.setDisable(true);
+				evh.consume();
+			});
+			GridPane gpEx = new GridPane();
+			gpEx.add(range, 0, 1);
+			gpEx.add(rangeInput, 1, 1);
+			gpEx.add(new Separator(Orientation.HORIZONTAL), 0, 2);
+			gpEx.add(partsToGen, 0, 3);
+			gpEx.add(muffler, 0, 4);
+			gpEx.add(mufflerInput, 1, 4);
+			gpEx.add(leftTips, 0, 5);
+			gpEx.add(leftTipsInput, 1, 5);
+			gpEx.add(rightTips, 0, 6);
+			gpEx.add(rightTipsInput, 1, 6);
+			gpEx.add(centerTips, 0, 7);
+			gpEx.add(centerTipsInput, 1, 7);
+			gpEx.add(new Separator(Orientation.HORIZONTAL), 0, 8);
+			gpEx.add(pointToKit, 0, 9);
+			gpEx.add(pointToKitInput, 1, 9);
+			gpEx.add(autosculptZonesExhaust, 0, 10);
+			gpEx.add(autosculptZonesExhaustInput, 1, 10);
+			
+			gp.add(removePreExisting, 0, 3);
+			
+			VBox vb = new VBox();
+			vb.setAlignment(Pos.CENTER);
+			
+			Button ok = new Button("OK");
+
+			Label titleGeneral = new Label("General kit settings");
+			Label titleExhausts = new Label("Exhaust generation settings");
+
+			Scene sc = new Scene(vb);
+			if (useDarkMode) sc.getRoot().setStyle("-fx-base:black");
+			st.setScene(sc);
+			st.setResizable(false);
+						
+			vb.getChildren().addAll(titleGeneral, new Separator(Orientation.HORIZONTAL), gp, 
+					new Separator(Orientation.HORIZONTAL), titleExhausts, new Separator(Orientation.HORIZONTAL), gpEx,
+					new Separator(Orientation.HORIZONTAL), ok);
+			st.show();
+        	e.consume();
+        	
+        	kitTemplate.setOnAction(evh -> {
+        		FileChooser fc = new FileChooser();
+				fc.setInitialDirectory(new File("kits"));
+				fc.setInitialFileName(kitTemplateInput.getText());
+				fc.getExtensionFilters().addAll(
+			        new FileChooser.ExtensionFilter("All files", "*.*"));
+				fc.setTitle("Load a kit template");
+				kitTemplateInput.setText(fc.showOpenDialog(null).getName());
+        		evh.consume();
+        	});
+        	
+        	
+        	ok.setOnAction(evh -> {
+        		currentKitTemplate = kitTemplateInput.getText();
+        		currentKitASZones = autosculptZonesInput.getText();
+        		currentExhRange = rangeInput.getText();
+        		currentExhMainPart = mufflerInput.getText();
+        		currentExhLeftTip = leftTipsInput.getText();
+        		currentExhLeftTipEnabled = leftTips.isSelected();
+        		currentExhRightTip = rightTipsInput.getText();
+        		currentExhRightTipEnabled = rightTips.isSelected();
+        		currentExhCenterTip = centerTipsInput.getText();
+        		currentExhCenterTipEnabled = centerTips.isSelected();
+        		currentExhASZones = autosculptZonesExhaustInput.getText();
+        		
+				Part sel = partsDisplay.getSelectionModel().getSelectedItem();
+        		try {
+					ArrayList<String> generateKits = new ArrayList<String>();
+					for (String s : kitsToGenerateInput.getText().split(",")) {
+						if (s.contains("-")) {
+							for(int i= Integer.parseInt(s.split("-")[0].strip().substring(s.split("-")[0].strip().length() -2));
+									i<=Integer.parseInt(s.split("-")[1].strip().substring(s.split("-")[0].strip().length() -2)); i++) {
+								if (i<10) generateKits.add(  s.split("-")[0].strip().substring(0, s.split("-")[0].strip().length() -2) + "0" + i  );
+								else generateKits.add(  s.split("-")[0].strip().substring(0, s.split("-")[0].strip().length() -2) + i  );
+							}
+						} else if (!s.strip().isBlank()) generateKits.add(s.strip());
+					}
+					
+					ArrayList<String> exhausts = new ArrayList<String>();
+					for (String s : rangeInput.getText().split(",")) {
+						if (s.contains("-")) {
+							for(int i= Integer.parseInt(s.split("-")[0].strip()); i<=Integer.parseInt(s.split("-")[1].strip()); i++) {
+								if (i<10) exhausts.add("0" + i); else exhausts.add(""+i);
+							}
+						} else if (!s.strip().isBlank()) exhausts.add(s.strip());
+					}				
+					
+					//first load kit parts from template
+					ArrayList<String> parts = new ArrayList<String>();
+					BufferedReader br = new BufferedReader(new FileReader(new File("kits\\" + kitTemplateInput.getText())));
+					String line;
+					while((line = br.readLine()) != null) {
+						parts.add(line);
+					}
+					br.close();
+					
+					int size = mainDBMP.parts.size();
+					for(int i=0; i<size; i++) {
+						if (generateKits.contains(((AttributeTwoString)mainDBMP.parts.get(i).getAttribute("PART_NAME_OFFSETS")).value1)) {
+							if(removePreExisting.isSelected()) { // remove any preexisting
+								mainDBMP.parts.remove(i);
+								size--;
+								i--;
+							} else { // remove conflicting preexisting
+								boolean val=false;
+								for (String part : parts) {
+									if (part.split("/")[0].equals(((AttributeTwoString)mainDBMP.parts.get(i).getAttribute("PART_NAME_OFFSETS")).value2)) {
+										val = true;
+									}
+								}
+								if (val) { 
+									mainDBMP.parts.remove(i);
+									size--;
+									i--;
+								}
+							}
+						}
+					}
+
+
+					for (String kit : generateKits) {
+						for (String part : parts) {
+							Part tp;
+							mainDBMP.parts.add(tp = new Part(kit, part.split("/")[0]));
+							if(part.contains("/")) {
+								((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value2 = part.split("/")[1];
+							}
+							if(autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
+						}
+						for (String exh : exhausts) {
+							Part tp;
+							mainDBMP.parts.add(tp = new Part(kit, mufflerInput.getText().strip() + "_" + exh));
+							((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST;
+							if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
+							if(autosculptZonesExhaust.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesExhaustInput.getText().strip())));
+							
+							if (leftTips.isSelected()) {
+								mainDBMP.parts.add(tp = new Part(kit, leftTipsInput.getText().strip() + "_" + exh));
+								((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_LEFT;
+								if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
+								if (autosculptZonesExhaust.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesExhaustInput.getText().strip())));
+							}
+							if (rightTips.isSelected()) {
+								mainDBMP.parts.add(tp = new Part(kit, rightTipsInput.getText().strip() + "_" + exh));
+								((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_RIGHT;
+								if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
+								if (autosculptZonesExhaust.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesExhaustInput.getText().strip())));
+							}
+							if (centerTips.isSelected()) {
+								mainDBMP.parts.add(tp = new Part(kit, centerTipsInput.getText().strip() + "_" + exh));
+								((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_CENTER;
+								if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
+								if (autosculptZonesExhaust.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesExhaustInput.getText().strip())));
+							}
+						}
+					}
+		        	updateAllPartsDisplay();
+		        	partsDisplay.getSelectionModel().select(sel);
+					st.close();
+					evh.consume();
+	        	}catch (IOException exception) {
+	            	new Alert(Alert.AlertType.WARNING, "Error loading template, please try again !").show();
+	        	}
+			});
+        	
+        	e.consume();
         });
         kitCopy.setOnAction(e -> {
         	Stage st = new Stage();
@@ -574,9 +836,9 @@ public class DBMPPlus extends Application {
 				copyFromInput = new TextField("KIT00");
 			}
 			Label copyTo = new Label("Copy to kit(s) : ");
-			TextField copyToInput = new TextField("KITW01, KIT03-KIT04");
+			TextField copyToInput = new TextField("");
 			CheckBox autosculptZones = new CheckBox("Harmonize Autosculpt zones : ");
-			TextField autosculptZonesInput = new TextField("11");
+			TextField autosculptZonesInput = new TextField(currentKitASZones);
 			
 			autosculptZonesInput.setDisable(true);
 			autosculptZones.setOnAction(evh -> {
@@ -596,6 +858,7 @@ public class DBMPPlus extends Application {
 			
 			Button ok = new Button("OK");
 			ok.setOnAction(evh -> {
+        		currentKitASZones = autosculptZonesInput.getText();
 				String copyFromKit = copyFromInput.getText().trim();
 				ArrayList<String> copyToKits = new ArrayList<String>();
 				for (String s : copyToInput.getText().split(",")) {
@@ -658,37 +921,37 @@ public class DBMPPlus extends Application {
 			if(partsDisplay.getSelectionModel().getSelectedItem() != null) {
 				workOnKitsInput = new TextField(((AttributeTwoString)partsDisplay.getSelectionModel().getSelectedItem().getAttribute("PART_NAME_OFFSETS")).value1);
 			} else {
-				workOnKitsInput = new TextField("KIT00");
+				workOnKitsInput = new TextField("");
 			}
 			Label range = new Label("Range of exhausts to add : ");
-			TextField rangeInput = new TextField("00-05");
+			TextField rangeInput = new TextField(currentExhRange);
 			Label partsToGen = new Label("Parts to generate");
 			Label muffler = new Label("Main part : ");
-			TextField mufflerInput = new TextField("MUFFLER");
+			TextField mufflerInput = new TextField(currentExhMainPart);
 			CheckBox rightTips = new CheckBox("Right tips : ");
-			TextField rightTipsInput = new TextField("EXHAUST_TIPS_RIGHT");
+			TextField rightTipsInput = new TextField(currentExhRightTip);
 			CheckBox leftTips = new CheckBox("Left tips : ");
-			TextField leftTipsInput = new TextField("EXHAUST_TIPS_LEFT");
+			TextField leftTipsInput = new TextField(currentExhLeftTip);
 			CheckBox centerTips = new CheckBox("Center tips : ");
-			TextField centerTipsInput = new TextField("EXHAUST_TIPS_CENTER");
+			TextField centerTipsInput = new TextField(currentExhCenterTip);
 
 			CheckBox pointToKit = new CheckBox("Point to model kit : ");
 			TextField pointToKitInput = new TextField("KIT00");
 			CheckBox autosculptZones = new CheckBox("Add Autosculpt zones : ");
-			TextField autosculptZonesInput = new TextField("11");
+			TextField autosculptZonesInput = new TextField(currentExhASZones);
 			CheckBox removePreExisting = new CheckBox("Remove pre-existing exhausts");
 
-			rightTips.setSelected(true);
+			rightTips.setSelected(currentExhRightTipEnabled);
 			rightTips.setOnAction(evh -> {
 				if(rightTips.isSelected()) rightTipsInput.setDisable(false); else rightTipsInput.setDisable(true);
 				evh.consume();
 			});
-			leftTips.setSelected(true);
+			leftTips.setSelected(currentExhLeftTipEnabled);
 			leftTips.setOnAction(evh -> {
 				if(leftTips.isSelected()) leftTipsInput.setDisable(false); else leftTipsInput.setDisable(true);
 				evh.consume();
 			});
-			centerTips.setSelected(true);
+			centerTips.setSelected(currentExhCenterTipEnabled);
 			centerTips.setOnAction(evh -> {
 				if(centerTips.isSelected()) centerTipsInput.setDisable(false); else centerTipsInput.setDisable(true);
 				evh.consume();
@@ -730,6 +993,15 @@ public class DBMPPlus extends Application {
 			
 			Button ok = new Button("OK");
 			ok.setOnAction(evh -> {
+        		currentExhRange = rangeInput.getText();
+        		currentExhMainPart = mufflerInput.getText();
+        		currentExhLeftTip = leftTipsInput.getText();
+        		currentExhLeftTipEnabled = leftTips.isSelected();
+        		currentExhRightTip = rightTipsInput.getText();
+        		currentExhRightTipEnabled = rightTips.isSelected();
+        		currentExhCenterTip = centerTipsInput.getText();
+        		currentExhCenterTipEnabled = centerTips.isSelected();
+        		currentExhASZones = autosculptZonesInput.getText();
 				ArrayList<String> kits = new ArrayList<String>();
 				for (String s : workOnKitsInput.getText().split(",")) {
 					if (s.contains("-")) {
@@ -809,12 +1081,37 @@ public class DBMPPlus extends Application {
 			
         	e.consume();
 		});
-        kitSavePreset.setOnAction(e -> {
-        	//TODO
-        	new Alert(Alert.AlertType.WARNING, "Not implemented").show();
+        kitSaveTemplate.setOnAction(e -> {
+        	if (partsDisplay.getSelectionModel().getSelectedItem()!=null) {	
+        		String kit = ((AttributeTwoString)partsDisplay.getSelectionModel().getSelectedItem().getAttribute("PART_NAME_OFFSETS")).value1;
+	    		FileChooser fc = new FileChooser();
+				fc.setInitialDirectory(new File("kits"));
+				fc.setInitialFileName("Template");
+				fc.getExtensionFilters().addAll(
+			        new FileChooser.ExtensionFilter("All files", "*.*"));
+				fc.setTitle("Save " + kit + " as template");
+
+				try {
+					BufferedWriter bw = new BufferedWriter(new FileWriter(fc.showSaveDialog(null)));
+					for (Part p : mainDBMP.parts) {
+						if (((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value1.equals(kit) 
+								&& !((AttributeCarPartID)p.getAttribute("PARTID_UPGRADE_GROUP")).ID.getText().contains("EXHAUST")) {
+							bw.write(((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value2);
+							if (!((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value2.equals(((AttributeTwoString)p.getAttribute("LOD_BASE_NAME")).value2)) {
+								bw.write("/" + ((AttributeTwoString)p.getAttribute("LOD_BASE_NAME")).value2);
+							}
+							bw.write("\n");
+						}
+					}
+					bw.close();
+		    		e.consume();        
+				} catch (IOException e1) {
+	            	new Alert(Alert.AlertType.WARNING, "Error saving template, please try again !").show();
+				}
+        	}
         });
         kitDelete.setOnAction(e -> {
-        	if (((AttributeTwoString)partsDisplay.getSelectionModel().getSelectedItem().getAttribute("PART_NAME_OFFSETS"))!=null) {
+        	if (partsDisplay.getSelectionModel().getSelectedItem()!=null) {
 	        	String kit = ((AttributeTwoString)partsDisplay.getSelectionModel().getSelectedItem().getAttribute("PART_NAME_OFFSETS")).value1;
 	        	ButtonType sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to delete all parts from " + kit + " ?", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
 				if (ButtonType.YES.equals(sure)) {
@@ -829,6 +1126,209 @@ public class DBMPPlus extends Application {
 		        	updateAllPartsDisplay();
 				}
         	}
+        });
+
+        partsHoods.setOnAction(e -> {
+        	Stage st = new Stage();
+			st.setTitle("Add hoods");
+			
+			Label addTo = new Label("Add to kit(s) : ");
+			TextField addToInput = new TextField("");
+			CheckBox autosculptZones = new CheckBox("Add Autosculpt zones : ");
+			TextField autosculptZonesInput = new TextField(currentKitASZones);
+			
+			autosculptZonesInput.setDisable(true);
+			autosculptZones.setOnAction(evh -> {
+				if(autosculptZones.isSelected()) autosculptZonesInput.setDisable(false); else autosculptZonesInput.setDisable(true);
+				evh.consume();
+			});
+			GridPane gp = new GridPane();
+			gp.add(addTo, 0, 1);
+			gp.add(addToInput, 1, 1);
+			gp.add(autosculptZones, 0, 2);
+			gp.add(autosculptZonesInput, 1, 2);
+			
+			VBox vb = new VBox();
+			vb.setAlignment(Pos.CENTER);
+			
+			Button ok = new Button("OK");
+			ok.setOnAction(evh -> {
+        		currentKitASZones = autosculptZonesInput.getText();
+				ArrayList<String> generateKits = new ArrayList<String>();
+				for (String s : addToInput.getText().split(",")) {
+					if (s.contains("-")) {
+						for(int i= Integer.parseInt(s.split("-")[0].strip().substring(s.split("-")[0].strip().length() -2));
+								i<=Integer.parseInt(s.split("-")[1].strip().substring(s.split("-")[0].strip().length() -2)); i++) {
+							if (i<10) generateKits.add(  s.split("-")[0].strip().substring(0, s.split("-")[0].strip().length() -2) + "0" + i  );
+							else generateKits.add(  s.split("-")[0].strip().substring(0, s.split("-")[0].strip().length() -2) + i  );
+						}
+					} else if (!s.strip().isBlank()) generateKits.add(s.strip());
+				}
+				Part sel = partsDisplay.getSelectionModel().getSelectedItem();
+				
+				int size = mainDBMP.parts.size();
+				for(int i=0; i<size; i++) {
+					if (generateKits.contains(((AttributeTwoString)mainDBMP.parts.get(i).getAttribute("PART_NAME_OFFSETS")).value1) 
+							&& ((AttributeCarPartID)mainDBMP.parts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.HOOD) {
+					// remove conflicting preexisting
+						mainDBMP.parts.remove(i);
+						size--;
+						i--;
+					}
+				}
+				for (String kit : generateKits) {
+						Part tp;
+						mainDBMP.parts.add(tp = new Part(kit, "HOOD"));
+						if(autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
+				}
+	        	updateAllPartsDisplay();
+	        	partsDisplay.getSelectionModel().select(sel);
+				st.close();
+				evh.consume();
+			});
+			Scene sc = new Scene(vb);
+			if (useDarkMode) sc.getRoot().setStyle("-fx-base:black");
+			st.setScene(sc);
+			st.setResizable(false);
+			vb.getChildren().addAll(gp, ok);
+			st.show();
+        	e.consume();
+        });
+        partsSpoilers.setOnAction(e -> {Stage st = new Stage();
+			st.setTitle("Add spoilers");
+			
+			Label addTo = new Label("Add to kit(s) : ");
+			TextField addToInput = new TextField("");
+			CheckBox autosculptZones = new CheckBox("Add Autosculpt zones : ");
+			TextField autosculptZonesInput = new TextField(currentKitASZones);
+			
+			autosculptZonesInput.setDisable(true);
+			autosculptZones.setOnAction(evh -> {
+				if(autosculptZones.isSelected()) autosculptZonesInput.setDisable(false); else autosculptZonesInput.setDisable(true);
+				evh.consume();
+			});
+			GridPane gp = new GridPane();
+			gp.add(addTo, 0, 1);
+			gp.add(addToInput, 1, 1);
+			gp.add(autosculptZones, 0, 2);
+			gp.add(autosculptZonesInput, 1, 2);
+			
+			VBox vb = new VBox();
+			vb.setAlignment(Pos.CENTER);
+			
+			Button ok = new Button("OK");
+			ok.setOnAction(evh -> {
+        		currentKitASZones = autosculptZonesInput.getText();
+				ArrayList<String> generateKits = new ArrayList<String>();
+				for (String s : addToInput.getText().split(",")) {
+					if (s.contains("-")) {
+						for(int i= Integer.parseInt(s.split("-")[0].strip().substring(s.split("-")[0].strip().length() -2));
+								i<=Integer.parseInt(s.split("-")[1].strip().substring(s.split("-")[0].strip().length() -2)); i++) {
+							if (i<10) generateKits.add(  s.split("-")[0].strip().substring(0, s.split("-")[0].strip().length() -2) + "0" + i  );
+							else generateKits.add(  s.split("-")[0].strip().substring(0, s.split("-")[0].strip().length() -2) + i  );
+						}
+					} else if (!s.strip().isBlank()) generateKits.add(s.strip());
+				}
+				Part sel = partsDisplay.getSelectionModel().getSelectedItem();
+				
+				int size = mainDBMP.parts.size();
+				for(int i=0; i<size; i++) {
+					if (generateKits.contains(((AttributeTwoString)mainDBMP.parts.get(i).getAttribute("PART_NAME_OFFSETS")).value1) 
+							&& ((AttributeCarPartID)mainDBMP.parts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.SPOILER) {
+					// remove conflicting preexisting
+						mainDBMP.parts.remove(i);
+						size--;
+						i--;
+					}
+				}
+				for (String kit : generateKits) {
+						Part tp;
+						mainDBMP.parts.add(tp = new Part(kit, "SPOILER"));
+						if(autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
+				}
+	        	updateAllPartsDisplay();
+	        	partsDisplay.getSelectionModel().select(sel);
+				st.close();
+				evh.consume();
+			});
+			Scene sc = new Scene(vb);
+			if (useDarkMode) sc.getRoot().setStyle("-fx-base:black");
+			st.setScene(sc);
+			st.setResizable(false);
+			vb.getChildren().addAll(gp, ok);
+			st.show();
+	    	e.consume();
+        });
+        partsRims.setOnAction(e -> {
+        	Stage st = new Stage();
+			st.setTitle("Add rims");
+			
+			Label addTo = new Label("Add to kit(s) : ");
+			TextField addToInput = new TextField("");
+			CheckBox autosculptZones = new CheckBox("Add Autosculpt zones : ");
+			TextField autosculptZonesInput = new TextField(currentKitASZones);
+			
+			autosculptZonesInput.setDisable(true);
+			autosculptZones.setOnAction(evh -> {
+				if(autosculptZones.isSelected()) autosculptZonesInput.setDisable(false); else autosculptZonesInput.setDisable(true);
+				evh.consume();
+			});
+			GridPane gp = new GridPane();
+			gp.add(addTo, 0, 1);
+			gp.add(addToInput, 1, 1);
+			gp.add(autosculptZones, 0, 2);
+			gp.add(autosculptZonesInput, 1, 2);
+			
+			VBox vb = new VBox();
+			vb.setAlignment(Pos.CENTER);
+			
+			Button ok = new Button("OK");
+			ok.setOnAction(evh -> {
+        		currentKitASZones = autosculptZonesInput.getText();
+				ArrayList<String> generateKits = new ArrayList<String>();
+				for (String s : addToInput.getText().split(",")) {
+					if (s.contains("-")) {
+						for(int i= Integer.parseInt(s.split("-")[0].strip().substring(s.split("-")[0].strip().length() -2));
+								i<=Integer.parseInt(s.split("-")[1].strip().substring(s.split("-")[0].strip().length() -2)); i++) {
+							if (i<10) generateKits.add(  s.split("-")[0].strip().substring(0, s.split("-")[0].strip().length() -2) + "0" + i  );
+							else generateKits.add(  s.split("-")[0].strip().substring(0, s.split("-")[0].strip().length() -2) + i  );
+						}
+					} else if (!s.strip().isBlank()) generateKits.add(s.strip());
+				}
+				Part sel = partsDisplay.getSelectionModel().getSelectedItem();
+				
+				int size = mainDBMP.parts.size();
+				for(int i=0; i<size; i++) {
+					if (generateKits.contains(((AttributeTwoString)mainDBMP.parts.get(i).getAttribute("PART_NAME_OFFSETS")).value1) 
+							&& (((AttributeCarPartID)mainDBMP.parts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.WHEEL
+							|| ((AttributeCarPartID)mainDBMP.parts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.WHEEL_REAR)) {
+					// remove conflicting preexisting
+						mainDBMP.parts.remove(i);
+						size--;
+						i--;
+					}
+				}
+				for (String kit : generateKits) {
+						Part tp;
+						mainDBMP.parts.add(tp = new Part(kit, "WHEEL"));
+						((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value2 = "WHEEL_TIRE_FRONT";
+						if(autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
+						mainDBMP.parts.add(tp = new Part(kit, "WHEEL_REAR"));
+						((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value2 = "WHEEL_TIRE_REAR";
+						if(autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
+				}
+	        	updateAllPartsDisplay();
+	        	partsDisplay.getSelectionModel().select(sel);
+				st.close();
+				evh.consume();
+			});
+			Scene sc = new Scene(vb);
+			if (useDarkMode) sc.getRoot().setStyle("-fx-base:black");
+			st.setScene(sc);
+			st.setResizable(false);
+			vb.getChildren().addAll(gp, ok);
+			st.show();
+        	e.consume();
         });
         
         if(debug) {

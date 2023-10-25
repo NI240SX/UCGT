@@ -66,49 +66,40 @@ class DBMP{
 	}
 	
 
-	public void saveToFile(File f) {
+	public void saveToFile(File f) throws IOException {
 		FileOutputStream fos;
-		try {
-			fos = new FileOutputStream(f);
-			
-			ByteBuffer bb = ByteBuffer.wrap(new byte[maxPartLength*this.parts.size()]);
-			
-			bb.order(ByteOrder.LITTLE_ENDIAN);
-			bb.position(36);
-			writeString(carname.label, bb);
-			bb.putInt(parts.size());
-			for (Part p : parts) { //loop on parts
-				bb.putInt(p.attributes.size());
-				for (Attribute a : p.attributes) { //loop on attributes
-					a.writeToFile(bb);
-				}
+		fos = new FileOutputStream(f);
+		
+		ByteBuffer bb = ByteBuffer.wrap(new byte[maxPartLength*this.parts.size()]);
+		
+		bb.order(ByteOrder.LITTLE_ENDIAN);
+		bb.position(36);
+		writeString(carname.label, bb);
+		bb.putInt(parts.size());
+		for (Part p : parts) { //loop on parts
+			bb.putInt(p.attributes.size());
+			for (Attribute a : p.attributes) { //loop on attributes
+				a.writeToFile(bb);
 			}
-			int fileLength = bb.position();
-			bb.position(0);
-			bb.putInt(Integer.reverseBytes(0x674d7042));
-			bb.putInt(fileLength-8);
-			bb.putInt(Integer.reverseBytes(0x06000000));
-			bb.putInt(Integer.reverseBytes(0xc0368c76));
-			bb.putInt(fileLength-20);
-			bb.putInt(Integer.reverseBytes(0x52415757));
-			bb.putInt(Integer.reverseBytes(0x01100000));
-			bb.putInt(fileLength-36);
-			bb.putInt(fileLength-20);
-			
-			Integer.reverseBytes(0);
-			
-			
-			fos.write(Arrays.copyOfRange(bb.array(), 0, fileLength));			
-			fos.close();
-			System.out.println("File saved to " + f);
-			
-		} catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}	
+		}
+		int fileLength = bb.position();
+		bb.position(0);
+		bb.putInt(Integer.reverseBytes(0x674d7042));
+		bb.putInt(fileLength-8);
+		bb.putInt(Integer.reverseBytes(0x06000000));
+		bb.putInt(Integer.reverseBytes(0xc0368c76));
+		bb.putInt(fileLength-20);
+		bb.putInt(Integer.reverseBytes(0x52415757));
+		bb.putInt(Integer.reverseBytes(0x01100000));
+		bb.putInt(fileLength-36);
+		bb.putInt(fileLength-20);
+		
+		Integer.reverseBytes(0);
+		
+		fos.write(Arrays.copyOfRange(bb.array(), 0, fileLength));			
+		fos.close();
+		System.out.println("File saved to " + f);
+		
 	}
 	
 	

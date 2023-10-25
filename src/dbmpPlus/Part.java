@@ -70,8 +70,9 @@ class Part {
 	
 	public void update() {
 		if (DBMPPlus.widebodyAutoCorrect && ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )) != null){
-			if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value1.contains("W")
-					&& !((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("WIDEBODY")) {
+			if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value1.contains("W")) {
+				((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2 = ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.replace("WIDEBODY_", "");
+				
 				if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.equals("BODY")) ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2 = "WIDEBODY";
 				else if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("BUMPER") 
 						|| ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("DOOR") 
