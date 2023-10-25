@@ -1,9 +1,11 @@
 package dbmpPlus;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -116,22 +118,44 @@ class DBMP{
 			byte [] fileToBytes = new byte[(int)f.length()];
 			fis.read(fileToBytes);
 			fis.close();
+
+			ArrayList<Hash> attributesTwoString = new ArrayList<Hash>();
+			ArrayList<Hash> attributesString = new ArrayList<Hash>();
+			ArrayList<Hash> attributesInteger = new ArrayList<Hash>();
+			ArrayList<Hash> attributesCarPartID = new ArrayList<Hash>();
+			ArrayList<Hash> attributesKey = new ArrayList<Hash>();
+			ArrayList<Hash> attributesBoolean = new ArrayList<Hash>();
 			
-			//common attribute hashes
-			Hash PART_NAME_OFFSETS = new Hash("PART_NAME_OFFSETS");
-			Hash LOD_BASE_NAME = new Hash("LOD_BASE_NAME");
-
-			Hash PARTID_UPGRADE_GROUP = new Hash("PARTID_UPGRADE_GROUP");
-
-			Hash PART_NAME_SELECTOR = new Hash("PART_NAME_SELECTOR");
-			Hash LOD_NAME_PREFIX_SELECTOR = new Hash("LOD_NAME_PREFIX_SELECTOR");
-			Hash MAX_LOD = new Hash("MAX_LOD");
-			Hash MORPHTARGET_NUM = new Hash("MORPHTARGET_NUM");
-
-			Hash LOD_CHARACTERS_OFFSET = new Hash("LOD_CHARACTERS_OFFSET");
-			Hash NAME_OFFSET = new Hash("NAME_OFFSET");
 			
-			Hash CV = new Hash("CV");
+			
+			
+			BufferedReader br = new BufferedReader(new FileReader(new File("data\\DBMP_Attributes")));
+			String line;
+			while((line = br.readLine()) != null) {
+				if (!line.isBlank()) {
+					switch (line.split("=")[1]) {
+					case "TwoString":
+						attributesTwoString.add(new Hash(line.split("=")[0]));
+						break;
+					case "String":
+						attributesString.add(new Hash(line.split("=")[0]));
+						break;
+					case "Integer":
+						attributesInteger.add(new Hash(line.split("=")[0]));
+						break;
+					case "CarPartID":
+						attributesCarPartID.add(new Hash(line.split("=")[0]));
+						break;
+					case "Key":
+						attributesKey.add(new Hash(line.split("=")[0]));
+						break;
+					case "Boolean":
+						attributesBoolean.add(new Hash(line.split("=")[0]));
+						break;
+					}
+				}
+			}
+			br.close();
 			
 			ByteBuffer bb = ByteBuffer.wrap(fileToBytes);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
@@ -144,22 +168,12 @@ class DBMP{
 				int partAttribCount = bb.getInt();
 				for (int j=0; j<partAttribCount; j++) { //loop on attributes
 					int attributeHash = bb.getInt();
-					if (attributeHash == PART_NAME_OFFSETS.binHash) p.attributes.add(new AttributeTwoString(PART_NAME_OFFSETS, bb));
-					if (attributeHash == LOD_BASE_NAME.binHash) p.attributes.add(new AttributeTwoString(LOD_BASE_NAME, bb));
-
-					if (attributeHash == PARTID_UPGRADE_GROUP.binHash) p.attributes.add(new AttributeCarPartID(PARTID_UPGRADE_GROUP, bb));
-
-					if (attributeHash == PART_NAME_SELECTOR.binHash) p.attributes.add(new AttributeInteger(PART_NAME_SELECTOR, bb));
-					if (attributeHash == LOD_NAME_PREFIX_SELECTOR.binHash) p.attributes.add(new AttributeInteger(LOD_NAME_PREFIX_SELECTOR, bb));
-					if (attributeHash == MAX_LOD.binHash) p.attributes.add(new AttributeInteger(MAX_LOD, bb));
-					if (attributeHash == MORPHTARGET_NUM.binHash) p.attributes.add(new AttributeInteger(MORPHTARGET_NUM, bb));
-					
-					if (attributeHash == LOD_CHARACTERS_OFFSET.binHash) p.attributes.add(new AttributeString(LOD_CHARACTERS_OFFSET, bb));
-					if (attributeHash == NAME_OFFSET.binHash) p.attributes.add(new AttributeString(NAME_OFFSET, bb));
-
-					if (attributeHash == CV.binHash) p.attributes.add(new AttributeKey(CV, bb));
-					
-					//cheap ass code moment
+					for (Hash h : attributesTwoString) if (h.binHash == attributeHash) p.attributes.add(new AttributeTwoString(h, bb));
+					for (Hash h : attributesString) if (h.binHash == attributeHash) p.attributes.add(new AttributeString(h, bb));
+					for (Hash h : attributesInteger) if (h.binHash == attributeHash) p.attributes.add(new AttributeInteger(h, bb));
+					for (Hash h : attributesCarPartID) if (h.binHash == attributeHash) p.attributes.add(new AttributeCarPartID(h, bb));
+					for (Hash h : attributesKey) if (h.binHash == attributeHash) p.attributes.add(new AttributeKey(h, bb));
+					for (Hash h : attributesBoolean) if (h.binHash == attributeHash) p.attributes.add(new AttributeBoolean(h, bb));
 				}
 				p.update();
 			}			

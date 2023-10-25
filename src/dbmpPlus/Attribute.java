@@ -385,6 +385,74 @@ class AttributeKey extends Attribute{
 	}
 }
 
+
+
+
+
+
+class AttributeBoolean extends Attribute{
+//	public static String AttributeIdentifier = "Integer";
+	public boolean value = false;
+	TextField valuegui = new TextField();
+	public AttributeBoolean(String key) {
+		super(key);
+		initGUI();
+	}
+	public AttributeBoolean(String key, boolean value) {
+		super(key);
+		this.value = value;
+		initGUI();
+	}
+	public AttributeBoolean(Hash key, ByteBuffer bb) {
+		super(key);
+		value = bb.get()==1;
+		initGUI();
+	}
+	public AttributeBoolean(AttributeBoolean copyFrom) {
+		super(copyFrom);
+		this.value = copyFrom.value;
+		initGUI();
+	}
+	public void initGUI() {
+		valuegui.setText(Boolean.toString(value));
+		dataHBox.getChildren().addAll(valuegui);
+		valuegui.setOnAction(e -> {
+			new UndoAttributeChange(this);
+			try {
+				value = Boolean.getBoolean(valuegui.getText().strip());
+			}catch(NumberFormatException ex) {
+				new Alert(Alert.AlertType.ERROR, "Please enter a valid integer", ButtonType.OK).show();
+			}
+			valuegui.setText(Boolean.toString(value));
+			e.consume();
+		});
+	}
+	public void update() {
+		valuegui.setText(Boolean.toString(value));
+	}
+	public void revertFrom(Attribute a) {
+		this.value = ((AttributeBoolean)a).value;
+		valuegui.setText(Boolean.toString(value));
+	}
+	public void writeToFile(ByteBuffer bb) {
+		super.writeToFile(bb);
+		if (value) bb.put((byte)1); else bb.put((byte)0);
+	}
+	public String getAttribType() {
+		return "Boolean";
+	}
+	public String toString() {
+		return "Boolean" + Key + ": " + value;
+	}
+}
+
+
+
+
+
+
+
+
 enum PartUndercover {
     BADGING_BUMPER_SET_FRONT(0x00, "BADGING_BUMPER_SET_FRONT"),
     BADGING_BUMPER_SET_REAR(0x01, "BADGING_BUMPER_SET_REAR"),
