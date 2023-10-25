@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -43,7 +44,7 @@ public class DBMPPlus extends Application {
 	public static String lastDirectoryLoaded = Paths.get("").toAbsolutePath().toString();
 	public static String lastFileLoaded = "";
 //	  public static String lastFileLoaded = "C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\LOT_ELI_111_06.bin"
-	public static String lastFileSaved = Paths.get("").toAbsolutePath().toString();
+	public static String lastFileSaved = Paths.get("").toAbsolutePath().toString(); //now unused
 	public static boolean useDarkMode = false;
 	public static boolean widebodyAutoCorrect = true;
 
@@ -162,7 +163,7 @@ public class DBMPPlus extends Application {
 //        fileGenerateNew.setAccelerator(KeyCombination.keyCombination("Ctrl+N"));
         fileSave.setOnAction(e -> {
     		FileChooser fc = new FileChooser();
-			fc.setInitialDirectory(new File(lastFileSaved));
+			fc.setInitialDirectory(new File(lastDirectoryLoaded));
 			fc.setInitialFileName(mainDBMP.carname.label);
 			fc.getExtensionFilters().addAll(
 			        new FileChooser.ExtensionFilter("BIN files", "*.bin"),
@@ -172,8 +173,9 @@ public class DBMPPlus extends Application {
 
 			try {
 				File f = fc.showSaveDialog(null);
+				lastFileSaved = f.getAbsolutePath().replace(lastFileLoaded, "");
 				File f_old = f;
-				f_old.renameTo(new File(f_old.getAbsoluteFile() + ".bak_" + DateTimeFormatter.ofPattern("uuMMdd-HHmmss").format(LocalDateTime.now())));
+				f_old.renameTo(new File(f_old.getAbsoluteFile() + ".bak_" + DateTimeFormatter.ofPattern("uuMMdd-HHmmss").format(LocalDateTime.ofEpochSecond(f_old.lastModified(), 0, ZoneOffset.UTC))));
 				mainDBMP.saveToFile(f);
 				new Alert(Alert.AlertType.INFORMATION, "Database saved successfully.", ButtonType.OK).show();
 	    		e.consume();        
