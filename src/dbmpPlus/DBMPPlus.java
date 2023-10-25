@@ -7,6 +7,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -58,7 +60,7 @@ public class DBMPPlus extends Application {
 	static String currentExhASZones = "11";
 	
 	public static final String programName = "fire";
-	public static final String programVersion = "1.0.0";
+	public static final String programVersion = "1.0.1";
 	
 	public static void main(String[] args) {
 		try {
@@ -169,7 +171,10 @@ public class DBMPPlus extends Application {
 			
 
 			try {
-				mainDBMP.saveToFile(fc.showSaveDialog(null));
+				File f = fc.showSaveDialog(null);
+				File f_old = f;
+				f_old.renameTo(new File(f_old.getAbsoluteFile() + ".bak_" + DateTimeFormatter.ofPattern("uuMMdd-HHmmss").format(LocalDateTime.now())));
+				mainDBMP.saveToFile(f);
 				new Alert(Alert.AlertType.INFORMATION, "Database saved successfully.", ButtonType.OK).show();
 	    		e.consume();        
 			} catch (IOException e1) {
