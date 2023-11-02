@@ -30,7 +30,7 @@ public class GeomDump extends Application {
 	String hexSearch = "";
 	String dmpSearch = "";
 	
-	static String car = "NIS_240_SX_89";
+	static String car = "LEX_LFA";
 //	static String car = "240SX";
 	static int[] art = new int[]{0, 1, 2, 3, 4, 5, 6, 11, 12};
 	static int[] wart = new int[]{1, 2, 3, 4, 5};
@@ -47,8 +47,8 @@ public class GeomDump extends Application {
 	
 	
 	
-	static int startFrom = 10375040;
-	static int length = 2048;//2048 recommended
+	static int startFrom = 0;
+	static int length = 8192;//2048 recommended
 	// M3 E92
 	//base : 63440
 	//hood : 725944
@@ -74,8 +74,9 @@ public class GeomDump extends Application {
 	
 	
 	
+	File f = new File("C:\\Program Files (x86)\\EA Games\\Need for Speed Undercover\\CARS\\LEX_LFA\\GEOMETRY.BIN"); //UCE on laptop
 //	File f = new File("C:\\Program Files (x86)\\EA Games\\Need for Speed Undercover\\CARS\\BMW_M3_E92_08\\GEOMETRY.BIN"); //vanilla
-	File f = new File("D:\\Jeux\\UCEtesting\\CARS\\" + car + "\\GEOMETRY.BIN"); //ctk
+//	File f = new File("D:\\Jeux\\UCEtesting\\CARS\\" + car + "\\GEOMETRY.BIN"); //ctk
 //	File f = new File("C:\\Users\\NI240SX\\Downloads\\240SX\\GEOMETRY.BIN"); //vanilla
 //	File f = new File("D:\\Jeux\\Need for Speed Carbon Endgame V2\\CARS\\240SX\\GEOMETRY.BIN"); //vanilla
 //	File f = new File("D:\\Jeux\\UCEtesting\\CARS\\NIS_350_Z_05\\GEOMETRY.BIN"); //ctk

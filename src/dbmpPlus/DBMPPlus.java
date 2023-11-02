@@ -3,9 +3,11 @@ package dbmpPlus;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -45,6 +47,7 @@ public class DBMPPlus extends Application {
 	public static String lastFileLoaded = "";
 //	  public static String lastFileLoaded = "C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\LOT_ELI_111_06.bin"
 	public static String lastFileSaved = Paths.get("").toAbsolutePath().toString(); //now unused
+	public static String lastGeomRepLoaded = Paths.get("").toAbsolutePath().toString();
 	public static boolean useDarkMode = false;
 	public static boolean widebodyAutoCorrect = true;
 
@@ -61,7 +64,7 @@ public class DBMPPlus extends Application {
 	static String currentExhASZones = "11";
 	
 	public static final String programName = "fire";
-	public static final String programVersion = "1.0.3";
+	public static final String programVersion = "1.0.4";
 	
 	public static void main(String[] args) {
 		try {
@@ -72,6 +75,8 @@ public class DBMPPlus extends Application {
 			lastFileSaved = br.readLine();
 			useDarkMode = Boolean.valueOf(br.readLine());
 			widebodyAutoCorrect = Boolean.valueOf(br.readLine());
+			String s;
+			if(!(s=br.readLine()).isBlank()) lastGeomRepLoaded = s;
 			br.close();
 		} catch (Exception e) {}
 		
@@ -88,7 +93,8 @@ public class DBMPPlus extends Application {
 					+ lastFileLoaded + "\n" 
 					+ lastFileSaved + "\n" 
 					+ Boolean.toString(useDarkMode) + "\n"
-					+ Boolean.toString(widebodyAutoCorrect) + "\n");
+					+ Boolean.toString(widebodyAutoCorrect) + "\n"
+					+ lastGeomRepLoaded + "\n");
 			bw.close();
 		} catch (IOException e1) {
 			e1.printStackTrace();
@@ -219,6 +225,7 @@ public class DBMPPlus extends Application {
         MenuItem dbChangeName = new MenuItem("Change car name");
         MenuItem dbFixNameOffsets = new MenuItem("Fix NAME_OFFSETS based on the PART_NAME_OFFSETS");
         MenuItem dbFixCVs = new MenuItem("Fix CVs for BODY parts based on the car's name");
+        MenuItem dbTrimToGeom = new MenuItem("Trim to a GEOMETRY...");
         
         dbSortPartsByName.setOnAction(e -> {
         	mainDBMP.parts.sort(new PartSorterByNameAsc());
@@ -287,8 +294,54 @@ public class DBMPPlus extends Application {
         	updateAllPartsDisplay();
         	e.consume();
         });
+        dbTrimToGeom.setOnAction(e -> {
+        	ButtonType sure = new Alert(Alert.AlertType.WARNING, "Are you sure you want to trim this DB ? This can take a while; backup recommended.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
+			if (ButtonType.YES.equals(sure)) {
+				FileChooser fc = new FileChooser();
+				fc.setInitialDirectory(new File(lastGeomRepLoaded));
+				fc.setInitialFileName("GEOMETRY.BIN");
+				fc.getExtensionFilters().addAll(
+			        new FileChooser.ExtensionFilter("BIN files", "*.bin"),
+			        new FileChooser.ExtensionFilter("All files", "*.*"));
+				fc.setTitle("Load a geometry file");
+				File selected = fc.showOpenDialog(null);
+				try {
+					FileInputStream fis = new FileInputStream(selected);
+					byte [] fileToBytes = new byte[(int)selected.length()];
+					fis.read(fileToBytes);
+					fis.close();
+					
+					ArrayList<Part> toRemove = new ArrayList<Part>(mainDBMP.parts);
+		        	ByteBuffer bb = ByteBuffer.wrap(fileToBytes);
+		        	bb.position(184);
+		        	int i;
+		        	while ((i = bb.getInt()) != 71308032) {	//stop searching when 0x04401300 is found
+						for (Part p : mainDBMP.parts) { //optimization has to be done probably
+							Hash part = new Hash( mainDBMP.carname.label + "_" + ((AttributeTwoString)p.getAttribute("LOD_BASE_NAME")).value1 + "_" + ((AttributeTwoString)p.getAttribute("LOD_BASE_NAME")).value2 + "_A");
+							if (i == part.reversedBinHash) {
+//								System.out.println("Part " + p.displayName + " found in geom file");
+								toRemove.remove(p);
+							}
+						}
+						bb.getInt(); //jumps the blank 4 bytes between each part
+					}
+					
+					for (Part p : toRemove) {
+//						System.out.println("Removing part : "+p.displayName);
+						mainDBMP.parts.remove(p);
+					}
+					
+					lastGeomRepLoaded = selected.getAbsolutePath().replace(selected.getName(), "");
+					updateAllPartsDisplay();
+					new Alert(Alert.AlertType.INFORMATION, "Database trimmed successfully", ButtonType.OK).show();
+				} catch (Exception ex) {
+					new Alert(Alert.AlertType.ERROR, "An error occured.", ButtonType.OK).show();
+				}
+	        	e.consume();
+        	}
+        });
         
-        menuDBMP.getItems().addAll(dbSortPartsByName, dbSortAttributes, dbFixNameOffsets, dbFixCVs, dbChangeName/*, dbSortPartsByNameExport, dbSortAttributesExport*/);
+        menuDBMP.getItems().addAll(dbSortPartsByName, dbSortAttributes, dbFixNameOffsets, dbFixCVs, dbChangeName, dbTrimToGeom/*, dbSortPartsByNameExport, dbSortAttributesExport*/);
         
         
         Menu menuAttributes = new Menu("Attributes");
