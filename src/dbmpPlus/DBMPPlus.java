@@ -49,6 +49,7 @@ public class DBMPPlus extends Application {
 	public static String lastFileSaved = Paths.get("").toAbsolutePath().toString(); //now unused
 	public static String lastGeomRepLoaded = Paths.get("").toAbsolutePath().toString();
 	public static boolean useDarkMode = false;
+	public static boolean disableWarnings = false;
 	public static boolean widebodyAutoCorrect = true;
 
 	static String currentKitTemplate = "UC-KIT00";
@@ -64,7 +65,7 @@ public class DBMPPlus extends Application {
 	static String currentExhASZones = "11";
 	
 	public static final String programName = "fire";
-	public static final String programVersion = "1.0.4";
+	public static final String programVersion = "1.0.5";
 	
 	public static void main(String[] args) {
 		try {
@@ -77,6 +78,8 @@ public class DBMPPlus extends Application {
 			widebodyAutoCorrect = Boolean.valueOf(br.readLine());
 			String s;
 			if(!(s=br.readLine()).isBlank()) lastGeomRepLoaded = s;
+			disableWarnings = Boolean.valueOf(br.readLine());
+			
 			br.close();
 		} catch (Exception e) {}
 		
@@ -94,7 +97,8 @@ public class DBMPPlus extends Application {
 					+ lastFileSaved + "\n" 
 					+ Boolean.toString(useDarkMode) + "\n"
 					+ Boolean.toString(widebodyAutoCorrect) + "\n"
-					+ lastGeomRepLoaded + "\n");
+					+ lastGeomRepLoaded + "\n"
+					+ Boolean.toString(disableWarnings) + "\n");
 			bw.close();
 		} catch (IOException e1) {
 			e1.printStackTrace();
@@ -122,8 +126,9 @@ public class DBMPPlus extends Application {
         
         fileLoad.setOnAction(new EventHandler<ActionEvent>(){
 			public void handle(ActionEvent arg0) {
-		        ButtonType sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to load a new DBMP ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
-				if (ButtonType.YES.equals(sure)) {
+		        ButtonType sure = null;
+		        if (!disableWarnings) sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to load a new DBMP ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
+				if (ButtonType.YES.equals(sure) || disableWarnings) {
 					FileChooser fc = new FileChooser();
 					fc.setInitialDirectory(new File(lastDirectoryLoaded));
 					fc.setInitialFileName(lastFileLoaded);
@@ -141,7 +146,7 @@ public class DBMPPlus extends Application {
 						updateAllPartsDisplay();
 						primaryStage.setTitle(programName + " - " + mainDBMP.carname.label);
 						menuDBMP.setText(mainDBMP.carname.label);
-						new Alert(Alert.AlertType.INFORMATION, "Database loaded successfully.", ButtonType.OK).show();
+						if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Database loaded successfully.", ButtonType.OK).show();
 					} else {
 //						new Alert(Alert.AlertType.INFORMATION, "Nothing to load", ButtonType.OK).show();
 					}
@@ -150,8 +155,9 @@ public class DBMPPlus extends Application {
         });
         fileLoad.setAccelerator(KeyCombination.keyCombination("Ctrl+O"));
         fileNew.setOnAction(e -> {
-        	ButtonType sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to create a blank DBMP ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
-			if (ButtonType.YES.equals(sure)) {
+	        ButtonType sure = null;
+	        if (!disableWarnings) sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to create a blank DBMP ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
+			if (ButtonType.YES.equals(sure) || disableWarnings) {
 				mainDBMP = new DBMP();
 				updateAllPartsDisplay();
 				primaryStage.setTitle("fire - "+mainDBMP.carname.label);
@@ -183,7 +189,7 @@ public class DBMPPlus extends Application {
 				File f_old = f;
 				f_old.renameTo(new File(f_old.getAbsoluteFile() + ".bak_" + DateTimeFormatter.ofPattern("uuMMdd-HHmmss").format(LocalDateTime.ofEpochSecond(f_old.lastModified(), 0, ZoneOffset.UTC))));
 				mainDBMP.saveToFile(f);
-				new Alert(Alert.AlertType.INFORMATION, "Database saved successfully.", ButtonType.OK).show();
+				if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Database saved successfully.", ButtonType.OK).show();
 	    		e.consume();        
 			} catch (IOException e1) {
             	new Alert(Alert.AlertType.WARNING, "Error saving DBModelParts, please try again !").show();
@@ -191,8 +197,9 @@ public class DBMPPlus extends Application {
         });
         fileSave.setAccelerator(KeyCombination.keyCombination("Ctrl+S"));
         fileExit.setOnAction(e -> {
-        	ButtonType sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to exit ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
-			if (ButtonType.YES.equals(sure)) {
+	        ButtonType sure = null;
+	        if (!disableWarnings)  sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to exit ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
+			if (ButtonType.YES.equals(sure) || disableWarnings) {
 				primaryStage.close();
 			}
         });
@@ -229,7 +236,7 @@ public class DBMPPlus extends Application {
         
         dbSortPartsByName.setOnAction(e -> {
         	mainDBMP.parts.sort(new PartSorterByNameAsc());
-        	new Alert(Alert.AlertType.INFORMATION, "All parts sorted alphabetically.").show();
+	        if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All parts sorted alphabetically.").show();
         	updateAllPartsDisplay();
         	e.consume();
         });
@@ -252,7 +259,7 @@ public class DBMPPlus extends Application {
         	DBMPPlus.attributesDisplay.getChildren().clear();
         	if (partsDisplay.getSelectionModel().getSelectedItem()!=null) for (Attribute a: partsDisplay.getSelectionModel().getSelectedItem().attributes) DBMPPlus.attributesDisplay.getChildren().add(a.dataHBox);
         	e.consume();
-        	new Alert(Alert.AlertType.INFORMATION, "All attributes sorted.").show();
+        	if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All attributes sorted.").show();
         });
 //        dbSortPartsByNameExport.setOnAction(e -> {
 //        	new Alert(Alert.AlertType.WARNING, "Not implemented").show();
@@ -267,7 +274,7 @@ public class DBMPPlus extends Application {
         		String s = td.showAndWait().get().strip();
         		if (!s.isBlank()) {
             		mainDBMP.carname = new Hash(s);
-                	new Alert(Alert.AlertType.INFORMATION, "Car name changed.").show();
+            		if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Car name changed.").show();
         			primaryStage.setTitle("fire - "+mainDBMP.carname.label);
         			menuDBMP.setText(mainDBMP.carname.label);
         			e.consume();
@@ -279,7 +286,7 @@ public class DBMPPlus extends Application {
         	for (Part p : mainDBMP.parts) {
         		((AttributeString)p.getAttribute("NAME_OFFSET")).value1 = ((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value1.replace("KIT", "").replace("W", "");
         	}
-        	new Alert(Alert.AlertType.INFORMATION, "All name offsets fixed.").show();
+        	if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All name offsets fixed.").show();
         	updateAllPartsDisplay();
         	e.consume();
         });
@@ -290,13 +297,14 @@ public class DBMPPlus extends Application {
         			else ((AttributeKey)p.getAttribute("CV")).value = new Hash(DBMPPlus.mainDBMP.carname.label + "_CV");
         		}
         	}
-        	new Alert(Alert.AlertType.INFORMATION, "All CVs fixed.").show();
+        	if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All CVs fixed.").show();
         	updateAllPartsDisplay();
         	e.consume();
         });
         dbTrimToGeom.setOnAction(e -> {
-        	ButtonType sure = new Alert(Alert.AlertType.WARNING, "Are you sure you want to trim this DB ? This can take a while; backup recommended.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
-			if (ButtonType.YES.equals(sure)) {
+	        ButtonType sure = null;
+	        if (!disableWarnings) sure = new Alert(Alert.AlertType.WARNING, "Are you sure you want to trim this DB ? This can take a while; backup recommended.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
+			if (ButtonType.YES.equals(sure) || disableWarnings) {
 				FileChooser fc = new FileChooser();
 				fc.setInitialDirectory(new File(lastGeomRepLoaded));
 				fc.setInitialFileName("GEOMETRY.BIN");
@@ -333,7 +341,7 @@ public class DBMPPlus extends Application {
 					
 					lastGeomRepLoaded = selected.getAbsolutePath().replace(selected.getName(), "");
 					updateAllPartsDisplay();
-					new Alert(Alert.AlertType.INFORMATION, "Database trimmed successfully", ButtonType.OK).show();
+					if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Database trimmed successfully", ButtonType.OK).show();
 				} catch (Exception ex) {
 					new Alert(Alert.AlertType.ERROR, "An error occured.", ButtonType.OK).show();
 				}
@@ -422,6 +430,7 @@ public class DBMPPlus extends Application {
         Menu menuSettings = new Menu(programName);
         
         CheckMenuItem settingsDark = new CheckMenuItem("Dark mode");
+        CheckMenuItem settingsWarnings = new CheckMenuItem("Disable warning pop-ups");
         CheckMenuItem settingsWidebodyAutoCorrect = new CheckMenuItem("Auto-correct widebody part names");
         MenuItem settingsAbout = new MenuItem("About " + programName + "...");
         
@@ -430,7 +439,15 @@ public class DBMPPlus extends Application {
         	if (isSelected) widebodyAutoCorrect = true; 
         	else widebodyAutoCorrect = false;
         });
-        
+
+        if (disableWarnings) settingsWarnings.setSelected(true);
+        settingsWarnings.selectedProperty().addListener((obs, wasSelected, isSelected) -> {
+            if (isSelected) {
+                disableWarnings = true;
+            } else {
+            	disableWarnings= false;
+                }
+        });
         
         settingsAbout.setOnAction(e -> {
 			Stage st = new Stage();
@@ -452,7 +469,7 @@ public class DBMPPlus extends Application {
 			st.show();
         });
         
-        menuSettings.getItems().addAll(settingsDark, settingsWidebodyAutoCorrect, settingsAbout);
+        menuSettings.getItems().addAll(settingsDark, settingsWarnings, settingsWidebodyAutoCorrect, settingsAbout);
         
         
         menuBar.getMenus().addAll(menuFile, menuEdit, menuDBMP, menuAttributes, menuSettings);
@@ -1173,8 +1190,9 @@ public class DBMPPlus extends Application {
         kitDelete.setOnAction(e -> {
         	if (partsDisplay.getSelectionModel().getSelectedItem()!=null) {
 	        	String kit = ((AttributeTwoString)partsDisplay.getSelectionModel().getSelectedItem().getAttribute("PART_NAME_OFFSETS")).value1;
-	        	ButtonType sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to delete all parts from " + kit + " ?", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
-				if (ButtonType.YES.equals(sure)) {
+		        ButtonType sure = null;
+		        if (!disableWarnings) sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to delete all parts from " + kit + " ?", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
+				if (ButtonType.YES.equals(sure) || disableWarnings) {
 					int size = mainDBMP.parts.size();
 					for(int i=0; i<size; i++) {
 						if (kit.equals(((AttributeTwoString)mainDBMP.parts.get(i).getAttribute("PART_NAME_OFFSETS")).value1)) {
@@ -1483,8 +1501,9 @@ public class DBMPPlus extends Application {
         Scene scene = new Scene(root, 1024, 600);
         primaryStage.setScene(scene);
         primaryStage.setOnCloseRequest(e -> {
-        	ButtonType sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to exit ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
-			if (!ButtonType.YES.equals(sure)) {
+	        ButtonType sure = null;
+	        if (!disableWarnings) sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to exit ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
+			if (ButtonType.NO.equals(sure)) {
 				e.consume();
 			}
         });
