@@ -19,17 +19,24 @@ public class CtkFixer {
 	
 
 	public static void main(String[] args) {
+		
 		try {
+			BufferedWriter log = new BufferedWriter(new FileWriter(new File("CTKFixer.log")));
+			log.write("Initializing CTKFixer...\n");
 			BufferedReader br = new BufferedReader(new FileReader(new File("CTKFixer.ini")));
-
-			
 			
 			File f = new File(br.readLine().strip());
+			log.write("Configuration file found.\n"
+					+ "Caching geometry file...\n");
+			long t = System.currentTimeMillis();
 			FileInputStream fis = new FileInputStream(f);
 			byte [] fileToBytes = new byte[(int)f.length()];
 			fis.read(fileToBytes);
 			fis.close();
 
+			log.write("File " + f.getPath() + " cached in " + (System.currentTimeMillis()-t) + " ms.\n"
+					+ "Reading config...\n");
+			t = System.currentTimeMillis();
 			
 			String s = br.readLine();
 			String carname = s.replaceAll(" the zmod lock is real", "").strip();
@@ -41,8 +48,13 @@ public class CtkFixer {
 					Hash[] toReplace = new Hash[line.length-1];
 					Hash[] replacement = new Hash[line.length-1];
 					for (int i=1;i<line.length;i++) {
-						toReplace[i-1] = new Hash(line[i].split(">")[0].replaceAll("%", carname));
-						replacement[i-1] = new Hash(line[i].split(">")[1].replaceAll("%", carname));
+						if(line[i].equals("ZMODLOCK")) {
+							replacement[i-1] = new Hash("[normalmap]",43354773);
+							toReplace[i-1] = new Hash("The Zmod Hard Lock TM",1311995566);							
+						} else {
+							toReplace[i-1] = new Hash(line[i].split(">")[0].replaceAll("%", carname));
+							replacement[i-1] = new Hash(line[i].split(">")[1].replaceAll("%", carname));
+						}
 					}
 					if (line[0].endsWith("_A") || line[0].endsWith("_B") ||line[0].endsWith("_C") || line[0].endsWith("_D")) {
 						replacements.add(new Replacements(new Hash(carname + "_" + line[0]), toReplace, replacement));
@@ -50,15 +62,16 @@ public class CtkFixer {
 						replacements.add(new Replacements(new Hash(carname + "_" + line[0] + "_A"), toReplace, replacement));
 						replacements.add(new Replacements(new Hash(carname + "_" + line[0] + "_B"), toReplace, replacement));
 						replacements.add(new Replacements(new Hash(carname + "_" + line[0] + "_C"), toReplace, replacement));
-						replacements.add(new Replacements(new Hash(carname + "_" + line[0] + "_D"), toReplace, replacement));
+						if (line[0].contains("KIT00")) replacements.add(new Replacements(new Hash(carname + "_" + line[0] + "_D"), toReplace, replacement));
 					}
 					
 				}
 			}
 			System.out.println(replacements);
 			
-			
-			
+			log.write("Config read in " + (System.currentTimeMillis()-t) + " ms.\n"
+					+ "Looking for parts offsets...\n");
+			t = System.currentTimeMillis();
 			
 			Hash potentialpart = null;
 			int potentialpartoff = 0;
@@ -125,21 +138,28 @@ public class CtkFixer {
 				}
 				off++;
 			}
-
+			log.write("Part offsets scanned in " + (System.currentTimeMillis()-t) + " ms.\n");
 			System.out.println("All parts found.");
 			
 			for (int i=0; i<replacements.size(); i++) {
 				if (replacements.get(i).position == 0) {
+					System.out.println("Warning : part " + replacements.get(i).part.label + " not found !");
+					log.write("Warning : part " + replacements.get(i).part.label + " not found !\n");
 					replacements.remove(i);
 					i--;
 				}
 			}
 			
+
+			log.write("Starting to replace...\n");
+			t = System.currentTimeMillis();
+			
 			byte cut = 0;
 			
 			for (Replacements r: replacements) {
 				
-
+				boolean[] val = new boolean[r.toReplace.length];
+				
 				System.out.println("Starting to replace part " + r.part + " at " + (r.position+32));
 				
 				off = r.position + 32;
@@ -194,6 +214,7 @@ public class CtkFixer {
 									potentialpart = null;
 									System.out.println("shader/texture/normalmap " + r.toReplace[i].label + " found | " + (off+1));
 									fileToBytes[potentialpartoff] = r.replacements[i].reversedBinHashBytes[0];
+									val[i] = true;
 									switch (cut) {
 									case 1:
 										System.out.println("Hash cut after 1 byte; replaced "+potentialpartoff+ "," + (potentialpartoff+2) +","+ (potentialpartoff+3)+","+(potentialpartoff+4));
@@ -234,8 +255,17 @@ public class CtkFixer {
 					off++;
 				}
 				System.out.println("End of part " + r.part + " at " + off);
+				
+				for(int i=0; i<val.length; i++) {
+					if(!val[i]) {
+						System.out.println("Warning : unable to find " + r.toReplace[i].label + " in part " + r.part.label + " at " + (r.position+32) + " !");
+						log.write("Warning : unable to find " + r.toReplace[i].label + " in part " + r.part.label + " at " + (r.position+32) + " !\n");
+					}
+				}
+				
 			}
-			System.out.println("All replacements done.");
+			System.out.println("Finished replacing.");
+			log.write("Finished replacing in " + (System.currentTimeMillis()-t) + " ms.\n");
 			
 			//important crash fix
 			fileToBytes[48]=67;
@@ -294,12 +324,16 @@ public class CtkFixer {
 			
 			
 			
-			
+
+			log.write("Saving file...\n");
+			t = System.currentTimeMillis();
 			
 			FileOutputStream fos = new FileOutputStream(f);
 			fos.write(fileToBytes);
 			fos.close();
 			System.out.println("File saved.");
+			log.write("File " + f.getPath() + " saved in " + (System.currentTimeMillis()-t) + " ms.");
+			log.close();
 			
 		} catch (FileNotFoundException e) {
 			try {
