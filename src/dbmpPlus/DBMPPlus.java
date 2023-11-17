@@ -65,7 +65,7 @@ public class DBMPPlus extends Application {
 	static String currentExhASZones = "11";
 	
 	public static final String programName = "fire";
-	public static final String programVersion = "1.0.5";
+	public static final String programVersion = "1.0.6";
 	
 	public static void main(String[] args) {
 		try {
@@ -336,7 +336,11 @@ public class DBMPPlus extends Application {
 					
 					for (Part p : toRemove) {
 //						System.out.println("Removing part : "+p.displayName);
-						mainDBMP.parts.remove(p);
+						if ((((AttributeCarPartID) p.getAttribute("PARTID_UPGRADE_GROUP")).ID != PartUndercover.EXHAUST_TIPS_CENTER) &&
+							(((AttributeCarPartID) p.getAttribute("PARTID_UPGRADE_GROUP")).ID != PartUndercover.EXHAUST_TIPS_LEFT) &&
+							(((AttributeCarPartID) p.getAttribute("PARTID_UPGRADE_GROUP")).ID != PartUndercover.EXHAUST_TIPS_RIGHT)){
+							mainDBMP.parts.remove(p);
+						}
 					}
 					
 					lastGeomRepLoaded = selected.getAbsolutePath().replace(selected.getName(), "");
