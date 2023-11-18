@@ -163,8 +163,9 @@ public class CtkFixer {
 				System.out.println("Starting to replace part " + r.part + " at " + (r.position+32));
 				
 				off = r.position + 32;
-				while (1514947658 != (((fileToBytes[off+4] & 0xFF) << 24) | ((fileToBytes[off+3] & 0xFF) << 16)
-				        | ((fileToBytes[off+2] & 0xFF) << 8) | (fileToBytes[off+1] & 0xFF))) {	//stop searching when 4a444c5a (JDLZ) is found
+				while (off<fileToBytes.length-4 
+						&& (1514947658 != (((fileToBytes[off+4] & 0xFF) << 24) | ((fileToBytes[off+3] & 0xFF) << 16)
+				        | ((fileToBytes[off+2] & 0xFF) << 8) | (fileToBytes[off+1] & 0xFF)))) {	//stop searching when 4a444c5a (JDLZ) is found OR WHEN EOF REACHED
 					
 					for(int i=0; i<r.toReplace.length; i++) {
 						
@@ -251,7 +252,6 @@ public class CtkFixer {
 						
 						
 					}
-					
 					off++;
 				}
 				System.out.println("End of part " + r.part + " at " + off);
