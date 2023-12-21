@@ -8,6 +8,7 @@ class Part {
 	
 	public int kitnumber = 99;
 	public boolean isWidebody = false;
+	public boolean isCarPart = false;
 	
 	CarPartListCell listCell = new CarPartListCell();
 	
@@ -17,6 +18,7 @@ class Part {
 	public Part(String kit, String name) {
 		AttributeCarPartID id;
 		AttributeTwoString partName;
+		isCarPart = true;
 		addAttribute(new AttributeInteger("PART_NAME_SELECTOR", 0));
 		addAttribute(new AttributeInteger("LOD_NAME_PREFIX_SELECTOR", 0));
 		addAttribute(new AttributeInteger("MAX_LOD", 4));
@@ -61,58 +63,69 @@ class Part {
 				this.attributes.add(new AttributeKey((AttributeKey)a));
 			} else if (a.getClass() == AttributeCarPartID.class) {
 				this.attributes.add(new AttributeCarPartID((AttributeCarPartID)a));
+			} else if (a.getClass() == AttributeBoolean.class) {
+				this.attributes.add(new AttributeBoolean((AttributeBoolean)a));
+			} else if (a.getClass() == AttributeColor.class) {
+				this.attributes.add(new AttributeColor((AttributeColor)a));
 			}
 		}
+		this.isCarPart = copyFrom.isCarPart;
 		this.displayName = copyFrom.displayName;
 		this.isWidebody = copyFrom.isWidebody;
 		this.kitnumber = copyFrom.kitnumber;
 	}
 	
 	public void update() {
-		if (DBMPPlus.widebodyAutoCorrect && ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )) != null){
-			if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value1.contains("W")) {
-				((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2 = ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.replace("WIDEBODY_", "");
-				
-				if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.equals("BODY")) ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2 = "WIDEBODY";
-				else if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("BUMPER") 
-						|| ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("DOOR") 
-						|| ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("FENDER") 
-						|| ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("SKIRT")) {
-					((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2 = "WIDEBODY_" + ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2;
-				}
-			} else {
-				if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.equals("WIDEBODY")) ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2 = "BODY";
-				else {
+		if (getAttribute("LOD_BASE_NAME") != null) isCarPart = true;
+		if(isCarPart) {
+			if (DBMPPlus.widebodyAutoCorrect && ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )) != null){
+				if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value1.contains("W")) {
 					((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2 = ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.replace("WIDEBODY_", "");
+					
+					if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.equals("BODY")) ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2 = "WIDEBODY";
+					else if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("BUMPER") 
+							|| ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("DOOR") 
+							|| ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("FENDER") 
+							|| ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.contains("SKIRT")) {
+						((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2 = "WIDEBODY_" + ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2;
+					}
+				} else {
+					if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.equals("WIDEBODY")) ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2 = "BODY";
+					else {
+						((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2 = ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value2.replace("WIDEBODY_", "");
+					}
 				}
 			}
-		}
-		
-		String name1 = "MISSING ATTRIBUTES";
-		String name2 = "MISSING ATTRIBUTES";
-		for (Attribute attribute : attributes) {
-			attribute.update();
-			if (attribute.Key.label.equals("PART_NAME_OFFSETS")) {
-				AttributeTwoString att2S = (AttributeTwoString)attribute;
-				name1 = att2S.value1 + "_" + att2S.value2;
-				kitnumber = Integer.valueOf(att2S.value1.substring(att2S.value1.length()-2));
-				if (att2S.value1.charAt(3) == 'W') isWidebody = true; else isWidebody = false;
+			
+			String name1 = "MISSING ATTRIBUTES";
+			String name2 = "MISSING ATTRIBUTES";
+			for (Attribute attribute : attributes) {
+				attribute.update();
+				if (attribute.Key.label.equals("PART_NAME_OFFSETS")) {
+					AttributeTwoString att2S = (AttributeTwoString)attribute;
+					name1 = att2S.value1 + "_" + att2S.value2;
+					kitnumber = Integer.valueOf(att2S.value1.substring(att2S.value1.length()-2));
+					if (att2S.value1.charAt(3) == 'W') isWidebody = true; else isWidebody = false;
+				}
+				if (attribute.Key.label.equals("LOD_BASE_NAME")) {
+					AttributeTwoString att2S = (AttributeTwoString)attribute;
+					name2 = att2S.value1 + "_" + att2S.value2;
+				}
 			}
-			if (attribute.Key.label.equals("LOD_BASE_NAME")) {
-				AttributeTwoString att2S = (AttributeTwoString)attribute;
-				name2 = att2S.value1 + "_" + att2S.value2;
+			if (name2.equals(name1)) {
+				displayName = name1;
+			} else {
+				displayName = name1 + " (reference to " + name2 + ")";
 			}
-		}
-		if (name2.equals(name1)) {
-			displayName = name1;
 		} else {
-			displayName = name1 + " (reference to " + name2 + ")";
+			displayName = ((AttributeString)getAttribute("NAME_OFFSET")).value1;
 		}
 		listCell.update();
 	}
 	
 	public void addAttribute(Attribute a) {
 		attributes.add(a);
+		if (getAttribute("LOD_BASE_NAME") != null) isCarPart = true;
 		update();
 	}
 	public Attribute getAttribute(String a) {

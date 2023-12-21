@@ -73,7 +73,7 @@ class AttributeString extends Attribute{
 	public AttributeString(Hash key, ByteBuffer bb) {
 		super(key);
 		value1Exists = bb.get();
-		value1 = DBMP.readString(bb);
+		if (value1Exists == 1) value1 = DBMP.readString(bb);
 		initGUI();
 	}
 	public AttributeString(AttributeString copyFrom) {
@@ -85,11 +85,13 @@ class AttributeString extends Attribute{
 	public void initGUI() {
 		value1gui.setText(value1);
 		dataHBox.getChildren().addAll(value1gui);
-		value1gui.setOnAction(e -> {
+		value1gui.setOnKeyTyped(e -> {
+			int caretB4Save = value1gui.getCaretPosition();
 			new UndoAttributeChange(this);
 			value1 = value1gui.getText().strip();
 			value1gui.setText(value1gui.getText().strip());
 			if (value1.isEmpty()) value1Exists = 0; else value1Exists = 1;
+			value1gui.positionCaret(caretB4Save);
 			e.consume();
 		});
 	}
@@ -104,7 +106,7 @@ class AttributeString extends Attribute{
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
 		bb.put(value1Exists);
-		DBMP.writeString(value1, bb);
+		if (value1Exists == 1) DBMP.writeString(value1, bb);
 	}
 	public String getAttribType() {
 		return "String";
@@ -138,8 +140,8 @@ class AttributeTwoString extends Attribute{
 		super(key);
 		value1Exists = bb.get();
 		value2Exists = bb.get();
-		value1 = DBMP.readString(bb);
-		value2 = DBMP.readString(bb);
+		if (value1Exists == 1) value1 = DBMP.readString(bb);
+		if (value2Exists == 1) value2 = DBMP.readString(bb);
 		initGUI();
 	}
 	public AttributeTwoString(AttributeTwoString copyFrom) {
@@ -156,20 +158,24 @@ class AttributeTwoString extends Attribute{
 		value1gui.setPrefWidth(60);
 		dataHBox.getChildren().addAll(value1gui,value2gui);
 
-		value1gui.setOnAction(e -> {
+		value1gui.setOnKeyTyped(e -> {
+			int caretB4Save = value1gui.getCaretPosition();
 			new UndoAttributeChange(this);
 			value1 = value1gui.getText().strip();
 			value1gui.setText(value1gui.getText().strip());
 			if (value1.isEmpty()) value1Exists = 0; else value1Exists = 1;
 			DBMPPlus.updateAllPartsDisplay();
+			value1gui.positionCaret(caretB4Save);
 			e.consume();
 		});
-		value2gui.setOnAction(e -> {
+		value2gui.setOnKeyTyped(e -> {
+			int caretB4Save = value2gui.getCaretPosition();
 			new UndoAttributeChange(this);
 			value2 = value2gui.getText().strip();
 			value2gui.setText(value2gui.getText().strip());
 			if (value2.isEmpty()) value2Exists = 0; else value2Exists = 1;
 			e.consume();
+			value2gui.positionCaret(caretB4Save);
 			DBMPPlus.updateAllPartsDisplay();
 		});
 	}
@@ -189,8 +195,8 @@ class AttributeTwoString extends Attribute{
 		super.writeToFile(bb);
 		bb.put(value1Exists);
 		bb.put(value2Exists);
-		DBMP.writeString(value1, bb);
-		DBMP.writeString(value2, bb);
+		if (value1Exists == 1) DBMP.writeString(value1, bb);
+		if (value2Exists == 1) DBMP.writeString(value2, bb);
 	}
 	public String getAttribType() {
 		return "TwoString";
@@ -226,7 +232,9 @@ class AttributeInteger extends Attribute{
 	public void initGUI() {
 		valuegui.setText(Integer.toString(value));
 		dataHBox.getChildren().addAll(valuegui);
-		valuegui.setOnAction(e -> {
+		valuegui.setOnKeyTyped(e -> {
+			int caretB4Save = valuegui.getCaretPosition();
+			if (valuegui.getText().isBlank()) valuegui.setText("0");
 			new UndoAttributeChange(this);
 			try {
 				value = Integer.parseInt(valuegui.getText().strip());
@@ -234,6 +242,7 @@ class AttributeInteger extends Attribute{
 				new Alert(Alert.AlertType.ERROR, "Please enter a valid integer", ButtonType.OK).show();
 			}
 			valuegui.setText(Integer.toString(value));
+			valuegui.positionCaret(caretB4Save);
 			e.consume();
 		});
 	}
@@ -291,14 +300,18 @@ class AttributeCarPartID extends Attribute{
 		dataHBox.getChildren().addAll(levelgui, IDgui);
 
 		IDgui.setOnAction(e -> {
+			int caretB4Save = IDgui.getCaretPosition();
 			new UndoAttributeChange(this);
 			if(PartUndercover.get(IDgui.getText().strip())!=null) {
 				ID = PartUndercover.get(IDgui.getText().strip());
 			} else new Alert(Alert.AlertType.ERROR, "Invalid slot", ButtonType.OK).show();
 			IDgui.setText(ID.getText());
+			IDgui.positionCaret(caretB4Save);
 			e.consume();
 		});
-		levelgui.setOnAction(e -> {
+		levelgui.setOnKeyTyped(e -> {
+			int caretB4Save = levelgui.getCaretPosition();
+			if (levelgui.getText().isBlank()) levelgui.setText("0");
 			new UndoAttributeChange(this);
 			try {
 				level = (byte) Integer.parseInt(levelgui.getText().strip());
@@ -306,6 +319,7 @@ class AttributeCarPartID extends Attribute{
 				new Alert(Alert.AlertType.ERROR, "Please enter a valid integer", ButtonType.OK).show();
 			}
 			levelgui.setText(Integer.toString(level));
+			levelgui.positionCaret(caretB4Save);
 			e.consume();
 		});
 	}
@@ -359,10 +373,12 @@ class AttributeKey extends Attribute{
 		valuegui.setText(this.value.label);
 		dataHBox.getChildren().addAll(valuegui);
 
-		valuegui.setOnAction(e -> {
+		valuegui.setOnKeyTyped(e -> {
+			int caretB4Save = valuegui.getCaretPosition();
 			new UndoAttributeChange(this);
 			value = new Hash(valuegui.getText().strip());
 			valuegui.setText(value.label);
+			valuegui.positionCaret(caretB4Save);
 			e.consume();
 		});
 	}
@@ -417,13 +433,16 @@ class AttributeBoolean extends Attribute{
 		valuegui.setText(Boolean.toString(value));
 		dataHBox.getChildren().addAll(valuegui);
 		valuegui.setOnAction(e -> {
+			int caretB4Save = valuegui.getCaretPosition();
+			if (valuegui.getText().isBlank()) valuegui.setText("false");
 			new UndoAttributeChange(this);
 			try {
 				value = Boolean.getBoolean(valuegui.getText().strip());
 			}catch(NumberFormatException ex) {
-				new Alert(Alert.AlertType.ERROR, "Please enter a valid integer", ButtonType.OK).show();
+				new Alert(Alert.AlertType.ERROR, "Please enter a valid boolean", ButtonType.OK).show();
 			}
 			valuegui.setText(Boolean.toString(value));
+			valuegui.positionCaret(caretB4Save);
 			e.consume();
 		});
 	}
@@ -446,6 +465,146 @@ class AttributeBoolean extends Attribute{
 	}
 }
 
+
+
+
+
+class AttributeColor extends Attribute{
+//	public static final String AttributeIdentifier = "TwoString";
+	public byte red=0;
+	public byte green=0;
+	public byte blue=0;
+	public byte alpha=0;
+	TextField redgui = new TextField();
+	TextField greengui = new TextField();
+	TextField bluegui = new TextField();
+	TextField alphagui = new TextField();
+	public AttributeColor(String key) {
+		super(key);
+		initGUI();
+	}
+	public AttributeColor(String key, byte red, byte blue, byte green, byte alpha) {
+		super(key);
+		this.red = red;
+		this.green = green;
+		this.blue = blue;
+		this.alpha = alpha;
+		initGUI();
+	}
+	public AttributeColor(Hash key, ByteBuffer bb) {
+		super(key);
+		red = bb.get();
+		green = bb.get();
+		blue = bb.get();
+		alpha = bb.get();
+		initGUI();
+	}
+	public AttributeColor(AttributeColor copyFrom) {
+		super(copyFrom);
+		this.red = copyFrom.red;
+		this.green = copyFrom.green;
+		this.blue = copyFrom.blue;
+		this.alpha = copyFrom.alpha;
+		initGUI();
+	}
+	public void initGUI() {
+		redgui.setText(Integer.toString(red & 0xFF));
+		greengui.setText(Integer.toString(green & 0xFF));
+		bluegui.setText(Integer.toString(blue & 0xFF));
+		alphagui.setText(Integer.toString(alpha & 0xFF));
+		redgui.setPrefWidth(60);
+		greengui.setPrefWidth(60);
+		bluegui.setPrefWidth(60);
+		alphagui.setPrefWidth(60);
+		dataHBox.getChildren().addAll(redgui, greengui, bluegui, alphagui);
+
+		redgui.setOnKeyTyped(e -> {
+			int caretB4Save = redgui.getCaretPosition();
+			if (redgui.getText().isBlank()) redgui.setText("0");
+			new UndoAttributeChange(this);
+			try {
+				red = (byte) Integer.parseInt(redgui.getText().strip());
+			}catch(NumberFormatException ex) {
+				new Alert(Alert.AlertType.ERROR, "Please enter a valid byte", ButtonType.OK).show();
+			}
+			redgui.setText(Integer.toString(red & 0xFF));
+			DBMPPlus.updateAllPartsDisplay();
+			redgui.positionCaret(caretB4Save);
+			e.consume();
+		});
+		greengui.setOnKeyTyped(e -> {
+			int caretB4Save = greengui.getCaretPosition();
+			if (greengui.getText().isBlank()) greengui.setText("0");
+			new UndoAttributeChange(this);
+			try {
+				green = (byte) Integer.parseInt(greengui.getText().strip());
+			}catch(NumberFormatException ex) {
+				new Alert(Alert.AlertType.ERROR, "Please enter a valid byte", ButtonType.OK).show();
+			}
+			greengui.setText(Integer.toString(green & 0xFF));
+			DBMPPlus.updateAllPartsDisplay();
+			greengui.positionCaret(caretB4Save);
+			e.consume();
+		});
+		bluegui.setOnKeyTyped(e -> {
+			int caretB4Save = bluegui.getCaretPosition();
+			if (bluegui.getText().isBlank()) bluegui.setText("0");
+			new UndoAttributeChange(this);
+			try {
+				blue = (byte) Integer.parseInt(bluegui.getText().strip());
+			}catch(NumberFormatException ex) {
+				new Alert(Alert.AlertType.ERROR, "Please enter a valid byte", ButtonType.OK).show();
+			}
+			bluegui.setText(Integer.toString(blue & 0xFF));
+			DBMPPlus.updateAllPartsDisplay();
+			bluegui.positionCaret(caretB4Save);
+			e.consume();
+		});
+		alphagui.setOnKeyTyped(e -> {
+			int caretB4Save = alphagui.getCaretPosition();
+			if (alphagui.getText().isBlank()) alphagui.setText("0");
+			new UndoAttributeChange(this);
+			try {
+				alpha = (byte) Integer.parseInt(alphagui.getText().strip());
+			}catch(NumberFormatException ex) {
+				new Alert(Alert.AlertType.ERROR, "Please enter a valid byte", ButtonType.OK).show();
+			}
+			alphagui.setText(Integer.toString(alpha & 0xFF));
+			DBMPPlus.updateAllPartsDisplay();
+			alphagui.positionCaret(caretB4Save);
+			e.consume();
+		});
+		}
+	public void update() {
+		redgui.setText(Integer.toString(red & 0xFF));
+		greengui.setText(Integer.toString(green & 0xFF));
+		bluegui.setText(Integer.toString(blue & 0xFF));
+		alphagui.setText(Integer.toString(alpha & 0xFF));
+	}
+	public void revertFrom(Attribute a) {
+		this.red = ((AttributeColor)a).red;
+		this.green = ((AttributeColor)a).green;
+		this.blue = ((AttributeColor)a).blue;
+		this.alpha = ((AttributeColor)a).alpha;
+		redgui.setText(Integer.toString(red & 0xFF));
+		greengui.setText(Integer.toString(green & 0xFF));
+		bluegui.setText(Integer.toString(blue & 0xFF));
+		alphagui.setText(Integer.toString(alpha & 0xFF));
+	}
+	public void writeToFile(ByteBuffer bb) {
+		super.writeToFile(bb);
+		bb.put(red);
+		bb.put(green);
+		bb.put(blue);
+		bb.put(alpha);
+	}
+	public String getAttribType() {
+		return "Color";
+	}
+	public String toString() {
+		return "Color" + Key + ": R=" + (red & 0xFF) + ", G=" + (green & 0xFF) + ", B=" + (blue & 0xFF) + ", A=" + (alpha & 0xFF);
+	}
+}
 
 
 
@@ -588,3 +747,31 @@ enum PartUndercover {
     }
     
 }
+
+
+//class AttributeTextFieldInt extends TextField{
+//
+//	public AttributeTextFieldInt(Integer linkedint, Attribute linkedattrib) {
+//		super();
+//		setOnKeyTyped(e -> {
+//			int caretB4Save = getCaretPosition();
+//			if (getText().isBlank()) setText("0");
+//			new UndoAttributeChange(linkedattrib);
+//			try {
+//				linkedint = Integer.parseInt(getText().strip());
+//			}catch(NumberFormatException ex) {
+//				new Alert(Alert.AlertType.ERROR, "Please enter a valid byte", ButtonType.OK).show();
+//			}
+//			setText(Integer.toString(linkedint & 0xFF));
+//			DBMPPlus.updateAllPartsDisplay();
+//			positionCaret(caretB4Save);
+//			e.consume();
+//		});
+//	}
+//
+//	public AttributeTextFieldInt(String arg0) {
+//		super(arg0);
+//		// TODO Auto-generated constructor stub
+//	}
+//	
+//}

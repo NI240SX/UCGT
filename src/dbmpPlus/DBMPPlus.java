@@ -65,7 +65,7 @@ public class DBMPPlus extends Application {
 	static String currentExhASZones = "11";
 	
 	public static final String programName = "fire";
-	public static final String programVersion = "1.0.6";
+	public static final String programVersion = "1.1";
 	
 	public static void main(String[] args) {
 		try {
