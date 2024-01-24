@@ -65,7 +65,7 @@ public class DBMPPlus extends Application {
 	static String currentExhASZones = "11";
 	
 	public static final String programName = "fire";
-	public static final String programVersion = "1.1";
+	public static final String programVersion = "1.1.1";
 	
 	public static void main(String[] args) {
 		try {
@@ -225,7 +225,8 @@ public class DBMPPlus extends Application {
         
         menuDBMP = new Menu(mainDBMP.carname.label);
 
-        MenuItem dbSortPartsByName = new MenuItem("Sort parts by name");
+        MenuItem dbSortPartsByName = new MenuItem("Sort parts by kit + name");
+        MenuItem dbSortPartsByName2 = new MenuItem("Sort parts by name");
         MenuItem dbSortAttributes = new MenuItem("Sort attributes");
 //        CheckMenuItem dbSortPartsByNameExport = new CheckMenuItem("Sort parts by name at export");
 //        CheckMenuItem dbSortAttributesExport = new CheckMenuItem("Sort attributes at export");
@@ -237,6 +238,12 @@ public class DBMPPlus extends Application {
         dbSortPartsByName.setOnAction(e -> {
         	mainDBMP.parts.sort(new PartSorterByNameAsc());
 	        if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All parts sorted alphabetically.").show();
+        	updateAllPartsDisplay();
+        	e.consume();
+        });        
+        dbSortPartsByName2.setOnAction(e -> {
+        	mainDBMP.parts.sort(new PartSorterByName2Asc());
+	        if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All parts sorted.").show();
         	updateAllPartsDisplay();
         	e.consume();
         });
@@ -353,7 +360,7 @@ public class DBMPPlus extends Application {
         	}
         });
         
-        menuDBMP.getItems().addAll(dbSortPartsByName, dbSortAttributes, dbFixNameOffsets, dbFixCVs, dbChangeName, dbTrimToGeom/*, dbSortPartsByNameExport, dbSortAttributesExport*/);
+        menuDBMP.getItems().addAll(dbSortPartsByName, dbSortPartsByName2, dbSortAttributes, dbFixNameOffsets, dbFixCVs, dbChangeName, dbTrimToGeom/*, dbSortPartsByNameExport, dbSortAttributesExport*/);
         
         
         Menu menuAttributes = new Menu("Attributes");
@@ -1562,5 +1569,26 @@ class PartSorterByNameAsc implements Comparator<Part>{
 	public int compare(Part a, Part b) {
 		return (((AttributeTwoString)a.getAttribute("PART_NAME_OFFSETS")).value1 + "_" + ((AttributeTwoString)a.getAttribute("PART_NAME_OFFSETS")).value2)
 				.compareTo((((AttributeTwoString)b.getAttribute("PART_NAME_OFFSETS")).value1 + "_" + ((AttributeTwoString)b.getAttribute("PART_NAME_OFFSETS")).value2));
+	}
+}
+
+class PartSorterByName2Asc implements Comparator<Part>{
+	public int compare(Part a, Part b) {
+		String stringA = ((AttributeTwoString)a.getAttribute("LOD_BASE_NAME")).value2 + "0" + ((AttributeTwoString)a.getAttribute("LOD_BASE_NAME")).value1.replace("KIT0", "KIT").replace("KITW0", "KITW");
+		String stringB = ((AttributeTwoString)b.getAttribute("LOD_BASE_NAME")).value2 + "0" + ((AttributeTwoString)b.getAttribute("LOD_BASE_NAME")).value1.replace("KIT0", "KIT").replace("KITW0", "KITW");
+
+		//brake fix
+		stringA = stringA.replace("BRAKE_FRONT", "BRAKE0FRONT").replace("BRAKE_REAR", "BRAKE0REAR");
+		stringB = stringB.replace("BRAKE_FRONT", "BRAKE0FRONT").replace("BRAKE_REAR", "BRAKE0REAR");
+		
+		//doorhandles fix
+		stringA = stringA.replace("DOORHANDLE", "DOOR_ZHANDLE").replace("HANDLE_REAR", "HANDLE_ZREAR");
+		stringB = stringB.replace("DOORHANDLE", "DOOR_ZHANDLE").replace("HANDLE_REAR", "HANDLE_ZREAR");
+
+		//exhausts fix
+		stringA = stringA.replace("MUFFLER_", "EXHAUST0");
+		stringB = stringB.replace("MUFFLER_", "EXHAUST0");
+		
+		return (stringA.compareTo(stringB));
 	}
 }
