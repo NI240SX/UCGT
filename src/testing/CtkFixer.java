@@ -39,7 +39,8 @@ public class CtkFixer {
 			t = System.currentTimeMillis();
 			
 			String s = br.readLine();
-			String carname = s.replaceAll(" the zmod lock is real", "").strip();
+			String carname = s.strip().split(" ")[0];
+			boolean bruteForceFixTripleCut = s.contains("bruteforce fix triple cut");
 			String l;
 			ArrayList<Replacements> replacements = new ArrayList<Replacements>();
 			while ((l = br.readLine()) != null) { //config reading loop
@@ -258,8 +259,114 @@ public class CtkFixer {
 				
 				for(int i=0; i<val.length; i++) {
 					if(!val[i]) {
-						System.out.println("Warning : unable to find " + r.toReplace[i].label + " in part " + r.part.label + " at " + (r.position+32) + " !");
-						log.write("Warning : unable to find " + r.toReplace[i].label + " in part " + r.part.label + " at " + (r.position+32) + " !\n");
+						
+						if(bruteForceFixTripleCut) {
+							System.out.print("Warning : attempting to bruteforce " + r.toReplace[i].label + " in part " + r.part.label + " at " + (r.position+32) + " !");
+							log.write("Warning : attempting to bruteforce " + r.toReplace[i].label + " in part " + r.part.label + " at " + (r.position+32) + " !");
+							
+							
+							
+							
+							
+							
+							potentialpart = null;
+							off = r.position + 32;
+							int bruteforcePos = 0;
+							byte bruteForceBackup = 0;
+							boolean firstreplace = true;
+							while (off<fileToBytes.length-4 && off<r.position + 32 + 768) {	//stop searching when fuck you OR WHEN EOF REACHED
+									
+								// force replace the first matching occurence for the first one
+								if (firstreplace && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[0]) {
+									bruteforcePos = off;
+									bruteForceBackup = fileToBytes[off];
+									fileToBytes[off] = r.replacements[i].reversedBinHashBytes[0];
+									firstreplace = false;
+									System.out.print(" | First byte bruteforced at " + (off) + ".");
+									log.write(" | First byte bruteforced at " + (off) + ".");
+//										System.out.println("1st byte loop triggered for shader/texture/normalmap " + r.toReplace[i].label +" | "+off);
+								}
+								
+								if (fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[1]) { //ONLY 3 BYTES REMAINING IN PART
+									potentialpart = r.toReplace[i];
+									potentialpartoff = off;
+									step = 1;
+									cut = 0;
+								}
+
+								if (potentialpart != null) {
+									if (step == 1 && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[2] && potentialpart == r.toReplace[i]) {
+										//potential 3rd byte of a part to replace found
+										if (cut == 0 && potentialpartoff == off-2) cut = 1;
+										if (potentialpartoff <= off-3) {
+											potentialpart = null;
+											step = 1;
+										}
+										else {
+											step = 2;
+//												System.out.println("3rd byte loop triggered for shader/texture/normalmap " + r.toReplace[i].label +" | "+off);
+										}
+									}else if (step == 2 && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[3] && potentialpart == r.toReplace[i] /*misses one more condition ?*/) {
+										//potential last byte of a part to replace found
+										if (cut == 0 && potentialpartoff == off-3) cut = 2;
+										if (potentialpartoff <= off-4) {
+											potentialpart = null;
+											step = 1;
+										}
+										if (potentialpart !=null) {
+											potentialpart = null;
+											fileToBytes[potentialpartoff] = r.replacements[i].reversedBinHashBytes[1];
+											val[i] = true;
+											System.out.println(" | Remnants found at " + (off) + " - potential success.");
+											log.write(" | Remnants found at " + (off) + " - potential success.\n");
+											switch (cut) {
+											case 1:
+												System.out.println("Hash cut after 1 byte");
+												fileToBytes[potentialpartoff+2] = r.replacements[i].reversedBinHashBytes[2];
+												fileToBytes[potentialpartoff+3] = r.replacements[i].reversedBinHashBytes[3];
+												break;
+											case 2:
+												System.out.println("Hash cut after 2 bytes");
+												fileToBytes[potentialpartoff+1] = r.replacements[i].reversedBinHashBytes[2];
+												fileToBytes[potentialpartoff+3] = r.replacements[i].reversedBinHashBytes[3];
+												break;
+											case 0:
+												System.out.println("Hash not cut");
+												fileToBytes[potentialpartoff+1] = r.replacements[i].reversedBinHashBytes[2];
+												fileToBytes[potentialpartoff+2] = r.replacements[i].reversedBinHashBytes[3];
+											}
+											step = 0;
+											break;
+										}
+									}
+								}
+								off++;
+							}
+							
+							if (firstreplace) {
+								if(val[i]) {
+									System.out.println(" - probably failed, no initial replacement.");
+									log.write(" - probably failed, no initial replacement.\n");
+								}else {
+									System.out.println(" - probably failed, nothing found.");
+									log.write(" - probably failed, nothing found.\n");
+								}
+							} else if (!val[i]) {
+								System.out.println(" - probably failed, no further replacements. Reverting changes.");
+								log.write(" - probably failed, no further replacements. Reverting changes.\n");
+								fileToBytes[bruteforcePos] = bruteForceBackup;
+							}
+								
+								
+								
+								
+								
+							
+							
+						} else {
+							System.out.println("Warning : unable to find " + r.toReplace[i].label + " in part " + r.part.label + " at " + (r.position+32) + " !");
+							log.write("Warning : unable to find " + r.toReplace[i].label + " in part " + r.part.label + " at " + (r.position+32) + " !\n");
+						}
 					}
 				}
 				
@@ -316,7 +423,7 @@ public class CtkFixer {
 			fileToBytes[109]=76;
 			
 
-			if (!s.equals(s.replaceAll(" the zmod lock is real", ""))) {
+			if (!s.equals(s.replaceAll("the zmod lock is real", ""))) {
 				fileToBytes[0] = 1;
 				System.out.println("The zmod lock is indeed real.");
 			}
