@@ -12,10 +12,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 
 import binstuff.Hash;
-import dbmpPlus.AttributeTwoString;
-import dbmpPlus.Part;
 
 public class GeomCheck {
 	
@@ -30,8 +29,8 @@ public class GeomCheck {
 
 			//Config read loop
 			String l;
-			File f;
-			String carname;
+			File f = new File("");
+			String carname = "";
 			boolean file = false;
 			boolean car = false;
 			ArrayList<String> autosculptKits = new ArrayList<String>();
@@ -152,14 +151,54 @@ public class GeomCheck {
         	while ((i = bb.getInt()) != 71308032) {	//stop searching when 0x04401300 is found
         		for (Hash h : hashes) {
         			if (i == h.reversedBinHash) {
+        				
+//        				System.out.print("Part found : "+h.label + " | ");
         				//part found
         				//TODO add it to a parts list (new class with kit, name, loda,b,c,d found) that checks the existence of all lods
+        				String partname = h.label.substring(0, h.label.length() - 2).replace(carname + "_", "");
+        				boolean existing = false;
+        				Part part = null;
+        				for(Part p : Part.allParts) {
+        					if ((p.kit + "_" + p.name).equals(partname)){
+        						part = p;
+        						existing = true;
+        						break;
+        					}
+        				}
+        				if (!existing) part = new Part(partname.split("_")[0], partname.replace(partname.split("_")[0] + "_", ""));
+        				switch (h.label.split("_")[h.label.split("_").length-1]) {
+        				case "A":
+        					part.lodAExists = true;
+        					break;
+        				case "B":
+        					part.lodBExists = true;
+        					break;
+        				case "C":
+        					part.lodCExists = true;
+        					break;
+        				case "D":
+        					part.lodDExists = true;
+        					break;
+        				case "E":
+        					part.lodEExists = true;
+        				}
+//        				System.out.println(part);
+        				
         				break;
         			}
         		}
         		
 				bb.getInt(); //jumps the blank 4 bytes between each part
 			}
+        	
+        	Part.allParts.sort(new Comparator<Part>() {
+				public int compare(Part p1, Part p2) {
+					return (p1.kit + "_" + p1.name).compareTo(p2.kit + "_" + p2.name);
+				}
+        	});
+        	for(Part p : Part.allParts) {
+        		System.out.println(p);
+        	}
 			
 			
 			
@@ -175,7 +214,7 @@ public class GeomCheck {
 			
 			
 			
-			
+			/*
 			
 			
 			Hash potentialpart = null;
@@ -219,7 +258,7 @@ public class GeomCheck {
 								r.seen++;
 							}
 						}
-					}*/
+					}
 					if (fileToBytes[off] == r.part.reversedBinHashBytes[0] 
 						&& fileToBytes[off+1] == r.part.reversedBinHashBytes[1] 
 						&& fileToBytes[off+2] == r.part.reversedBinHashBytes[2] 
@@ -309,7 +348,7 @@ public class GeomCheck {
 									step = 2;
 //									System.out.println("3rd byte loop triggered for shader/texture/normalmap " + r.toReplace[i].label +" | "+off);
 								}
-							}else if (step == 2 && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[3] && potentialpart == r.toReplace[i] /*misses one more condition ?*/) {
+							}else if (step == 2 && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[3] && potentialpart == r.toReplace[i] /*misses one more condition ?) {
 								//potential last byte of a part to replace found
 								if (cut == 0 && potentialpartoff == off-4) cut = 3;
 								if (potentialpartoff <= off-5) {
@@ -410,7 +449,7 @@ public class GeomCheck {
 											step = 2;
 //												System.out.println("3rd byte loop triggered for shader/texture/normalmap " + r.toReplace[i].label +" | "+off);
 										}
-									}else if (step == 2 && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[3] && potentialpart == r.toReplace[i] /*misses one more condition ?*/) {
+									}else if (step == 2 && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[3] && potentialpart == r.toReplace[i] /*misses one more condition ?) {
 										//potential last byte of a part to replace found
 										if (cut == 0 && potentialpartoff == off-3) cut = 2;
 										if (potentialpartoff <= off-4) {
@@ -543,29 +582,22 @@ public class GeomCheck {
 			fos.write(fileToBytes);
 			fos.close();
 			System.out.println("File saved.");
-			log.write("File " + f.getPath() + " saved in " + (System.currentTimeMillis()-t) + " ms.");
+			log.write("File " + f.getPath() + " saved in " + (System.currentTimeMillis()-t) + " ms.");*/
 			log.close();
 			
 		} catch (FileNotFoundException e) {
 			try {
-				if (!new File("CTKFixer.ini").exists()) {
-					BufferedWriter bw = new BufferedWriter(new FileWriter(new File("CTKFixer.ini")));
+				if (!new File("GeomCheck.ini").exists()) {
+					BufferedWriter bw = new BufferedWriter(new FileWriter(new File("GeomCheck.ini")));
 					
-					bw.write("C:\\Program Files (x86)\\EA Games\\Need for Speed Undercover\\CARS\\AAA_AAA_AAA_01\\GEOMETRY.BIN\r\n"
-							+ "AAA_AAA_AAA_01\r\n"
-							+ "#	^ ALWAYS PUT THE CAR FOLDER THEN XNAME HERE\r\n"
-							+ "#\r\n"
-							+ "#	FORMATTING : put raw parts then textures/normalmaps/shaders to swap with new shaders\r\n"
-							+ "#\r\n"
-							+ "#	SMALL EXAMPLE :\r\n"
-							+ "# \r\n"
-							+ "#	KITW04_BODY_A BADGING_UNIVERSAL>DOORLINE BADGING>%_BADGING_KITW04\r\n"
-							+ "#	KITW04_BODY_B BADGING_UNIVERSAL>DOORLINE BADGING>%_BADGING_KITW04\r\n"
-							+ "#	KITW04_BODY_C BADGING_UNIVERSAL>DOORLINE BADGING>%_BADGING_KITW04\r\n"
-							+ "#\r\n"
-							+ "#	KIT01_BRAKELIGHT_LEFT %_KIT00_BRAKELIGHT_OFF>%_KIT01_BRAKELIGHT_OFF %_KIT00_BRAKELIGHT_ON>%_KIT01_BRAKELIGHT_ON\r\n"
-							+ "#	KIT01_BRAKELIGHT_RIGHT %_KIT00_BRAKELIGHT_OFF>%_KIT01_BRAKELIGHT_OFF %_KIT00_BRAKELIGHT_ON>%_KIT01_BRAKELIGHT_ON\r\n"
-							+ "#");
+					bw.write( "File =  C:\\\\Program Files (x86)\\\\EA Games\\\\Need for Speed Undercover\\\\CARS\\\\AAA_AAA_AAA_01\\\\GEOMETRY.BIN\\r\\n"
+							+ "Car =   AAA_AAA_AAA_01\r\n"
+							+ "\r\n"
+							+ "Autosculpt kits =               KIT01-KIT30 #kit30 for the hoods\r\n"
+							+ "Widebody kits =                 KITW01-KITW05\r\n"
+							+ "Full replacement widebodies =   KITW06-KITW16\r\n"
+							+ "Exhausts amount =               15\r\n"
+							+ "\r\n");
 					bw.close();
 					System.out.println("Missing configuration, it has been generated.");
 				} else System.out.println("Invalid configuration, check the car's path.");
@@ -574,7 +606,8 @@ public class GeomCheck {
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
