@@ -9,6 +9,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public class CtkPartsGen {
+	
+	static int kits = 20;
+	static int widekits = 20;
+	static int exhausts = 20;
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
@@ -37,7 +41,7 @@ public class CtkPartsGen {
 			
 			
 			
-			for (int k=0; k<50; k++) {
+			for (int k=0; k<kits; k++) {
 				br = new BufferedReader(new FileReader(new File("data/Parts_anykit")));
 
 				while ((part = br.readLine())!=null){
@@ -66,7 +70,7 @@ public class CtkPartsGen {
 					String kstr;
 					if(k<10)kstr = "KIT0"+k;
 					else kstr = "KIT"+k;
-					for (int as=0; as<50; as++) {
+					for (int as=0; as<exhausts; as++) {
 						String nstr;
 						if(as<10)nstr = "_0"+as;
 						else nstr = "_"+as;
@@ -79,7 +83,7 @@ public class CtkPartsGen {
 				
 			}
 			
-			for (int k=0;k<50;k++) {
+			for (int k=0;k<widekits;k++) {
 				br = new BufferedReader(new FileReader(new File("data/Parts_anykit")));
 
 				while ((part = br.readLine())!=null){
@@ -105,7 +109,7 @@ public class CtkPartsGen {
 					String kstr;
 					if(k<10)kstr = "KITW0"+k;
 					else kstr = "KITW"+k;
-					for (int as=0; as<50; as++) {
+					for (int as=0; as<exhausts; as++) {
 						String nstr;
 						if(as<10)nstr = "_0"+as;
 						else nstr = "_"+as;
