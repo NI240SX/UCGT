@@ -23,6 +23,7 @@ public class GeomCheck {
 	public static void main(String[] args) {
 		
 		try {
+			long t = System.currentTimeMillis();
 			BufferedWriter log = new BufferedWriter(new FileWriter(new File("GeomCheck.log")));
 			log.write("Initializing GeomCheck...\n");
 			BufferedReader br = new BufferedReader(new FileReader(new File("GeomCheck.ini")));
@@ -36,23 +37,28 @@ public class GeomCheck {
 			ArrayList<String> autosculptKits = new ArrayList<String>();
 			ArrayList<String> widebodyKits = new ArrayList<String>();
 			ArrayList<String> fullReplacementKits = new ArrayList<String>();
-			int exhausts = 5;
+			int exhausts = 99;
+			
+			//checks
+			boolean checkLODs = false;
 			
 			while ((l = br.readLine()) != null) {
 				l = l.split("//")[0].split("#")[0]; // comments removal
-				if (!l.isBlank() && l.contains("=")) {
-					if(l.split("=")[0].strip().toLowerCase().equals("file") 
+				if (!l.isBlank() && l.contains("=")) { // reading a proper config
+					// file config, mandatory
+					if(l.split("=")[0].strip().toLowerCase().equals("file")
 							|| l.split("=")[0].strip().toLowerCase().equals("path") 
 							|| l.split("=")[0].strip().toLowerCase().equals("file path")) {
 						f = new File(l.split("=")[1].strip());
 						file = true;
 					}
-					if(l.split("=")[0].strip().toLowerCase().equals("car") 
+					if(l.split("=")[0].strip().toLowerCase().equals("car")
 							|| l.split("=")[0].strip().toLowerCase().equals("car name") 
 							|| l.split("=")[0].strip().toLowerCase().equals("xname")) {
 						carname = l.split("=")[1].strip();
 						car = true;
 					}
+					// customization config, facultative
 					if(l.split("=")[0].strip().toLowerCase().equals("autosculpt kits")
 							|| l.split("=")[0].strip().toLowerCase().equals("autosculpt")) {
 						for (String s : l.split("=")[1].split(",")) {
@@ -98,6 +104,14 @@ public class GeomCheck {
 							|| l.split("=")[0].strip().toLowerCase().equals("amount of exhausts")) {
 						exhausts = Integer.parseInt(l.split("=")[1].strip());
 					}
+					// checks
+					if(l.split("=")[0].strip().toLowerCase().equals("missing/useless lods")
+							|| l.split("=")[0].strip().toLowerCase().equals("lods") 
+							|| l.split("=")[0].strip().toLowerCase().equals("useless")) {
+						if (l.split("=")[1].strip().equals("yes")
+								|| l.split("=")[1].strip().equals("true")
+								|| l.split("=")[1].strip().equals("1")) checkLODs = true;
+					}
 				}
 			}
 
@@ -105,32 +119,25 @@ public class GeomCheck {
 			if (!car) throw new Exception("Car name not specified !");
 			
 
-			if(autosculptKits.isEmpty()) {
-				autosculptKits.add("KIT01");
-				autosculptKits.add("KIT02");
-				autosculptKits.add("KIT03");
-				autosculptKits.add("KIT04");
-				autosculptKits.add("KIT05");
-				autosculptKits.add("KIT06");
-				autosculptKits.add("KIT07");
-				autosculptKits.add("KIT08");
-				autosculptKits.add("KIT11");
-				autosculptKits.add("KIT12");
-			}
-			if(widebodyKits.isEmpty()) {
-				widebodyKits.add("KITW01");
-				widebodyKits.add("KITW02");
-				widebodyKits.add("KITW03");
-				widebodyKits.add("KITW04");
-				widebodyKits.add("KITW05");
+			if(autosculptKits.isEmpty() && widebodyKits.isEmpty() && fullReplacementKits.isEmpty()) {
+				for(int i=1;i<10;i++) fullReplacementKits.add("KIT0"+i);
+				for(int i=10;i<100;i++) fullReplacementKits.add("KIT"+i);
+				for(int i=1;i<10;i++) fullReplacementKits.add("KITW0"+i);
+				for(int i=10;i<100;i++) fullReplacementKits.add("KITW"+i);
 			}
 			
 			if (autosculptKits.contains("KIT00")) autosculptKits.remove("KIT00");
 			if (widebodyKits.contains("KIT00")) widebodyKits.remove("KIT00");
 			if (fullReplacementKits.contains("KIT00")) fullReplacementKits.remove("KIT00");
 			
+			for (String k : fullReplacementKits) {
+				if (autosculptKits.contains(k)) autosculptKits.remove(k);
+				if (widebodyKits.contains(k)) widebodyKits.remove(k);
+			}
+
+			log.write("Configuration loaded in " + (System.currentTimeMillis()-t) + " ms.\n");
+			t = System.currentTimeMillis();
 			
-			long t = System.currentTimeMillis();
 			FileInputStream fis = new FileInputStream(f);
 			byte [] fileToBytes = new byte[(int)f.length()];
 			fis.read(fileToBytes);
@@ -149,12 +156,15 @@ public class GeomCheck {
         	bb.position(184);
         	int i;
         	while ((i = bb.getInt()) != 71308032) {	//stop searching when 0x04401300 is found
+        		boolean found = false;
         		for (Hash h : hashes) {
         			if (i == h.reversedBinHash) {
-        				
+        				found = true;
+
+//            			System.out.println("Part found : Ox" + Integer.toHexString(i) + " = " + h.label);
+//            			log.write("Part found : Ox" + Integer.toHexString(i) + " = " + h.label + "\n");
 //        				System.out.print("Part found : "+h.label + " | ");
         				//part found
-        				//TODO add it to a parts list (new class with kit, name, loda,b,c,d found) that checks the existence of all lods
         				String partname = h.label.substring(0, h.label.length() - 2).replace(carname + "_", "");
         				boolean existing = false;
         				Part part = null;
@@ -183,11 +193,13 @@ public class GeomCheck {
         					part.lodEExists = true;
         				}
 //        				System.out.println(part);
-        				
         				break;
         			}
         		}
-        		
+        		if (!found) {
+        			System.out.println("Part not found : Ox" + Integer.toHexString(i));
+        			log.write("Warning : unable to guess part Ox" + Integer.toHexString(i) + " at " + bb.position() + "\n");
+        		}
 				bb.getInt(); //jumps the blank 4 bytes between each part
 			}
         	
@@ -196,13 +208,36 @@ public class GeomCheck {
 					return (p1.kit + "_" + p1.name).compareTo(p2.kit + "_" + p2.name);
 				}
         	});
-        	for(Part p : Part.allParts) {
-        		System.out.println(p);
-        	}
+//        	for(Part p : Part.allParts) {
+//        		System.out.println(p);
+//        	}
+        	
+			log.write("Parts guessed in " + (System.currentTimeMillis()-t) + " ms.\n");
+			t = System.currentTimeMillis();
 			
 			
+			// CHECKS
 			
-			
+			if (checkLODs) { // useless/missing LODs
+				boolean noD = false;
+				boolean dupeD = false;
+				for (Part p : Part.allParts) {
+					if (p.lodDExists && !p.kit.equals("KIT00")) log.write("[LODCHK] Useless LOD : " + p.kit + "_" + p.name + "_D\n");
+					if (p.lodEExists) log.write("[LODCHK] Useless LOD : " + p.kit + "_" + p.name + "_E\n");
+				}
+				for (Part p : Part.allParts) {
+					if (!p.lodAExists) log.write("[LODCHK] Missing LOD : " + p.kit + "_" + p.name + "_A\n");
+					if (!p.lodBExists) log.write("[LODCHK] Missing LOD : " + p.kit + "_" + p.name + "_B\n");
+					if (!p.lodCExists) log.write("[LODCHK] Missing LOD : " + p.kit + "_" + p.name + "_C\n");
+
+					if (!p.lodDExists && p.kit.equals("KIT00") && p.name.equals("BODY")) noD = true;
+					if (p.lodDExists && p.kit.equals("KIT00") && !p.name.equals("BODY")) dupeD = true;
+				}
+				if (noD) log.write("[LODCHK] Critical : missing KIT00_BODY_D \n");
+				if (dupeD) log.write("[LODCHK] Warning : several KIT00 LOD D parts detected, please check that this is not caused by duplicated LOD C parts (potential clipping and optimization loss)\n");
+				log.write("LODs checked in " + (System.currentTimeMillis()-t) + " ms.\n");
+				t = System.currentTimeMillis();
+			}
 			
 			
 			
@@ -590,13 +625,18 @@ public class GeomCheck {
 				if (!new File("GeomCheck.ini").exists()) {
 					BufferedWriter bw = new BufferedWriter(new FileWriter(new File("GeomCheck.ini")));
 					
-					bw.write( "File =  C:\\\\Program Files (x86)\\\\EA Games\\\\Need for Speed Undercover\\\\CARS\\\\AAA_AAA_AAA_01\\\\GEOMETRY.BIN\\r\\n"
+					bw.write( "File settings (mandatory)\r\n"
+							+ "File =  C:\\Program Files (x86)\\EA Games\\Need for Speed Undercover\\CARS\\AAA_AAA_AAA_01\\GEOMETRY.BIN\\r\\n"
 							+ "Car =   AAA_AAA_AAA_01\r\n"
 							+ "\r\n"
-							+ "Autosculpt kits =               KIT01-KIT30 #kit30 for the hoods\r\n"
+							+ "Customization settings (optional)\r\n"
+							+ "Autosculpt kits =               KIT01-KIT11\r\n"
 							+ "Widebody kits =                 KITW01-KITW05\r\n"
-							+ "Full replacement widebodies =   KITW06-KITW16\r\n"
-							+ "Exhausts amount =               15\r\n"
+							+ "Full replacement widebodies =   #none\r\n"
+							+ "Exhausts amount =               5\r\n"
+							+ "\r\n"
+							+ "Checks (optional)\r\n"
+							+ "Missing/useless LODs =          yes\r\n"
 							+ "\r\n");
 					bw.close();
 					System.out.println("Missing configuration, it has been generated.");
@@ -625,11 +665,13 @@ public class GeomCheck {
 				l.add(new Hash(carname + "_KIT00_" + part + "_B"));
 				l.add(new Hash(carname + "_KIT00_" + part + "_C"));
 				l.add(new Hash(carname + "_KIT00_" + part + "_D"));
+				l.add(new Hash(carname + "_KIT00_" + part + "_E"));
 				for (int as=0; as<11; as++) {
 					l.add(new Hash(carname + "_KIT00_" + part + "_T" + as + "_A"));
 					l.add(new Hash(carname + "_KIT00_" + part + "_T" + as + "_B"));
 					l.add(new Hash(carname + "_KIT00_" + part + "_T" + as + "_C"));
 					l.add(new Hash(carname + "_KIT00_" + part + "_T" + as + "_D"));
+					l.add(new Hash(carname + "_KIT00_" + part + "_T" + as + "_E"));
 				}
 			}
 			br = new BufferedReader(new FileReader(new File("data/Parts_anykit")));
@@ -638,16 +680,18 @@ public class GeomCheck {
 				l.add(new Hash(carname + "_KIT00_" + part + "_B"));
 				l.add(new Hash(carname + "_KIT00_" + part + "_C"));
 				l.add(new Hash(carname + "_KIT00_" + part + "_D"));
+				l.add(new Hash(carname + "_KIT00_" + part + "_E"));
 				for (int as=0; as<11; as++) {
 					l.add(new Hash(carname + "_KIT00_" + part + "_T" + as + "_A"));
 					l.add(new Hash(carname + "_KIT00_" + part + "_T" + as + "_B"));
 					l.add(new Hash(carname + "_KIT00_" + part + "_T" + as + "_C"));
 					l.add(new Hash(carname + "_KIT00_" + part + "_T" + as + "_D"));
+					l.add(new Hash(carname + "_KIT00_" + part + "_T" + as + "_E"));
 				}
 			}
 			br = new BufferedReader(new FileReader(new File("data/Parts_exhaust")));
 			while ((part = br.readLine())!=null){
-				for (int as=0; as<exhausts; as++) {
+				for (int as=0; as<exhausts+1; as++) {
 					String nstr;
 					if(as<10)nstr = "_0"+as;
 					else nstr = "_"+as;
@@ -655,6 +699,12 @@ public class GeomCheck {
 					l.add(new Hash(carname + "_KIT00_" + part + nstr + "_B"));
 					l.add(new Hash(carname + "_KIT00_" + part + nstr + "_C"));
 					l.add(new Hash(carname + "_KIT00_" + part + nstr + "_D"));
+					l.add(new Hash(carname + "_KIT00_" + part + nstr + "_E"));
+					l.add(new Hash(carname + "_KIT00_" + part + nstr + "_T0_A"));
+					l.add(new Hash(carname + "_KIT00_" + part + nstr + "_T0_B"));
+					l.add(new Hash(carname + "_KIT00_" + part + nstr + "_T0_C"));
+					l.add(new Hash(carname + "_KIT00_" + part + nstr + "_T0_D"));
+					l.add(new Hash(carname + "_KIT00_" + part + nstr + "_T0_E"));
 				}
 			}
 			
@@ -674,13 +724,18 @@ public class GeomCheck {
 				}
 				br = new BufferedReader(new FileReader(new File("data/Parts_exhaust")));
 				while ((part = br.readLine())!=null){
-					for (int as=0; as<exhausts; as++) {
+					for (int as=0; as<exhausts+1; as++) {
 						String nstr;
 						if(as<10)nstr = "_0"+as;
 						else nstr = "_"+as;
 						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_A"));
 						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_B"));
 						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_C"));
+						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_D"));
+						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_T0_A"));
+						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_T0_B"));
+						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_T0_C"));
+						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_T0_D"));
 					}
 				}
 			}
@@ -701,13 +756,18 @@ public class GeomCheck {
 				}
 				br = new BufferedReader(new FileReader(new File("data/Parts_exhaust")));
 				while ((part = br.readLine())!=null){
-					for (int as=0; as<exhausts; as++) {
+					for (int as=0; as<exhausts+1; as++) {
 						String nstr;
 						if(as<10)nstr = "_0"+as;
 						else nstr = "_"+as;
 						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_A"));
 						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_B"));
 						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_C"));
+						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_D"));
+						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_T0_A"));
+						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_T0_B"));
+						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_T0_C"));
+						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_T0_D"));
 					}
 				}
 			}
@@ -744,13 +804,18 @@ public class GeomCheck {
 
 				br = new BufferedReader(new FileReader(new File("data/Parts_exhaust")));
 				while ((part = br.readLine())!=null){
-					for (int as=0; as<exhausts; as++) {
+					for (int as=0; as<exhausts+1; as++) {
 						String nstr;
 						if(as<10)nstr = "_0"+as;
 						else nstr = "_"+as;
 						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_A"));
 						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_B"));
 						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_C"));
+						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_D"));
+						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_T0_A"));
+						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_T0_B"));
+						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_T0_C"));
+						l.add(new Hash(carname + "_" + k + "_" + part + nstr + "_T0_D"));
 					}
 				}
 			}
