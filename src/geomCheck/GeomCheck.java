@@ -10,6 +10,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -18,7 +19,7 @@ import binstuff.Hash;
 
 public class GeomCheck {
 	
-	
+	public static String carname = "";
 
 	public static void main(String[] args) {
 		
@@ -31,7 +32,6 @@ public class GeomCheck {
 			//Config read loop
 			String l;
 			File f = new File("");
-			String carname = "";
 			boolean file = false;
 			boolean car = false;
 			ArrayList<String> autosculptKits = new ArrayList<String>();
@@ -40,7 +40,8 @@ public class GeomCheck {
 			int exhausts = 99;
 			
 			//checks
-			boolean checkLODs = false;
+			boolean checkLODs = false; //check useless/missing LODs
+			boolean checkMaterials = false; //check some part materials
 			
 			while ((l = br.readLine()) != null) {
 				l = l.split("//")[0].split("#")[0]; // comments removal
@@ -111,6 +112,13 @@ public class GeomCheck {
 						if (l.split("=")[1].strip().equals("yes")
 								|| l.split("=")[1].strip().equals("true")
 								|| l.split("=")[1].strip().equals("1")) checkLODs = true;
+					}
+					if(l.split("=")[0].strip().toLowerCase().equals("materials")
+							|| l.split("=")[0].strip().toLowerCase().equals("parts materials") 
+							|| l.split("=")[0].strip().toLowerCase().equals("part materials")) {
+						if (l.split("=")[1].strip().equals("yes")
+								|| l.split("=")[1].strip().equals("true")
+								|| l.split("=")[1].strip().equals("1")) checkMaterials = true;
 					}
 				}
 			}
@@ -215,10 +223,21 @@ public class GeomCheck {
 			log.write("Parts guessed in " + (System.currentTimeMillis()-t) + " ms.\n");
 			t = System.currentTimeMillis();
 			
+			hashes = new ArrayList<Hash>();
+			for (Part p : Part.allParts) {
+				if (p.lodAExists) hashes.add(new Hash(carname+"_"+p.kit+"_"+p.name+"_A"));
+				if (p.lodBExists) hashes.add(new Hash(carname+"_"+p.kit+"_"+p.name+"_B"));
+				if (p.lodCExists) hashes.add(new Hash(carname+"_"+p.kit+"_"+p.name+"_C"));
+				if (p.lodDExists) hashes.add(new Hash(carname+"_"+p.kit+"_"+p.name+"_D"));
+			}
+
+			log.write("Part hashes optimized in " + (System.currentTimeMillis()-t) + " ms.\n");
+			t = System.currentTimeMillis();
 			
 			// CHECKS
 			
 			if (checkLODs) { // useless/missing LODs
+				System.out.println("Checking LODs");
 				boolean noD = false;
 				boolean dupeD = false;
 				for (Part p : Part.allParts) {
@@ -239,8 +258,75 @@ public class GeomCheck {
 				t = System.currentTimeMillis();
 			}
 			
-			
-			
+			if (checkMaterials) {
+				System.out.println("Checking some common materials");
+				
+				//after the end of the parts list
+				// something        first part offset    ?        ?        ?        ?
+				//04401300 E0130000 FE39C300 801B0000 67340000 404A0000 00020000 00000000 then cycles with parts
+				//second part       FF39C300 00500000 82110000 201B0000 00020000 00000000
+				//etc               003AC300 00620000 82110000 201B0000 00020000 00000000 <- kit00 door left btw
+				//                  013AC300 00740000 82110000 201B0000 00020000 00000000
+				//
+				//                  3F9D74FD 802A2900 E5160000 20240000 00020000 00000000 <- kitw01 brakelight left
+				//                  409D74FD 80412900 53160000 A0220000 00020000 00000000
+				// last part        419D74FD 00582900 52160000 A0220000 00020000 00000000 
+				//                  00000000 38000000 00000000 00000000 00000000 00000000 00000000 00000000 
+				//                  00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+				bb.getInt();
+				bb.order(ByteOrder.LITTLE_ENDIAN);
+				
+				while ((i = bb.getInt()) != 0) {	//stop searching when 0x00000000 is found
+					boolean val = false;
+	        		for (Part p : Part.allParts) {
+	        			if (i == p.lodAHash.binHash) {
+	        				p.lodAPosition = bb.getInt();
+//	        				System.out.println(p.name + " lod A at : " + p.lodAPosition);
+	        				val = true;
+	        				break;
+	        			}
+	        			if (i == p.lodBHash.binHash) {
+	        				p.lodBPosition = bb.getInt();
+//	        				System.out.println(p.name + " lod B at : " + p.lodBPosition);
+	        				val = true;
+	        				break;
+	        			}
+	        			if (i == p.lodCHash.binHash) {
+	        				p.lodCPosition = bb.getInt();
+//	        				System.out.println(p.name + " lod C at : " + p.lodCPosition);
+	        				val = true;
+	        				break;
+	        			}
+	        			if (i == p.lodDHash.binHash) {
+	        				p.lodDPosition = bb.getInt();
+//	        				System.out.println(p.name + " lod D at : " + p.lodDPosition);
+	        				val = true;
+	        				break;
+	        			}
+	        		}
+	        		if (!val) bb.getInt();
+					bb.position(bb.position()+16); //jumps the 4x4 bytes
+				}
+				bb.order(ByteOrder.BIG_ENDIAN);
+				
+				log.write("Part offsets scanned in " + (System.currentTimeMillis()-t) + " ms.\n");
+				t = System.currentTimeMillis();
+				
+				// WINDOW_FRONT : check it has WINDOW_FRONT and doesn't have the rest
+				// WINDOW_FRONT/REAR_LEFT/RIGHT : check the correct material
+				// WINDOW_REAR : check it has WINDOW_FRONT and REAR_DEFROSTER and not the others
+				
+				// BODY_D : check there's no "fancy" shaders besides dullplastic and carskin eg magsilver
+				
+				
+				
+				
+				
+				
+				
+				log.write("Common materials checked in " + (System.currentTimeMillis()-t) + " ms.\n");
+				t = System.currentTimeMillis();
+			}
 			
 			
 			
@@ -637,6 +723,7 @@ public class GeomCheck {
 							+ "\r\n"
 							+ "Checks (optional)\r\n"
 							+ "Missing/useless LODs =          yes\r\n"
+							+ "Parts materials =               yes\r\n"
 							+ "\r\n");
 					bw.close();
 					System.out.println("Missing configuration, it has been generated.");
@@ -820,29 +907,29 @@ public class GeomCheck {
 				}
 			}
 		
-			br = new BufferedReader(new FileReader(new File("data/textures")));
-			String tex;
-			while ((tex = br.readLine())!=null){
-				l.add(new Hash(carname + "_" + tex));
-			}
-			
-			br = new BufferedReader(new FileReader(new File("data/gentextures")));
-			while ((tex = br.readLine())!=null){
-				l.add(new Hash(tex));
-			}
-
-			br = new BufferedReader(new FileReader(new File("data/shaders")));
-			while ((tex = br.readLine())!=null){
-				l.add(new Hash(tex));
-			}
-
-			br = new BufferedReader(new FileReader(new File("data/mpoints")));
-			while ((tex = br.readLine())!=null){
-				l.add(new Hash(tex));
-				for (int as=0; as<11; as++) {
-					l.add(new Hash(tex + "_T" + as));
-				}
-			}
+//			br = new BufferedReader(new FileReader(new File("data/textures")));
+//			String tex;
+//			while ((tex = br.readLine())!=null){
+//				l.add(new Hash(carname + "_" + tex));
+//			}
+//			
+//			br = new BufferedReader(new FileReader(new File("data/gentextures")));
+//			while ((tex = br.readLine())!=null){
+//				l.add(new Hash(tex));
+//			}
+//
+//			br = new BufferedReader(new FileReader(new File("data/shaders")));
+//			while ((tex = br.readLine())!=null){
+//				l.add(new Hash(tex));
+//			}
+//
+//			br = new BufferedReader(new FileReader(new File("data/mpoints")));
+//			while ((tex = br.readLine())!=null){
+//				l.add(new Hash(tex));
+//				for (int as=0; as<11; as++) {
+//					l.add(new Hash(tex + "_T" + as));
+//				}
+//			}
 			
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
