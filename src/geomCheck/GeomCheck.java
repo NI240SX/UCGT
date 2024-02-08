@@ -318,11 +318,153 @@ public class GeomCheck {
 				
 				// BODY_D : check there's no "fancy" shaders besides dullplastic and carskin eg magsilver
 				
-				
-				
-				
-				
-				
+				for (Part p : Part.allParts) {
+					ArrayList<Hash> search;
+					ArrayList<ArrayList<Boolean>> result;
+					ArrayList<Boolean> resultLOD;
+
+					if (p.lodDExists) { //lod D materials
+						search = new ArrayList<Hash>();
+						search.add(new Hash("BRAKEDISC"));
+						search.add(new Hash("BRAKELIGHT"));
+						search.add(new Hash("BRAKELIGHT_ALUMINUM"));
+						search.add(new Hash("BRAKELIGHTGLASS"));
+						search.add(new Hash("BRAKELIGHTGLASSRED"));
+						search.add(new Hash("CALIPER"));
+						search.add(new Hash("DEFROSTER"));
+						search.add(new Hash("DOORLINE"));
+						search.add(new Hash("ENGINE"));
+						search.add(new Hash("EXHAUST_ALUMINUM"));
+						search.add(new Hash("EXHAUST_CHROME"));
+						search.add(new Hash("GRILL"));
+						search.add(new Hash("GRILLCHROME"));
+						search.add(new Hash("HEADLIGHTCHROME"));
+						search.add(new Hash("HEADLIGHTGLASS"));
+						search.add(new Hash("HEADLIGHTREFLECTOR"));
+						search.add(new Hash("INTERIOR"));
+						search.add(new Hash("MAGCHROME"));
+						search.add(new Hash("MAGLIP"));
+						search.add(new Hash("MAGMATTE"));
+						search.add(new Hash("MAGSILVER"));
+						search.add(new Hash("RAD"));
+						search.add(new Hash("RUBBER"));
+						search.add(new Hash("WINDOWMASK"));
+						search.add(new Hash("WINDSHIELD"));
+						resultLOD = p.scanLOD(fileToBytes, search, 3);
+						boolean val = false;
+						for (Boolean b : resultLOD) {
+							if (b) {
+								val = true;
+								break;
+							}
+						}
+						if (val) {
+							log.write("[MATCHK] \"Fancy\" shader(s) on " + p.kit + "_" + p.name + "_D");
+							for (i=0; i<resultLOD.size(); i++) {
+								if (resultLOD.get(i)) {
+									log.write(", "+search.get(i).label);
+								}
+							}
+							log.write("\n");
+						}
+					}
+					
+					if (p.name.equals("WINDOW_FRONT")) {
+						search = new ArrayList<Hash>();
+						search.add(new Hash("WINDOW_FRONT"));
+						result = p.scan(fileToBytes, search);
+						for (i=0; i<3; i++) { //i<3 to not check lod D
+							if(result.get(i) != null) {
+								if (!result.get(i).get(0)) log.write("[MATCHK] Texture WINDOW_FRONT not found in " + p.kit + "_" + p.name + "_" + lodconv(i) + "\n");
+							}
+						}
+					}
+
+					if (p.name.equals("WINDOW_FRONT_LEFT")) {
+						search = new ArrayList<Hash>();
+						search.add(new Hash("WINDOW_LEFT_FRONT"));
+						search.add(new Hash("WINDOW_FRONT"));
+						result = p.scan(fileToBytes, search);
+						for (i=0; i<3; i++) { //i<3 to not check lod D
+							if(result.get(i) != null) {
+								if (!result.get(i).get(0)) {
+									log.write("[MATCHK] Texture WINDOW_LEFT_FRONT not found in " + p.kit + "_" + p.name + "_" + lodconv(i));
+									if (result.get(i).get(1)) log.write(" (mismatched with WINDOW_FRONT)");
+									log.write("\n");
+								}
+							}
+						}
+					}
+
+					if (p.name.equals("WINDOW_FRONT_RIGHT")) {
+						search = new ArrayList<Hash>();
+						search.add(new Hash("WINDOW_RIGHT_FRONT"));
+						search.add(new Hash("WINDOW_FRONT"));
+						result = p.scan(fileToBytes, search);
+						for (i=0; i<3; i++) { //i<3 to not check lod D
+							if(result.get(i) != null) {
+								if (!result.get(i).get(0)) {
+									log.write("[MATCHK] Texture WINDOW_RIGHT_FRONT not found in " + p.kit + "_" + p.name + "_" + lodconv(i));
+									if (result.get(i).get(1)) log.write(" (mismatched with WINDOW_FRONT)");
+									log.write("\n");
+								}
+							}
+						}
+					}
+					
+					if (p.name.equals("WINDOW_REAR")) {
+						search = new ArrayList<Hash>();
+						search.add(new Hash("WINDOW_REAR"));
+						search.add(new Hash("REAR_DEFROSTER"));
+						search.add(new Hash("WINDOW_FRONT"));
+						result = p.scan(fileToBytes, search);
+						for (i=0; i<3; i++) { //i<3 to not check lod D
+							if(result.get(i) != null) {
+								if (!result.get(i).get(0)) {
+									log.write("[MATCHK] Texture WINDOW_REAR not found in " + p.kit + "_" + p.name + "_" + lodconv(i));
+									if (result.get(i).get(2)) log.write(" (mismatched with WINDOW_FRONT)");
+									log.write("\n");
+								}
+								if (!result.get(i).get(1)) log.write("[MATCHK] Texture REAR_DEFROSTER not found in " + p.kit + "_" + p.name + "_" + lodconv(i) + "\n");
+							}
+						}
+					}
+
+					if (p.name.equals("WINDOW_REAR_LEFT")) {
+						search = new ArrayList<Hash>();
+						search.add(new Hash("WINDOW_LEFT_REAR"));
+						search.add(new Hash("WINDOW_FRONT"));
+						result = p.scan(fileToBytes, search);
+						for (i=0; i<3; i++) { //i<3 to not check lod D
+							if(result.get(i) != null) {
+								if (!result.get(i).get(0)) {
+									log.write("[MATCHK] Texture WINDOW_LEFT_REAR not found in " + p.kit + "_" + p.name + "_" + lodconv(i));
+									if (result.get(i).get(1)) log.write(" (mismatched with WINDOW_FRONT)");
+									log.write("\n");
+								}
+							}
+						}
+					}
+
+					if (p.name.equals("WINDOW_REAR_RIGHT")) {
+						search = new ArrayList<Hash>();
+						search.add(new Hash("WINDOW_RIGHT_REAR"));
+						search.add(new Hash("WINDOW_FRONT"));
+						result = p.scan(fileToBytes, search);
+						for (i=0; i<3; i++) { //i<3 to not check lod D
+							if(result.get(i) != null) {
+								if (!result.get(i).get(0)) {
+									log.write("[MATCHK] Texture WINDOW_RIGHT_REAR not found in " + p.kit + "_" + p.name + "_" + lodconv(i));
+									if (result.get(i).get(1)) log.write(" (mismatched with WINDOW_FRONT)");
+									log.write("\n");
+								}
+							}
+						}
+					}
+					
+					
+					
+				}
 				
 				log.write("Common materials checked in " + (System.currentTimeMillis()-t) + " ms.\n");
 				t = System.currentTimeMillis();
@@ -331,379 +473,6 @@ public class GeomCheck {
 			
 			
 			
-			
-			
-			
-			
-			/*
-			
-			
-			Hash potentialpart = null;
-			int potentialpartoff = 0;
-			byte step = 0;
-			int off=0;
-//			int progressstep = (int) (f.length()/20);
-			
-			while (1514947658 != (((fileToBytes[off+4] & 0xFF) << 24) | ((fileToBytes[off+3] & 0xFF) << 16)
-			        | ((fileToBytes[off+2] & 0xFF) << 8) | (fileToBytes[off+1] & 0xFF))) {	//stop searching when 4a444c5a (JDLZ) is found
-				
-//				if (off%progressstep == 0) System.out.println("Progress "+ (100*off/f.length() +1)+"%");
-				
-				for (Replacements r : replacements) { //optimization has to be done probably
-/*					if (fileToBytes[off] == r.part.reversedBinHashBytes[0]) {
-						//potential beginning of a part to replace found
-						potentialpart = r.part;
-						potentialpartoff = off;
-						step = 0;
-					}
-					if (potentialpart != null) {
-						if (step == 0 && fileToBytes[off] == r.part.reversedBinHashBytes[1] && potentialpart == r.part) {
-							//potential second byte of a part to replace found
-							if (potentialpartoff <= off-2) potentialpart = null;
-							else step = 1;
-						}else if (step == 1 && fileToBytes[off] == r.part.reversedBinHashBytes[2] && potentialpart == r.part) {
-							//potential 3rd byte of a part to replace found
-							if (potentialpartoff <= off-3) potentialpart = null;
-							else step = 2;
-						}else if (step == 2 && fileToBytes[off] == r.part.reversedBinHashBytes[3] && potentialpart == r.part) { //misses one more condition ?
-							//potential last byte of a part to replace found
-							if (potentialpartoff <= off-4) potentialpart = null;
-							if (potentialpart !=null) {
-								potentialpart = null;
-								if (r.seen == 1) {
-									r.position = ((fileToBytes[off+4] & 0xFF) << 24) | ((fileToBytes[off+3] & 0xFF) << 16)
-									        | ((fileToBytes[off+2] & 0xFF) << 8) | (fileToBytes[off+1] & 0xFF);
-
-									System.out.println("part " + r.part.label + " found | offset (decimal) = " + r.position);
-								}
-								r.seen++;
-							}
-						}
-					}
-					if (fileToBytes[off] == r.part.reversedBinHashBytes[0] 
-						&& fileToBytes[off+1] == r.part.reversedBinHashBytes[1] 
-						&& fileToBytes[off+2] == r.part.reversedBinHashBytes[2] 
-						&& fileToBytes[off+3] == r.part.reversedBinHashBytes[3]) {
-						
-						if (r.seen == 1) {
-							r.position = ((fileToBytes[off+7] & 0xFF) << 24) | ((fileToBytes[off+6] & 0xFF) << 16)
-							        | ((fileToBytes[off+5] & 0xFF) << 8) | (fileToBytes[off+4] & 0xFF);
-
-							System.out.println("part " + r.part.label + " found | offset (decimal) = " + r.position);
-						}
-						r.seen++;
-						
-						
-						
-						
-						
-					}
-					
-					
-				}
-				off++;
-			}
-			log.write("Part offsets scanned in " + (System.currentTimeMillis()-t) + " ms.\n");
-			System.out.println("All parts found.");
-			
-			for (int i=0; i<replacements.size(); i++) {
-				if (replacements.get(i).position == 0) {
-					System.out.println("Warning : part " + replacements.get(i).part.label + " not found !");
-					log.write("Warning : part " + replacements.get(i).part.label + " not found !\n");
-					replacements.remove(i);
-					i--;
-				}
-			}
-			
-
-			log.write("Starting to replace...\n");
-			t = System.currentTimeMillis();
-			
-			byte cut = 0;
-			
-			for (Replacements r: replacements) {
-				
-				boolean[] val = new boolean[r.toReplace.length];
-				
-				System.out.println("Starting to replace part " + r.part + " at " + (r.position+32));
-				
-				off = r.position + 32;
-				while (off<fileToBytes.length-4 
-						&& (1514947658 != (((fileToBytes[off+4] & 0xFF) << 24) | ((fileToBytes[off+3] & 0xFF) << 16)
-				        | ((fileToBytes[off+2] & 0xFF) << 8) | (fileToBytes[off+1] & 0xFF)))) {	//stop searching when 4a444c5a (JDLZ) is found OR WHEN EOF REACHED
-					
-					for(int i=0; i<r.toReplace.length; i++) {
-						
-						
-						
-						
-						
-						if (fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[0]) {
-							//potential beginning of a hash to replace found
-							potentialpart = r.toReplace[i];
-							potentialpartoff = off;
-							step = 0;
-							cut = 0;
-//							System.out.println("1st byte loop triggered for shader/texture/normalmap " + r.toReplace[i].label +" | "+off);
-						}
-						if (potentialpart != null) {
-							if (step == 0 && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[1] && potentialpart == r.toReplace[i]) {
-								//potential second byte of a part to replace found
-								if (potentialpartoff == off-2) cut = 1;
-								if (potentialpartoff <= off-3) {
-									potentialpart = null;
-									step = 0;
-								}
-								else {
-									step = 1;
-//									System.out.println("2nd byte loop triggered for shader/texture/normalmap " + r.toReplace[i].label +" | "+off + " right after " + potentialpartoff);
-								}
-							}else if (step == 1 && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[2] && potentialpart == r.toReplace[i]) {
-								//potential 3rd byte of a part to replace found
-								if (cut == 0 && potentialpartoff == off-3) cut = 2;
-								if (potentialpartoff <= off-4) {
-									potentialpart = null;
-									step = 0;
-								}
-								else {
-									step = 2;
-//									System.out.println("3rd byte loop triggered for shader/texture/normalmap " + r.toReplace[i].label +" | "+off);
-								}
-							}else if (step == 2 && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[3] && potentialpart == r.toReplace[i] /*misses one more condition ?) {
-								//potential last byte of a part to replace found
-								if (cut == 0 && potentialpartoff == off-4) cut = 3;
-								if (potentialpartoff <= off-5) {
-									potentialpart = null;
-									step = 0;
-								}
-								if (potentialpart !=null) {
-									potentialpart = null;
-									System.out.println("shader/texture/normalmap " + r.toReplace[i].label + " found | " + (off+1));
-									fileToBytes[potentialpartoff] = r.replacements[i].reversedBinHashBytes[0];
-									val[i] = true;
-									switch (cut) {
-									case 1:
-										System.out.println("Hash cut after 1 byte; replaced "+potentialpartoff+ "," + (potentialpartoff+2) +","+ (potentialpartoff+3)+","+(potentialpartoff+4));
-										fileToBytes[potentialpartoff+2] = r.replacements[i].reversedBinHashBytes[1];
-										fileToBytes[potentialpartoff+3] = r.replacements[i].reversedBinHashBytes[2];
-										fileToBytes[potentialpartoff+4] = r.replacements[i].reversedBinHashBytes[3];
-										break;
-									case 2:
-										System.out.println("Hash cut after 2 bytes; replaced "+potentialpartoff+ "," + (potentialpartoff+1) +","+ (potentialpartoff+3)+","+(potentialpartoff+4));
-										fileToBytes[potentialpartoff+1] = r.replacements[i].reversedBinHashBytes[1];
-										fileToBytes[potentialpartoff+3] = r.replacements[i].reversedBinHashBytes[2];
-										fileToBytes[potentialpartoff+4] = r.replacements[i].reversedBinHashBytes[3];
-										break;
-									case 3:
-										System.out.println("Hash cut after 3 bytes; replaced "+potentialpartoff+ "," + (potentialpartoff+1) +","+ (potentialpartoff+2)+","+(potentialpartoff+4));
-										fileToBytes[potentialpartoff+1] = r.replacements[i].reversedBinHashBytes[1];
-										fileToBytes[potentialpartoff+2] = r.replacements[i].reversedBinHashBytes[2];
-										fileToBytes[potentialpartoff+4] = r.replacements[i].reversedBinHashBytes[3];
-										break;
-									case 0:
-										System.out.println("Hash not cut; replaced "+potentialpartoff+ "," + (potentialpartoff+1) +","+ (potentialpartoff+2)+","+(potentialpartoff+3));
-										fileToBytes[potentialpartoff+1] = r.replacements[i].reversedBinHashBytes[1];
-										fileToBytes[potentialpartoff+2] = r.replacements[i].reversedBinHashBytes[2];
-										fileToBytes[potentialpartoff+3] = r.replacements[i].reversedBinHashBytes[3];
-									}
-								}
-							}
-						}
-						
-						
-						
-						
-						
-						
-						
-					}
-					off++;
-				}
-				System.out.println("End of part " + r.part + " at " + off);
-				
-				for(int i=0; i<val.length; i++) {
-					if(!val[i]) {
-						
-						if(bruteForceFixTripleCut) {
-							System.out.print("Warning : attempting to bruteforce " + r.toReplace[i].label + " in part " + r.part.label + " at " + (r.position+32) + " !");
-							log.write("Warning : attempting to bruteforce " + r.toReplace[i].label + " in part " + r.part.label + " at " + (r.position+32) + " !");
-							
-							
-							
-							
-							
-							
-							potentialpart = null;
-							off = r.position + 32;
-							int bruteforcePos = 0;
-							byte bruteForceBackup = 0;
-							boolean firstreplace = true;
-							while (off<fileToBytes.length-4 && off<r.position + 32 + 768) {	//stop searching when fuck you OR WHEN EOF REACHED
-									
-								// force replace the first matching occurence for the first one
-								if (firstreplace && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[0]) {
-									bruteforcePos = off;
-									bruteForceBackup = fileToBytes[off];
-									fileToBytes[off] = r.replacements[i].reversedBinHashBytes[0];
-									firstreplace = false;
-									System.out.print(" | First byte bruteforced at " + (off) + ".");
-									log.write(" | First byte bruteforced at " + (off) + ".");
-//										System.out.println("1st byte loop triggered for shader/texture/normalmap " + r.toReplace[i].label +" | "+off);
-								}
-								
-								if (fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[1]) { //ONLY 3 BYTES REMAINING IN PART
-									potentialpart = r.toReplace[i];
-									potentialpartoff = off;
-									step = 1;
-									cut = 0;
-								}
-
-								if (potentialpart != null) {
-									if (step == 1 && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[2] && potentialpart == r.toReplace[i]) {
-										//potential 3rd byte of a part to replace found
-										if (cut == 0 && potentialpartoff == off-2) cut = 1;
-										if (potentialpartoff <= off-3) {
-											potentialpart = null;
-											step = 1;
-										}
-										else {
-											step = 2;
-//												System.out.println("3rd byte loop triggered for shader/texture/normalmap " + r.toReplace[i].label +" | "+off);
-										}
-									}else if (step == 2 && fileToBytes[off] == r.toReplace[i].reversedBinHashBytes[3] && potentialpart == r.toReplace[i] /*misses one more condition ?) {
-										//potential last byte of a part to replace found
-										if (cut == 0 && potentialpartoff == off-3) cut = 2;
-										if (potentialpartoff <= off-4) {
-											potentialpart = null;
-											step = 1;
-										}
-										if (potentialpart !=null) {
-											potentialpart = null;
-											fileToBytes[potentialpartoff] = r.replacements[i].reversedBinHashBytes[1];
-											val[i] = true;
-											System.out.println(" | Remnants found at " + (off) + " - potential success.");
-											log.write(" | Remnants found at " + (off) + " - potential success.\n");
-											switch (cut) {
-											case 1:
-												System.out.println("Hash cut after 1 byte");
-												fileToBytes[potentialpartoff+2] = r.replacements[i].reversedBinHashBytes[2];
-												fileToBytes[potentialpartoff+3] = r.replacements[i].reversedBinHashBytes[3];
-												break;
-											case 2:
-												System.out.println("Hash cut after 2 bytes");
-												fileToBytes[potentialpartoff+1] = r.replacements[i].reversedBinHashBytes[2];
-												fileToBytes[potentialpartoff+3] = r.replacements[i].reversedBinHashBytes[3];
-												break;
-											case 0:
-												System.out.println("Hash not cut");
-												fileToBytes[potentialpartoff+1] = r.replacements[i].reversedBinHashBytes[2];
-												fileToBytes[potentialpartoff+2] = r.replacements[i].reversedBinHashBytes[3];
-											}
-											step = 0;
-											break;
-										}
-									}
-								}
-								off++;
-							}
-							
-							if (firstreplace) {
-								if(val[i]) {
-									System.out.println(" - probably failed, no initial replacement.");
-									log.write(" - probably failed, no initial replacement.\n");
-								}else {
-									System.out.println(" - probably failed, nothing found.");
-									log.write(" - probably failed, nothing found.\n");
-								}
-							} else if (!val[i]) {
-								System.out.println(" - probably failed, no further replacements. Reverting changes.");
-								log.write(" - probably failed, no further replacements. Reverting changes.\n");
-								fileToBytes[bruteforcePos] = bruteForceBackup;
-							}
-								
-								
-								
-								
-								
-							
-							
-						} else {
-							System.out.println("Warning : unable to find " + r.toReplace[i].label + " in part " + r.part.label + " at " + (r.position+32) + " !");
-							log.write("Warning : unable to find " + r.toReplace[i].label + " in part " + r.part.label + " at " + (r.position+32) + " !\n");
-						}
-					}
-				}
-				
-			}
-			System.out.println("Finished replacing.");
-			log.write("Finished replacing in " + (System.currentTimeMillis()-t) + " ms.\n");
-			
-			//important crash fix
-			fileToBytes[48]=67;
-			fileToBytes[49]=97;
-			fileToBytes[50]=114;
-			fileToBytes[51]=84;
-			fileToBytes[52]=111;
-			fileToBytes[53]=111;
-			fileToBytes[54]=108;
-			fileToBytes[55]=83;
-			fileToBytes[56]=104;
-			fileToBytes[57]=105;
-			fileToBytes[58]=116;
-			fileToBytes[59]=32;
-			fileToBytes[60]=102;
-			fileToBytes[61]=105;
-			fileToBytes[62]=120;
-			fileToBytes[63]=101;
-			fileToBytes[64]=100;
-			fileToBytes[65]=32;
-			fileToBytes[66]=98;
-			fileToBytes[67]=121;
-			fileToBytes[68]=32;
-			fileToBytes[69]=85;
-			fileToBytes[70]=67;
-			fileToBytes[71]=71;
-			fileToBytes[72]=84;
-			fileToBytes[73]=32;
-			fileToBytes[74]=45;
-			fileToBytes[75]=32;
-			fileToBytes[76]=78;
-			fileToBytes[77]=73;
-			fileToBytes[78]=50;
-			fileToBytes[79]=52;
-			fileToBytes[80]=48;
-			fileToBytes[81]=83;
-			fileToBytes[82]=88;
-			fileToBytes[83]=32;
-			fileToBytes[84]=50;
-			fileToBytes[85]=48;
-			fileToBytes[86]=50;
-			fileToBytes[87]=50;
-			fileToBytes[104]=68;
-			fileToBytes[105]=69;
-			fileToBytes[106]=70;
-			fileToBytes[107]=65;
-			fileToBytes[108]=85;
-			fileToBytes[109]=76;
-			
-
-			if (!s.equals(s.replaceAll("the zmod lock is real", ""))) {
-				fileToBytes[0] = 1;
-				System.out.println("The zmod lock is indeed real.");
-			}
-			
-			
-			
-			
-
-			log.write("Saving file...\n");
-			t = System.currentTimeMillis();
-			
-			FileOutputStream fos = new FileOutputStream(f);
-			fos.write(fileToBytes);
-			fos.close();
-			System.out.println("File saved.");
-			log.write("File " + f.getPath() + " saved in " + (System.currentTimeMillis()-t) + " ms.");*/
 			log.close();
 			
 		} catch (FileNotFoundException e) {
@@ -738,6 +507,21 @@ public class GeomCheck {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	public static String lodconv(int i) {
+		switch(i) {
+		case 0:
+			return "A";
+		case 1:
+			return "B";
+		case 2:
+			return "C";
+		case 3:
+			return "D";
+		default:
+			return "?";
+		}
 	}
 	
 	public static ArrayList<Hash> generateHashes(String carname, ArrayList<String> autosculptKits, ArrayList<String> widebodyKits, ArrayList<String> fullReplacementKits, int exhausts) {
