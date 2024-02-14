@@ -120,6 +120,68 @@ public class GeomCheck {
 								|| l.split("=")[1].strip().equals("true")
 								|| l.split("=")[1].strip().equals("1")) checkMaterials = true;
 					}
+					
+					if(l.split("=")[0].strip().toLowerCase().startsWith("search") 
+							|| l.split("=")[0].strip().toLowerCase().startsWith("check")) {
+						// TODO create a mini class to handle that : 
+						// materials to check
+						// parts to check
+						// which combination of true/false checks should output something
+						// list of all checks
+						MaterialSearch ms = new MaterialSearch();
+						
+						String matsToCheck = l.split("=")[0].replace("seach", "").replace("check", "").replace("for", "").strip();
+
+						for (String s : matsToCheck.split(",")) {
+							if (!s.strip().isBlank()) {
+								if (s.contains("not")) {
+									ms.mats.add(new Hash(s.replace("not", "").strip()));
+									ms.combination.add(false);
+								} else {
+									ms.mats.add(new Hash(s.strip()));
+									ms.combination.add(true);
+								}
+							}
+						}
+
+						String partsToCheck = l.split("=")[1].strip();
+						
+						for (String s : partsToCheck.split(",")) {
+							// LODs not supported !
+							if(s.strip().charAt(s.strip().length()-2) == '_') {
+								log.write("LODs not supported in material search !\n"
+										+ "In : " + l + "\n");
+								s = s.strip().substring(0, s.strip().length()-2);
+							}
+							if (!s.strip().isBlank()) {
+								if (s.split("_").length == 1) {
+									//only a kit
+									for (Part p : Part.allParts) {
+										if (p.kit.equals(s.strip())) {
+											ms.parts.add(p);
+										}
+									}
+								} else if (s.startsWith("KIT")){
+									//only a part from a kit
+									for (Part p : Part.allParts) {
+										if (p.kit.equals(s.split("_")[0]) && p.name.equals(s.strip().replace(s.split("_")[0] + "_", ""))) {
+											ms.parts.add(p);
+										}
+									}
+								} else {
+									//a part, all kits
+									for (Part p : Part.allParts) {
+										if (p.name.equals(s.strip())){
+											ms.parts.add(p);
+										}
+									}
+								}
+							}
+						}
+						
+						
+					
+					}
 				}
 			}
 
@@ -470,6 +532,8 @@ public class GeomCheck {
 				t = System.currentTimeMillis();
 			}
 			
+			// TODO add custom material checks
+			
 			
 			
 			
@@ -726,5 +790,17 @@ public class GeomCheck {
 		}
 		
 		return l;
+	}
+}
+
+class MaterialSearch{
+	static ArrayList<MaterialSearch> allSearches = new ArrayList<MaterialSearch>();
+	
+	ArrayList<Hash> mats = new ArrayList<Hash>();
+	ArrayList<Part> parts = new ArrayList<Part>();
+	ArrayList<Boolean> combination = new ArrayList<Boolean>();
+
+	MaterialSearch(){
+		allSearches.add(this);
 	}
 }
