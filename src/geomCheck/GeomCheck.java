@@ -20,13 +20,15 @@ import binstuff.Hash;
 public class GeomCheck {
 	
 	public static String carname = "";
+	public static String version = "1.0";
 
 	public static void main(String[] args) {
 		
+		BufferedWriter log = null;
 		try {
 			long t = System.currentTimeMillis();
-			BufferedWriter log = new BufferedWriter(new FileWriter(new File("GeomCheck.log")));
-			log.write("Initializing GeomCheck...\n");
+			log = new BufferedWriter(new FileWriter(new File("GeomCheck.log")));
+			log.write("Initializing GeomCheck v"+version+"...\n");
 			BufferedReader br = new BufferedReader(new FileReader(new File("GeomCheck.ini")));
 
 			//Config read loop
@@ -44,24 +46,24 @@ public class GeomCheck {
 			boolean checkMaterials = false; //check some part materials
 			
 			while ((l = br.readLine()) != null) {
-				l = l.split("//")[0].split("#")[0]; // comments removal
+				l = l.split("//")[0].split("#")[0].toUpperCase(); // comments removal
 				if (!l.isBlank() && l.contains("=")) { // reading a proper config
 					// file config, mandatory
-					if(l.split("=")[0].strip().toLowerCase().equals("file")
-							|| l.split("=")[0].strip().toLowerCase().equals("path") 
-							|| l.split("=")[0].strip().toLowerCase().equals("file path")) {
+					if(l.split("=")[0].strip().equals("FILE")
+							|| l.split("=")[0].strip().equals("PATH") 
+							|| l.split("=")[0].strip().equals("FILE PATH")) {
 						f = new File(l.split("=")[1].strip());
 						file = true;
 					}
-					if(l.split("=")[0].strip().toLowerCase().equals("car")
-							|| l.split("=")[0].strip().toLowerCase().equals("car name") 
-							|| l.split("=")[0].strip().toLowerCase().equals("xname")) {
+					if(l.split("=")[0].strip().equals("CAR")
+							|| l.split("=")[0].strip().equals("CAR NAME") 
+							|| l.split("=")[0].strip().equals("XNAME")) {
 						carname = l.split("=")[1].strip();
 						car = true;
 					}
 					// customization config, facultative
-					if(l.split("=")[0].strip().toLowerCase().equals("autosculpt kits")
-							|| l.split("=")[0].strip().toLowerCase().equals("autosculpt")) {
+					if(l.split("=")[0].strip().equals("AUTOSCULPT KITS")
+							|| l.split("=")[0].strip().equals("AUTOSCULPT")) {
 						for (String s : l.split("=")[1].split(",")) {
 							if (s.contains("-")) {
 								for(int i= Integer.parseInt(s.split("-")[0].strip().substring(s.split("-")[0].strip().length() -2));
@@ -72,9 +74,9 @@ public class GeomCheck {
 							} else if (!s.strip().isBlank()) autosculptKits.add(s.strip());
 						}
 					}
-					if(l.split("=")[0].strip().toLowerCase().equals("widebody kits")
-							|| l.split("=")[0].strip().toLowerCase().equals("widebody")
-							|| l.split("=")[0].strip().toLowerCase().equals("widebodies")) {
+					if(l.split("=")[0].strip().equals("WIDEBODY KITS")
+							|| l.split("=")[0].strip().equals("WIDEBODY")
+							|| l.split("=")[0].strip().equals("WIDEBODIES")) {
 						for (String s : l.split("=")[1].split(",")) {
 							if (s.contains("-")) {
 								for(int i= Integer.parseInt(s.split("-")[0].strip().substring(s.split("-")[0].strip().length() -2));
@@ -85,11 +87,11 @@ public class GeomCheck {
 							} else if (!s.strip().isBlank()) widebodyKits.add(s.strip());
 						}
 					}
-					if(l.split("=")[0].strip().toLowerCase().equals("full replacement kits")
-							|| l.split("=")[0].strip().toLowerCase().equals("full replacement widebody")
-							|| l.split("=")[0].strip().toLowerCase().equals("full replacement widebodies")
-							|| l.split("=")[0].strip().toLowerCase().equals("replacement")
-							|| l.split("=")[0].strip().toLowerCase().equals("base")) {
+					if(l.split("=")[0].strip().equals("FULL REPLACEMENT KITS")
+							|| l.split("=")[0].strip().equals("FULL REPLACEMENT WIDEBODY")
+							|| l.split("=")[0].strip().equals("FULL REPLACEMENT WIDEBODIES")
+							|| l.split("=")[0].strip().equals("REPLACEMENT")
+							|| l.split("=")[0].strip().equals("BASE")) {
 						for (String s : l.split("=")[1].split(",")) {
 							if (s.contains("-")) {
 								for(int i= Integer.parseInt(s.split("-")[0].strip().substring(s.split("-")[0].strip().length() -2));
@@ -100,29 +102,29 @@ public class GeomCheck {
 							} else if (!s.strip().isBlank()) fullReplacementKits.add(s.strip());
 						}
 					}
-					if(l.split("=")[0].strip().toLowerCase().equals("exhausts") 
-							|| l.split("=")[0].strip().toLowerCase().equals("exhausts amount") 
-							|| l.split("=")[0].strip().toLowerCase().equals("amount of exhausts")) {
+					if(l.split("=")[0].strip().equals("EXHAUSTS") 
+							|| l.split("=")[0].strip().equals("EXHAUSTS AMOUNT") 
+							|| l.split("=")[0].strip().equals("AMOUNT OF EXHAUSTS")) {
 						exhausts = Integer.parseInt(l.split("=")[1].strip());
 					}
 					// checks
-					if(l.split("=")[0].strip().toLowerCase().equals("missing/useless lods")
-							|| l.split("=")[0].strip().toLowerCase().equals("lods") 
-							|| l.split("=")[0].strip().toLowerCase().equals("useless")) {
-						if (l.split("=")[1].strip().equals("yes")
-								|| l.split("=")[1].strip().equals("true")
+					if(l.split("=")[0].strip().equals("MISSING/USELESS LODS")
+							|| l.split("=")[0].strip().equals("LODS") 
+							|| l.split("=")[0].strip().equals("USELESS")) {
+						if (l.split("=")[1].strip().equals("YES")
+								|| l.split("=")[1].strip().equals("TRUE")
 								|| l.split("=")[1].strip().equals("1")) checkLODs = true;
 					}
-					if(l.split("=")[0].strip().toLowerCase().equals("materials")
-							|| l.split("=")[0].strip().toLowerCase().equals("parts materials") 
-							|| l.split("=")[0].strip().toLowerCase().equals("part materials")) {
-						if (l.split("=")[1].strip().equals("yes")
-								|| l.split("=")[1].strip().equals("true")
+					if(l.split("=")[0].strip().equals("MATERIALS")
+							|| l.split("=")[0].strip().equals("PARTS MATERIALS") 
+							|| l.split("=")[0].strip().equals("PART MATERIALS")) {
+						if (l.split("=")[1].strip().equals("YES")
+								|| l.split("=")[1].strip().equals("TRUE")
 								|| l.split("=")[1].strip().equals("1")) checkMaterials = true;
 					}
 					
-					if(l.split("=")[0].strip().toLowerCase().startsWith("search") 
-							|| l.split("=")[0].strip().toLowerCase().startsWith("check")) {
+					if(l.split("=")[0].strip().startsWith("SEARCH") 
+							|| l.split("=")[0].strip().startsWith("CHECK")) {
 						// TODO create a mini class to handle that : 
 						// materials to check
 						// parts to check
@@ -130,57 +132,21 @@ public class GeomCheck {
 						// list of all checks
 						MaterialSearch ms = new MaterialSearch();
 						
-						String matsToCheck = l.split("=")[0].replace("seach", "").replace("check", "").replace("for", "").strip();
+						String matsToCheck = l.split("=")[0].replace("SEARCH", "").replace("CHECK", "").replace("FOR", "").strip();
 
 						for (String s : matsToCheck.split(",")) {
 							if (!s.strip().isBlank()) {
-								if (s.contains("not")) {
-									ms.mats.add(new Hash(s.replace("not", "").strip()));
+								if (s.contains("NOT")) {
+									ms.mats.add(new Hash(s.replace("NOT", "").strip().replace("%", carname)));
 									ms.combination.add(false);
 								} else {
-									ms.mats.add(new Hash(s.strip()));
+									ms.mats.add(new Hash(s.strip().replace("%", carname)));
 									ms.combination.add(true);
 								}
 							}
 						}
 
-						String partsToCheck = l.split("=")[1].strip();
-						
-						for (String s : partsToCheck.split(",")) {
-							// LODs not supported !
-							if(s.strip().charAt(s.strip().length()-2) == '_') {
-								log.write("LODs not supported in material search !\n"
-										+ "In : " + l + "\n");
-								s = s.strip().substring(0, s.strip().length()-2);
-							}
-							if (!s.strip().isBlank()) {
-								if (s.split("_").length == 1) {
-									//only a kit
-									for (Part p : Part.allParts) {
-										if (p.kit.equals(s.strip())) {
-											ms.parts.add(p);
-										}
-									}
-								} else if (s.startsWith("KIT")){
-									//only a part from a kit
-									for (Part p : Part.allParts) {
-										if (p.kit.equals(s.split("_")[0]) && p.name.equals(s.strip().replace(s.split("_")[0] + "_", ""))) {
-											ms.parts.add(p);
-										}
-									}
-								} else {
-									//a part, all kits
-									for (Part p : Part.allParts) {
-										if (p.name.equals(s.strip())){
-											ms.parts.add(p);
-										}
-									}
-								}
-							}
-						}
-						
-						
-					
+						ms.partsToCheck = l.split("=")[1].strip();
 					}
 				}
 			}
@@ -533,7 +499,65 @@ public class GeomCheck {
 			}
 			
 			// TODO add custom material checks
-			
+			for (MaterialSearch ms : MaterialSearch.allSearches) {
+				
+				for (String s : ms.partsToCheck.split(",")) {
+					s = s.strip();
+					// LODs not supported !
+					if(s.charAt(s.length()-2) == '_') {
+						log.write("LODs not supported in material search !\n"
+								+ "In : " + ms.partsToCheck + "\n");
+						s = s.substring(0, s.length()-2);
+					}
+					if (!s.isBlank()) {
+						if (s.split("_").length == 1 && s.startsWith("KIT")) {
+							//only a kit
+							for (Part p : Part.allParts) {
+								if (p.kit.equals(s)) {
+									ms.parts.add(p);
+								}
+							}
+						} else if (s.startsWith("KIT")){
+							//only a part from a kit
+							for (Part p : Part.allParts) {
+								if (p.kit.equals(s.split("_")[0]) && (p.name.equals(s.replace(s.split("_")[0] + "_", "")) || (p.name.substring(0,p.name.length()-3).equals(s.replace(s.split("_")[0] + "_", ""))) ) ) {
+									ms.parts.add(p);
+								}
+							}
+						} else {
+							//a part, all kits
+							for (Part p : Part.allParts) {
+								if (p.name.equals(s) || p.name.substring(0,p.name.length()-3).equals(s)){
+									ms.parts.add(p);
+								}
+							}
+						}
+					}
+				}
+				
+				
+				System.out.println("Checking parts : " + ms.parts + " for " + ms.mats + " normally " + ms.combination);
+				for (Part p : ms.parts) {
+					ArrayList<Hash> search = ms.mats;
+					ArrayList<ArrayList<Boolean>> result = p.scan(fileToBytes, search);
+					for (i=0; i<4; i++) {
+						if(result.get(i) != null) {
+							if (!result.get(i).equals(ms.combination)) {
+								log.write("[CUSTCHK] Custom check failed for part : " + p.kit + "_" + p.name + "_" + lodconv(i) + " | ");
+								log.write(ms.mats.get(0).label + "=" + result.get(i).get(0));
+								for (int j=1; j<ms.mats.size(); j++) {
+									log.write(", " + ms.mats.get(j).label + "=" + result.get(i).get(j));
+								}
+								log.write("\n");
+							}
+						}
+					}
+				}
+			}
+			if (MaterialSearch.allSearches.size() != 0) {
+				log.write("Custom checks performed in " + (System.currentTimeMillis()-t) + " ms.\n");
+				t = System.currentTimeMillis();
+			}
 			
 			
 			
@@ -544,23 +568,38 @@ public class GeomCheck {
 				if (!new File("GeomCheck.ini").exists()) {
 					BufferedWriter bw = new BufferedWriter(new FileWriter(new File("GeomCheck.ini")));
 					
-					bw.write( "File settings (mandatory)\r\n"
-							+ "File =  C:\\Program Files (x86)\\EA Games\\Need for Speed Undercover\\CARS\\AAA_AAA_AAA_01\\GEOMETRY.BIN\\r\\n"
+					bw.write( "========= File settings (mandatory) =========\r\n"
+							+ "File =  C:\\Program Files (x86)\\EA Games\\Need for Speed Undercover\\CARS\\AAA_AAA_AAA_01\\GEOMETRY.BIN\r\n"
 							+ "Car =   AAA_AAA_AAA_01\r\n"
 							+ "\r\n"
-							+ "Customization settings (optional)\r\n"
+							+ "===== Customization settings (optional) =====\r\n"
 							+ "Autosculpt kits =               KIT01-KIT11\r\n"
 							+ "Widebody kits =                 KITW01-KITW05\r\n"
 							+ "Full replacement widebodies =   #none\r\n"
 							+ "Exhausts amount =               5\r\n"
 							+ "\r\n"
-							+ "Checks (optional)\r\n"
+							+ "============= Checks (optional) =============\r\n"
 							+ "Missing/useless LODs =          yes\r\n"
 							+ "Parts materials =               yes\r\n"
-							+ "\r\n");
+							+ "\r\n"
+							+ "========== Custom checks (optional) =========\r\n"
+							+ "Search for not %_SKIN1 = BASE, SPOILER //checks parts that shouldn't be UV mapped to not have SKIN1\r\n"
+							+ "Search for not DOORSEAM = BODY, BUMPER_FRONT, BUMPER_REAR, DOOR_LEFT, DOOR_RIGHT, HOOD, TRUNK, SKIRT_LEFT, SKIRT_RIGHT\r\n");
 					bw.close();
 					System.out.println("Missing configuration, it has been generated.");
-				} else System.out.println("Invalid configuration, check the car's path.");
+					try {
+						log.write("Missing configuration, it has been generated.");
+						log.close();
+					} catch (Exception e2) {
+					}
+				} else {
+					System.out.println("Invalid configuration, check the car's path.");
+					try {
+						log.write("Invalid configuration, check the car's path.");
+						log.close();
+					} catch (Exception e2) {
+					}
+				}
 				
 				
 			} catch (IOException e1) {
@@ -799,6 +838,7 @@ class MaterialSearch{
 	ArrayList<Hash> mats = new ArrayList<Hash>();
 	ArrayList<Part> parts = new ArrayList<Part>();
 	ArrayList<Boolean> combination = new ArrayList<Boolean>();
+	String partsToCheck = "";
 
 	MaterialSearch(){
 		allSearches.add(this);
