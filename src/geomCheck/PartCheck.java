@@ -4,9 +4,9 @@ import java.util.ArrayList;
 
 import binstuff.Hash;
 
-class Part {
+class PartCheck {
 
-	static ArrayList<Part> allParts = new ArrayList<Part>();
+	static ArrayList<PartCheck> allParts = new ArrayList<PartCheck>();
 	
 	String kit;
 	String name;
@@ -24,7 +24,7 @@ class Part {
 	Hash lodCHash = null;
 	Hash lodDHash = null;
 
-	public Part(String kit, String name){
+	public PartCheck(String kit, String name){
 		this.kit = kit;
 		this.name = name;
 		this.lodAHash = new Hash(GeomCheck.carname + "_" + kit + "_" + name + "_A");

@@ -21,31 +21,31 @@ class DBMP{
 	public static final int maxPartLength = 500; //200 bytes for each part should be more than enough when exporting
 	
 	public Hash carname;
-	public ArrayList<Part> parts;
+	public ArrayList<DBMPPart> dBMPParts;
 	public DBMP() {
 		super();
 		this.carname = new Hash("UNKNOWN");
-		this.parts = new ArrayList<Part>();
+		this.dBMPParts = new ArrayList<DBMPPart>();
 	}
 	public DBMP(String carname) {
 		super();
 		this.carname = new Hash(carname);
-		this.parts = new ArrayList<Part>();
+		this.dBMPParts = new ArrayList<DBMPPart>();
 	}
-	public DBMP(String carname, ArrayList<Part> parts) {
+	public DBMP(String carname, ArrayList<DBMPPart> dBMPParts) {
 		super();
 		this.carname = new Hash(carname);
-		this.parts = parts;
+		this.dBMPParts = dBMPParts;
 	}
-	public DBMP(Hash carname, ArrayList<Part> parts) {
+	public DBMP(Hash carname, ArrayList<DBMPPart> dBMPParts) {
 		super();
 		this.carname = carname;
-		this.parts = parts;
+		this.dBMPParts = dBMPParts;
 	}
 	
 	public String toString() {
 		String s = "== DBModelParts ==\nCar=" + carname.label;
-		for (Part p : parts) {
+		for (DBMPPart p : dBMPParts) {
 			s += "\n" + p;
 		}
 		s += "\n== End of DBMP  ==";
@@ -54,7 +54,7 @@ class DBMP{
 	
 	public String displayName() {
 		String s = "== DBModelParts ==\nCar=" + carname.label;
-		for (Part p : parts) {
+		for (DBMPPart p : dBMPParts) {
 			s += "\n" + p.displayName;
 		}
 		s += "\n== End of DBMP  ==";
@@ -62,7 +62,7 @@ class DBMP{
 	}
 	
 	public void updateAll() {
-		for (Part p : parts) {
+		for (DBMPPart p : dBMPParts) {
 			p.update();
 		}
 	}
@@ -72,13 +72,13 @@ class DBMP{
 		FileOutputStream fos;
 		fos = new FileOutputStream(f);
 		
-		ByteBuffer bb = ByteBuffer.wrap(new byte[maxPartLength*this.parts.size()]);
+		ByteBuffer bb = ByteBuffer.wrap(new byte[maxPartLength*this.dBMPParts.size()]);
 		
 		bb.order(ByteOrder.LITTLE_ENDIAN);
 		bb.position(36);
 		writeString(carname.label, bb);
-		bb.putInt(parts.size());
-		for (Part p : parts) { //loop on parts
+		bb.putInt(dBMPParts.size());
+		for (DBMPPart p : dBMPParts) { //loop on parts
 			bb.putInt(p.attributes.size());
 			for (Attribute a : p.attributes) { //loop on attributes
 				a.writeToFile(bb);
@@ -166,8 +166,8 @@ class DBMP{
 			loadDBMP = new DBMP(readString(bb)); //reads the plain text car name
 			int partsAmount = bb.getInt();
 			for (int i=0; i<partsAmount; i++) { //loop on parts
-				Part p;
-				loadDBMP.parts.add(p = new Part());
+				DBMPPart p;
+				loadDBMP.dBMPParts.add(p = new DBMPPart());
 				int partAttribCount = bb.getInt();
 				for (int j=0; j<partAttribCount; j++) { //loop on attributes
 					int attributeHash = bb.getInt();

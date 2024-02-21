@@ -201,30 +201,30 @@ public class GeomCheck {
         				//part found
         				String partname = h.label.substring(0, h.label.length() - 2).replace(carname + "_", "");
         				boolean existing = false;
-        				Part part = null;
-        				for(Part p : Part.allParts) {
+        				PartCheck partCheck = null;
+        				for(PartCheck p : PartCheck.allParts) {
         					if ((p.kit + "_" + p.name).equals(partname)){
-        						part = p;
+        						partCheck = p;
         						existing = true;
         						break;
         					}
         				}
-        				if (!existing) part = new Part(partname.split("_")[0], partname.replace(partname.split("_")[0] + "_", ""));
+        				if (!existing) partCheck = new PartCheck(partname.split("_")[0], partname.replace(partname.split("_")[0] + "_", ""));
         				switch (h.label.split("_")[h.label.split("_").length-1]) {
         				case "A":
-        					part.lodAExists = true;
+        					partCheck.lodAExists = true;
         					break;
         				case "B":
-        					part.lodBExists = true;
+        					partCheck.lodBExists = true;
         					break;
         				case "C":
-        					part.lodCExists = true;
+        					partCheck.lodCExists = true;
         					break;
         				case "D":
-        					part.lodDExists = true;
+        					partCheck.lodDExists = true;
         					break;
         				case "E":
-        					part.lodEExists = true;
+        					partCheck.lodEExists = true;
         				}
 //        				System.out.println(part);
         				break;
@@ -237,8 +237,8 @@ public class GeomCheck {
 				bb.getInt(); //jumps the blank 4 bytes between each part
 			}
         	
-        	Part.allParts.sort(new Comparator<Part>() {
-				public int compare(Part p1, Part p2) {
+        	PartCheck.allParts.sort(new Comparator<PartCheck>() {
+				public int compare(PartCheck p1, PartCheck p2) {
 					return (p1.kit + "_" + p1.name).compareTo(p2.kit + "_" + p2.name);
 				}
         	});
@@ -250,7 +250,7 @@ public class GeomCheck {
 			t = System.currentTimeMillis();
 			
 			hashes = new ArrayList<Hash>();
-			for (Part p : Part.allParts) {
+			for (PartCheck p : PartCheck.allParts) {
 				if (p.lodAExists) hashes.add(new Hash(carname+"_"+p.kit+"_"+p.name+"_A"));
 				if (p.lodBExists) hashes.add(new Hash(carname+"_"+p.kit+"_"+p.name+"_B"));
 				if (p.lodCExists) hashes.add(new Hash(carname+"_"+p.kit+"_"+p.name+"_C"));
@@ -266,11 +266,11 @@ public class GeomCheck {
 				System.out.println("Checking LODs");
 				boolean noD = false;
 				boolean dupeD = false;
-				for (Part p : Part.allParts) {
+				for (PartCheck p : PartCheck.allParts) {
 					if (p.lodDExists && !p.kit.equals("KIT00")) log.write("[LODCHK] Useless LOD : " + p.kit + "_" + p.name + "_D\n");
 					if (p.lodEExists) log.write("[LODCHK] Useless LOD : " + p.kit + "_" + p.name + "_E\n");
 				}
-				for (Part p : Part.allParts) {
+				for (PartCheck p : PartCheck.allParts) {
 					if (!p.lodAExists) log.write("[LODCHK] Missing LOD : " + p.kit + "_" + p.name + "_A\n");
 					if (!p.lodBExists) log.write("[LODCHK] Missing LOD : " + p.kit + "_" + p.name + "_B\n");
 					if (!p.lodCExists) log.write("[LODCHK] Missing LOD : " + p.kit + "_" + p.name + "_C\n");
@@ -304,7 +304,7 @@ public class GeomCheck {
 				
 				while ((i = bb.getInt()) != 0) {	//stop searching when 0x00000000 is found
 					boolean val = false;
-	        		for (Part p : Part.allParts) {
+	        		for (PartCheck p : PartCheck.allParts) {
 	        			if (i == p.lodAHash.binHash) {
 	        				p.lodAPosition = bb.getInt();
 //	        				System.out.println(p.name + " lod A at : " + p.lodAPosition);
@@ -344,7 +344,7 @@ public class GeomCheck {
 				
 				// BODY_D : check there's no "fancy" shaders besides dullplastic and carskin eg magsilver
 				
-				for (Part p : Part.allParts) {
+				for (PartCheck p : PartCheck.allParts) {
 					ArrayList<Hash> search;
 					ArrayList<ArrayList<Boolean>> result;
 					ArrayList<Boolean> resultLOD;
@@ -510,23 +510,23 @@ public class GeomCheck {
 					if (!s.isBlank()) {
 						if (s.split("_").length == 1 && s.startsWith("KIT")) {
 							//only a kit
-							for (Part p : Part.allParts) {
+							for (PartCheck p : PartCheck.allParts) {
 								if (p.kit.equals(s)) {
-									ms.parts.add(p);
+									ms.partChecks.add(p);
 								}
 							}
 						} else if (s.startsWith("KIT")){
 							//only a part from a kit
-							for (Part p : Part.allParts) {
+							for (PartCheck p : PartCheck.allParts) {
 								if (p.kit.equals(s.split("_")[0]) && (p.name.equals(s.replace(s.split("_")[0] + "_", "")) || (p.name.substring(0,p.name.length()-3).equals(s.replace(s.split("_")[0] + "_", ""))) ) ) {
-									ms.parts.add(p);
+									ms.partChecks.add(p);
 								}
 							}
 						} else {
 							//a part, all kits
-							for (Part p : Part.allParts) {
+							for (PartCheck p : PartCheck.allParts) {
 								if (p.name.equals(s) || p.name.substring(0,p.name.length()-3).equals(s)){
-									ms.parts.add(p);
+									ms.partChecks.add(p);
 								}
 							}
 						}
@@ -534,8 +534,8 @@ public class GeomCheck {
 				}
 				
 				
-				System.out.println("Checking parts : " + ms.parts + " for " + ms.mats + " normally " + ms.combination);
-				for (Part p : ms.parts) {
+				System.out.println("Checking parts : " + ms.partChecks + " for " + ms.mats + " normally " + ms.combination);
+				for (PartCheck p : ms.partChecks) {
 					ArrayList<Hash> search = ms.mats;
 					ArrayList<ArrayList<Boolean>> result = p.scan(fileToBytes, search);
 					for (i=0; i<4; i++) {
@@ -834,7 +834,7 @@ class MaterialSearch{
 	static ArrayList<MaterialSearch> allSearches = new ArrayList<MaterialSearch>();
 	
 	ArrayList<Hash> mats = new ArrayList<Hash>();
-	ArrayList<Part> parts = new ArrayList<Part>();
+	ArrayList<PartCheck> partChecks = new ArrayList<PartCheck>();
 	ArrayList<Boolean> combination = new ArrayList<Boolean>();
 	String partsToCheck = "";
 

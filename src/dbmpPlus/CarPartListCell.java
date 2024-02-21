@@ -8,7 +8,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 
-public class CarPartListCell extends ListCell<Part> {
+public class CarPartListCell extends ListCell<DBMPPart> {
     CheckBox checkBox;
     Label partDisplayName;
     Label autosculptMorphZonesLabel;
@@ -17,7 +17,7 @@ public class CarPartListCell extends ListCell<Part> {
     HBox asHBox;
     HBox partHBox;
 
-	public static Part previousPartClicked = null;
+	public static DBMPPart previousPartClicked = null;
 
     public CarPartListCell() {
         checkBox = new CheckBox();
@@ -63,7 +63,7 @@ public class CarPartListCell extends ListCell<Part> {
     }
 
     @Override
-    protected void updateItem(Part item, boolean empty) {
+    protected void updateItem(DBMPPart item, boolean empty) {
         super.updateItem(item, empty);
 
         if (item == null || empty) {

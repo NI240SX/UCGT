@@ -2,7 +2,7 @@ package dbmpPlus;
 
 import java.util.ArrayList;
 
-class Part {
+class DBMPPart {
 	public ArrayList<Attribute> attributes = new ArrayList<Attribute>();
 	public String displayName = "MISSING ATTRIBUTES";
 	
@@ -12,10 +12,10 @@ class Part {
 	
 	CarPartListCell listCell = new CarPartListCell();
 	
-	public Part() {
+	public DBMPPart() {
 	}
 	
-	public Part(String kit, String name) {
+	public DBMPPart(String kit, String name) {
 		AttributeCarPartID id;
 		AttributeTwoString partName;
 		isCarPart = true;
@@ -51,7 +51,7 @@ class Part {
 		
 	}
 	
-	public Part(Part copyFrom) {
+	public DBMPPart(DBMPPart copyFrom) {
 		for(Attribute a : copyFrom.attributes) {
 			if (a.getClass() == AttributeInteger.class) {
 				this.attributes.add(new AttributeInteger((AttributeInteger)a));

@@ -40,9 +40,9 @@ public abstract class Undo {
 }
 
 class UndoPartDelete extends Undo{
-	Part p;
+	DBMPPart p;
 	int index;
-	public UndoPartDelete(Part p, int index) {
+	public UndoPartDelete(DBMPPart p, int index) {
 		super();
 		this.p = p;
 		this.index = index;
@@ -50,15 +50,15 @@ class UndoPartDelete extends Undo{
 	
 	public void undoThis() {
 		super.undoThis();
-		DBMPPlus.mainDBMP.parts.add(index, p);
+		DBMPPlus.mainDBMP.dBMPParts.add(index, p);
 		DBMPPlus.partsDisplay.getItems().add(index, p);
 //		DBMPPlus.updateAllPartsDisplay();
 	}
 	
 	public void redoThis() {
 		super.redoThis();
-		index = DBMPPlus.mainDBMP.parts.indexOf(p);
-		DBMPPlus.mainDBMP.parts.remove(p);
+		index = DBMPPlus.mainDBMP.dBMPParts.indexOf(p);
+		DBMPPlus.mainDBMP.dBMPParts.remove(p);
 		DBMPPlus.updateAllPartsDisplay();
 	}
 }

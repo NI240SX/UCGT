@@ -33,7 +33,7 @@ public class DBMPPlus extends Application {
 	
 	public static DBMP mainDBMP = new DBMP();
 
-	public static ListView<Part> partsDisplay;
+	public static ListView<DBMPPart> partsDisplay;
 	public static VBox attributesDisplay;
 	
 	public static ArrayList<CarPartListCell> carPartListCells = new ArrayList<CarPartListCell>();
@@ -236,19 +236,19 @@ public class DBMPPlus extends Application {
         MenuItem dbTrimToGeom = new MenuItem("Trim to a GEOMETRY...");
         
         dbSortPartsByName.setOnAction(e -> {
-        	mainDBMP.parts.sort(new PartSorterByNameAsc());
+        	mainDBMP.dBMPParts.sort(new PartSorterByNameAsc());
 	        if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All parts sorted alphabetically.").show();
         	updateAllPartsDisplay();
         	e.consume();
         });        
         dbSortPartsByName2.setOnAction(e -> {
-        	mainDBMP.parts.sort(new PartSorterByName2Asc());
+        	mainDBMP.dBMPParts.sort(new PartSorterByName2Asc());
 	        if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All parts sorted.").show();
         	updateAllPartsDisplay();
         	e.consume();
         });
         dbSortAttributes.setOnAction(e -> {
-        	for(Part p: mainDBMP.parts) {
+        	for(DBMPPart p: mainDBMP.dBMPParts) {
         		int s = p.attributes.size();
         		//most wack ass sorting method but it works
         		p.addAttribute(p.getAttribute("PART_NAME_SELECTOR"));
@@ -290,7 +290,7 @@ public class DBMPPlus extends Application {
         	}
         });
         dbFixNameOffsets.setOnAction(e -> {
-        	for (Part p : mainDBMP.parts) {
+        	for (DBMPPart p : mainDBMP.dBMPParts) {
         		((AttributeString)p.getAttribute("NAME_OFFSET")).value1 = ((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value1.replace("KIT", "").replace("W", "");
         	}
         	if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All name offsets fixed.").show();
@@ -298,7 +298,7 @@ public class DBMPPlus extends Application {
         	e.consume();
         });
         dbFixCVs.setOnAction(e -> {
-        	for (Part p : mainDBMP.parts) {
+        	for (DBMPPart p : mainDBMP.dBMPParts) {
         		if (((AttributeCarPartID)p.getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.BODY) {
         			if (((AttributeKey)p.getAttribute("CV")) == null) p.addAttribute(new AttributeKey("CV", DBMPPlus.mainDBMP.carname.label + "_CV"));
         			else ((AttributeKey)p.getAttribute("CV")).value = new Hash(DBMPPlus.mainDBMP.carname.label + "_CV");
@@ -326,12 +326,12 @@ public class DBMPPlus extends Application {
 					fis.read(fileToBytes);
 					fis.close();
 					
-					ArrayList<Part> toRemove = new ArrayList<Part>(mainDBMP.parts);
+					ArrayList<DBMPPart> toRemove = new ArrayList<DBMPPart>(mainDBMP.dBMPParts);
 		        	ByteBuffer bb = ByteBuffer.wrap(fileToBytes);
 		        	bb.position(184);
 		        	int i;
 		        	while ((i = bb.getInt()) != 71308032) {	//stop searching when 0x04401300 is found
-						for (Part p : mainDBMP.parts) { //optimization has to be done probably
+						for (DBMPPart p : mainDBMP.dBMPParts) { //optimization has to be done probably
 							Hash part = new Hash( mainDBMP.carname.label + "_" + ((AttributeTwoString)p.getAttribute("LOD_BASE_NAME")).value1 + "_" + ((AttributeTwoString)p.getAttribute("LOD_BASE_NAME")).value2 + "_A");
 							if (i == part.reversedBinHash) {
 //								System.out.println("Part " + p.displayName + " found in geom file");
@@ -341,12 +341,12 @@ public class DBMPPlus extends Application {
 						bb.getInt(); //jumps the blank 4 bytes between each part
 					}
 					
-					for (Part p : toRemove) {
+					for (DBMPPart p : toRemove) {
 //						System.out.println("Removing part : "+p.displayName);
 						if ((((AttributeCarPartID) p.getAttribute("PARTID_UPGRADE_GROUP")).ID != PartUndercover.EXHAUST_TIPS_CENTER) &&
 							(((AttributeCarPartID) p.getAttribute("PARTID_UPGRADE_GROUP")).ID != PartUndercover.EXHAUST_TIPS_LEFT) &&
 							(((AttributeCarPartID) p.getAttribute("PARTID_UPGRADE_GROUP")).ID != PartUndercover.EXHAUST_TIPS_RIGHT)){
-							mainDBMP.parts.remove(p);
+							mainDBMP.dBMPParts.remove(p);
 						}
 					}
 					
@@ -372,7 +372,7 @@ public class DBMPPlus extends Application {
         MenuItem attributeSort = new MenuItem("Sort");
 
         attributeAddAS.setOnAction(e -> {
-        	for(Part p: partsDisplay.getSelectionModel().getSelectedItems()) {
+        	for(DBMPPart p: partsDisplay.getSelectionModel().getSelectedItems()) {
         		if (p.getAttribute("MORPHTARGET_NUM") == null) {
         			p.addAttribute(new AttributeInteger("MORPHTARGET_NUM", Integer.valueOf(currentKitASZones)));
         			p.update();
@@ -383,7 +383,7 @@ public class DBMPPlus extends Application {
         	e.consume();
         });
         attributeRemoveAS.setOnAction(e -> {
-        	for(Part p: partsDisplay.getSelectionModel().getSelectedItems()) {
+        	for(DBMPPart p: partsDisplay.getSelectionModel().getSelectedItems()) {
         		if (p.getAttribute("MORPHTARGET_NUM") != null) {
         			p.attributes.remove(p.getAttribute("MORPHTARGET_NUM"));
         			p.update();
@@ -394,7 +394,7 @@ public class DBMPPlus extends Application {
         	e.consume();
         });
         attributeAddCV.setOnAction(e -> {
-        	for(Part p: partsDisplay.getSelectionModel().getSelectedItems()) {
+        	for(DBMPPart p: partsDisplay.getSelectionModel().getSelectedItems()) {
         		if (p.getAttribute("CV") == null) {
         			p.addAttribute(new AttributeKey("CV", mainDBMP.carname.label + "_CV"));
         			p.update();
@@ -405,7 +405,7 @@ public class DBMPPlus extends Application {
         	e.consume();
         });
         attributeRemoveCV.setOnAction(e -> {
-        	for(Part p: partsDisplay.getSelectionModel().getSelectedItems()) {
+        	for(DBMPPart p: partsDisplay.getSelectionModel().getSelectedItems()) {
         		if (p.getAttribute("CV") != null) {
         			p.attributes.remove(p.getAttribute("CV"));
         			p.update();
@@ -416,7 +416,7 @@ public class DBMPPlus extends Application {
         	e.consume();
         });
         attributeSort.setOnAction(e -> {
-        	for(Part p: partsDisplay.getSelectionModel().getSelectedItems()) {
+        	for(DBMPPart p: partsDisplay.getSelectionModel().getSelectedItems()) {
         		int s = p.attributes.size();
         		//most wack ass sorting method but it works
         		p.addAttribute(p.getAttribute("PART_NAME_SELECTOR"));
@@ -468,7 +468,7 @@ public class DBMPPlus extends Application {
 					+ "Aims to make the creation of such data less of a hassle for modders.\n"
 					+ "This software has been originally created for the mod Undercover Exposed.\n\n"
 					+ "Not affiliated with EA, MaxHwoy, nfsu360, etc.\n\n"
-					+ "NI240SX 2023 - No rights reserved"));
+					+ "NI240SX 2023-2024 - No rights reserved"));
 			st.setScene(sc);
 			if (useDarkMode) sc.getRoot().setStyle("-fx-base:black");
 			st.setResizable(false);
@@ -524,22 +524,22 @@ public class DBMPPlus extends Application {
         			String kit = s.split("_")[0];
         			String part = s.substring(kit.length()+1);
         			if (part.contains("FRONT")) {
-        				mainDBMP.parts.add(new Part(kit, part));
-        				mainDBMP.parts.add(new Part(kit, part.replace("FRONT", "REAR")));
+        				mainDBMP.dBMPParts.add(new DBMPPart(kit, part));
+        				mainDBMP.dBMPParts.add(new DBMPPart(kit, part.replace("FRONT", "REAR")));
         				if(part.contains("LEFT")) {
-            				mainDBMP.parts.add(new Part(kit, part.replace("LEFT", "RIGHT")));
-            				mainDBMP.parts.add(new Part(kit, part.replace("FRONT", "REAR").replace("LEFT", "RIGHT")));
+            				mainDBMP.dBMPParts.add(new DBMPPart(kit, part.replace("LEFT", "RIGHT")));
+            				mainDBMP.dBMPParts.add(new DBMPPart(kit, part.replace("FRONT", "REAR").replace("LEFT", "RIGHT")));
         				}
         			} else {
         				if(part.contains("LEFT")) {
-            				mainDBMP.parts.add(new Part(kit, part));
-            				mainDBMP.parts.add(new Part(kit, part.replace("LEFT", "RIGHT")));
+            				mainDBMP.dBMPParts.add(new DBMPPart(kit, part));
+            				mainDBMP.dBMPParts.add(new DBMPPart(kit, part.replace("LEFT", "RIGHT")));
             				if(part.contains("LIGHT")) {
-            					mainDBMP.parts.add(new Part(kit, part.replace("LIGHT", "LIGHT_GLASS")));
-                				mainDBMP.parts.add(new Part(kit, part.replace("LIGHT", "LIGHT_GLASS").replace("LEFT", "RIGHT")));	
+            					mainDBMP.dBMPParts.add(new DBMPPart(kit, part.replace("LIGHT", "LIGHT_GLASS")));
+                				mainDBMP.dBMPParts.add(new DBMPPart(kit, part.replace("LIGHT", "LIGHT_GLASS").replace("LEFT", "RIGHT")));	
             				}
         				} else {
-            				mainDBMP.parts.add(new Part(kit, part));
+            				mainDBMP.dBMPParts.add(new DBMPPart(kit, part));
         				}
         			}
         			updateAllPartsDisplay();
@@ -549,10 +549,10 @@ public class DBMPPlus extends Application {
         	}
         });
         partCopy.setOnAction(e -> {
-        	Part sel = partsDisplay.getSelectionModel().getSelectedItem();
-        	for(Part p: partsDisplay.getSelectionModel().getSelectedItems()) {
-            	Part p2 = new Part(p);
-            	mainDBMP.parts.add(mainDBMP.parts.indexOf(p)+1, p2);
+        	DBMPPart sel = partsDisplay.getSelectionModel().getSelectedItem();
+        	for(DBMPPart p: partsDisplay.getSelectionModel().getSelectedItems()) {
+            	DBMPPart p2 = new DBMPPart(p);
+            	mainDBMP.dBMPParts.add(mainDBMP.dBMPParts.indexOf(p)+1, p2);
             }
         	updateAllPartsDisplay();
         	partsDisplay.getSelectionModel().select(sel);
@@ -611,8 +611,8 @@ public class DBMPPlus extends Application {
 			Button ok = new Button("OK");
 			ok.setOnAction(evh -> {
 				currentKitASZones = autosculptZonesInput.getText();
-				Part sel = partsDisplay.getSelectionModel().getSelectedItem();
-	        	for(Part p: partsDisplay.getSelectionModel().getSelectedItems()) {
+				DBMPPart sel = partsDisplay.getSelectionModel().getSelectedItem();
+	        	for(DBMPPart p: partsDisplay.getSelectionModel().getSelectedItems()) {
 	            	if(copyTo.isSelected()) {
 	            		ArrayList<String> copyToKits = new ArrayList<String>();
 	    				for (String s : copyToInput.getText().split(",")) {
@@ -626,8 +626,8 @@ public class DBMPPlus extends Application {
 	    				}
 	            		
 	            		for (String k : copyToKits) {
-	            			Part tp;
-		            		mainDBMP.parts.add(tp = new Part(p));
+	            			DBMPPart tp;
+		            		mainDBMP.dBMPParts.add(tp = new DBMPPart(p));
 		            		((AttributeTwoString)tp.getAttribute("PART_NAME_OFFSETS")).value1 = k;
 		            		((AttributeString)tp.getAttribute("NAME_OFFSET")).value1 = k.replace("KIT", "").replace("W", "");
 		            		if(toAnotherKitReference.isSelected()) {
@@ -647,8 +647,8 @@ public class DBMPPlus extends Application {
 		            		
 	            		}	
 	            	} else {
-		            	Part tp;
-		            	mainDBMP.parts.add(mainDBMP.parts.indexOf(p)+1, tp = new Part(p));
+		            	DBMPPart tp;
+		            	mainDBMP.dBMPParts.add(mainDBMP.dBMPParts.indexOf(p)+1, tp = new DBMPPart(p));
 		            	if(autosculptZones.isSelected()) {
 		            		int morphnum = Integer.parseInt(autosculptZonesInput.getText().strip());
 		            		if (tp.getAttribute("MORPHTARGET_NUM") == null) {
@@ -809,7 +809,7 @@ public class DBMPPlus extends Application {
         		currentExhCenterTipEnabled = centerTips.isSelected();
         		currentExhASZones = autosculptZonesExhaustInput.getText();
         		
-				Part sel = partsDisplay.getSelectionModel().getSelectedItem();
+				DBMPPart sel = partsDisplay.getSelectionModel().getSelectedItem();
         		try {
 					ArrayList<String> generateKits = new ArrayList<String>();
 					for (String s : kitsToGenerateInput.getText().split(",")) {
@@ -840,22 +840,22 @@ public class DBMPPlus extends Application {
 					}
 					br.close();
 					
-					int size = mainDBMP.parts.size();
+					int size = mainDBMP.dBMPParts.size();
 					for(int i=0; i<size; i++) {
-						if (generateKits.contains(((AttributeTwoString)mainDBMP.parts.get(i).getAttribute("PART_NAME_OFFSETS")).value1)) {
+						if (generateKits.contains(((AttributeTwoString)mainDBMP.dBMPParts.get(i).getAttribute("PART_NAME_OFFSETS")).value1)) {
 							if(removePreExisting.isSelected()) { // remove any preexisting
-								mainDBMP.parts.remove(i);
+								mainDBMP.dBMPParts.remove(i);
 								size--;
 								i--;
 							} else { // remove conflicting preexisting
 								boolean val=false;
 								for (String part : parts) {
-									if (part.split("/")[0].equals(((AttributeTwoString)mainDBMP.parts.get(i).getAttribute("PART_NAME_OFFSETS")).value2)) {
+									if (part.split("/")[0].equals(((AttributeTwoString)mainDBMP.dBMPParts.get(i).getAttribute("PART_NAME_OFFSETS")).value2)) {
 										val = true;
 									}
 								}
 								if (val) { 
-									mainDBMP.parts.remove(i);
+									mainDBMP.dBMPParts.remove(i);
 									size--;
 									i--;
 								}
@@ -866,34 +866,34 @@ public class DBMPPlus extends Application {
 
 					for (String kit : generateKits) {
 						for (String part : parts) {
-							Part tp;
-							mainDBMP.parts.add(tp = new Part(kit, part.split("/")[0]));
+							DBMPPart tp;
+							mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, part.split("/")[0]));
 							if(part.contains("/")) {
 								((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value2 = part.split("/")[1];
 							}
 							if(autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
 						}
 						for (String exh : exhausts) {
-							Part tp;
-							mainDBMP.parts.add(tp = new Part(kit, mufflerInput.getText().strip() + "_" + exh));
+							DBMPPart tp;
+							mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, mufflerInput.getText().strip() + "_" + exh));
 							((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST;
 							if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 							if(autosculptZonesExhaust.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesExhaustInput.getText().strip())));
 							
 							if (leftTips.isSelected()) {
-								mainDBMP.parts.add(tp = new Part(kit, leftTipsInput.getText().strip() + "_" + exh));
+								mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, leftTipsInput.getText().strip() + "_" + exh));
 								((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_LEFT;
 								if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 								if (autosculptZonesExhaust.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesExhaustInput.getText().strip())));
 							}
 							if (rightTips.isSelected()) {
-								mainDBMP.parts.add(tp = new Part(kit, rightTipsInput.getText().strip() + "_" + exh));
+								mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, rightTipsInput.getText().strip() + "_" + exh));
 								((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_RIGHT;
 								if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 								if (autosculptZonesExhaust.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesExhaustInput.getText().strip())));
 							}
 							if (centerTips.isSelected()) {
-								mainDBMP.parts.add(tp = new Part(kit, centerTipsInput.getText().strip() + "_" + exh));
+								mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, centerTipsInput.getText().strip() + "_" + exh));
 								((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_CENTER;
 								if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 								if (autosculptZonesExhaust.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesExhaustInput.getText().strip())));
@@ -959,11 +959,11 @@ public class DBMPPlus extends Application {
 					} else if (!s.strip().isBlank()) copyToKits.add(s.strip());
 				}
 				
-				Part sel = partsDisplay.getSelectionModel().getSelectedItem();
-	        	for(int i=0; i<mainDBMP.parts.size(); i++) { //looping on Part p: mainDBMP.parts throws an exception for whatever reason
-	        		if (((AttributeTwoString)mainDBMP.parts.get(i) .getAttribute("PART_NAME_OFFSETS")).value1.equals(copyFromKit)) {
+				DBMPPart sel = partsDisplay.getSelectionModel().getSelectedItem();
+	        	for(int i=0; i<mainDBMP.dBMPParts.size(); i++) { //looping on Part p: mainDBMP.parts throws an exception for whatever reason
+	        		if (((AttributeTwoString)mainDBMP.dBMPParts.get(i) .getAttribute("PART_NAME_OFFSETS")).value1.equals(copyFromKit)) {
 		        		for(String s : copyToKits) {
-		        			Part p2 = new Part(mainDBMP.parts.get(i));
+		        			DBMPPart p2 = new DBMPPart(mainDBMP.dBMPParts.get(i));
 		            		((AttributeTwoString)p2.getAttribute("PART_NAME_OFFSETS")).value1 = s;
 		            		((AttributeString)p2.getAttribute("NAME_OFFSET")).value1 = s.replace("KIT", "").replace("W", "");
 		            		((AttributeTwoString)p2.getAttribute("LOD_BASE_NAME")).value1 = s;
@@ -978,7 +978,7 @@ public class DBMPPlus extends Application {
 			            		}
 			            	}
 			            	p2.update();
-			            	mainDBMP.parts.add(p2);
+			            	mainDBMP.dBMPParts.add(p2);
 		        		}
 	        		}
 	            }
@@ -1110,14 +1110,14 @@ public class DBMPPlus extends Application {
 					} else if (!s.strip().isBlank()) exhausts.add(s.strip());
 				}				
 				
-				Part sel = partsDisplay.getSelectionModel().getSelectedItem();
+				DBMPPart sel = partsDisplay.getSelectionModel().getSelectedItem();
 	        	
 				if(removePreExisting.isSelected()) {
-					int size = mainDBMP.parts.size();
+					int size = mainDBMP.dBMPParts.size();
 					for(int i=0; i<size; i++) {
-						if (kits.contains(((AttributeTwoString)mainDBMP.parts.get(i).getAttribute("PART_NAME_OFFSETS")).value1) 
-								&& ((AttributeCarPartID)mainDBMP.parts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID.getText().contains("EXHAUST")) {
-							mainDBMP.parts.remove(i);
+						if (kits.contains(((AttributeTwoString)mainDBMP.dBMPParts.get(i).getAttribute("PART_NAME_OFFSETS")).value1) 
+								&& ((AttributeCarPartID)mainDBMP.dBMPParts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID.getText().contains("EXHAUST")) {
+							mainDBMP.dBMPParts.remove(i);
 							size--;
 							i--;
 						}
@@ -1126,26 +1126,26 @@ public class DBMPPlus extends Application {
 
 				for (String kit : kits) {
 					for (String exh : exhausts) {
-						Part tp;
-						mainDBMP.parts.add(tp = new Part(kit, mufflerInput.getText().strip() + "_" + exh));
+						DBMPPart tp;
+						mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, mufflerInput.getText().strip() + "_" + exh));
 						((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST;
 						if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 						if(autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
 						
 						if (leftTips.isSelected()) {
-							mainDBMP.parts.add(tp = new Part(kit, leftTipsInput.getText().strip() + "_" + exh));
+							mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, leftTipsInput.getText().strip() + "_" + exh));
 							((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_LEFT;
 							if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 							if (autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
 						}
 						if (rightTips.isSelected()) {
-							mainDBMP.parts.add(tp = new Part(kit, rightTipsInput.getText().strip() + "_" + exh));
+							mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, rightTipsInput.getText().strip() + "_" + exh));
 							((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_RIGHT;
 							if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 							if (autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
 						}
 						if (centerTips.isSelected()) {
-							mainDBMP.parts.add(tp = new Part(kit, centerTipsInput.getText().strip() + "_" + exh));
+							mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, centerTipsInput.getText().strip() + "_" + exh));
 							((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_CENTER;
 							if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 							if (autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
@@ -1181,7 +1181,7 @@ public class DBMPPlus extends Application {
 
 				try {
 					BufferedWriter bw = new BufferedWriter(new FileWriter(fc.showSaveDialog(null)));
-					for (Part p : mainDBMP.parts) {
+					for (DBMPPart p : mainDBMP.dBMPParts) {
 						if (((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value1.equals(kit) 
 								&& !((AttributeCarPartID)p.getAttribute("PARTID_UPGRADE_GROUP")).ID.getText().contains("EXHAUST")) {
 							bw.write(((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value2);
@@ -1204,10 +1204,10 @@ public class DBMPPlus extends Application {
 		        ButtonType sure = null;
 		        if (!disableWarnings) sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to delete all parts from " + kit + " ?", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
 				if (ButtonType.YES.equals(sure) || disableWarnings) {
-					int size = mainDBMP.parts.size();
+					int size = mainDBMP.dBMPParts.size();
 					for(int i=0; i<size; i++) {
-						if (kit.equals(((AttributeTwoString)mainDBMP.parts.get(i).getAttribute("PART_NAME_OFFSETS")).value1)) {
-							mainDBMP.parts.remove(i);
+						if (kit.equals(((AttributeTwoString)mainDBMP.dBMPParts.get(i).getAttribute("PART_NAME_OFFSETS")).value1)) {
+							mainDBMP.dBMPParts.remove(i);
 							size--;
 							i--;
 						}
@@ -1253,21 +1253,21 @@ public class DBMPPlus extends Application {
 						}
 					} else if (!s.strip().isBlank()) generateKits.add(s.strip());
 				}
-				Part sel = partsDisplay.getSelectionModel().getSelectedItem();
+				DBMPPart sel = partsDisplay.getSelectionModel().getSelectedItem();
 				
-				int size = mainDBMP.parts.size();
+				int size = mainDBMP.dBMPParts.size();
 				for(int i=0; i<size; i++) {
-					if (generateKits.contains(((AttributeTwoString)mainDBMP.parts.get(i).getAttribute("PART_NAME_OFFSETS")).value1) 
-							&& ((AttributeCarPartID)mainDBMP.parts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.HOOD) {
+					if (generateKits.contains(((AttributeTwoString)mainDBMP.dBMPParts.get(i).getAttribute("PART_NAME_OFFSETS")).value1) 
+							&& ((AttributeCarPartID)mainDBMP.dBMPParts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.HOOD) {
 					// remove conflicting preexisting
-						mainDBMP.parts.remove(i);
+						mainDBMP.dBMPParts.remove(i);
 						size--;
 						i--;
 					}
 				}
 				for (String kit : generateKits) {
-						Part tp;
-						mainDBMP.parts.add(tp = new Part(kit, "HOOD"));
+						DBMPPart tp;
+						mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, "HOOD"));
 						if(autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
 				}
 	        	updateAllPartsDisplay();
@@ -1318,21 +1318,21 @@ public class DBMPPlus extends Application {
 						}
 					} else if (!s.strip().isBlank()) generateKits.add(s.strip());
 				}
-				Part sel = partsDisplay.getSelectionModel().getSelectedItem();
+				DBMPPart sel = partsDisplay.getSelectionModel().getSelectedItem();
 				
-				int size = mainDBMP.parts.size();
+				int size = mainDBMP.dBMPParts.size();
 				for(int i=0; i<size; i++) {
-					if (generateKits.contains(((AttributeTwoString)mainDBMP.parts.get(i).getAttribute("PART_NAME_OFFSETS")).value1) 
-							&& ((AttributeCarPartID)mainDBMP.parts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.SPOILER) {
+					if (generateKits.contains(((AttributeTwoString)mainDBMP.dBMPParts.get(i).getAttribute("PART_NAME_OFFSETS")).value1) 
+							&& ((AttributeCarPartID)mainDBMP.dBMPParts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.SPOILER) {
 					// remove conflicting preexisting
-						mainDBMP.parts.remove(i);
+						mainDBMP.dBMPParts.remove(i);
 						size--;
 						i--;
 					}
 				}
 				for (String kit : generateKits) {
-						Part tp;
-						mainDBMP.parts.add(tp = new Part(kit, "SPOILER"));
+						DBMPPart tp;
+						mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, "SPOILER"));
 						if(autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
 				}
 	        	updateAllPartsDisplay();
@@ -1384,25 +1384,25 @@ public class DBMPPlus extends Application {
 						}
 					} else if (!s.strip().isBlank()) generateKits.add(s.strip());
 				}
-				Part sel = partsDisplay.getSelectionModel().getSelectedItem();
+				DBMPPart sel = partsDisplay.getSelectionModel().getSelectedItem();
 				
-				int size = mainDBMP.parts.size();
+				int size = mainDBMP.dBMPParts.size();
 				for(int i=0; i<size; i++) {
-					if (generateKits.contains(((AttributeTwoString)mainDBMP.parts.get(i).getAttribute("PART_NAME_OFFSETS")).value1) 
-							&& (((AttributeCarPartID)mainDBMP.parts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.WHEEL
-							|| ((AttributeCarPartID)mainDBMP.parts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.WHEEL_REAR)) {
+					if (generateKits.contains(((AttributeTwoString)mainDBMP.dBMPParts.get(i).getAttribute("PART_NAME_OFFSETS")).value1) 
+							&& (((AttributeCarPartID)mainDBMP.dBMPParts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.WHEEL
+							|| ((AttributeCarPartID)mainDBMP.dBMPParts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.WHEEL_REAR)) {
 					// remove conflicting preexisting
-						mainDBMP.parts.remove(i);
+						mainDBMP.dBMPParts.remove(i);
 						size--;
 						i--;
 					}
 				}
 				for (String kit : generateKits) {
-						Part tp;
-						mainDBMP.parts.add(tp = new Part(kit, "WHEEL"));
+						DBMPPart tp;
+						mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, "WHEEL"));
 						((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value2 = "WHEEL_TIRE_FRONT";
 						if(autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
-						mainDBMP.parts.add(tp = new Part(kit, "WHEEL_REAR"));
+						mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, "WHEEL_REAR"));
 						((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value2 = "WHEEL_TIRE_REAR";
 						if(autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
 				}
@@ -1428,13 +1428,13 @@ public class DBMPPlus extends Application {
         	
         	debugListCheckedParts.setOnAction(e -> {
         		System.out.println("[DEBUG] CHECKED PARTS :");
-                for(Part p: partsDisplay.getSelectionModel().getSelectedItems()) {
+                for(DBMPPart p: partsDisplay.getSelectionModel().getSelectedItems()) {
                 	System.out.println(p.displayName);
                 }
         		e.consume();
         	});
         	debugInfoCheckedParts.setOnAction(e -> {
-        		for(Part p: partsDisplay.getSelectionModel().getSelectedItems()) {
+        		for(DBMPPart p: partsDisplay.getSelectionModel().getSelectedItems()) {
                 	System.out.println("- "+p.displayName);
                 	for (Attribute a:p.attributes) {
                 		System.out.println(a);
@@ -1451,11 +1451,11 @@ public class DBMPPlus extends Application {
         
         windowTop.getChildren().addAll(menuBar, shortcutsBar);
         
-        partsDisplay = new ListView<Part>();
+        partsDisplay = new ListView<DBMPPart>();
         partsDisplay.setCellFactory( lv -> {
         	 CarPartListCell cell = new CarPartListCell() {
                  @Override
-                 protected void updateItem(Part item, boolean empty) {
+                 protected void updateItem(DBMPPart item, boolean empty) {
                      super.updateItem(item, empty);
                  }
              };
@@ -1492,7 +1492,7 @@ public class DBMPPlus extends Application {
         scrollPaneAttrib.setFitToWidth(true);
         
         
-        for (Part p : mainDBMP.parts) {
+        for (DBMPPart p : mainDBMP.dBMPParts) {
         	partsDisplay.getItems().add(p);
         }
 
@@ -1539,10 +1539,10 @@ public class DBMPPlus extends Application {
     }
 
     public static void updateAllPartsDisplay() { //broken for undo only for some weird reason
-    	Part selected = partsDisplay.getSelectionModel().getSelectedItem();
+    	DBMPPart selected = partsDisplay.getSelectionModel().getSelectedItem();
     	mainDBMP.updateAll();
     	partsDisplay.getItems().clear();
-    	for (Part p : mainDBMP.parts) {
+    	for (DBMPPart p : mainDBMP.dBMPParts) {
        	partsDisplay.getItems().add(p);
     	}
     	//while we're at it
@@ -1552,28 +1552,28 @@ public class DBMPPlus extends Application {
     }
     
     public static void deleteSelectedParts() {
-		Part[] toDelete =  (Part[]) partsDisplay.getSelectionModel().getSelectedItems().toArray(new Part[0]);
+		DBMPPart[] toDelete =  (DBMPPart[]) partsDisplay.getSelectionModel().getSelectedItems().toArray(new DBMPPart[0]);
 		
 		for(int i=0; i<toDelete.length; i++) {
-			new UndoPartDelete(toDelete[i], DBMPPlus.mainDBMP.parts.indexOf(toDelete[i]));
+			new UndoPartDelete(toDelete[i], DBMPPlus.mainDBMP.dBMPParts.indexOf(toDelete[i]));
 			partsDisplay.getItems().remove(toDelete[i]);
     		if (DBMPPlus.debug) System.out.println("Part " + toDelete[i].displayName + " deleted");
-    		DBMPPlus.mainDBMP.parts.remove(toDelete[i]);
+    		DBMPPlus.mainDBMP.dBMPParts.remove(toDelete[i]);
 		}
 		for (CarPartListCell c : DBMPPlus.carPartListCells) if(c!=null && c.getItem()!=null) c.checkBox.setSelected(DBMPPlus.partsDisplay.getSelectionModel().getSelectedItems().contains(c.getItem()));
 	}
 }
 
 
-class PartSorterByNameAsc implements Comparator<Part>{
-	public int compare(Part a, Part b) {
+class PartSorterByNameAsc implements Comparator<DBMPPart>{
+	public int compare(DBMPPart a, DBMPPart b) {
 		return (((AttributeTwoString)a.getAttribute("PART_NAME_OFFSETS")).value1 + "_" + ((AttributeTwoString)a.getAttribute("PART_NAME_OFFSETS")).value2)
 				.compareTo((((AttributeTwoString)b.getAttribute("PART_NAME_OFFSETS")).value1 + "_" + ((AttributeTwoString)b.getAttribute("PART_NAME_OFFSETS")).value2));
 	}
 }
 
-class PartSorterByName2Asc implements Comparator<Part>{
-	public int compare(Part a, Part b) {
+class PartSorterByName2Asc implements Comparator<DBMPPart>{
+	public int compare(DBMPPart a, DBMPPart b) {
 		String stringA = ((AttributeTwoString)a.getAttribute("LOD_BASE_NAME")).value2 + "0" + ((AttributeTwoString)a.getAttribute("LOD_BASE_NAME")).value1.replace("KIT0", "KIT").replace("KITW0", "KITW");
 		String stringB = ((AttributeTwoString)b.getAttribute("LOD_BASE_NAME")).value2 + "0" + ((AttributeTwoString)b.getAttribute("LOD_BASE_NAME")).value1.replace("KIT0", "KIT").replace("KITW0", "KITW");
 

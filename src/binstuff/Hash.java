@@ -6,6 +6,24 @@ public class Hash {
 	public int binHash;
 	public int reversedBinHash;
 	public byte[] reversedBinHashBytes;
+
+	public int vltHash;
+	public int reversedVltHash;
+	
+	public Hash(String label, int hex, String type) {
+		switch(type) {
+		case "BIN":
+			this.label = label;
+			this.binHash = hex;
+			this.reversedBinHash = Integer.reverseBytes(this.binHash);
+			this.reversedBinHashBytes = intToBytes(reversedBinHash);
+			break;
+		case "VLT":
+			this.label = label;
+			this.vltHash = hex;
+			this.reversedVltHash = Integer.reverseBytes(this.vltHash);
+		}
+	}
 	
 	public Hash(String label) {
 		this.label = label;
