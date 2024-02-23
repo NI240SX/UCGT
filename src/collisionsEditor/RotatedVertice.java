@@ -1,5 +1,7 @@
 package collisionsEditor;
 
+import java.nio.ByteBuffer;
+
 public class RotatedVertice {
 
 	float XRotationX = 0;
@@ -38,9 +40,24 @@ public class RotatedVertice {
 		ZRotationW = zRotationW;
 	}
 
+	public RotatedVertice(ByteBuffer bb) {
+        this.XRotationX = bb.getFloat();
+        this.XRotationY = bb.getFloat();
+        this.XRotationZ = bb.getFloat();
+        this.XRotationW = bb.getFloat();
+        this.YRotationX = bb.getFloat();
+        this.YRotationY = bb.getFloat();
+        this.YRotationZ = bb.getFloat();
+        this.YRotationW = bb.getFloat();
+        this.ZRotationX = bb.getFloat();
+        this.ZRotationY = bb.getFloat();
+        this.ZRotationZ = bb.getFloat();
+        this.ZRotationW = bb.getFloat();
+	}
+
 	@Override
 	public String toString() {
-		return "RotatedVertice [XRotationX=" + XRotationX + ", XRotationY=" + XRotationY + ", XRotationZ=" + XRotationZ
+		return "\n    -RotatedVertice [XRotationX=" + XRotationX + ", XRotationY=" + XRotationY + ", XRotationZ=" + XRotationZ
 				+ ", XRotationW=" + XRotationW + ", YRotationX=" + YRotationX + ", YRotationY=" + YRotationY
 				+ ", YRotationZ=" + YRotationZ + ", YRotationW=" + YRotationW + ", ZRotationX=" + ZRotationX
 				+ ", ZRotationY=" + ZRotationY + ", ZRotationZ=" + ZRotationZ + ", ZRotationW=" + ZRotationW + "]";

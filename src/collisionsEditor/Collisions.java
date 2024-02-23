@@ -38,6 +38,13 @@ public class Collisions {
 	public float Y = 0;
 	public float Z = 0;
 	public float W = 0;
+
+	public int NumberOfLocalFixUps = 0;
+	public int NumberOfVirtualFixUps = 0;
+
+	public ArrayList<LocalFixUp> LocalFixUps = new ArrayList<LocalFixUp>();
+	public ArrayList<VirtualFixUp> VirtualFixUps = new ArrayList<VirtualFixUp>();
+	
 	
 	public Collisions() {
 		// TODO Auto-generated constructor stub
@@ -68,46 +75,35 @@ public class Collisions {
 			loadCol.NumberOfConvexTranslateShapes = bb.getInt();
 			loadCol.NumberOfConvexVerticesShapes = bb.getInt();
 			loadCol.NumberOfSphereShapes = bb.getInt();
+			loadCol.NumberOfLocalFixUps = bb.getInt();
+			loadCol.NumberOfVirtualFixUps = bb.getInt();
+
+			
+			
 			
 			for(int i =0; i<loadCol.NumberOfBounds; i++) {
-				loadCol.bounds.add(new CollisionBound());
-				bb.getInt(); //something -> at the beginning or at the end ???
-				bb.getInt(); //something
-				loadCol.bounds.get(i).OrientationX = bb.getFloat();
-				loadCol.bounds.get(i).OrientationY = bb.getFloat();
-				loadCol.bounds.get(i).OrientationZ = bb.getFloat();
-				bb.getInt(); //something
-				loadCol.bounds.get(i).PositionX = bb.getFloat();
-				loadCol.bounds.get(i).PositionY = bb.getFloat();
-				loadCol.bounds.get(i).PositionZ = bb.getFloat();
-				bb.getInt(); //something 0
-				loadCol.bounds.get(i).HalfDimensionX = bb.getFloat();
-				loadCol.bounds.get(i).HalfDimensionY = bb.getFloat();
-				loadCol.bounds.get(i).HalfDimensionZ = bb.getFloat();
-				bb.getInt(); //something 0
-				loadCol.bounds.get(i).PivotX = bb.getFloat();
-				loadCol.bounds.get(i).PivotY = bb.getFloat();
-				loadCol.bounds.get(i).PivotZ = bb.getFloat();
-				bb.getInt(); //something 0
-				loadCol.bounds.get(i).BoneOffsetX = bb.getFloat();
-				loadCol.bounds.get(i).BoneOffsetY = bb.getFloat();
-				loadCol.bounds.get(i).BoneOffsetZ = bb.getFloat();
-				bb.getInt(); //something 0
-				bb.getInt(); //something
-				loadCol.bounds.get(i).AttributeName = new Hash("[AttributeName]", bb.getInt(), "VLT"); //AttributeName VLT HASH
-				loadCol.bounds.get(i).SurfaceName = new Hash("[SurfaceName]", bb.getInt(), "VLT"); //SurfaceName VLT HASH
-				loadCol.bounds.get(i).NameHash = new Hash("[NameHash]", bb.getInt(), "VLT"); //NameHash VLT HASH
-				loadCol.bounds.get(i).BoneIndex = bb.getShort();
-				loadCol.bounds.get(i).RenderHierarchyIndex = bb.getShort();
-				bb.getInt(); //something 0
-				bb.getInt(); //something 0
-				bb.getInt(); //something 0
-				bb.getInt(); //something 0
-				bb.getInt(); //something 0
-				bb.getInt(); //something 0
-				bb.getInt(); //something 1 -> NumberOfChildren ? its a byte tho
-				bb.getInt(); //something
-				bb.getInt(); //something 0
+				loadCol.bounds.add(CollisionBound.load(bb));
+			}
+			for(int i =0; i<loadCol.NumberOfBoxShapes; i++) {
+				loadCol.boxShapes.add(CollisionBoxShape.load(bb));
+			}
+			for(int i =0; i<loadCol.NumberOfConvexTransformShapes; i++) {
+				loadCol.convexTransformShapes.add(CollisionConvexTransform.load(bb));
+			}
+			for(int i =0; i<loadCol.NumberOfConvexTranslateShapes; i++) {
+				loadCol.convexTranslateShapes.add(CollisionConvexTranslate.load(bb));
+			}
+			for(int i =0; i<loadCol.NumberOfConvexVerticesShapes; i++) {
+				loadCol.convexVerticesShapes.add(CollisionConvexVertice.load(bb));
+			}
+			for(int i =0; i<loadCol.NumberOfSphereShapes; i++) {
+				loadCol.sphereShapes.add(CollisionSphereShape.load(bb));
+			}
+			for(int i =0; i<loadCol.NumberOfLocalFixUps; i++) {
+				loadCol.LocalFixUps.add(new LocalFixUp(bb));
+			}
+			for(int i =0; i<loadCol.NumberOfVirtualFixUps; i++) {
+				loadCol.VirtualFixUps.add(new VirtualFixUp(bb));
 			}
 			
 			
@@ -116,13 +112,11 @@ public class Collisions {
 //			}			
 //			
 //			//at the very end, find the correct offset
-//			bb.getInt(); //something 0
-//			bb.getInt(); //something 0
-//			loadCol.isResolved = bb.get()==1;
-//			loadCol.X = bb.getFloat();
-//			loadCol.Y = bb.getFloat();
-//			loadCol.Z = bb.getFloat();
-//			loadCol.W = bb.getFloat();
+			loadCol.isResolved = bb.get()==1;
+			loadCol.X = bb.getFloat();
+			loadCol.Y = bb.getFloat();
+			loadCol.Z = bb.getFloat();
+			loadCol.W = bb.getFloat();
 			
 		} catch (FileNotFoundException e) {
 			//dbmp to load not found

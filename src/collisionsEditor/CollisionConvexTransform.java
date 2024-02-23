@@ -1,5 +1,7 @@
 package collisionsEditor;
 
+import java.nio.ByteBuffer;
+
 public class CollisionConvexTransform {
 
 	// int or float ???
@@ -57,13 +59,37 @@ public class CollisionConvexTransform {
 
 	@Override
 	public String toString() {
-		return "CollisionConvexTransform [NumVertices=" + NumVertices + ", TranslationX=" + TranslationX
+		return "\n -CollisionConvexTransform [NumVertices=" + NumVertices + ", TranslationX=" + TranslationX
 				+ ", TranslationY=" + TranslationY + ", TranslationZ=" + TranslationZ + ", TranslationW=" + TranslationW
 				+ ", XRotationX=" + XRotationX + ", XRotationY=" + XRotationY + ", XRotationZ=" + XRotationZ
 				+ ", XRotationW=" + XRotationW + ", YRotationX=" + YRotationX + ", YRotationY=" + YRotationY
 				+ ", YRotationZ=" + YRotationZ + ", YRotationW=" + YRotationW + ", ZRotationX=" + ZRotationX
 				+ ", ZRotationY=" + ZRotationY + ", ZRotationZ=" + ZRotationZ + ", ZRotationW=" + ZRotationW
 				+ ", unknownFloat=" + unknownFloat + "]";
+	}
+
+	public static CollisionConvexTransform load(ByteBuffer bb) {
+		CollisionConvexTransform load = new CollisionConvexTransform();
+		bb.position(bb.position() + 0x10);
+		load.unknownFloat = bb.getFloat();
+		bb.position(bb.position() + 0x0C);
+		load.XRotationX = bb.getFloat();
+		load.XRotationY = bb.getFloat();
+		load.XRotationZ = bb.getFloat();
+		load.XRotationW = bb.getFloat();
+		load.YRotationX = bb.getFloat();
+		load.YRotationY = bb.getFloat();
+		load.YRotationZ = bb.getFloat();
+		load.YRotationW = bb.getFloat();
+		load.ZRotationX = bb.getFloat();
+		load.ZRotationY = bb.getFloat();
+		load.ZRotationZ = bb.getFloat();
+		load.ZRotationW = bb.getFloat();
+		load.TranslationX = bb.getFloat();
+		load.TranslationY = bb.getFloat();
+		load.TranslationZ = bb.getFloat();
+		load.TranslationW = bb.getFloat();
+		return load;
 	}
 
 }

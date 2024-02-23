@@ -1,5 +1,6 @@
 package collisionsEditor;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 public class CollisionConvexVertice {
@@ -49,12 +50,60 @@ public class CollisionConvexVertice {
 
 	@Override
 	public String toString() {
-		return "CollisionConvexVertice [CenterX=" + CenterX + ", CenterY=" + CenterY + ", CenterZ=" + CenterZ
+		return "\n -CollisionConvexVertice [CenterX=" + CenterX + ", CenterY=" + CenterY + ", CenterZ=" + CenterZ
 				+ ", CenterW=" + CenterW + ", HalfExtentsX=" + HalfExtentsX + ", HalfExtentsY=" + HalfExtentsY
 				+ ", HalfExtentsZ=" + HalfExtentsZ + ", HalfExtentsW=" + HalfExtentsW + ", NumberOfPlaneEquations="
 				+ NumberOfPlaneEquations + ", NumberOfRotatedVertices=" + NumberOfRotatedVertices + ", NumVertices="
-				+ NumVertices + ", unknownFloat=" + unknownFloat + ", PlaneEquations=" + PlaneEquations
-				+ ", RotatedVertices=" + RotatedVertices + "]";
+				+ NumVertices + ", unknownFloat=" + unknownFloat + ",\n PlaneEquations=" + PlaneEquations
+				+ ",\n RotatedVertices=" + RotatedVertices + "]";
+	}
+
+	public static CollisionConvexVertice load(ByteBuffer bb) {
+		CollisionConvexVertice load = new CollisionConvexVertice();
+		bb.position(bb.position() + 0x10);
+		load.unknownFloat = bb.getFloat();
+		bb.position(bb.position() + 0x0C);
+		
+		load.HalfExtentsX = bb.getFloat();
+		load.HalfExtentsY = bb.getFloat();
+		load.HalfExtentsZ = bb.getFloat();
+		load.HalfExtentsW = bb.getFloat();
+		load.CenterX = bb.getFloat();
+		load.CenterY = bb.getFloat();
+		load.CenterZ = bb.getFloat();
+		load.CenterW = bb.getFloat();
+		//TODO currently going around the HKArray, might need to do this properly
+		//commented is the C code from Binary
+//		load.arrRotatedVertices.Read(br); (aka the following)
+
+//		br.BaseStream.Position += 0x4;
+		bb.getInt();
+		load.NumberOfRotatedVertices = bb.getShort();
+		bb.position(bb.position()+6);
+//		br.BaseStream.Position += 0x2;
+//		this.Capacity = br.ReadInt16();
+//		br.BaseStream.Position += 0x1;
+//		this.Flags = br.ReadByte();
+		
+		load.NumVertices = bb.getInt();
+//		load.arrPlaneEquations.Read(br);
+		bb.getInt();
+		load.NumberOfPlaneEquations = bb.getShort();
+		bb.position(bb.position()+10);
+
+		// Get Rotated Vertices
+		for (int loop = 0; loop < load.NumberOfRotatedVertices; loop++)
+		{
+			load.RotatedVertices.add(new RotatedVertice(bb));
+		}
+
+		// Get Plane Equations
+		for (int loop = 0; loop < load.NumberOfPlaneEquations; loop++)
+		{
+			load.PlaneEquations.add(new PlaneEquation(bb));
+		}
+
+		return load;
 	}
 
 }

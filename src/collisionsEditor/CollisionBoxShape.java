@@ -1,5 +1,7 @@
 package collisionsEditor;
 
+import java.nio.ByteBuffer;
+
 public class CollisionBoxShape {
 
 	float HalfExtentsX = (float) 0.06;
@@ -24,8 +26,20 @@ public class CollisionBoxShape {
 
 	@Override
 	public String toString() {
-		return "CollisionBoxShape [HalfExtentsX=" + HalfExtentsX + ", HalfExtentsY=" + HalfExtentsY + ", HalfExtentsZ="
+		return "\n -CollisionBoxShape [HalfExtentsX=" + HalfExtentsX + ", HalfExtentsY=" + HalfExtentsY + ", HalfExtentsZ="
 				+ HalfExtentsZ + ", HalfExtentsW=" + HalfExtentsW + ", unknownFloat=" + unknownFloat + "]";
+	}
+
+	public static CollisionBoxShape load(ByteBuffer bb) {
+		CollisionBoxShape load = new CollisionBoxShape();
+		bb.position(bb.position() + 0x10);
+		load.unknownFloat = bb.getFloat();
+		bb.position(bb.position() + 0x0C);
+		load.HalfExtentsX = bb.getFloat();
+		load.HalfExtentsY = bb.getFloat();
+		load.HalfExtentsZ = bb.getFloat();
+		load.HalfExtentsW = bb.getFloat();
+		return load;
 	}
 
 }
