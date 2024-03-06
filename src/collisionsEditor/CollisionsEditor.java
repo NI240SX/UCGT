@@ -13,10 +13,19 @@ import java.time.format.DateTimeFormatter;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Point3D;
+import javafx.scene.Group;
+import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
+import javafx.scene.SceneAntialiasing;
+import javafx.scene.SubScene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.*;
+import javafx.scene.transform.Rotate;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -46,6 +55,9 @@ public class CollisionsEditor extends Application {
 	public static final String programName = "collisions editor or some shit idk";
 	public static final String programVersion = "dev";
 	public static final String settingsFile = "colseditor.dat";
+	
+	public static Group viewportGroup = new Group();
+	public static OrbitCameraViewport viewport;
 	
 	public static void main(String[] args) {
 		try {
@@ -290,6 +302,13 @@ public class CollisionsEditor extends Application {
         }
         
         windowTop.getChildren().addAll(menuBar, shortcutsBar);
+        
+        
+
+        viewport = new OrbitCameraViewport(viewportGroup, 1024, 600);
+        
+
+
 //        
 //        partsDisplay = new ListView<DBMPPart>();
 //        partsDisplay.setCellFactory( lv -> {
@@ -327,6 +346,7 @@ public class CollisionsEditor extends Application {
 
         BorderPane root = new BorderPane();
         root.setTop(windowTop);
+        root.setCenter(viewport);
 //        root.setCenter(partsDisplay);
 //        root.setRight(attributesDisplay);
 //        root.setRight(scrollPaneAttrib);
