@@ -2,6 +2,15 @@ package collisionsEditor;
 
 import java.nio.ByteBuffer;
 
+import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.Box;
+import javafx.scene.shape.Cylinder;
+import javafx.scene.shape.DrawMode;
+import javafx.scene.shape.Shape3D;
+import javafx.scene.shape.Sphere;
+import javafx.scene.transform.Rotate;
+
 public class CollisionBoxShape {
 
 	float HalfExtentsX = (float) 0.06;
@@ -10,6 +19,9 @@ public class CollisionBoxShape {
 	float HalfExtentsW = (float) 0.06;
 	
 	float unknownFloat = (float) 0.05;
+
+	Shape3D displayShape = new Box(1,1,1);
+	boolean render = true;
 	
 	public CollisionBoxShape() {
 		// TODO Auto-generated constructor stub
@@ -22,6 +34,7 @@ public class CollisionBoxShape {
 		HalfExtentsZ = halfExtentsZ;
 		HalfExtentsW = halfExtentsW;
 		this.unknownFloat = unknownFloat;
+		updateShape();
 	}
 
 	@Override
@@ -39,7 +52,15 @@ public class CollisionBoxShape {
 		load.HalfExtentsY = bb.getFloat();
 		load.HalfExtentsZ = bb.getFloat();
 		load.HalfExtentsW = bb.getFloat();
+		load.updateShape();
 		return load;
 	}
 
+	
+	public void updateShape() {
+		this.displayShape.setScaleX(HalfExtentsX*2);
+		this.displayShape.setScaleY(HalfExtentsY*2);
+		this.displayShape.setScaleZ(HalfExtentsZ*2);
+		this.displayShape.setMaterial(new PhongMaterial(Color.color(Math.random(), Math.random(), Math.random(), 0.4)));
+	}
 }

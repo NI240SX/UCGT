@@ -13,6 +13,7 @@ import java.util.Arrays;
 import binstuff.Hash;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.shape.Shape;
 
 public class Collisions {
 
@@ -44,7 +45,6 @@ public class Collisions {
 
 	public ArrayList<LocalFixUp> LocalFixUps = new ArrayList<LocalFixUp>();
 	public ArrayList<VirtualFixUp> VirtualFixUps = new ArrayList<VirtualFixUp>();
-	
 	
 	public Collisions() {
 		// TODO Auto-generated constructor stub

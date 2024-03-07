@@ -3,6 +3,15 @@ package collisionsEditor;
 import java.nio.ByteBuffer;
 
 import binstuff.Hash;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.Box;
+import javafx.scene.shape.Cylinder;
+import javafx.scene.shape.DrawMode;
+import javafx.scene.shape.Shape;
+import javafx.scene.shape.Shape3D;
+import javafx.scene.shape.Sphere;
+import javafx.scene.transform.Rotate;
 
 public class CollisionBound {
 
@@ -42,6 +51,10 @@ public class CollisionBound {
 	float PositionX = 0;
 	float PositionY = 0;
 	float PositionZ = 0;
+
+	Shape3D displayShape = new Box(1,1,1);
+	Sphere displayPivot = new Sphere(0.05);
+	boolean render = true;
 	
 	public CollisionBound() {
 		// TODO Auto-generated constructor stub
@@ -82,6 +95,7 @@ public class CollisionBound {
 		PositionX = positionX;
 		PositionY = positionY;
 		PositionZ = positionZ;
+		updateShape();
 	}
 
 	@Override
@@ -97,6 +111,58 @@ public class CollisionBound {
 				+ ", PositionY=" + PositionY + ", PositionZ=" + PositionZ + "]";
 	}
 
+	public void updateShape() {
+		switch(this.Shape) {
+		case KSHAPE_BOX:
+			this.displayShape = new Box(1,1,1);
+			this.displayShape.setDrawMode(DrawMode.FILL);
+			break;
+		case KSHAPE_CYLINDER:
+			this.displayShape = new Cylinder(1,1);
+			this.displayShape.setDrawMode(DrawMode.FILL);
+			break;
+		case KSHAPE_INVALID:
+			this.displayShape = new Box(1,1,1);
+			this.displayShape.setDrawMode(DrawMode.LINE);
+			break;
+		case KSHAPE_MESH:
+			this.displayShape = new Box(1,1,1);
+			this.displayShape.setDrawMode(DrawMode.LINE);
+			break;
+		case KSHAPE_SPHERE:
+			this.displayShape = new Sphere(1);
+			this.displayShape.setDrawMode(DrawMode.FILL);
+			break;
+		case KSHAPE_TYPE_COUNT:
+			this.displayShape = new Box(1,1,1);
+			this.displayShape.setDrawMode(DrawMode.LINE);
+			break;
+		default:
+			this.displayShape = new Box(1,1,1);
+			this.displayShape.setDrawMode(DrawMode.LINE);
+			break;
+		}
+		this.displayShape.setScaleX(HalfDimensionX*2);
+		this.displayShape.setScaleY(HalfDimensionY*2);
+		this.displayShape.setScaleZ(HalfDimensionZ*2);
+		this.displayShape.setTranslateX(PositionX);
+		this.displayShape.setTranslateY(PositionY - CollisionsEditor.mainCollisions.Z); 
+		this.displayShape.setTranslateZ(PositionZ - CollisionsEditor.mainCollisions.X);
+		double r; double g; double b;
+		this.displayShape.setMaterial(new PhongMaterial(Color.color(r=Math.random(), g=Math.random(), b=Math.random(), 0.4)));
+		//TODO fix rotation breaking the fabric of reality
+		Rotate rotateX = new Rotate(this.OrientationX*180/Math.PI, this.PivotX, this.PivotY, this.PivotZ, Rotate.X_AXIS);
+		Rotate rotateY = new Rotate(this.OrientationY*180/Math.PI, this.PivotX, this.PivotY, this.PivotZ, Rotate.Y_AXIS);
+		Rotate rotateZ = new Rotate(this.OrientationZ*180/Math.PI, this.PivotX, this.PivotY, this.PivotZ, Rotate.Z_AXIS);
+		this.displayShape.getTransforms().addAll(rotateX, rotateY, rotateZ);
+		
+		this.displayPivot.setMaterial(new PhongMaterial(Color.color(r, g, b, 1)));
+		this.displayPivot.setTranslateX(PivotX);
+		this.displayPivot.setTranslateY(PivotY);
+		this.displayPivot.setTranslateZ(PivotZ);
+		this.displayPivot.setViewOrder(0);
+	}
+	
 	public static CollisionBound load(ByteBuffer bb) {
 		CollisionBound ret = new CollisionBound();
 		ret.OrientationX = bb.getFloat();
@@ -133,6 +199,7 @@ public class CollisionBound {
 		bb.position(bb.position()+6);
 		ret.ChildrenFlags = BoundFlags.get(bb.get());
 		bb.position(bb.position()+12);
+		ret.updateShape();
 		return ret;
 	}
 	

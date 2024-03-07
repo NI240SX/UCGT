@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import javafx.application.Application;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Point3D;
@@ -137,6 +139,9 @@ public class CollisionsEditor extends Application {
 						updateAllPartsDisplay();
 						primaryStage.setTitle(programName + " - " + mainCollisions.carname.label);
 //						menuDBMP.setText(mainCollisions.carname.label);
+						updateRender();
+				        
+						
 						if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Collisions loaded successfully.", ButtonType.OK).show();
 					} else {
 //						new Alert(Alert.AlertType.INFORMATION, "Nothing to load", ButtonType.OK).show();
@@ -276,7 +281,9 @@ public class CollisionsEditor extends Application {
 //        	Button debugListCheckedParts = new Button("LIST CHECKED PARTS");
 //        	Button debugInfoCheckedParts = new Button("INFO ABOUT CHECKED PARTS");
         	Button debugDBMPDisplay = new Button("DISPLAY COLLISIONS");
-            shortcutsBar.getChildren().addAll(debugDBMPDisplay);
+        	Button debug3D = new Button("3D DEBUG");
+        	CheckBox debugBoxes = new CheckBox("COL BOXES");
+            shortcutsBar.getChildren().addAll(debugDBMPDisplay, debug3D, debugBoxes);
         	
 //        	debugListCheckedParts.setOnAction(e -> {
 //        		System.out.println("[DEBUG] CHECKED PARTS :");
@@ -298,6 +305,17 @@ public class CollisionsEditor extends Application {
         		System.out.println(mainCollisions+"\n");
         		e.consume();
         	});
+        	debug3D.setOnAction(e->{
+        		System.out.println("Viewport :\nRotation X : "+viewport.rotationX+"\nRotation Y : "+viewport.rotationY+"\nRotation Z : "+viewport.rotationZ);
+        		e.consume();
+        	});
+        	debugBoxes.setSelected(true);
+        	debugBoxes.setOnAction(e -> {
+        		for (CollisionBoxShape b : CollisionsEditor.mainCollisions.boxShapes) {
+        			b.render = debugBoxes.isSelected();
+        		}
+        		updateRender();
+        	});
         	
         }
         
@@ -306,8 +324,10 @@ public class CollisionsEditor extends Application {
         
 
         viewport = new OrbitCameraViewport(viewportGroup, 1024, 600);
-        
+        updateRender();
 
+        
+		
 
 //        
 //        partsDisplay = new ListView<DBMPPart>();
@@ -352,6 +372,25 @@ public class CollisionsEditor extends Application {
 //        root.setRight(scrollPaneAttrib);
 //        root.setBottom(statusBar);
         
+        
+        
+
+		viewport.widthProperty().addListener(new InvalidationListener() {
+			@Override
+			public void invalidated(Observable evt) {
+				updateRender();
+			}
+		});
+        viewport.heightProperty().addListener(new InvalidationListener() {
+			@Override
+			public void invalidated(Observable evt) {
+				updateRender();
+			}
+		});
+		viewport.widthProperty().bind(root.widthProperty());
+		viewport.heightProperty().bind(root.heightProperty());
+		
+        
 
 //        attributesDisplay.setMinWidth(root.getWidth()/2);
         
@@ -383,6 +422,24 @@ public class CollisionsEditor extends Application {
                 useDarkMode = false;
                 }
         });
+    }
+    
+    public void updateRender() {
+    	viewport.viewportGroup.getChildren().clear();
+    	viewport.buildAxes();
+        for (CollisionBound b : CollisionsEditor.mainCollisions.bounds) {
+        	if (b.render) {
+	        	b.updateShape();
+	        	viewport.viewportGroup.getChildren().addAll(b.displayPivot, b.displayShape);
+        	}
+        }
+        for (CollisionBoxShape b : CollisionsEditor.mainCollisions.boxShapes) {
+        	if (b.render) {
+	        	b.updateShape();
+	        	viewport.viewportGroup.getChildren().addAll(b.displayShape);
+        	}
+        }
+
     }
     
     public void updateAllPartsDisplay() {
