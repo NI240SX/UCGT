@@ -27,6 +27,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.*;
+import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -283,7 +284,8 @@ public class CollisionsEditor extends Application {
         	Button debugDBMPDisplay = new Button("DISPLAY COLLISIONS");
         	Button debug3D = new Button("3D DEBUG");
         	CheckBox debugBoxes = new CheckBox("COL BOXES");
-            shortcutsBar.getChildren().addAll(debugDBMPDisplay, debug3D, debugBoxes);
+        	CheckBox debugBoundsNoShape = new CheckBox("BOUNDS WITHOUT SHAPE");
+            shortcutsBar.getChildren().addAll(debugDBMPDisplay, debug3D, debugBoxes, debugBoundsNoShape);
         	
 //        	debugListCheckedParts.setOnAction(e -> {
 //        		System.out.println("[DEBUG] CHECKED PARTS :");
@@ -309,14 +311,28 @@ public class CollisionsEditor extends Application {
         		System.out.println("Viewport :\nRotation X : "+viewport.rotationX+"\nRotation Y : "+viewport.rotationY+"\nRotation Z : "+viewport.rotationZ);
         		e.consume();
         	});
-        	debugBoxes.setSelected(true);
+        	
+        	debugBoxes.setSelected(false);
         	debugBoxes.setOnAction(e -> {
         		for (CollisionBoxShape b : CollisionsEditor.mainCollisions.boxShapes) {
         			b.render = debugBoxes.isSelected();
         		}
         		updateRender();
         	});
-        	
+    		for (CollisionBoxShape b : CollisionsEditor.mainCollisions.boxShapes) {
+    			b.render = debugBoxes.isSelected();
+    		}
+    		
+    		debugBoundsNoShape.setSelected(false);
+        	debugBoundsNoShape.setOnAction(e -> {
+        		for (CollisionBound b : CollisionsEditor.mainCollisions.bounds) {
+        			if (b.displayShape.getDrawMode() == DrawMode.LINE) b.render = debugBoundsNoShape.isSelected();
+        		}
+        		updateRender();
+        	});
+    		for (CollisionBound b : CollisionsEditor.mainCollisions.bounds) {
+    			if (b.displayShape.getDrawMode() == DrawMode.LINE) b.render = debugBoundsNoShape.isSelected();
+    		}
         }
         
         windowTop.getChildren().addAll(menuBar, shortcutsBar);
@@ -440,6 +456,7 @@ public class CollisionsEditor extends Application {
         	}
         }
 
+        
     }
     
     public void updateAllPartsDisplay() {

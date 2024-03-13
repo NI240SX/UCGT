@@ -46,6 +46,8 @@ public class Collisions {
 	public ArrayList<LocalFixUp> LocalFixUps = new ArrayList<LocalFixUp>();
 	public ArrayList<VirtualFixUp> VirtualFixUps = new ArrayList<VirtualFixUp>();
 	
+	public static ArrayList<Hash> commonCollisionHashes = Hash.loadHashes(new File("data/collisionshashes"));
+	
 	public Collisions() {
 		// TODO Auto-generated constructor stub
 	}

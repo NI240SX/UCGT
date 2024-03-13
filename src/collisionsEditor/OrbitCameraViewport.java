@@ -26,6 +26,11 @@ public class OrbitCameraViewport extends SubScene {
     Rotate rotationZ = new Rotate(0, 0, 0, 10, Rotate.Z_AXIS);
     Translate translation = new Translate();
 	
+	/**
+	 * @param viewportGroup
+	 * @param width
+	 * @param height
+	 */
 	public OrbitCameraViewport(Group viewportGroup, @NamedArg(value="width") double width, @NamedArg(value="height") double height) {
 		super(viewportGroup, width, height, true, SceneAntialiasing.BALANCED);
 

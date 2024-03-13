@@ -3,6 +3,7 @@ package collisionsEditor;
 import java.nio.ByteBuffer;
 
 import binstuff.Hash;
+import javafx.scene.control.Tooltip;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
@@ -16,7 +17,7 @@ import javafx.scene.transform.Rotate;
 public class CollisionBound {
 
 	Hash AttributeName = new Hash("");
-	Hash NameHash = new Hash(""); //TODO VLT HASH !!
+	Hash NameHash = new Hash("");
 	Hash SurfaceName;
 	
 	BoundFlags ChildrenFlags;
@@ -161,6 +162,10 @@ public class CollisionBound {
 		this.displayPivot.setTranslateY(PivotY);
 		this.displayPivot.setTranslateZ(PivotZ);
 		this.displayPivot.setViewOrder(0);
+		
+		this.displayShape.setOnMouseEntered(e -> {
+			System.out.println("Name : "+this.NameHash.label+"\nSurfaceName : "+this.SurfaceName.label+"\nAttributeName : "+this.AttributeName.label);			
+		});
 	}
 	
 	public static CollisionBound load(ByteBuffer bb) {
@@ -189,9 +194,9 @@ public class CollisionBound {
 		bb.get(); //BoundSubType
 		ret.Shape = BoundShape.get(bb.get()); //BoundShape
 		ret.Flags = BoundFlags.get(bb.get()); //BoundFlags
-		ret.AttributeName = new Hash("[AttributeName]", bb.getInt(), "VLT"); //AttributeName VLT HASH
-		ret.SurfaceName = new Hash("[SurfaceName]", bb.getInt(), "VLT"); //SurfaceName VLT HASH
-		ret.NameHash = new Hash("[NameHash]", bb.getInt(), "VLT"); //NameHash VLT HASH
+		ret.AttributeName = Hash.guess(bb.getInt(), Collisions.commonCollisionHashes, "[unknown AttributeName]", "VLT"); //AttributeName VLT HASH
+		ret.SurfaceName = Hash.guess(bb.getInt(), Collisions.commonCollisionHashes, "[unknown SurfaceName]", "VLT"); //SurfaceName VLT HASH
+		ret.NameHash = Hash.guess(bb.getInt(), Collisions.commonCollisionHashes, "[unknown NameHash]", "VLT"); //NameHash VLT HASH
 		ret.BoneIndex = bb.getShort();
 		ret.RenderHierarchyIndex = bb.getShort();
 		bb.position(bb.position()+24);
