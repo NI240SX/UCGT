@@ -53,6 +53,10 @@ public class CollisionBound {
 	float PositionY = 0;
 	float PositionZ = 0;
 
+	CollisionShape collisionShape = null;
+	CollisionConvexTransform shapeTransform = null;
+	CollisionConvexTranslate shapeTranslate = null;
+	
 	Shape3D displayShape = new Box(1,1,1);
 	Sphere displayPivot = new Sphere(0.05);
 	boolean render = true;

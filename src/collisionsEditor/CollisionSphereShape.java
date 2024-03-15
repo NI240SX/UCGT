@@ -2,7 +2,7 @@ package collisionsEditor;
 
 import java.nio.ByteBuffer;
 
-public class CollisionSphereShape {
+public class CollisionSphereShape extends CollisionShape {
 
 	float unknownFloat = (float) 0.05;
 		

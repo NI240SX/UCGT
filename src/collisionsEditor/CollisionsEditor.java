@@ -79,7 +79,7 @@ public class CollisionsEditor extends Application {
 		} catch (Exception e) {}
 		
 		try {
-			mainCollisions = Collisions.load(new File(lastDirectoryLoaded + lastFileLoaded));
+			mainCollisions = new Collisions(new File(lastDirectoryLoaded + lastFileLoaded));
 		} catch (Exception e){}
 		
 		
@@ -132,7 +132,7 @@ public class CollisionsEditor extends Application {
 					fc.setTitle("Load existing Collisions");
 					Collisions loadDBMP;
 					File selected = fc.showOpenDialog(null);
-					if ((loadDBMP = Collisions.load(selected))!=null) {
+					if ((loadDBMP = new Collisions(selected))!=null) {
 						mainCollisions = loadDBMP;
 						lastFileLoaded = selected.getName();
 						lastDirectoryLoaded = selected.getAbsolutePath().replace(lastFileLoaded, "");
@@ -311,28 +311,28 @@ public class CollisionsEditor extends Application {
         		System.out.println("Viewport :\nRotation X : "+viewport.rotationX+"\nRotation Y : "+viewport.rotationY+"\nRotation Z : "+viewport.rotationZ);
         		e.consume();
         	});
-        	
-        	debugBoxes.setSelected(false);
-        	debugBoxes.setOnAction(e -> {
-        		for (CollisionBoxShape b : CollisionsEditor.mainCollisions.boxShapes) {
-        			b.render = debugBoxes.isSelected();
-        		}
-        		updateRender();
-        	});
-    		for (CollisionBoxShape b : CollisionsEditor.mainCollisions.boxShapes) {
-    			b.render = debugBoxes.isSelected();
-    		}
-    		
-    		debugBoundsNoShape.setSelected(false);
-        	debugBoundsNoShape.setOnAction(e -> {
-        		for (CollisionBound b : CollisionsEditor.mainCollisions.bounds) {
-        			if (b.displayShape.getDrawMode() == DrawMode.LINE) b.render = debugBoundsNoShape.isSelected();
-        		}
-        		updateRender();
-        	});
-    		for (CollisionBound b : CollisionsEditor.mainCollisions.bounds) {
-    			if (b.displayShape.getDrawMode() == DrawMode.LINE) b.render = debugBoundsNoShape.isSelected();
-    		}
+//        	
+//        	debugBoxes.setSelected(false);
+//        	debugBoxes.setOnAction(e -> {
+//        		for (CollisionBoxShape b : CollisionsEditor.mainCollisions.boxShapes) {
+//        			b.render = debugBoxes.isSelected();
+//        		}
+//        		updateRender();
+//        	});
+//    		for (CollisionBoxShape b : CollisionsEditor.mainCollisions.boxShapes) {
+//    			b.render = debugBoxes.isSelected();
+//    		}
+//    		
+//    		debugBoundsNoShape.setSelected(false);
+//        	debugBoundsNoShape.setOnAction(e -> {
+//        		for (CollisionBound b : CollisionsEditor.mainCollisions.bounds) {
+//        			if (b.displayShape.getDrawMode() == DrawMode.LINE) b.render = debugBoundsNoShape.isSelected();
+//        		}
+//        		updateRender();
+//        	});
+//    		for (CollisionBound b : CollisionsEditor.mainCollisions.bounds) {
+//    			if (b.displayShape.getDrawMode() == DrawMode.LINE) b.render = debugBoundsNoShape.isSelected();
+//    		}
         }
         
         windowTop.getChildren().addAll(menuBar, shortcutsBar);
@@ -443,18 +443,24 @@ public class CollisionsEditor extends Application {
     public void updateRender() {
     	viewport.viewportGroup.getChildren().clear();
     	viewport.buildAxes();
-        for (CollisionBound b : CollisionsEditor.mainCollisions.bounds) {
-        	if (b.render) {
+    	for(CollisionBound b : CollisionsEditor.mainCollisions.childBounds) {
+    		if (b.render) {
 	        	b.updateShape();
 	        	viewport.viewportGroup.getChildren().addAll(b.displayPivot, b.displayShape);
         	}
-        }
-        for (CollisionBoxShape b : CollisionsEditor.mainCollisions.boxShapes) {
-        	if (b.render) {
-	        	b.updateShape();
-	        	viewport.viewportGroup.getChildren().addAll(b.displayShape);
-        	}
-        }
+    	}
+//        for (CollisionBound b : CollisionsEditor.mainCollisions.bounds) {
+//        	if (b.render) {
+//	        	b.updateShape();
+//	        	viewport.viewportGroup.getChildren().addAll(b.displayPivot, b.displayShape);
+//        	}
+//        }
+//        for (CollisionBoxShape b : CollisionsEditor.mainCollisions.boxShapes) {
+//        	if (b.render) {
+//	        	b.updateShape();
+//	        	viewport.viewportGroup.getChildren().addAll(b.displayShape);
+//        	}
+//        }
 
         
     }

@@ -3,7 +3,7 @@ package collisionsEditor;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-public class CollisionConvexVertice {
+public class CollisionConvexVertice extends CollisionShape {
 
 	float CenterX = 0;
 	float CenterY = 0;

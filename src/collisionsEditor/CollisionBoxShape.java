@@ -11,7 +11,7 @@ import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.Sphere;
 import javafx.scene.transform.Rotate;
 
-public class CollisionBoxShape {
+public class CollisionBoxShape extends CollisionShape {
 
 	float HalfExtentsX = (float) 0.06;
 	float HalfExtentsY = (float) 0.06;
