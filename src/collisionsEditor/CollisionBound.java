@@ -3,6 +3,7 @@ package collisionsEditor;
 import java.nio.ByteBuffer;
 
 import binstuff.Hash;
+import javafx.geometry.Point3D;
 import javafx.scene.control.Tooltip;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -135,7 +136,7 @@ public class CollisionBound {
 			this.displayShape.setDrawMode(DrawMode.LINE);
 			break;
 		case KSHAPE_SPHERE:
-			this.displayShape = new Sphere(1);
+			this.displayShape = new Sphere(0.5);
 			this.displayShape.setDrawMode(DrawMode.FILL);
 			break;
 		case KSHAPE_TYPE_COUNT:
@@ -155,11 +156,25 @@ public class CollisionBound {
 		this.displayShape.setTranslateZ(PositionZ - CollisionsEditor.mainCollisions.X);
 		double r; double g; double b;
 		this.displayShape.setMaterial(new PhongMaterial(Color.color(r=Math.random(), g=Math.random(), b=Math.random(), 0.4)));
-		//TODO fix rotation breaking the fabric of reality
-		Rotate rotateX = new Rotate(this.OrientationX*180/Math.PI, this.PivotX, this.PivotY, this.PivotZ, Rotate.X_AXIS);
-		Rotate rotateY = new Rotate(this.OrientationY*180/Math.PI, this.PivotX, this.PivotY, this.PivotZ, Rotate.Y_AXIS);
-		Rotate rotateZ = new Rotate(this.OrientationZ*180/Math.PI, this.PivotX, this.PivotY, this.PivotZ, Rotate.Z_AXIS);
-		this.displayShape.getTransforms().addAll(rotateX, rotateY, rotateZ);
+
+		if (this.shapeTransform != null) {
+			double d = Math.acos((shapeTransform.XRotationX+shapeTransform.YRotationY+shapeTransform.ZRotationZ-1d)/2d);
+		    if(d!=0d){
+		        double den=2d*Math.sin(d);
+		        Point3D p= new Point3D((shapeTransform.YRotationZ-shapeTransform.ZRotationY)/den,
+		        		(shapeTransform.ZRotationX-shapeTransform.XRotationZ)/den,
+		        		(shapeTransform.XRotationY-shapeTransform.YRotationX)/den);
+		        displayShape.setRotationAxis(p);
+		        displayShape.setRotate(Math.toDegrees(d));                    
+		    }
+		}
+		
+//		
+//		//TODO fix rotation breaking the fabric of reality
+//		Rotate rotateX = new Rotate(this.OrientationX*180/Math.PI, this.PivotX, this.PivotY, this.PivotZ, Rotate.X_AXIS);
+//		Rotate rotateY = new Rotate(this.OrientationY*180/Math.PI, this.PivotX, this.PivotY, this.PivotZ, Rotate.Y_AXIS);
+//		Rotate rotateZ = new Rotate(this.OrientationZ*180/Math.PI, this.PivotX, this.PivotY, this.PivotZ, Rotate.Z_AXIS);
+//		this.displayShape.getTransforms().addAll(rotateX, rotateY, rotateZ);
 		
 		this.displayPivot.setMaterial(new PhongMaterial(Color.color(r, g, b, 1)));
 		this.displayPivot.setTranslateX(PivotX);

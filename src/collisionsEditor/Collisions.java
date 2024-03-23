@@ -156,9 +156,9 @@ public class Collisions {
 				switch(b.Shape) {
 				case KSHAPE_BOX:
 					for(CollisionBoxShape s : boxShapes) {
-						if (similarEnough(b.HalfDimensionX, s.HalfExtentsX)
-								&& similarEnough(b.HalfDimensionY,s.HalfExtentsY)
-								&& similarEnough(b.HalfDimensionZ,s.HalfExtentsZ)) {
+						if (similarEnough(b.HalfDimensionX/2, s.HalfExtentsX)
+								&& similarEnough(b.HalfDimensionY/2,s.HalfExtentsY)
+								&& similarEnough(b.HalfDimensionZ/2,s.HalfExtentsZ)) {
 							b.collisionShape = s;
 						}
 					}
@@ -193,9 +193,28 @@ public class Collisions {
 				default:
 					break;				
 				}
+				
+				//transforms
+				//transforms + translates = boxshapes
+				for(CollisionConvexTranslate t : convexTranslateShapes) {
+					if (similarEnough(b.PositionX, t.TranslationX)
+							&& similarEnough(b.PositionY, t.TranslationY)
+							&& similarEnough(b.PositionZ, t.TranslationZ)) {
+						b.shapeTranslate = t;
+					}
+				}
+				for(CollisionConvexTransform t : convexTransformShapes) {
+					if (similarEnough(b.PositionX, t.TranslationX)
+							&& similarEnough(b.PositionY, t.TranslationY)
+							&& similarEnough(b.PositionZ, t.TranslationZ)
+							&& b.OrientationX != 0) {
+						b.shapeTransform = t;
+					}
+				}
+				
+				
 			}
 			
-			//TODO transforms
 			
 			
 			
@@ -204,6 +223,9 @@ public class Collisions {
 			// TODO Auto-generated catch block
 			new Alert(Alert.AlertType.ERROR, "File not found", ButtonType.OK).show();
 			e.printStackTrace();
+		} catch (NullPointerException e) {
+//			e.printStackTrace();
+			//no file selected by the user
 		} catch (Exception e) {
 			e.printStackTrace();
 			new Alert(Alert.AlertType.ERROR, "Error while loading file", ButtonType.OK).show();
@@ -216,7 +238,7 @@ public class Collisions {
 	}
 	
 	public boolean similarEnough(float a, float b) {
-		return ((int)((a-b)/floatingPointError)==0);
+		return (Math.abs(a-b) < floatingPointError);
 	}
 	
 	public static String readString(ByteBuffer bb) {

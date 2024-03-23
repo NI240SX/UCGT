@@ -132,7 +132,8 @@ public class CollisionsEditor extends Application {
 					fc.setTitle("Load existing Collisions");
 					Collisions loadDBMP;
 					File selected = fc.showOpenDialog(null);
-					if ((loadDBMP = new Collisions(selected))!=null) {
+					if (selected != null) {
+						loadDBMP = new Collisions(selected);
 						mainCollisions = loadDBMP;
 						lastFileLoaded = selected.getName();
 						lastDirectoryLoaded = selected.getAbsolutePath().replace(lastFileLoaded, "");
@@ -140,12 +141,8 @@ public class CollisionsEditor extends Application {
 						updateAllPartsDisplay();
 						primaryStage.setTitle(programName + " - " + mainCollisions.carname.label);
 //						menuDBMP.setText(mainCollisions.carname.label);
-						updateRender();
-				        
-						
+						updateRender();	
 						if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Collisions loaded successfully.", ButtonType.OK).show();
-					} else {
-//						new Alert(Alert.AlertType.INFORMATION, "Nothing to load", ButtonType.OK).show();
 					}
 				}
 			}
@@ -158,6 +155,7 @@ public class CollisionsEditor extends Application {
 				mainCollisions = new Collisions();
 				updateAllPartsDisplay();
 				primaryStage.setTitle("fire - "+mainCollisions.carname.label);
+				updateRender();	
 //				menuDBMP.setText(mainCollisions.carname.label);
 			}
         });
