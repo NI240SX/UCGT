@@ -8,11 +8,15 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
+import javafx.scene.shape.CullFace;
 import javafx.scene.shape.Cylinder;
 import javafx.scene.shape.DrawMode;
+import javafx.scene.shape.MeshView;
 import javafx.scene.shape.Shape;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.Sphere;
+import javafx.scene.shape.TriangleMesh;
+import javafx.scene.shape.VertexFormat;
 import javafx.scene.transform.Rotate;
 
 public class CollisionBound {
@@ -61,6 +65,10 @@ public class CollisionBound {
 	Shape3D displayShape = new Box(1,1,1);
 	Sphere displayPivot = new Sphere(0.05);
 	boolean render = true;
+	
+	double colorR = Math.random();
+	double colorG = Math.random();
+	double colorB = Math.random();
 	
 	public CollisionBound() {
 		// TODO Auto-generated constructor stub
@@ -132,8 +140,15 @@ public class CollisionBound {
 			this.displayShape.setDrawMode(DrawMode.LINE);
 			break;
 		case KSHAPE_MESH:
-			this.displayShape = new Box(1,1,1);
-			this.displayShape.setDrawMode(DrawMode.LINE);
+			if (this.collisionShape != null) {
+				((CollisionConvexVertice) this.collisionShape).updateShape();
+		        this.displayShape = ((CollisionConvexVertice) this.collisionShape).shape;
+		        this.displayShape.setDrawMode(DrawMode.FILL);
+		        this.displayShape.setCullFace(CullFace.NONE); // Ensure both sides of the plane are visible
+			} else {
+				this.displayShape = new Box(1,1,1);
+				this.displayShape.setDrawMode(DrawMode.LINE);
+			}			
 			break;
 		case KSHAPE_SPHERE:
 			this.displayShape = new Sphere(0.5);
@@ -148,15 +163,20 @@ public class CollisionBound {
 			this.displayShape.setDrawMode(DrawMode.LINE);
 			break;
 		}
-		this.displayShape.setScaleX(HalfDimensionX*2);
-		this.displayShape.setScaleY(HalfDimensionY*2);
-		this.displayShape.setScaleZ(HalfDimensionZ*2);
-		this.displayShape.setTranslateX(PositionX);
-		this.displayShape.setTranslateY(PositionY - CollisionsEditor.mainCollisions.Z); 
-		this.displayShape.setTranslateZ(PositionZ - CollisionsEditor.mainCollisions.X);
-		double r; double g; double b;
-		this.displayShape.setMaterial(new PhongMaterial(Color.color(r=Math.random(), g=Math.random(), b=Math.random(), 0.4)));
+		if (this.Shape != BoundShape.KSHAPE_MESH || this.collisionShape == null){
+			this.displayShape.setScaleX(HalfDimensionX*2);
+			this.displayShape.setScaleY(HalfDimensionY*2);
+			this.displayShape.setScaleZ(HalfDimensionZ*2);
+			this.displayShape.setTranslateX(PositionX);
+			this.displayShape.setTranslateY(PositionY - CollisionsEditor.mainCollisions.Z); 
+			this.displayShape.setTranslateZ(PositionZ - CollisionsEditor.mainCollisions.X);
+		} else {
+			this.displayShape.setTranslateY( - CollisionsEditor.mainCollisions.Z); 
+			this.displayShape.setTranslateZ(PositionZ - CollisionsEditor.mainCollisions.X);
+		}
+		this.displayShape.setMaterial(new PhongMaterial(Color.color(colorR, colorG, colorB, 0.4)));
 
+			
 		if (this.shapeTransform != null) {
 			double d = Math.acos((shapeTransform.XRotationX+shapeTransform.YRotationY+shapeTransform.ZRotationZ-1d)/2d);
 		    if(d!=0d){
@@ -169,21 +189,23 @@ public class CollisionBound {
 		    }
 		}
 		
-//		
-//		//TODO fix rotation breaking the fabric of reality
-//		Rotate rotateX = new Rotate(this.OrientationX*180/Math.PI, this.PivotX, this.PivotY, this.PivotZ, Rotate.X_AXIS);
-//		Rotate rotateY = new Rotate(this.OrientationY*180/Math.PI, this.PivotX, this.PivotY, this.PivotZ, Rotate.Y_AXIS);
-//		Rotate rotateZ = new Rotate(this.OrientationZ*180/Math.PI, this.PivotX, this.PivotY, this.PivotZ, Rotate.Z_AXIS);
-//		this.displayShape.getTransforms().addAll(rotateX, rotateY, rotateZ);
-		
-		this.displayPivot.setMaterial(new PhongMaterial(Color.color(r, g, b, 1)));
+		this.displayPivot.setMaterial(new PhongMaterial(Color.color(colorR, colorG, colorB, 1)));
 		this.displayPivot.setTranslateX(PivotX);
 		this.displayPivot.setTranslateY(PivotY);
 		this.displayPivot.setTranslateZ(PivotZ);
 		this.displayPivot.setViewOrder(0);
 		
 		this.displayShape.setOnMouseEntered(e -> {
-			System.out.println("Name : "+this.NameHash.label+"\nSurfaceName : "+this.SurfaceName.label+"\nAttributeName : "+this.AttributeName.label);			
+			System.out.println("CollisionBound | Index : "+ (CollisionsEditor.mainCollisions.childBounds.indexOf(this)+1) +",Name : "+this.NameHash.label+", SurfaceName : "+this.SurfaceName.label+", AttributeName : "+this.AttributeName.label
+					+"\nType : "+this.Type+", Shape : "+Shape+", Node : "+NodeType+", Constraint : "+ConstraintType+", Joint : "+JointType);			
+		});
+		this.displayShape.setOnMouseClicked(e->{
+			this.render = false;
+			CollisionsEditor.updateRender();
+		});
+		this.displayPivot.setOnMouseClicked(e -> {
+			this.render = true;
+			CollisionsEditor.updateRender();
 		});
 	}
 	

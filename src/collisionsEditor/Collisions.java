@@ -148,6 +148,8 @@ public class Collisions {
 					this.childBounds.add(b);
 				}
 			}
+			
+			//TODO rule out sub-hierarchy (expl joints on trailers that have a main joint and two child ones)
 
 			//boxshapes + convexverticeshapes + sphereshapes = childbounds
 			//a child bound is either convex vertice or box (or sphere/no geometry but rare)

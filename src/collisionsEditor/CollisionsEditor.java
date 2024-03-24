@@ -22,6 +22,7 @@ import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -281,9 +282,9 @@ public class CollisionsEditor extends Application {
 //        	Button debugInfoCheckedParts = new Button("INFO ABOUT CHECKED PARTS");
         	Button debugDBMPDisplay = new Button("DISPLAY COLLISIONS");
         	Button debug3D = new Button("3D DEBUG");
-        	CheckBox debugBoxes = new CheckBox("COL BOXES");
-        	CheckBox debugBoundsNoShape = new CheckBox("BOUNDS WITHOUT SHAPE");
-            shortcutsBar.getChildren().addAll(debugDBMPDisplay, debug3D, debugBoxes, debugBoundsNoShape);
+        	Slider debugColPlaneCarWidth = new Slider(0, 5, 1);
+        	Slider debugColPlaneCarLength = new Slider(0, 15, 2);
+            shortcutsBar.getChildren().addAll(debugDBMPDisplay, debug3D, debugColPlaneCarWidth, debugColPlaneCarLength);
         	
 //        	debugListCheckedParts.setOnAction(e -> {
 //        		System.out.println("[DEBUG] CHECKED PARTS :");
@@ -309,28 +310,15 @@ public class CollisionsEditor extends Application {
         		System.out.println("Viewport :\nRotation X : "+viewport.rotationX+"\nRotation Y : "+viewport.rotationY+"\nRotation Z : "+viewport.rotationZ);
         		e.consume();
         	});
-//        	
-//        	debugBoxes.setSelected(false);
-//        	debugBoxes.setOnAction(e -> {
-//        		for (CollisionBoxShape b : CollisionsEditor.mainCollisions.boxShapes) {
-//        			b.render = debugBoxes.isSelected();
-//        		}
-//        		updateRender();
-//        	});
-//    		for (CollisionBoxShape b : CollisionsEditor.mainCollisions.boxShapes) {
-//    			b.render = debugBoxes.isSelected();
-//    		}
-//    		
-//    		debugBoundsNoShape.setSelected(false);
-//        	debugBoundsNoShape.setOnAction(e -> {
-//        		for (CollisionBound b : CollisionsEditor.mainCollisions.bounds) {
-//        			if (b.displayShape.getDrawMode() == DrawMode.LINE) b.render = debugBoundsNoShape.isSelected();
-//        		}
-//        		updateRender();
-//        	});
-//    		for (CollisionBound b : CollisionsEditor.mainCollisions.bounds) {
-//    			if (b.displayShape.getDrawMode() == DrawMode.LINE) b.render = debugBoundsNoShape.isSelected();
-//    		}
+        	debugColPlaneCarWidth.valueProperty().addListener(i -> {
+        		CollisionConvexVertice.carHalfWidth = (float) debugColPlaneCarWidth.getValue();
+        		updateRender();
+        	});
+        	debugColPlaneCarLength.valueProperty().addListener(i -> {
+        		CollisionConvexVertice.carHalfLength = (float) debugColPlaneCarLength.getValue();
+        		updateRender();
+        	});
+
         }
         
         windowTop.getChildren().addAll(menuBar, shortcutsBar);
@@ -386,6 +374,16 @@ public class CollisionsEditor extends Application {
 //        root.setRight(scrollPaneAttrib);
 //        root.setBottom(statusBar);
         
+
+        root.setOnKeyPressed(e -> {
+        	if (e.getCode() == KeyCode.A) {
+        		CollisionsEditor.mainCollisions.mainBound.render = true;
+        		for (CollisionBound b : CollisionsEditor.mainCollisions.childBounds) {
+        			b.render = true;
+        		}
+        		CollisionsEditor.updateRender();
+        	}
+        });
         
         
 
@@ -438,13 +436,14 @@ public class CollisionsEditor extends Application {
         });
     }
     
-    public void updateRender() {
+    public static void updateRender() {
     	viewport.viewportGroup.getChildren().clear();
     	viewport.buildAxes();
     	for(CollisionBound b : CollisionsEditor.mainCollisions.childBounds) {
+        	b.updateShape();
+        	viewport.viewportGroup.getChildren().addAll(b.displayPivot);
     		if (b.render) {
-	        	b.updateShape();
-	        	viewport.viewportGroup.getChildren().addAll(b.displayPivot, b.displayShape);
+            	viewport.viewportGroup.getChildren().addAll(b.displayShape);
         	}
     	}
 //        for (CollisionBound b : CollisionsEditor.mainCollisions.bounds) {

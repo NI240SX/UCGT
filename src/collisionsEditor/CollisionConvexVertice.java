@@ -3,6 +3,9 @@ package collisionsEditor;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
+import javafx.scene.shape.MeshView;
+import javafx.scene.shape.TriangleMesh;
+
 public class CollisionConvexVertice extends CollisionShape {
 
 	float CenterX = 0;
@@ -23,6 +26,12 @@ public class CollisionConvexVertice extends CollisionShape {
 
 	ArrayList<PlaneEquation> PlaneEquations = new ArrayList<PlaneEquation>();
 	ArrayList<RotatedVertice> RotatedVertices = new ArrayList<RotatedVertice>();
+
+	MeshView shape = new MeshView();
+
+	public static float carHalfWidth = 1f;
+	public static float carHalfLength = 2f;
+	public static float carHalfHeight = 0.7f;
 	
 	public CollisionConvexVertice() {
 		// TODO Auto-generated constructor stub
@@ -46,6 +55,7 @@ public class CollisionConvexVertice extends CollisionShape {
 		this.unknownFloat = unknownFloat;
 		PlaneEquations = planeEquations;
 		RotatedVertices = rotatedVertices;
+		updateShape();
 	}
 
 	@Override
@@ -58,6 +68,51 @@ public class CollisionConvexVertice extends CollisionShape {
 				+ ",\n RotatedVertices=" + RotatedVertices + "]";
 	}
 
+	public void updateShape() {
+		TriangleMesh planeMesh = new TriangleMesh();
+//        planeMesh.setVertexFormat(VertexFormat.POINT_TEXCOORD);
+
+		planeMesh.getTexCoords().addAll(0, 0);
+		
+		for (PlaneEquation p : PlaneEquations) {
+	        // Calculate y-coordinate for each vertex based on the plane equation
+			// x= +/- 1m; z= +/- 2m
+			// ax + by + cz + d = 0 -> y = 
+
+			//approximate method, not that great
+			if (Math.abs(p.Y)>0.05) {
+            planeMesh.getPoints().addAll(
+            		-carHalfWidth, 	(-p.X*-carHalfWidth - p.Z*-carHalfLength -p.W)/p.Y, 	-carHalfLength,	//0
+            		carHalfWidth, 	(-p.X*carHalfWidth -  p.Z*-carHalfLength -p.W)/p.Y, 	-carHalfLength,	//1
+            		-carHalfWidth, 	(-p.X*-carHalfWidth - p.Z*carHalfLength  -p.W)/p.Y, 	carHalfLength,	//2
+            		carHalfWidth, 	(-p.X*carHalfWidth -  p.Z*carHalfLength  -p.W)/p.Y, 	carHalfLength);	//3
+			} else if (Math.abs(p.Z)>0.05) {
+                planeMesh.getPoints().addAll(
+                		-carHalfWidth, 	-carHalfHeight,		(-p.X*-carHalfWidth - p.Y*-carHalfHeight -p.W)/p.Z,	//0
+                		carHalfWidth, 	-carHalfHeight,		(-p.X*carHalfWidth - p.Y*-carHalfHeight -p.W)/p.Z,	//1
+                		-carHalfWidth, 	carHalfHeight,		(-p.X*-carHalfWidth - p.Y*carHalfHeight -p.W)/p.Z,	//2
+                		carHalfWidth, 	carHalfHeight,		(-p.X*carHalfWidth - p.Y*carHalfHeight -p.W)/p.Z);	//3
+			} else {
+                planeMesh.getPoints().addAll(
+                		(-p.Y*-carHalfHeight - p.Z*-carHalfLength -p.W)/p.X,	-carHalfHeight, -carHalfLength,	//0
+                		(-p.Y*carHalfHeight -  p.Z*-carHalfLength -p.W)/p.X, 	carHalfHeight,	-carHalfLength,	//1
+                		(-p.Y*-carHalfHeight - p.Z*carHalfLength  -p.W)/p.X, 	-carHalfHeight,	carHalfLength,	//2
+                		(-p.Y*carHalfHeight -  p.Z*carHalfLength  -p.W)/p.X, 	carHalfHeight,	carHalfLength);	//3
+			}
+			
+			
+	        // Define the faces of the plane
+	        planeMesh.getFaces().addAll(
+	                planeMesh.getPoints().size()/3-4, 0,  planeMesh.getPoints().size()/3-3, 0,  planeMesh.getPoints().size()/3-2, 0,  // Triangle 1 (Vertices 0, 1, 2)
+	                planeMesh.getPoints().size()/3-3, 0,  planeMesh.getPoints().size()/3-2, 0,  planeMesh.getPoints().size()/3-1, 0   // Triangle 2 (Vertices 0, 2, 3)
+	        );
+		}
+		
+		
+        // Create a MeshView to render the plane
+        this.shape = new MeshView(planeMesh);
+	}
+	
 	public static CollisionConvexVertice load(ByteBuffer bb) {
 		CollisionConvexVertice load = new CollisionConvexVertice();
 		bb.position(bb.position() + 0x10);
@@ -103,6 +158,7 @@ public class CollisionConvexVertice extends CollisionShape {
 			load.PlaneEquations.add(new PlaneEquation(bb));
 		}
 
+		load.updateShape();
 		return load;
 	}
 
