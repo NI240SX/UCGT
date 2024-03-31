@@ -3,8 +3,8 @@ module UCGT {
 	requires javafx.base;
 	requires javafx.graphics;
 	
-	opens application to javafx.graphics, javafx.fxml;
-	opens testing to javafx.graphics, javafx.fxml;
-	opens dbmpPlus to javafx.graphics, javafx.fxml;
-	opens collisionsEditor to javafx.graphics, javafx.fxml;
+	opens fr.ni240sx.ucgt.application to javafx.graphics, javafx.fxml;
+	opens fr.ni240sx.ucgt.testing to javafx.graphics, javafx.fxml;
+	opens fr.ni240sx.ucgt.dbmpPlus to javafx.graphics, javafx.fxml;
+	opens fr.ni240sx.ucgt.collisionsEditor to javafx.graphics, javafx.fxml;
 }
