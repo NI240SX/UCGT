@@ -13,7 +13,7 @@ import javafx.scene.transform.Translate;
 
 public class OrbitCameraViewport extends SubScene {
 
-	Group viewportGroup;
+	public Group viewportGroup;
     public PerspectiveCamera camera = new PerspectiveCamera(true);
     Rotate rotationX = new Rotate(0, 0, 0, 10, Rotate.X_AXIS);
     Rotate rotationY = new Rotate(0, 0, 0, 10, Rotate.Y_AXIS);

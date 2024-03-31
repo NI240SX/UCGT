@@ -1,9 +1,12 @@
-package fr.ni240sx.ucgt.collisionsEditor.BoundShapes;
+package fr.ni240sx.ucgt.collisionsEditor.CollisionMesh;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
+import fr.ni240sx.ucgt.collisionsEditor.CollisionsEditor;
+import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionShape;
 import javafx.scene.shape.MeshView;
+import javafx.scene.shape.Sphere;
 import javafx.scene.shape.TriangleMesh;
 
 public class CollisionConvexVertice extends CollisionShape {
@@ -25,6 +28,9 @@ public class CollisionConvexVertice extends CollisionShape {
 	public float unknownFloat = (float) 0.05;
 
 	public ArrayList<PlaneEquation> PlaneEquations = new ArrayList<PlaneEquation>();
+	public ArrayList<LineEquation> LineEquations = new ArrayList<LineEquation>();
+	public ArrayList<Vertex> Vertices = new ArrayList<Vertex>();
+	
 	public ArrayList<RotatedVertice> RotatedVertices = new ArrayList<RotatedVertice>();
 
 	public ArrayList<float[]> vertices = new ArrayList<float[]>();
@@ -70,10 +76,46 @@ public class CollisionConvexVertice extends CollisionShape {
 				+ ",\n RotatedVertices=" + RotatedVertices + "]";
 	}
 
+	public void calculateVertices() {
+		//I FUCKED UP, 2025 WILL BE MY YEAR
+		//maybe look up the closest planes to the center of gravity on the x, y, z axes instead, then find the closest top/bottom/sides intersections
+		//it's always the closest plane to the axes that's taken into account
+		
+		// 1) intersect all planes -> lines and all lines -> vertices
+		// 2) intersect all planes with the 3 axes, find the 6 planes closest to the center of the mesh on each axis (x, -x, y, -y, z, -z)
+		// 3) build the intersection shape around each intersection point ???
+		// 4) ???
+		for (PlaneEquation p : this.PlaneEquations) {
+			for (PlaneEquation p2 : this.PlaneEquations) if (!p.equals(p2)) {
+				p.intersect(p2);
+			}
+			
+			for (LineEquation l : p.containedLines) {
+				for (LineEquation l2 : p.containedLines) if (!l.equals(l2)) {
+					l.intersect(l2);
+				}
+			}
+		}
+		
+
+		System.out.println("Number of calculated vertices : "+this.Vertices.size()+" vs actual number of vertices : "+this.NumVertices);
+	}
+	
 	public void updateShape() {
 		TriangleMesh planeMesh = new TriangleMesh();
 		planeMesh.getTexCoords().addAll(0, 0);
 
+		
+		for (Vertex v : this.Vertices) {
+			Sphere s;
+			CollisionsEditor.viewport.viewportGroup.getChildren().addAll(s = new Sphere(0.05));
+			s.setTranslateX(v.x);
+			s.setTranslateY(v.y - CollisionsEditor.mainCollisions.Z);
+			s.setTranslateZ(v.z - CollisionsEditor.mainCollisions.X);
+		}
+		
+		
+		
 		
 		// display the planes themselves
 		
@@ -83,24 +125,24 @@ public class CollisionConvexVertice extends CollisionShape {
 			// ax + by + cz + d = 0 -> y = 
 
 			//approximate method, not that great
-			if (Math.abs(p.Y)>0.05) {
+			if (Math.abs(p.b)>0.05) {
             planeMesh.getPoints().addAll(
-            		-carHalfWidth, 	(-p.X*-carHalfWidth - p.Z*-carHalfLength -p.W)/p.Y, 	-carHalfLength,	//0
-            		carHalfWidth, 	(-p.X*carHalfWidth -  p.Z*-carHalfLength -p.W)/p.Y, 	-carHalfLength,	//1
-            		-carHalfWidth, 	(-p.X*-carHalfWidth - p.Z*carHalfLength  -p.W)/p.Y, 	carHalfLength,	//2
-            		carHalfWidth, 	(-p.X*carHalfWidth -  p.Z*carHalfLength  -p.W)/p.Y, 	carHalfLength);	//3
-			} else if (Math.abs(p.Z)>0.05) {
+            		-carHalfWidth, 	(-p.a*-carHalfWidth - p.c*-carHalfLength -p.d)/p.b, 	-carHalfLength,	//0
+            		carHalfWidth, 	(-p.a*carHalfWidth -  p.c*-carHalfLength -p.d)/p.b, 	-carHalfLength,	//1
+            		-carHalfWidth, 	(-p.a*-carHalfWidth - p.c*carHalfLength  -p.d)/p.b, 	carHalfLength,	//2
+            		carHalfWidth, 	(-p.a*carHalfWidth -  p.c*carHalfLength  -p.d)/p.b, 	carHalfLength);	//3
+			} else if (Math.abs(p.c)>0.05) {
                 planeMesh.getPoints().addAll(
-                		-carHalfWidth, 	-carHalfHeight,		(-p.X*-carHalfWidth - p.Y*-carHalfHeight -p.W)/p.Z,	//0
-                		carHalfWidth, 	-carHalfHeight,		(-p.X*carHalfWidth - p.Y*-carHalfHeight -p.W)/p.Z,	//1
-                		-carHalfWidth, 	carHalfHeight,		(-p.X*-carHalfWidth - p.Y*carHalfHeight -p.W)/p.Z,	//2
-                		carHalfWidth, 	carHalfHeight,		(-p.X*carHalfWidth - p.Y*carHalfHeight -p.W)/p.Z);	//3
+                		-carHalfWidth, 	-carHalfHeight,		(-p.a*-carHalfWidth - p.b*-carHalfHeight -p.d)/p.c,	//0
+                		carHalfWidth, 	-carHalfHeight,		(-p.a*carHalfWidth - p.b*-carHalfHeight -p.d)/p.c,	//1
+                		-carHalfWidth, 	carHalfHeight,		(-p.a*-carHalfWidth - p.b*carHalfHeight -p.d)/p.c,	//2
+                		carHalfWidth, 	carHalfHeight,		(-p.a*carHalfWidth - p.b*carHalfHeight -p.d)/p.c);	//3
 			} else {
                 planeMesh.getPoints().addAll(
-                		(-p.Y*-carHalfHeight - p.Z*-carHalfLength -p.W)/p.X,	-carHalfHeight, -carHalfLength,	//0
-                		(-p.Y*carHalfHeight -  p.Z*-carHalfLength -p.W)/p.X, 	carHalfHeight,	-carHalfLength,	//1
-                		(-p.Y*-carHalfHeight - p.Z*carHalfLength  -p.W)/p.X, 	-carHalfHeight,	carHalfLength,	//2
-                		(-p.Y*carHalfHeight -  p.Z*carHalfLength  -p.W)/p.X, 	carHalfHeight,	carHalfLength);	//3
+                		(-p.b*-carHalfHeight - p.c*-carHalfLength -p.d)/p.a,	-carHalfHeight, -carHalfLength,	//0
+                		(-p.b*carHalfHeight -  p.c*-carHalfLength -p.d)/p.a, 	carHalfHeight,	-carHalfLength,	//1
+                		(-p.b*-carHalfHeight - p.c*carHalfLength  -p.d)/p.a, 	-carHalfHeight,	carHalfLength,	//2
+                		(-p.b*carHalfHeight -  p.c*carHalfLength  -p.d)/p.a, 	carHalfHeight,	carHalfLength);	//3
 			}
 			
 			
@@ -112,9 +154,10 @@ public class CollisionConvexVertice extends CollisionShape {
 		}
 
 		
-		//I FUCKED UP, 2025 WILL BE MY YEAR
-		//maybe look up the closest planes to the center of gravity on the x, y, z axes instead, then find the closest top/bottom/sides intersections
-		//it's always the closest plane to the axes that's taken into account
+		
+		
+		
+		
 //		
 //		// the convexverticeshape is the smallest shape formed by all planes
 //		// 1) intersect planes -> lines
@@ -209,10 +252,11 @@ public class CollisionConvexVertice extends CollisionShape {
 		// Get Plane Equations
 		for (int loop = 0; loop < load.NumberOfPlaneEquations; loop++)
 		{
-			load.PlaneEquations.add(new PlaneEquation(bb));
+			load.PlaneEquations.add(new PlaneEquation(bb, load));
 		}
 
 		load.updateShape();
+		load.calculateVertices();
 		return load;
 	}
 

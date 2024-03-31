@@ -1,4 +1,4 @@
-package fr.ni240sx.ucgt.collisionsEditor.BoundShapes;
+package fr.ni240sx.ucgt.collisionsEditor.CollisionMesh;
 
 import java.nio.ByteBuffer;
 

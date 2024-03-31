@@ -12,8 +12,8 @@ import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionBoxShape;
 import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionConvexTransform;
 import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionConvexTranslate;
-import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionConvexVertice;
 import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionSphereShape;
+import fr.ni240sx.ucgt.collisionsEditor.CollisionMesh.CollisionConvexVertice;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 
@@ -241,7 +241,7 @@ public class Collisions {
 		
 	}
 	
-	public boolean similarEnough(float a, float b) {
+	public static boolean similarEnough(float a, float b) {
 		return (Math.abs(a-b) < floatingPointError);
 	}
 	

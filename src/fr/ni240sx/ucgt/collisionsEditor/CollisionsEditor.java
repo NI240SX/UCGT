@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
-import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionConvexVertice;
+import fr.ni240sx.ucgt.collisionsEditor.CollisionMesh.CollisionConvexVertice;
 import javafx.application.Application;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
