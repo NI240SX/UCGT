@@ -63,6 +63,7 @@ public class CollisionConvexVertice extends CollisionShape {
 		this.unknownFloat = unknownFloat;
 		PlaneEquations = planeEquations;
 		RotatedVertices = rotatedVertices;
+		calculateVertices();
 		updateShape();
 	}
 
@@ -85,6 +86,21 @@ public class CollisionConvexVertice extends CollisionShape {
 		// 2) intersect all planes with the 3 axes, find the 6 planes closest to the center of the mesh on each axis (x, -x, y, -y, z, -z)
 		// 3) build the intersection shape around each intersection point ???
 		// 4) ???
+		Vertex COG = new Vertex(CenterX, CenterY, CenterZ);
+		PlaneEquation closestPosX;
+		PlaneEquation closestPosY;
+		PlaneEquation closestPosZ;
+		PlaneEquation closestNegX;
+		PlaneEquation closestNegY;
+		PlaneEquation closestNegZ;
+		double closestDistPosX = Float.POSITIVE_INFINITY;
+		double closestDistPosY = Float.POSITIVE_INFINITY;
+		double closestDistPosZ = Float.POSITIVE_INFINITY;
+		double closestDistNegX = Float.POSITIVE_INFINITY;
+		double closestDistNegY = Float.POSITIVE_INFINITY;
+		double closestDistNegZ = Float.POSITIVE_INFINITY;
+		
+		
 		for (PlaneEquation p : this.PlaneEquations) {
 			for (PlaneEquation p2 : this.PlaneEquations) if (!p.equals(p2)) {
 				p.intersect(p2);
@@ -95,7 +111,42 @@ public class CollisionConvexVertice extends CollisionShape {
 					l.intersect(l2);
 				}
 			}
+			
+			//distance to cog
+			Vertex intersectX = new Vertex(p, "x");
+			Vertex intersectY = new Vertex(p, "y");
+			Vertex intersectZ = new Vertex(p, "z");
+			
+			// find out the closest plane to the origin on the x axis
+			if (COG.distanceTo(intersectX) < closestDistPosX && intersectX.x > 0) {
+				closestPosX = p;
+				closestDistPosX = COG.distanceTo(intersectX);
+			} else if (COG.distanceTo(intersectX) < closestDistNegX && intersectX.x < 0) {
+				closestNegX = p;
+				closestDistNegX = COG.distanceTo(intersectX);
+			}
+			
+			if (COG.distanceTo(intersectY) < closestDistPosY && intersectY.y > 0) {
+				closestPosY = p;
+				closestDistPosY = COG.distanceTo(intersectY);
+			} else if (COG.distanceTo(intersectY) < closestDistNegY && intersectY.y < 0) {
+				closestNegY = p;
+				closestDistNegY = COG.distanceTo(intersectY);
+			}
+			
+			if (COG.distanceTo(intersectZ) < closestDistPosZ && intersectZ.z > 0) {
+				closestPosZ = p;
+				closestDistPosZ = COG.distanceTo(intersectZ);
+			} else if (COG.distanceTo(intersectZ) < closestDistNegZ && intersectZ.z < 0) {
+				closestNegZ = p;
+				closestDistNegZ = COG.distanceTo(intersectZ);
+			}	
 		}
+		
+		//now all vertices are calculated and we know 6 close planes
+		//next up : find out the shortest vertices loop that encloses the intersections
+		
+		//for each plane (?) : find 4 close lines to the intersection point on the plane's x' and y'
 		
 
 		System.out.println("Number of calculated vertices : "+this.Vertices.size()+" vs actual number of vertices : "+this.NumVertices);
@@ -112,6 +163,7 @@ public class CollisionConvexVertice extends CollisionShape {
 			s.setTranslateX(v.x);
 			s.setTranslateY(v.y - CollisionsEditor.mainCollisions.Z);
 			s.setTranslateZ(v.z - CollisionsEditor.mainCollisions.X);
+//			System.out.println(v);
 		}
 		
 		
@@ -127,22 +179,22 @@ public class CollisionConvexVertice extends CollisionShape {
 			//approximate method, not that great
 			if (Math.abs(p.b)>0.05) {
             planeMesh.getPoints().addAll(
-            		-carHalfWidth, 	(-p.a*-carHalfWidth - p.c*-carHalfLength -p.d)/p.b, 	-carHalfLength,	//0
-            		carHalfWidth, 	(-p.a*carHalfWidth -  p.c*-carHalfLength -p.d)/p.b, 	-carHalfLength,	//1
-            		-carHalfWidth, 	(-p.a*-carHalfWidth - p.c*carHalfLength  -p.d)/p.b, 	carHalfLength,	//2
-            		carHalfWidth, 	(-p.a*carHalfWidth -  p.c*carHalfLength  -p.d)/p.b, 	carHalfLength);	//3
+            		CenterX+ -carHalfWidth, 	(-p.a*-carHalfWidth - p.c*-carHalfLength -p.d)/p.b, CenterZ+ 	-carHalfLength,	//0
+            		CenterX+ carHalfWidth, 	(-p.a*carHalfWidth -  p.c*-carHalfLength -p.d)/p.b, 	CenterZ+ -carHalfLength,	//1
+            		CenterX+ -carHalfWidth, 	(-p.a*-carHalfWidth - p.c*carHalfLength  -p.d)/p.b, CenterZ+ 	carHalfLength,	//2
+            		CenterX+ carHalfWidth, 	(-p.a*carHalfWidth -  p.c*carHalfLength  -p.d)/p.b, 	CenterZ+ carHalfLength);	//3
 			} else if (Math.abs(p.c)>0.05) {
                 planeMesh.getPoints().addAll(
-                		-carHalfWidth, 	-carHalfHeight,		(-p.a*-carHalfWidth - p.b*-carHalfHeight -p.d)/p.c,	//0
-                		carHalfWidth, 	-carHalfHeight,		(-p.a*carHalfWidth - p.b*-carHalfHeight -p.d)/p.c,	//1
-                		-carHalfWidth, 	carHalfHeight,		(-p.a*-carHalfWidth - p.b*carHalfHeight -p.d)/p.c,	//2
-                		carHalfWidth, 	carHalfHeight,		(-p.a*carHalfWidth - p.b*carHalfHeight -p.d)/p.c);	//3
+                		CenterX+ -carHalfWidth, CenterY+ 	-carHalfHeight,		(-p.a*-carHalfWidth - p.b*-carHalfHeight -p.d)/p.c,	//0
+                		CenterX+ carHalfWidth, 	CenterY+ -carHalfHeight,		(-p.a*carHalfWidth - p.b*-carHalfHeight -p.d)/p.c,	//1
+                		CenterX+ -carHalfWidth, CenterY+ 	carHalfHeight,		(-p.a*-carHalfWidth - p.b*carHalfHeight -p.d)/p.c,	//2
+                		CenterX+ carHalfWidth, 	CenterY+ carHalfHeight,		(-p.a*carHalfWidth - p.b*carHalfHeight -p.d)/p.c);	//3
 			} else {
                 planeMesh.getPoints().addAll(
-                		(-p.b*-carHalfHeight - p.c*-carHalfLength -p.d)/p.a,	-carHalfHeight, -carHalfLength,	//0
-                		(-p.b*carHalfHeight -  p.c*-carHalfLength -p.d)/p.a, 	carHalfHeight,	-carHalfLength,	//1
-                		(-p.b*-carHalfHeight - p.c*carHalfLength  -p.d)/p.a, 	-carHalfHeight,	carHalfLength,	//2
-                		(-p.b*carHalfHeight -  p.c*carHalfLength  -p.d)/p.a, 	carHalfHeight,	carHalfLength);	//3
+                		(-p.b*-carHalfHeight - p.c*-carHalfLength -p.d)/p.a,	CenterY+ -carHalfHeight, 	CenterZ+ -carHalfLength,	//0
+                		(-p.b*carHalfHeight -  p.c*-carHalfLength -p.d)/p.a, 	CenterY+ carHalfHeight,		CenterZ+ -carHalfLength,	//1
+                		(-p.b*-carHalfHeight - p.c*carHalfLength  -p.d)/p.a, 	CenterY+ -carHalfHeight,	CenterZ+ carHalfLength,	//2
+                		(-p.b*carHalfHeight -  p.c*carHalfLength  -p.d)/p.a, 	CenterY+ carHalfHeight,		CenterZ+ carHalfLength);	//3
 			}
 			
 			

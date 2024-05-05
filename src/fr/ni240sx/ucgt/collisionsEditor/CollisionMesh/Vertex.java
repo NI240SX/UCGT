@@ -21,6 +21,10 @@ public class Vertex {
 		x = (l2.c*l.b - l2.b*l.c) / (l.a*l2.b - l2.a*l.b);
 		y = (-l.a*x - l.c)/l.b;
 		z = (-l.intersectedPlanes.get(0).a*x -l.intersectedPlanes.get(0).b*y -l.intersectedPlanes.get(0).d)/l.intersectedPlanes.get(0).c;
+		if (x != x || y != y || z != z) {
+//			System.out.println("prevented a NaN vertex");
+			save = false;
+		}
 		if (save) {
 			intersectedLines.add(l);
 			intersectedLines.add(l2);
@@ -58,5 +62,21 @@ public class Vertex {
 			break;
 		}
 //		this.convexVerticeShape = p.convexVerticeShape;
+	}
+
+	public Vertex(float x, float y, float z) {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+	}
+	
+	public double distanceTo(Vertex v) {
+		return Math.sqrt((x+v.x)*(x+v.x) + (y+v.y)*(y+v.y) + (z+v.z)*(z+v.z));
+		
+	}
+	
+	@Override
+	public String toString() {
+		return "Vertex x=" + x + ", y=" + y + ", z=" + z + ", " + intersectedLines.size() + " intersected lines";
 	}
 }

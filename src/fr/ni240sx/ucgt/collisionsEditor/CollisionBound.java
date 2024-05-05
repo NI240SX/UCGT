@@ -169,8 +169,8 @@ public class CollisionBound {
 			this.displayShape.setTranslateY(PositionY - CollisionsEditor.mainCollisions.Z); 
 			this.displayShape.setTranslateZ(PositionZ - CollisionsEditor.mainCollisions.X);
 		} else {
-			this.displayShape.setTranslateY( - CollisionsEditor.mainCollisions.Z); 
-			this.displayShape.setTranslateZ(PositionZ - CollisionsEditor.mainCollisions.X);
+			this.displayShape.setTranslateY(- CollisionsEditor.mainCollisions.Z); 
+			this.displayShape.setTranslateZ(- CollisionsEditor.mainCollisions.X);
 		}
 		this.displayShape.setMaterial(new PhongMaterial(Color.color(colorR, colorG, colorB, 0.4)));
 

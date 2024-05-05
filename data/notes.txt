@@ -52,137 +52,237 @@ NIS_370_Z_09_KIT11_MUFFLER_05_T0_B  NIS_370_Z_09_KIT11_MUFFLER_05_T0_C
 
 
 
+================== FILE HEADER =================== (checked on AUD_RS4_STK_08)
+00401380 0CB29F00 00000000 00000000 -> file ID, file length from next position, 0, 0
+01401380 707B0000 					-> geom header blockID, header length
+
+file info block-----------------------------------
+blockid=02401300, length 144
+02401300 90000000					-> ID and length
+00000000 03000000 1E000000 D6030000 -> 0, constant (3), constant (30), parts count
+GEOM ETRY .BIN  					-> file name
+    
+    
+  DEFA ULT 							-> block name
+    
+    
+80000000    						-> 128 what ?
+88304300 88304300 90304300 90304300 -> constants ? ctk fills with zeroes
+
+parts list block----------------------------------
+blockid=03401300, length 7856
+03401300 B01E0000 AUD_RS4_STK_08_KIT00_HEADLIGHT_GLASS_LEFT_A 0 ->ID and length, part 1, 0, part 2, 0, etc
+AUD_RS4_STK_08_KIT00_HEADLIGHT_GLASS_LEFT_B 0 AUD_RS4_STK_08_KIT00_HEADLIGHT_GLASS_LEFT_C 0
+
+parts offsets block-------------------------------
+blockid=04401300, length 23568
+6x4 bytes for each part, repeat
+9C29BC03 00EE0900 60060000 EC0A0000 -> part binhash, offset relative to file beginning, compressed part size, decompressed part size // 650752, 1632, 2796 for hlglass_l_a
+00020000 00000000					-> 2, 0																							// 31744, 49688, 86484 for BASE_A
+
+??? block-----------------------------------------
+blockid=08401380, length 0
+
+padding block-------------------------------------
+blockid=00000000, length 112
+filled with zeroes
+
+==================== DATA ========================
+
+COMPRESSED DATA-----------------------------------
+blockid=22114455, decompressedsize=32768, size=18092, decompressedsize=32768
+22114455 00800000 AC460000 00800000 -> blockid, decompressedsize, block size FROM BLOCKID INCLUDED (aka standard block size+8), decompressedsize (why again ?)
+00000000 00000000   RFPK   01100000 -> padding, beginning of archive with compressiontype, compressionflags maybe
+00800000 83460000 10FB0080 00E5DD09 -> decompressed size, compressed size (18051), compressed data --->>>
+...
+end of compressed data (seems to always end with 000000FC), 4-bytes alignment with 00s
+
+padding block to reach a 128 bytes alignment when blocks belong to different parts
+when the compressed data blocks belong to a single part, no padding inbetween
+
+EOF after all compressed data blocks
+
+
+for RFPK by parts compression (vanilla) : multiple 32kb blocks one after the other ordered : 2,3,4,..., 1
+
+
+\/\/\/\/\/\/\/ AFTER DECOMPRESSION \/\/\/\/\/\/\/
+
+
+================= PART STRUCTURE ================= (AUD_RS4_STK_08_KIT00_BASE_A)
+
+HEADER--------------------------------------------
+10401380 cc510100 11401300 e4000000 	-> geometry part blockid, total part length before splitting & compressing, header block ID, header length (up to the end of the part name string)
+0 0 0 19004000 							-> constants? last one might be an id of some sort, maybe mesh type
+8abcc62d 44070000 a0600 0 				-> part's bin key, triangles count, [short][big endian] textures count and [short][little endian] shaders count
+ee6d0ec0 f94c63bf c30d983d 0 			-2,225;	-0,888;	0,074	-> bounds ? length x, width y, height z, min then max
+ed810d40 f94c633f 70c99c3f 0 			2,211;	0,888;	1,225		`-> distance between bound plane and origin in respective axis
+803f 0 0 0 
+0 803f 0 0 								-> a matrix of some sort ? probably transforms, let's just say it's always that
+0 0 803f 0 
+0 0 0 803f 
+0 0 8740e00 8740e00 					-> ? constants apparently
+0 0 30b1141 362e4d43 					-> maybe floats ? 9,065; 205,18 ; ctk fills these with zeroes
+0 0 0 0 
+0 0 0 0 
+0 0 [part name string]
+
+
+TEXTURES AND USAGE--------------------------------
+MORE INFO NEEDED : ALL USAGE TYPES
+header : blockid then length
+blockid=12401300, length 120
+
+8 bytes by 8 bytes spaced by 4 bytes blank space, texture binhash then texture usage
+possible usages:
+ae76334e -> diffuse
+958a9502 -> normal
+5aff315c -> alpha ?
+c8c5ed6 -> colorable ? used for METAL_SWATCH
+39143000 -> glow ? used for brakelight_glass_on
+
+example:
+B41F491D AE76334E 00000000 1E17FF65 AE76334E 00000000 EB19E790 958A9502 00000000 9B8830BF 0C8C5ED6 00000000 6BA24144 AE76334E 00000000 B4F768D4 AE76334E 00000000 DCF27F02 AE76334E 00000000 7FA4D736 AE76334E 00000000 2181E7F9 39143000 00000000 7E793080 AE76334E 00000000
+
+
+STRINGS ?-------------
+blockid=15401300, length 64
+04000000 00000000 08000000 10000000 	-> number of strings (4 here), beginning offset of string1 (0), beg off of str2 (8), beg off str3 (16)
+18000000 44494646 55534500 4E4F524D 	bg off s4 (24), strings --> DIFFUSE NORMAL  AMBIENT SELFILLUMINATION 
+414C0000 414D4249 454E5400 53454C46 
+494C4C55 4D494E41 54494F4E 00EE907C		ends with EE907C on BASE (238/144/124) ??? maybe not necessary, some parts don't have that (filled with 0s until reaching %4bytes for the next block)
+
+
+SHADERS-------------------------------------------
+blockid=13401300, length 48
+4bytes shader bin hash, 4 bytes blank space x number of shaders
+
+expl
+ABED8727 00000000 0A08D6D6 00000000 40EEED0F 00000000 4AB60C01 00000000 11F6B87E 00000000 B55DA559 00000000
+
+
+POSITION MARKERS----------------------------------
+blockid=1A401300, length 1444 (on BASE xd), some 11111111 padding to get to an offset multiple of 16/0x10 (alignment shit)
+for every marker (no blank spaces inbetween) :
+9923B502 00000000 00000000 00000000 <- marker name
+4CEF2EB4 134A8028 0000803F 00000000 
+3B6466B4 0000803F 85945DA9 00000000 <- rotation matrix ?
+000080BF 3B6466B4 4CEF2EB4 00000000 
+816506C0 567D16BF 86E9403F 0000803F <- position (+ scale factor ?)
+
+BIG BLOCK => MESH_________________________________ shorter in a ctk model apparently
+blockid=00411380, length 79184
+contains sub-blocks
+
+SOMETHING-----------------------------------------
+blockid=00491300, length 72
+00000000 00000000 30000000 8041A302 <- always 0, always 0, always 3, varies
+07000000 00000000 00000000 00000000 <- number of materials ?, always 0, 0 and 0
+00000000 00000000 00000000 00000000 <- always 0, 0, 0, 0
+44070000 00000000 00000000 00000000 <- changes, always 0, 0, 0
+F6070000 00000000					<- changes, always 0
+
+SHADERS USAGE-------------------------------------
+blockid=014F1300, length 16
+03000000 5C6CDD0D C52DA6A8 EB5337A1	<- first 3 stands for 3 hashes ?
+
+MATERIALS----------------------------------------- at 2064 d
+blockid=02491300, length 1896
+first contains 104 bytes of 111111... padding until reaching 0x880/2176 (offset multiple of 128 ?)
+
+then a sort of material header ? first material :
+0 06000000 0 03000000				<- 0 to 6 (poly ids?), 0, 3 (there's 7 materials in total)
+then FFFFFFFF... padding until reaching (offset+16) multiple of 32/material header + 48
+ 6000000  3000000 
+ÿÿÿÿ ÿÿÿÿ ÿÿÿÿ ÿÿÿÿ 
+ÿÿÿÿ ÿÿÿÿ ÿÿÿÿ ÿÿÿÿ 
+708ffff ÿÿÿÿ ffff0204 dfc94894 
+80510100 6000000   
+    
+   80000000 
+2080    
+ 5c6cdd0d  [texture] 
+39143000    
+    
+ AUD_RS4_STK_08_KIT00_BRAKELIGHT_GLASS_OFF AUD_RS4_STK_08_KIT00_BRAKELIGHT_GLASS_ON  
+    
+    
+    
+    
+why all these blank spaces ? used for normalmaps or other stuff ? better check on other parts
+second material :
+6000000 42030000  1000000 
+2000000 ÿÿÿÿ ÿÿÿÿ ÿÿÿÿ 
+ÿÿÿÿ ÿÿÿÿ ÿÿÿÿ ÿÿÿÿ 
+10203ff ÿÿÿÿ ffff0301 35e70209 
+8051a302 3c030000   
+    
+10000   803c0000 
+2080    
+ c52da6a8  [texture] 
+[normalmap] c8c5ed6   
+    
+ CARBONFIBRE_PLACEHOLDER DAMAGE_N METAL_SWATCH 
+    
+    
+    
+    
+etc
+
+EMPTY BLOCK--------------------------------------- 3968
+blockid=024C1300, length 0
+another padding block ?
+
+POLYGONS? OR VERTICES?-------- 3976
+blockid=01491300, length 240
+starts with 1111... padding (128 bytes padding)
+repeating pattern, 6 hashes, 00000000 00000000 padding, sometimes the 00000000s are replaced by hashes too
+
+more of these blocks
+EMPTY BLOCK--------------------------------------- 4224
+blockid=024C1300, length 0
+POLYGONS? OR VERTICES?--------4232
+blockid=01491300, length 15600
+
+EMPTY BLOCK--------------------------------------- 19840
+blockid=024C1300, length 0
+POLYGONS? OR VERTICES?-------- 19848
+blockid=01491300, length 32592
+
+EMPTY BLOCK--------------------------------------- 52448
+blockid=024C1300, length 0
+POLYGONS? OR VERTICES?-------- 52456
+blockid=01491300, length 400
+
+... (3 more)
+
+???----------------- 69952
+blockid=03491300, length 11184
+starts with 11111 32 Byte alignment padding (not 128!)
+stores 2-byte indexes next to each other without separation -> looks like triangles
+
+
+BIG BLOCK END_____________________________________
+
+
+SOMETHING----------------------------------------- at 81144 d
+blockid=17401300, length 12
+00000000 00000000 00000000
+padding block ?
+
+
+SOMETHING----------------------------------------- at 81164 d
+blockid=18401300, length 1536
+most likely a list of the hashes or ids used in the next block
+
+
+SOMETHING----------------------------------------- at 82708 d
+blockid=19401300, length 3768
+hash or id, int, int, repeat
+
+
+EOF-----------------------------------------------
+rather end of part
 
 
 
-
-
-
-
-==================== PARTS HEADERS ====================
-
-RFPK 1100000 800000 f93a0000 
-10fb0080 e21040 1380a045 1001140 
-13008a80 δα [PART DECLARATION] BMW_M3_E92_08_KIT00_BASE_A 
-20c 1d07[1821 tris] 50409e2 6ea5 dc063b0 
-63bf8fd0 60f903d e0e73e0e 40000fe0 
-3ff7f1a0 d353f11 7808800 ae0013 
-b030874 e1400e1 c0d01541 b37a4243 
-8e003392 0000e6 B MW_M 3_E9                   26/28 e6 (1b 6B 3b)
-2_08 _KIT 00_B ASE_ 
-A 000001 eb120123 6ce1BMW_M3_E92_08_INTERIOR [texture]
-
-RFPK 1100000 800000 9a550000 
-10fb0080 e21040 138024c2 1140 
-13008a80 δα [PART DECLARATION] BMW_M3_E92_08_KIT00_HOOD_A 
-20c 7405[1396 tris] a130803 e2d73655 3f60ea45 
-bfecebfc 3e040fe0 a6450e40 fe03f 
-a3d9500d 353f1107 80880000 ae00130b 
-308740e 1400e162 17313f07 41fc448e 
-339200 00e6 BM W_M3 _E92                       26/28 e6 (2b 6B 2b)
-_08_ KIT0 0_HO OD_A 
-000001eb 12012360 e1CARBONFIBRE_PLACEHOLDER [texture]
-
-RFPK 1100000 800000 c350000 
-10fb0080 e21040 138024b6 1001140 
-13008a80 πα [PART DECLARATION] BMW_M3_E92_08_KIT00_WHEEL_TIRE_FRONT_A 
-20c 9505[1429 tris] a130403 e2afb7ae be94d44b 
-bc5ca4ad be040fe2 86baae3e afdf803e 
-5df4ad3e c358b80 46803fb1 130b03 
-8740e14 e1ffa9 fa3d6d6d 36468e00 
-33920000 e9 BMW _M3_ E92_                      38/39 e9 (3b ?)
-
-RFPK 1100000 40110000 80b0000 
-10fb0011 40e21040 13803811 1140 
-13008a80 τα [PART DECLARATION] BMW_M3_E92_08_KIT00_BRAKELIGHT_GLASS_LEFT_A 
-50c 85[133 tris] 0a 130201e2 18040bc0 69a7f63e 
-98840e3f 40fe197 5aeabf33 cb473f0b 
-fd5e140 13070000 80880000 ae00130b 
-308740e 1400e12b 45a43cae 44cf458e 
-339200 00ea BM W_M3 _E92                       43/44 ea (2b 10B 2b)
-
-RFPK 1100000 800000 5a4a0000 
-10fb0080 e21040 1380a497 1001140 
-13008a80 πα [PART DECLARATION] BMW_M3_E92_08_KITW01_BUMPER_FRONT_T1_A 
-20c 3c09[2364 tris] a130b07 e28b88d2 3f59f57e 
-bf6bd6a7 bd040fe2 83fe2340 5df57e3f 
-40760c3f c351107 80880000 ae00130b 
-308740e 1400e1f3 89933fe5 2e00458e 
-339200 00e9 BM W_M3 _E92                     38/40 e9 (2b 9B 2b)
-_08_ KITW 01_B UMPE 
-R_FR ONT_ T1_A 000001f7 
-12012f84 e1CARBONFIBRE_PLACEHOLDER [texture]
-
-RFPK 1100000 14090000 1d030000 
-10fb0009 14e21040 13800c09 1140 
-13008a80 μα [PART DECLARATION] BMW_M3_E92_08_KIT00_BRAKE_FRONT_C 
-50c 10[16 tris] 0a 130202e2 fdb85cbe d73ca03c 
-f88e3bbe 40fe1f7 8e3b3e35 e0ba3d01 
-7f60c35 8b804680 3fb10013 b030874 
-e1400e1 c78c2b3c ef02bf44 8e003392 
-e7B MW_M 3_E9 2_08                            35 e7 (1b 8B 3b)
-_KIT 00_B RAKE _FRO 
-4e545f01 234301f3 12010718 e1ROTOR_01
-
-
-
-
-
-[RFPK/BEGINNING OF ???] 1100000 4c070000 cb030000 
-10fb0007 4ce21040 13804407 1140 
-13008a80 τα [PART DECLARATION] BMW_M3_E92_08_KIT00_WINDOW_FRONT_RIGHT_A 
-50c170a 130301e2 bb630abf eae245bf 
-a29a3d3f 40fe1f2 d30b3f5a b611bf0b 
-f10ed92 13070000 80880000 ae00130b 
-308740e 1400e1a7 b8b83d18 7f438e 
-339200 ιBM W_M3 _E92                          42 e9 (2b 10B)
-_08_ KIT0 0_WI NDOW 
-_FRO NT_R IGHT 5f41042b 
-1fb1201 724e1WINDOW_RIGHT_FRONT [texture]
-
-
-
-
-
-RFPK 1100000 800000 e43c0000 
-10fb0080 e21040 1380544e 1001140 
-13008a80 δα [PART DECLARATION] NIS_370_Z_09_KIT00_BASE_A 
-20cc607 a130603 e2112500 c00e8f67 
-bf012dd3 3d040fe2 646a0340 68f673f 
-32a7903f c351107 80880000 ae00130b 
-308740e 1400e19f 1df14083 d84438e 
-339200 e5NI S_37 0_Z_                        25/27 e5 (2b 5B 2b)
-09_K IT00 _BAS E_ 011b 
-A 01eb12 10748e1 NIS_370_Z_09_INTERIOR [texture] 
-
-
-000001eb 12012360 e1
-
-
-
--------------------- GENERIC PART HEADER --------------------
-
-5246504b 01100000 ????0000 ????0000          often 0080 / ?
-10fb00?? ??e21040 1380???? ----1140          ? / ? / 0000 or 01000       
-13008a80 00??00e1 19004000 [part binhash]    ?
---0c---- ???????? ???????? ????????          02 or 05 depending on next is 1 or 2 bytes / number of tris
-???????? ???????? ???????? ????????
-???????? ???????? !!!!!!!! !!!!!!!!           very often 80880000 ae00130b 
-!!!!!!!! !!!!!!?? ???????? ????????           very often 0308740e 1400e1
---8e0033920000-- [part in plain text]         often 45,44,46,43 / e9,ea,e6  6,9,a = number of bytes to jump ? |note : not always the same place
-????01-- 1201???? e1 [textures...]            ? / eb or fb / sometimes 2360 or 23xx for the e92
-
-
-
-
-
-
-cartoolshit
-
-JDLZ 2100000 802b0100 γΑ 
-6b1040 1380782b 1004011 401300e4 
-b19 4000 NIS_350_Z_05_KIT00_BASE_A ce12060c 
-70402 3de2504 c023c1 65bfc386 
-bd023d0f 2110440 229965a0 3fcc5490 
-3f032580 704c700 91f03a6 d030874 
-e030200 5NI S_35 0_Z 

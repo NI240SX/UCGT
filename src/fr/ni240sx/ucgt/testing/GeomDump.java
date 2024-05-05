@@ -31,7 +31,9 @@ public class GeomDump extends Application {
 	String dmpSearch = "";
 
 //	static String car = "UCGT";
-	static String car = "BMW_M3_E92_08";
+	static String car = "AUD_RS4_STK_08";
+//	static String car = "NIS_240_SX_89";
+//	static String car = "BMW_M3_E92_08";
 //	static String car = "240SX";
 	static int[] art = new int[]{0, 1, 2, 3, 4, 5, 6, 11, 12};
 	static int[] wart = new int[]{1, 2, 3, 4, 5};
@@ -51,8 +53,13 @@ public class GeomDump extends Application {
 	
 	
 	
-	static int startFrom = 63400;
-	static int length = 4096;//2048 recommended
+	static int startFrom = 8040; //63400
+	static int length = 8192;//2048 recommended
+	
+//	AUD_RS4_K00_BASE_A blocks
+//	blockid=18401300	81164	1536+8
+//	blockid=19401300	82708	3768+8
+//	blockid=02491300	2064	1896+8		(materials)	
 	// M3 E92
 	//base : 63440
 	//hood : 725944
@@ -75,11 +82,23 @@ public class GeomDump extends Application {
 	
 	
 	
+
+//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_BODY_A.dat");
+//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_BASE_A.dat");
+//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_BRAKEROTOR_FRONT_A.dat");
+//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_BRAKELIGHT_LEFT_A.dat");
+//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_BRAKELIGHT_GLASS_LEFT_A.dat");
+//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_HEADLIGHT_LEFT_A.dat");
+//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_HEADLIGHT_GLASS_LEFT_A.dat");
+
+//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\NIS_240_SX_89\\NIS_240_SX_89_KIT00_BRAKELIGHT_GLASS_RIGHT_A.dat");
+// 	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\ctk_NIS_240_SX_89\\ctk_NIS_240_SX_89_KIT00_BRAKELIGHT_GLASS_RIGHT_A.dat");
 	
+	File f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
 	
 //	File f = new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\UCGT-UC_WINDOW_FRONT.BIN");
 //	File f = new File("C:\\Program Files (x86)\\EA Games\\Need for Speed Undercover\\CARS\\LEX_LFA\\GEOMETRY.BIN"); //UCE on laptop
-	File f = new File("D:\\Jeux\\vanilla uc\\CARS\\BMW_M3_E92_08\\GEOMETRY.BIN"); //vanilla
+//	File f = new File("D:\\Jeux\\vanilla uc\\CARS\\BMW_M3_E92_08\\GEOMETRY.BIN"); //vanilla
 //	File f = new File("D:\\Jeux\\UCEtesting\\CARS\\" + car + "\\GEOMETRY.BIN"); //ctk
 //	File f = new File("C:\\Users\\NI240SX\\Downloads\\240SX\\GEOMETRY.BIN"); //vanilla
 //	File f = new File("D:\\Jeux\\Need for Speed Carbon Endgame V2\\CARS\\240SX\\GEOMETRY.BIN"); //vanilla
@@ -203,7 +222,7 @@ public class GeomDump extends Application {
 			Hashlist.add(new Hash(car + "_KIT00_CUBE_A"));
 			
 			bb.position(startFrom);
-			while (bb.position()<startFrom+length) {//65536
+			while (bb.position()<startFrom+length && bb.position()<arr.length-16) {//65536
 /*				for (int i=0; i<4; i++) {
 					int current = bb.getInt();
 					
@@ -418,15 +437,55 @@ public class GeomDump extends Application {
 			e.printStackTrace();
 		}
 
-		l.add(new Hash("[texture]",1311995566));
-		l.add(new Hash("[normalmap]",43354773));
+		addSpecificHashes(l);
+		
+		
+		return l;
+	}
+
+	private static void addSpecificHashes(ArrayList<Hash> l) {
+		l.add(new Hash("BLOCK:GEOM",Integer.reverseBytes(0x00401380))); 
+		l.add(new Hash("BLOCK:GEOM_HEADER",Integer.reverseBytes(0x01401380))); 
+		l.add(new Hash("BLOCK:GEOM_INFO",Integer.reverseBytes(0x02401300))); 
+		l.add(new Hash("BLOCK:GEOM_PARTSLIST",Integer.reverseBytes(0x03401300))); 
+		l.add(new Hash("BLOCK:GEOM_PARTSOFSSETS",Integer.reverseBytes(0x04401300))); 
+		l.add(new Hash("BLOCK:GEOM_???",Integer.reverseBytes(0x08401380))); 
+		l.add(new Hash("BLOCK:COMPRESSED",Integer.reverseBytes(0x22114455))); 
+		l.add(new Hash("BLOCK:PART",Integer.reverseBytes(0x10401380))); 
+		l.add(new Hash("BLOCK:PART_HEADER",Integer.reverseBytes(0x11401300)));
+		l.add(new Hash("BLOCK:PART_TEXUSAGE",Integer.reverseBytes(0x12401300)));
+		l.add(new Hash("BLOCK:PART_STRINGS",Integer.reverseBytes(0x15401300)));
+		l.add(new Hash("BLOCK:PART_SHADERLIST",Integer.reverseBytes(0x13401300)));
+		l.add(new Hash("BLOCK:PART_MPOINTS",Integer.reverseBytes(0x1A401300)));
+		l.add(new Hash("BLOCK:PART_MESH",Integer.reverseBytes(0x00411380)));
+		l.add(new Hash("BLOCK:PART_MESH_?",Integer.reverseBytes(0x00491300)));
+		l.add(new Hash("BLOCK:PART_MESH_SHADERS",Integer.reverseBytes(0x014F1300)));
+		l.add(new Hash("BLOCK:PART_MESH_MATERIALS",Integer.reverseBytes(0x02491300)));
+		l.add(new Hash("BLOCK:PART_MESH_PADDING?",Integer.reverseBytes(0x024C1300)));
+		l.add(new Hash("BLOCK:PART_MESH_TRIANGLES?",Integer.reverseBytes(0x01491300)));
+		l.add(new Hash("BLOCK:PART_MESH_INDICES?",Integer.reverseBytes(0x03491300)));
+		l.add(new Hash("BLOCK:PART_PADDING?",Integer.reverseBytes(0x17401300)));
+		l.add(new Hash("BLOCK:PART_HASHLIST?",Integer.reverseBytes(0x18401300)));
+		l.add(new Hash("BLOCK:PART_HASHASSIGN?",Integer.reverseBytes(0x19401300)));
+
+		l.add(new Hash("SHADER:Diffuse",Integer.reverseBytes(0xeb5337a1))); //diffuse tex
+		l.add(new Hash("SHADER:DiffuseAlpha",Integer.reverseBytes(0xe12db62e))); //diffuse tex (in BRAKEDISC) OR diffuse tex, alpha tex (in HEADLIGHTGLASS)
+		l.add(new Hash("SHADER:DiffuseAlphaNormal",Integer.reverseBytes(0xd70a7771))); //diffuse tex, alpha tex, normalmap ; used for DOORLINE, seems a bit weird
+		l.add(new Hash("SHADER:DiffuseGlow",Integer.reverseBytes(0x88155cb2))); //diffuse tex, glow tex
+		l.add(new Hash("SHADER:DiffuseGlowAlpha",Integer.reverseBytes(0x5c6cdd0d))); //diffuse tex, glow tex
+		l.add(new Hash("SHADER:DiffuseNormalPaintable",Integer.reverseBytes(0xc52da6a8))); //diffuse tex, normal tex, swatch tex
+		
+		l.add(new Hash("TEXUSAGE_DIFFUSE",1311995566));	//AE76334E
+		l.add(new Hash("TEXUSAGE_NORMAL",43354773));	//958A9502
+		l.add(new Hash("TEXUSAGE_ALPHA",Integer.reverseBytes(0x5aff315c)));	
+		l.add(new Hash("TEXUSAGE_GLOW",3150905));		//39143000²
+		l.add(new Hash("TEXUSAGE_SWATCH",-698446836)); 	//0C8C5ED6
+		
+		
 		l.add(new Hash("[PART DECLARATION]",4194329)); // 19004000
 		l.add(new Hash("[RFPK/BEGINNING OF ???]",1263552082)); // 5246504b
 //		l.add(new Hash("[before carskin]",2499937291));
 //		l.add(new Hash("[???]",3943825699));
-		
-		
-		return l;
 	}
 	
 	
