@@ -81,7 +81,7 @@ public class Compression {
 	private static byte[] decompressFile(File f){
 		FileInputStream fis;
 		try {
-			System.out.println("Decompressing file : "+f.getName());
+//			System.out.println("Decompressing file : "+f.getName());
 			fis = new FileInputStream(f);
 			byte [] arr = new byte[(int)f.length()];
 			fis.read(arr);
@@ -99,10 +99,10 @@ public class Compression {
 		}
 	}
 
-	private static byte[] decompress(byte[] arr){
+	public static byte[] decompress(byte[] arr){
 		ByteBuffer in = ByteBuffer.wrap(arr);
 		String compressionType = String.valueOf(new char[] {(char)(in.get()), (char)(in.get()), (char)(in.get()), (char)(in.get())});
-		System.out.println("Compression type : "+compressionType);
+//		System.out.println("Compression type : "+compressionType);
 		
 		switch(compressionType) {
 		case "RFPK":
@@ -140,16 +140,18 @@ public class Compression {
 		}
 	}
 
-	private static byte[] compress(byte[] arr, String compressionType, CompressionLevel compressionLevel){
-		ByteBuffer in = ByteBuffer.wrap(arr);
-		System.out.println("Compression type : "+compressionType);
+	public static byte[] compress(byte[] arr, String compressionType){
+		return compress(arr, compressionType, CompressionLevel.Ultra);
+	}
+
+	public static byte[] compress(byte[] arr, String compressionType, CompressionLevel compressionLevel){
+//		System.out.println("Compression type : "+compressionType);
 		
 		switch(compressionType) {
 		case "RFPK":
-			return RefPackCompress.compress(in, compressionLevel);
+			return RefPackCompress.compress(ByteBuffer.wrap(arr), compressionLevel);
 		case "JDLZ":
-			System.out.println("Not implemented");
-			return null;
+			return JDLZCompress.compress(arr);
 		default:
 			System.out.println("Compression type not supported.");	
 			return null;

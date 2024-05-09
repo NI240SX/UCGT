@@ -346,6 +346,12 @@ public class GeomDump extends Application {
 		
 	}
 	
+	/**
+	 * @param carname
+	 * @param kits
+	 * @param widebodies
+	 * @return
+	 */
 	public static ArrayList<Hash> generateHashes(String carname, int[] kits, int[] widebodies) {
 		
 		ArrayList<Hash> l = new ArrayList<Hash>();

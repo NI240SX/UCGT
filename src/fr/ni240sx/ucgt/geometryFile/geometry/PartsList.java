@@ -1,0 +1,47 @@
+package fr.ni240sx.ucgt.geometryFile.geometry;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+
+import fr.ni240sx.ucgt.binstuff.Block;
+import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.Part;
+
+public class PartsList extends Block {
+
+	public GeomBlock getBlockID() {return GeomBlock.Geom_PartsList;}
+	
+	public ArrayList<Integer> partKeys = new ArrayList<Integer>();
+	
+	public PartsList(ByteBuffer in) {
+		var blockLength = in.getInt();
+//		var blockStart = in.position();
+		
+		for(int i=0; i<blockLength/8; i++) {
+			partKeys.add(in.getInt());
+			in.getInt(); //0
+		}
+	}
+
+	@Override
+	public byte[] save() throws IOException {
+		var buf = ByteBuffer.wrap(new byte[partKeys.size()*8 + 8]);
+		buf.order(ByteOrder.LITTLE_ENDIAN);
+		buf.putInt(getBlockID().getKey()); 
+		buf.putInt(partKeys.size()*8); //length
+		for (var p : partKeys) {
+			buf.putInt(p);
+			buf.putInt(0);
+		}
+		return buf.array();
+	}
+
+	public void refresh(ArrayList<Part> parts) {
+		partKeys.clear();
+		for (var p : parts) {
+			partKeys.add(p.partKey);
+		}
+	}
+}

@@ -6,14 +6,17 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+// original code in OpenNFSTools, https://github.com/MWisBest/OpenNFSTools
+// ported to Java by NI240SX
 public class JDLZDecompress {
+
 	public static byte[] decompress(ByteBuffer input )
 	{
 		int flags1 = 1, flags2 = 1;
 		int t, length;
 //		int inPos = 16, outPos = 0;
 
-		System.out.println("JDLZDecompress");
+//		System.out.println("JDLZDecompress");
 		
 		//called right after the header
 //		if( input[0] != 'J' || input[1] != 'D' || input[2] != 'L' || input[3] != 'Z' || input[4] != 0x02 )
@@ -79,17 +82,7 @@ public class JDLZDecompress {
 			}
 			flags1 >>>= 1;
 					
-					
-
-			FileOutputStream fos;
-			try {
-				fos = new FileOutputStream(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\ctk_NIS_240_SX_89_KIT00_BRAKELIGHT_GLASS_RIGHT_A_decomp"));
-				fos.write(output.array());	
-				fos.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+				
 		}
 		return output.array();
 	}

@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 
+// Contains code from 379Felipe
 public class Hash {
 	
 	//TODO change the display of unknown hashes to their hex code + eventual given description

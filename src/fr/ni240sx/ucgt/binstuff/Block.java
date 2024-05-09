@@ -1,23 +1,29 @@
 package fr.ni240sx.ucgt.binstuff;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import fr.ni240sx.ucgt.geometryFile.*;
 import fr.ni240sx.ucgt.geometryFile.geometry.*;
-import fr.ni240sx.ucgt.geometryFile.part.*;
 
 public abstract class Block {
-	public static final GeomChunk BlockID = GeomChunk.INVALID;
+	public abstract GeomBlock getBlockID();
 
 	public ArrayList<Block> subBlocks = new ArrayList<Block>();
 	public byte[] data;
 	
-	public abstract byte[] save();
+	public abstract byte[] save() throws IOException;
 	
 	public static Block read(ByteBuffer in) {
-		switch (GeomChunk.get(in.getInt())) {
+		int chunkToInt;
+		GeomBlock block = GeomBlock.get(chunkToInt = in.getInt());
+//		System.out.println("Block read : "+block.getName());
+		int len;
+		switch (block) {
+		case Padding:
+			return new Padding(in);
 		case Geometry:
 			return new Geometry(in);
 		case Geom_Header:
@@ -25,9 +31,13 @@ public abstract class Block {
 		case Geom_Info:
 			return new Info(in);
 		case Geom_PartsList:
+			return new PartsList(in);
 		case Geom_PartsOffsets:
+			return new PartsOffsets(in);
 		case Geom_UNKNOWN:
+			return new Geom_Unknown(in);
 		case CompressedData:
+			return new CompressedData(in);
 		case Part:
 		case Part_HashAssign:
 		case Part_HashList:
@@ -44,10 +54,9 @@ public abstract class Block {
 		case Part_ShaderList:
 		case Part_Strings:
 		case Part_TexUsage:
-		case EMPTY:
 		case INVALID:
 		default:
-			return null;
+			return new UnknownBlock(in, chunkToInt);
 		}
 	}
 	
@@ -60,5 +69,21 @@ public abstract class Block {
 			i++;
 		}
 		return new String(Arrays.copyOf(stringBytesOversize, i));
+	}
+	
+	/**
+	 * @param bb - ByteBuffer to use
+	 * @param s - String to add
+	 * @param maxSize - Maximum string length
+	 */
+	public static void putString(ByteBuffer bb, String s, int maxSize) {
+		
+		for (int i=0; i<s.length(); i++) {
+			if (i>maxSize) {
+				System.out.println("[WARN] String too long !");
+				break;
+			}
+			bb.put((byte)s.charAt(i));
+		}
 	}
 }

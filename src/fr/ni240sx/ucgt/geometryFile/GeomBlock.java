@@ -3,8 +3,8 @@ package fr.ni240sx.ucgt.geometryFile;
 import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.collisionsEditor.CollisionBound.BoundConstraintType;
 
-public enum GeomChunk {
-	EMPTY(0x00000000, "EMPTY"),
+public enum GeomBlock {
+	Padding(0x00000000, "Padding"),
 	Geometry(0x00401380, "Geometry"),
 	Geom_Header(0x01401380, "Geom_Header"),
 	Geom_Info(0x02401300, "Geom_Info"),
@@ -28,13 +28,13 @@ public enum GeomChunk {
 	Part_Padding(0x17401300, "Part_Padding?"),
 	Part_HashList(0x18401300, "Part_HashList?"),
 	Part_HashAssign(0x19401300, "Part_HashAssign?"),
-	INVALID(0x00000000, "INVALID");
+	INVALID(0xFFFFFFFF, "INVALID");
 	
     private final int key;
     private final String name;
 
-    GeomChunk(int key, String name) {
-        this.key = key;
+    GeomBlock(int key, String name) {
+        this.key = Integer.reverseBytes(key);
         this.name = name;
     }
 
@@ -46,8 +46,8 @@ public enum GeomChunk {
         return name;
     }
 
-    public static GeomChunk get(int key) {
-        for (GeomChunk c : values()) {
+    public static GeomBlock get(int key) {
+        for (GeomBlock c : values()) {
             if (c.key == key) return c;
         }
         return INVALID; // Handle invalid value

@@ -3,6 +3,8 @@ package fr.ni240sx.ucgt.compression;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+// Original code by Rick Gibbed https://github.com/gibbed/Gibbed.RefPack/tree/master
+// Ported to Java by NI240SX
 public class RefPackDecompress {
 
 	public static boolean stop = true;
@@ -20,14 +22,14 @@ public class RefPackDecompress {
 	public static byte[] decompress(ByteBuffer in) {
 		return decompress(in, true);
 	}
-	
+
 	public static byte[] decompress(ByteBuffer in, boolean chunkData) {
 		byte[] header = new byte[2];
 //		int flags;
 		int compressedSize = 0;
 		int decompressedSize = 0;
 
-		System.out.println("RefPackDecompress");
+//		System.out.println("RefPackDecompress");
 		
 		RefPackDecompress.in = in;
 		

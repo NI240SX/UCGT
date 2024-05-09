@@ -1,6 +1,7 @@
 package fr.ni240sx.ucgt.compression;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.HashMap;
@@ -9,6 +10,8 @@ import java.util.PriorityQueue;
 
 import javafx.util.Pair;
 
+// Original code by Rick Gibbed https://github.com/gibbed/Gibbed.RefPack/tree/master
+// Ported to Java by NI240SX
 public class RefPackCompress {
 
 	static int sequenceStart = 0;
@@ -16,15 +19,14 @@ public class RefPackCompress {
     static int sequenceIndex = 0;
     
 	public static byte[] compress(ByteBuffer in) {
-		// TODO Auto-generated method stub
 		return compress(in, CompressionLevel.Max);
 	}
 
-    public static byte[] compress(ByteBuffer input, CompressionLevel level)
+	public static byte[] compress(ByteBuffer input, CompressionLevel level)
     {
     	byte[] output;
 
-		System.out.println("RefPackCompress");
+//		System.out.println("RefPackCompress");
     			
     	if (input.capacity() >= Integer.toUnsignedLong(0xFFFFFFFF)) //workaround because the latter is -1
         {
@@ -99,20 +101,22 @@ public class RefPackCompress {
                         var tmppair2 = blockTrackingQueue.poll();
                         valueList = latestBlocks.get(tmppair2.getKey());
 
-                        for (int loop = 0; loop < valueList.size(); loop++)
-                        {
-                            if (valueList.get(loop) == tmppair2.getValue())
-                            {
-                                valueList.remove(loop);
-                                break;
-                            }
-                        }
-
-                        if (valueList.size() == 0)
-                        {
-                            latestBlocks.remove(tmppair2.getKey());
-                            unusedLists.add(valueList);
-                        }
+                        if (valueList != null) {
+	                        for (int loop = 0; loop < valueList.size(); loop++)
+	                        {
+	                            if (valueList.get(loop) == tmppair2.getValue())
+	                            {
+	                                valueList.remove(loop);
+	                                break;
+	                            }
+	                        }
+	
+	                        if (valueList.size() == 0)
+	                        {
+	                            latestBlocks.remove(tmppair2.getKey());
+	                            unusedLists.add(valueList);
+	                        }
+                    	}
                     }
                 }
 
@@ -298,36 +302,44 @@ public class RefPackCompress {
         if (compressedLength + 6 < input.capacity())
         {
         	//END
-            int chunkPosition;
+//            int chunkPosition;
+            
+          //adding the header used in UC : RFPK flags decompSize compSize
+            output = new byte[compressedLength + 5 + (endIsValid ? 0 : 1) + 16];
+            var bb = ByteBuffer.wrap(output);
+            bb.order(ByteOrder.LITTLE_ENDIAN);
+            bb.put("RFPK".getBytes());
+            bb.putInt(4097);
+            bb.putInt(input.capacity());
+            bb.putInt(compressedLength + 5 + (endIsValid ? 0 : 1));
 
             if (input.capacity() > Integer.toUnsignedLong(0xFFFFFF))
             {
-                output = new byte[compressedLength + 5 + (endIsValid ? 0 : 1)];
-                output[0] = (byte) (0x10 | 0x80); // 0x80 = length is 4 bytes
-                output[1] = (byte) 0xFB;
-                output[2] = (byte)(input.capacity() >>> 24);
-                output[3] = (byte)(input.capacity() >>> 16);
-                output[4] = (byte)(input.capacity() >>> 8);
-                output[5] = (byte)(input.capacity());
-                chunkPosition = 6;
+                bb.put((byte) (0x10 | 0x80)); // 0x80 = length is 4 bytes
+                bb.put((byte) 0xFB);
+                bb.put((byte)(input.capacity() >>> 24));
+                bb.put((byte)(input.capacity() >>> 16));
+                bb.put((byte)(input.capacity() >>> 8));
+                bb.put((byte)(input.capacity()));
+//                chunkPosition = 22;
             }
             else
             {
-                output = new byte[compressedLength + 5 + (endIsValid ? 0 : 1)];
-                output[0] = 0x10;
-                output[1] = (byte) 0xFB;
-                output[2] = (byte)(input.capacity() >>> 16);
-                output[3] = (byte)(input.capacity() >>> 8);
-                output[4] = (byte)(input.capacity());
-                chunkPosition = 5;
+            	bb.put((byte) 0x10);
+            	bb.put((byte) 0xFB);
+            	bb.put((byte)(input.capacity() >>> 16));
+            	bb.put((byte)(input.capacity() >>> 8));
+            	bb.put((byte)(input.capacity()));
+//                chunkPosition = 21;
             }
 
             for (byte[] t : compressedChunks)
             {
-            	var T = ByteBuffer.wrap(t);
-                T.get(0, output, chunkPosition, t.length);
+            	bb.put(t);
+//            	var T = ByteBuffer.wrap(t);
+//                T.get(0, output, chunkPosition, t.length);
 //                Array.Copy(t, 0, output, chunkPosition, t.Length);
-                chunkPosition += t.length;
+//                chunkPosition += t.length;
             }
 
             if (!endIsValid)
@@ -335,11 +347,21 @@ public class RefPackCompress {
                 output[output.length - 1] = (byte) 0xFC;
             }
 
+//            //adding the header used in UC : RFPK flags decompSize compSize
+//            byte[] finalOutput = new byte[output.length + 16];
+//            var bb = ByteBuffer.wrap(finalOutput);
+//            bb.order(ByteOrder.LITTLE_ENDIAN);
+//            bb.put("RFPK".getBytes());
+//            bb.putInt(4097);
+//            bb.putInt(input.capacity());
+//            bb.putInt(output.length);
+//            bb.put(output);
+            
             return output;
         }
 
-        System.out.println("Something didn't go well");
-        return output;
+        System.out.println("[RFPKCompress] Something didn't go well");
+        return null;
     }
 
     private static boolean FindSequence(ByteBuffer input,
@@ -478,46 +500,4 @@ public class RefPackCompress {
         return endDestination - destination;
     }
 	
-}
-
-class CompressionLevel
-{
-    public static CompressionLevel Max = new CompressionLevel(1, 1, 10, 65536);
-    public static CompressionLevel Ultra = new CompressionLevel(1, 1, 10, 32768);
-    public static CompressionLevel VeryHigh = new CompressionLevel(1, 1, 10, 16384);
-    public static CompressionLevel High = new CompressionLevel(1, 1, 10, 8192);
-    public static CompressionLevel Medium = new CompressionLevel(1, 1, 10, 4096);
-    public static CompressionLevel Low = new CompressionLevel(1, 1, 10, 2048);
-
-    public int BlockInterval;
-    public int SearchLength;
-    public int PrequeueLength;
-    public int QueueLength;
-    public int SameValToTrack;
-    public int BruteForceLength;
-
-    public CompressionLevel(int blockInterval, 
-    						int searchLength,
-                            int prequeueLength,
-                            int queueLength,
-                            int sameValToTrack,
-                            int bruteForceLength)
-    {
-        this.BlockInterval = blockInterval;
-        this.SearchLength = searchLength;
-        this.PrequeueLength = prequeueLength;
-        this.QueueLength = queueLength;
-        this.SameValToTrack = sameValToTrack;
-        this.BruteForceLength = bruteForceLength;
-    }
-
-    public CompressionLevel(int blockInterval, int searchLength, int sameValToTrack, int bruteForceLength)
-    {
-        this.BlockInterval = blockInterval;
-        this.SearchLength = searchLength;
-        this.PrequeueLength = this.SearchLength / this.BlockInterval;
-        this.QueueLength = 131000 / this.BlockInterval - this.PrequeueLength;
-        this.SameValToTrack = sameValToTrack;
-        this.BruteForceLength = bruteForceLength;
-    }
 }

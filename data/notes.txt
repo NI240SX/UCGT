@@ -18,37 +18,6 @@ eb120123 marque le début des déclarations de matériaux (NON)
 
 
 
-==================== FILE HEADER ====================
-
-401380 3c64b000   
-1401380 pz 2401300 90000000 
- 3000000 1e000000 ce030000 
-GEOM ETRY .BIN  
-    
-    
-  DEFA ULT 
-    
-    
-80000000    
-88304300 88304300 90304300 90304300 
-3401300 701e0000 BMW_M3_E92_08_KIT06_BUMPER_FRONT_A  
-BMW_M3_E92_08_KIT06_BUMPER_FRONT_B  BMW_M3_E92_08_KIT06_BUMPER_FRONT_C  
-
-------------------------------------------------------------------------
-
-401380 90129000   
-1401380 Pz 2401300 90000000 
- 3000000 1e000000 cd030000 
-GEOM ETRY .BIN  
-    
-    
-  DEFA ULT 
-    
-    
-80000000    
-88304300 88304300 90304300 90304300 
-3401300 681e0000 NIS_370_Z_09_KIT11_MUFFLER_05_T0_A  
-NIS_370_Z_09_KIT11_MUFFLER_05_T0_B  NIS_370_Z_09_KIT11_MUFFLER_05_T0_C  
 
 
 
@@ -78,7 +47,7 @@ parts offsets block-------------------------------
 blockid=04401300, length 23568
 6x4 bytes for each part, repeat
 9C29BC03 00EE0900 60060000 EC0A0000 -> part binhash, offset relative to file beginning, compressed part size, decompressed part size // 650752, 1632, 2796 for hlglass_l_a
-00020000 00000000					-> 2, 0																							// 31744, 49688, 86484 for BASE_A
+00020000 00000000					-> 2, 0																							// 31744, 49688, 86484 for BASE_A, 49688 contains the 3 RFPK archives
 
 ??? block-----------------------------------------
 blockid=08401380, length 0
@@ -110,6 +79,8 @@ for RFPK by parts compression (vanilla) : multiple 32kb blocks one after the oth
 
 
 ================= PART STRUCTURE ================= (AUD_RS4_STK_08_KIT00_BASE_A)
+
+//TODO find the autosculpt stuff
 
 HEADER--------------------------------------------
 10401380 cc510100 11401300 e4000000 	-> geometry part blockid, total part length before splitting & compressing, header block ID, header length (up to the end of the part name string)
