@@ -104,8 +104,12 @@ class DBMPPart {
 				if (attribute.Key.label.equals("PART_NAME_OFFSETS")) {
 					AttributeTwoString att2S = (AttributeTwoString)attribute;
 					name1 = att2S.value1 + "_" + att2S.value2;
-					kitnumber = Integer.valueOf(att2S.value1.substring(att2S.value1.length()-2));
-					if (att2S.value1.charAt(3) == 'W') isWidebody = true; else isWidebody = false;
+					try {
+						kitnumber = Integer.valueOf(att2S.value1.substring(att2S.value1.length()-2));
+						if (att2S.value1.charAt(3) == 'W') isWidebody = true; else isWidebody = false;
+					} catch (Exception e) {
+						
+					}
 				}
 				if (attribute.Key.label.equals("LOD_BASE_NAME")) {
 					AttributeTwoString att2S = (AttributeTwoString)attribute;
@@ -146,6 +150,33 @@ class DBMPPart {
 		}
 		return att;
 	}
+	public AttributeKey getAttributeKey(String a) {
+		AttributeKey att = null;
+		for (Attribute attribute : attributes) {
+			if (attribute.Key.label.equals(a)) {
+				att = (AttributeKey)attribute;
+			}
+		}
+		return att;
+	}
+	public AttributeCarPartID getAttributeCarPartID(String a) {
+		AttributeCarPartID att = null;
+		for (Attribute attribute : attributes) {
+			if (attribute.Key.label.equals(a)) {
+				att = (AttributeCarPartID)attribute;
+			}
+		}
+		return att;
+	}
+	public AttributeString getAttributeString(String a) {
+		AttributeString att = null;
+		for (Attribute attribute : attributes) {
+			if (attribute.Key.label.equals(a)) {
+				att = (AttributeString)attribute;
+			}
+		}
+		return att;
+	}
 	public void removeAttribute(String a) {
 		for (Attribute attribute : attributes) {
 			if (attribute.Key.label.equals(a)) {
@@ -162,4 +193,6 @@ class DBMPPart {
 		}
 		return s;
 	}
+
+
 }
