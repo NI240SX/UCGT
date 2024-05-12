@@ -14,15 +14,15 @@ import javafx.util.Pair;
 // Ported to Java by NI240SX
 public class RefPackCompress {
 
-	static int sequenceStart = 0;
-    static int sequenceLength = 0;
-    static int sequenceIndex = 0;
+	public int sequenceStart = 0;
+    public int sequenceLength = 0;
+    public int sequenceIndex = 0;
     
-	public static byte[] compress(ByteBuffer in) {
+	public byte[] compress(ByteBuffer in) {
 		return compress(in, CompressionLevel.Max);
 	}
 
-	public static byte[] compress(ByteBuffer input, CompressionLevel level)
+	public byte[] compress(ByteBuffer input, CompressionLevel level)
     {
     	byte[] output;
 
@@ -364,7 +364,7 @@ public class RefPackCompress {
         return null;
     }
 
-    private static boolean FindSequence(ByteBuffer input,
+    private boolean FindSequence(ByteBuffer input,
                                      int offset,
 //                                     int bestStart, //ref
 //                                     int bestLength, //ref
@@ -485,7 +485,7 @@ public class RefPackCompress {
         return foundRun;
     }
 
-    private static int FindRunLength(ByteBuffer input, int source, int destination)
+    private int FindRunLength(ByteBuffer input, int source, int destination)
     {
         int endSource = source + 1;
         int endDestination = destination + 1;

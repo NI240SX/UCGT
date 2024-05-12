@@ -26,7 +26,7 @@ public class PartsList extends Block {
 	}
 
 	@Override
-	public byte[] save() throws IOException {
+	public byte[] save(int currentPosition) throws IOException {
 		var buf = ByteBuffer.wrap(new byte[partKeys.size()*8 + 8]);
 		buf.order(ByteOrder.LITTLE_ENDIAN);
 		buf.putInt(getBlockID().getKey()); 

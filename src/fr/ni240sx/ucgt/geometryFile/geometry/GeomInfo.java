@@ -8,7 +8,7 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 
-public class Info extends Block {
+public class GeomInfo extends Block {
 
 	public GeomBlock getBlockID() {return GeomBlock.Geom_Info;}
 	public static final int usualLength = 144;
@@ -18,7 +18,7 @@ public class Info extends Block {
 	public int const1=128, const21=0, const22=0, const23=0, const24=0;
 	
 	
-	public Info(ByteBuffer in) {
+	public GeomInfo(ByteBuffer in) {
 		var blockLength = in.getInt();
 		if (blockLength != usualLength) System.out.println("[WARN] Unexpected info block length : "+blockLength+" instead of 144.");
 		var blockStart = in.position();
@@ -43,7 +43,7 @@ public class Info extends Block {
 	}
 
 	@Override
-	public byte[] save() throws IOException {
+	public byte[] save(int currentPosition) throws IOException {
 		var out = new ByteArrayOutputStream();
 
 		var buf = ByteBuffer.wrap(new byte[usualLength+8]); //TODO usual size used, not dynamic

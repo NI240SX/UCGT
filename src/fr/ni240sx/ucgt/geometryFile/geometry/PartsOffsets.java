@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
@@ -13,26 +14,27 @@ public class PartsOffsets extends Block {
 
 	public GeomBlock getBlockID() {return GeomBlock.Geom_PartsOffsets;}
 	
-	public ArrayList<PartOffset> partOffsets = new ArrayList<PartOffset>();
+	public HashMap<Integer, PartOffset> partOffsets = new HashMap<Integer, PartOffset>();
 	
 	public PartsOffsets(ByteBuffer in) {
 		var blockLength = in.getInt();
 //		var blockStart = in.position();
 		
 		for(int i=0; i<blockLength/24; i++) {
-			partOffsets.add(new PartOffset(in.getInt(), in.getInt(), in.getInt(), in.getInt()));
+			var po = new PartOffset(in.getInt(), in.getInt(), in.getInt(), in.getInt());
+			partOffsets.put(po.partKey, po);
 			in.getInt(); //512
 			in.getInt(); //0
 		}
 	}
 
 	@Override
-	public byte[] save() throws IOException {
+	public byte[] save(int currentPosition) throws IOException {
 		var buf = ByteBuffer.wrap(new byte[partOffsets.size()*24 + 8]); 
 		buf.order(ByteOrder.LITTLE_ENDIAN);
 		buf.putInt(getBlockID().getKey()); 
 		buf.putInt(partOffsets.size()*24); //length
-		for (var p : partOffsets) {
+		for (var p : partOffsets.values()) {
 			buf.putInt(p.partKey);
 			buf.putInt(p.offset);
 			buf.putInt(p.sizeCompressed);
@@ -46,16 +48,19 @@ public class PartsOffsets extends Block {
 	public void refresh(ArrayList<Part> parts) {
 		partOffsets.clear();
 		for (var p : parts) {
-			partOffsets.add(new PartOffset(p.partKey, 0, p.compressedLength, p.decompressedLength));
+			var po = new PartOffset(p.partKey, 0, p.compressedLength, p.decompressedLength);
+			partOffsets.put(po.partKey, po);
 		}
 	}
 
 	public void setOffset(Part p, int offset) {
-		for (var o : partOffsets) {
-			if (o.partKey == p.partKey) {
-				o.offset = offset;
-				break;
-			}
-		}
+		partOffsets.get(p.partKey).offset = offset;
+		
+//		for (var o : partOffsets.values()) {
+//			if (o.partKey == p.partKey) {
+//				o.offset = offset;
+//				break;
+//			}
+//		}
 	}
 }

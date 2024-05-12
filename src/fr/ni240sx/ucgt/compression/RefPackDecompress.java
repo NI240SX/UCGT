@@ -10,20 +10,20 @@ public class RefPackDecompress {
 	public static boolean stop = true;
 	
 	//decompression stuff
-	public static int[] m_prefix = new int[4];
-	public static ByteBuffer in;
-	public static ByteBuffer out;
+	public int[] m_prefix = new int[4];
+	public ByteBuffer in;
+	public ByteBuffer out;
 	
-	public static byte[] decompress(byte[] in) {
+	public byte[] decompress(byte[] in) {
 		return decompress(ByteBuffer.wrap(in));
 	}
 	
 
-	public static byte[] decompress(ByteBuffer in) {
+	public byte[] decompress(ByteBuffer in) {
 		return decompress(in, true);
 	}
 
-	public static byte[] decompress(ByteBuffer in, boolean chunkData) {
+	public byte[] decompress(ByteBuffer in, boolean chunkData) {
 		byte[] header = new byte[2];
 //		int flags;
 		int compressedSize = 0;
@@ -31,7 +31,7 @@ public class RefPackDecompress {
 
 //		System.out.println("RefPackDecompress");
 		
-		RefPackDecompress.in = in;
+		this.in = in;
 		
 		if(chunkData) {
 			//this method is called right after detecting the compressiontype (RFPK magic)
@@ -84,7 +84,7 @@ public class RefPackDecompress {
 		}
 	}
 	
-	public static void decompressionStep() {
+	public void decompressionStep() {
 		/* read one byte from compressed stream */
 		m_prefix[0] = Byte.toUnsignedInt(in.get()); 
 		if (m_prefix[0] >= 0xC0) {
@@ -112,7 +112,7 @@ public class RefPackDecompress {
 		}
 	}
 
-	private static void copyShort() {
+	private void copyShort() {
 		/* read one more byte from compressed stream */
 		m_prefix[1] = Byte.toUnsignedInt(in.get());
 
@@ -130,7 +130,7 @@ public class RefPackDecompress {
 		copy(copyOffset, copySize);
 	}
 
-	private static void copyMedium() {
+	private void copyMedium() {
 		/* read two more bytes from compressed stream */
 		m_prefix[1] = Byte.toUnsignedInt(in.get());
 		m_prefix[2] = Byte.toUnsignedInt(in.get());
@@ -148,7 +148,7 @@ public class RefPackDecompress {
 		copy(copyOffset, copySize);
 	}
 
-	private static void copyLong() {
+	private void copyLong() {
 		/* read three more bytes from compressed stream */
 		m_prefix[1] = Byte.toUnsignedInt(in.get());
 		m_prefix[2] = Byte.toUnsignedInt(in.get());
@@ -168,7 +168,7 @@ public class RefPackDecompress {
 		copy(copyOffset, copySize);
 	}
 
-	private static void immediateBytesLong() {
+	private void immediateBytesLong() {
 		/* num_src_bytes ~ 4..0x70 step 4 */
 		int plainSize = ((m_prefix[0] & 0x1F) + 1) * 4;
 
@@ -177,7 +177,7 @@ public class RefPackDecompress {
 		pump(plainSize);
 	}
 
-	private static void immediateBytesAndFinish() {
+	private void immediateBytesAndFinish() {
 		/* num_src_bytes ~ 0..3 and finish */
 		int plainSize = m_prefix[0] & 3;
 
@@ -189,7 +189,7 @@ public class RefPackDecompress {
 		assert(out.position() == out.capacity());
 	}
 	
-	private static void copy(int offset, int length) {
+	private void copy(int offset, int length) {
 
 		int positionOut = out.position();
 		
@@ -201,7 +201,7 @@ public class RefPackDecompress {
 		
 	}
 	
-	private static void pump(int length) {
+	private void pump(int length) {
 
 		for (int i=0; i<length; i++) {
 			out.put(in.get());

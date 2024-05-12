@@ -8,15 +8,15 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 
-public class Header extends Block {
+public class GeomHeader extends Block {
 
 	public GeomBlock getBlockID() {return GeomBlock.Geom_Header;}
 	
-	public Info info = null;
+	public GeomInfo geomInfo = null;
 	public PartsList partsList = null;
 	public PartsOffsets partsOffsets = null;
 	
-	public Header(ByteBuffer in) {
+	public GeomHeader(ByteBuffer in) {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
 		Block block;
@@ -30,7 +30,7 @@ public class Header extends Block {
 		for (var b : subBlocks) {
 			switch (b.getBlockID()) {
 			case Geom_Info:
-				info = (Info) b;
+				geomInfo = (GeomInfo) b;
 				break;
 			case Geom_PartsList:
 				partsList = (PartsList) b;
@@ -47,7 +47,7 @@ public class Header extends Block {
 	}
 
 	@Override
-	public byte[] save() throws IOException {
+	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 		var out = new ByteArrayOutputStream();
 
 		var buf = ByteBuffer.wrap(new byte[8]);
@@ -58,7 +58,7 @@ public class Header extends Block {
 		out.write(buf.array());
 		
 		for (var b : subBlocks) {
-			out.write(b.save());
+			out.write(b.save(out.size()));
 		}
 
 		buf = ByteBuffer.wrap(new byte[4]);

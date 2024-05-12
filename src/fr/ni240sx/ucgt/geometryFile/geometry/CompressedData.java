@@ -33,7 +33,7 @@ public class CompressedData extends Block {
 	}
 
 	@Override
-	public byte[] save() throws IOException {
+	public byte[] save(int currentPosition) throws IOException {
 		
 		var arr = new byte [data.length+24];
 		

@@ -106,7 +106,7 @@ public class Compression {
 		
 		switch(compressionType) {
 		case "RFPK":
-			return RefPackDecompress.decompress(in);
+			return new RefPackDecompress().decompress(in);
 		case "JDLZ":
 			return JDLZDecompress.decompress(in);
 		default:
@@ -149,7 +149,7 @@ public class Compression {
 		
 		switch(compressionType) {
 		case "RFPK":
-			return RefPackCompress.compress(ByteBuffer.wrap(arr), compressionLevel);
+			return new RefPackCompress().compress(ByteBuffer.wrap(arr), compressionLevel);
 		case "JDLZ":
 			return JDLZCompress.compress(arr);
 		default:

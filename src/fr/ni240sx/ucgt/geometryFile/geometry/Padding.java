@@ -24,7 +24,7 @@ public class Padding extends Block {
 	//TODO will need another save() method to create proper padding with proper saving
 	
 	@Override
-	public byte[] save() throws IOException {
+	public byte[] save(int currentPosition) throws IOException {
 		
 		var arr = new byte [length+8];
 		
