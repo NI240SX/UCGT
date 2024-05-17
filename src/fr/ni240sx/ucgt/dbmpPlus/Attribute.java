@@ -175,8 +175,8 @@ class AttributeTwoString extends Attribute{
 			value2gui.setText(value2gui.getText().strip());
 			if (value2.isEmpty()) value2Exists = 0; else value2Exists = 1;
 			e.consume();
-			value2gui.positionCaret(caretB4Save);
 			DBMPPlus.updateAllPartsDisplay();
+			value2gui.positionCaret(caretB4Save);
 		});
 	}
 	public void update() {
