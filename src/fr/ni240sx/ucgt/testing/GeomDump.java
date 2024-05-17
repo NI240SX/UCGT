@@ -53,13 +53,16 @@ public class GeomDump extends Application {
 	
 	
 	
-	static int startFrom = 8040; //63400
-	static int length = 8192;//2048 recommended
+	static int startFrom = 0; //63400
+	static int length = 4096;//2048 recommended
 	
 //	AUD_RS4_K00_BASE_A blocks
 //	blockid=18401300	81164	1536+8
 //	blockid=19401300	82708	3768+8
-//	blockid=02491300	2064	1896+8		(materials)	
+//	blockid=02491300	2064 (2176 aligned)	1896+8		(materials)	
+
+// materials WHEELF	768
+	
 	// M3 E92
 	//base : 63440
 	//hood : 725944
@@ -80,8 +83,18 @@ public class GeomDump extends Application {
 	
 	
 	
-	
-	
+
+	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BASE_A");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BODY_A");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKEROTOR_FRONT_A");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_WINDOW_REAR_A");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_WHEEL_TIRE_FRONT_A");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKELIGHT_LEFT_A");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKELIGHT_GLASS_LEFT_A");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_HEADLIGHT_LEFT_A");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_HEADLIGHT_GLASS_LEFT_A");
+
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT01_BUMPER_FRONT_A");	
 
 //	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_BODY_A.dat");
 //	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_BASE_A.dat");
@@ -94,7 +107,7 @@ public class GeomDump extends Application {
 //	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\NIS_240_SX_89\\NIS_240_SX_89_KIT00_BRAKELIGHT_GLASS_RIGHT_A.dat");
 // 	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\ctk_NIS_240_SX_89\\ctk_NIS_240_SX_89_KIT00_BRAKELIGHT_GLASS_RIGHT_A.dat");
 	
-	File f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
 	
 //	File f = new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\UCGT-UC_WINDOW_FRONT.BIN");
 //	File f = new File("C:\\Program Files (x86)\\EA Games\\Need for Speed Undercover\\CARS\\LEX_LFA\\GEOMETRY.BIN"); //UCE on laptop
@@ -475,6 +488,7 @@ public class GeomDump extends Application {
 		l.add(new Hash("BLOCK:PART_HASHASSIGN?",Integer.reverseBytes(0x19401300)));
 
 		l.add(new Hash("SHADER:Diffuse",Integer.reverseBytes(0xeb5337a1))); //diffuse tex
+		l.add(new Hash("SHADER:DiffuseNormal",Integer.reverseBytes(0xf5bbcc3f))); //diffuse tex
 		l.add(new Hash("SHADER:DiffuseAlpha",Integer.reverseBytes(0xe12db62e))); //diffuse tex (in BRAKEDISC) OR diffuse tex, alpha tex (in HEADLIGHTGLASS)
 		l.add(new Hash("SHADER:DiffuseAlphaNormal",Integer.reverseBytes(0xd70a7771))); //diffuse tex, alpha tex, normalmap ; used for DOORLINE, seems a bit weird
 		l.add(new Hash("SHADER:DiffuseGlow",Integer.reverseBytes(0x88155cb2))); //diffuse tex, glow tex

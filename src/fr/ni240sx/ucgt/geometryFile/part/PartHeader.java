@@ -77,6 +77,7 @@ public class PartHeader extends Block {
 		in.position(in.position()+40);
 		partName = Block.readString(in);
 		
+		System.out.println(partName);
 //		if (in.position()%4 != 0) in.position(in.position()+4-in.position()%4); //unnecessary complication
 		in.position(blockStart+blockLength); //anyways it's that
 	}

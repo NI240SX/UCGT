@@ -44,7 +44,7 @@ public class Geometry extends Block {
 		
 		
 		// decompress and read parts by offsets
-		for (var o : geomHeader.partsOffsets.partOffsets.values()) {
+		for (var o : geomHeader.partsOffsets.partOffsets) { //.values()
 			byte[] partData = new byte[o.sizeDecompressed];
 			ByteBuffer dataWriter = ByteBuffer.wrap(partData);
 			
@@ -176,7 +176,7 @@ public class Geometry extends Block {
 //			Block.doNotRead.put(GeomBlock.Geom_PartsList, true);
 			
 			File f;
-			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN"));
+			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak"));
 //			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY-ctk.BIN"));
 //			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\NIS_240_SX_89\\GEOMETRY.BIN"));
 //			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\MER_G63AMG\\GEOMETRY.BIN"));
@@ -192,7 +192,7 @@ public class Geometry extends Block {
 			System.out.println("Geom read in "+(System.currentTimeMillis()-t)+" ms.");
 			t = System.currentTimeMillis();
 
-			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY-recompiled.BIN"));
+			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN"));
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY-ctk recompiled.BIN"));
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\NIS_240_SX_89\\GEOMETRY-recompiled.BIN"));
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\MER_G63AMG\\GEOMETRY-recompiled.BIN"));

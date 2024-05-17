@@ -47,35 +47,3 @@ public class TexUsage extends Block {
 		return out.array();	
 	}
 }
-
-enum Usage {
-	DIFFUSE(0xAE76334E, "DIFFUSE"),
-	NORMAL(0x958A9502, "NORMAL"),
-	ALPHA(0x5aff315c, "ALPHA"),
-	SWATCH(0x0c8c5ed6, "SWATCH"),
-	SELFILLUMINATION(0x39143000, "SELFILLUMINATION"),
-	INVALID(0xFFFFFFFF, "INVALID");
-	
-    private final int key;
-    private final String name;
-
-    Usage(int key, String name) {
-        this.key = Integer.reverseBytes(key);
-        this.name = name;
-    }
-
-    public int getKey() {
-        return key;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public static Usage get(int key) {
-        for (Usage c : values()) {
-            if (c.key == key) return c;
-        }
-        return INVALID; // Handle invalid value
-    }
-}

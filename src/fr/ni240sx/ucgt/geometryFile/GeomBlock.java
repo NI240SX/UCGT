@@ -19,7 +19,7 @@ public enum GeomBlock {
 	Part_ShaderList(0x13401300, "Part_ShaderList"),
 	Part_MPoints(0x1A401300, "Part_MPoints"),
 	Part_Mesh(0x00411380, "Part_Mesh"),
-	Part_Mesh_UNKNOWN(0x00491300, "Part_Mesh_???"),
+	Part_Mesh_Info(0x00491300, "Part_Mesh_Info"),
 	Part_Mesh_Shaders(0x014F1300, "Part_Mesh_Shaders"),
 	Part_Mesh_Materials(0x02491300, "Part_Mesh_Materials"),
 	Part_Mesh_Padding(0x024C1300, "Part_Mesh_Padding?"),

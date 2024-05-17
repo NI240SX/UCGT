@@ -145,13 +145,13 @@ BIG BLOCK => MESH_________________________________ shorter in a ctk model appare
 blockid=00411380, length 79184
 contains sub-blocks
 
-SOMETHING-----------------------------------------
-blockid=00491300, length 72
+MESH INFO-----------------------------------------
+blockid=00491300, length 72, aligned after length declared (16-byte, 0x11 fill)
 00000000 00000000 30000000 8041A302 <- always 0, always 0, always 3, varies
 07000000 00000000 00000000 00000000 <- number of materials ?, always 0, 0 and 0
 00000000 00000000 00000000 00000000 <- always 0, 0, 0, 0
-44070000 00000000 00000000 00000000 <- changes, always 0, 0, 0
-F6070000 00000000					<- changes, always 0
+44070000 00000000 00000000 00000000 <- number of triangles, always 0, 0, 0
+F6070000 00000000					<- number of vertices, always 0
 
 SHADERS USAGE-------------------------------------
 blockid=014F1300, length 16
@@ -162,13 +162,13 @@ blockid=02491300, length 1896
 first contains 104 bytes of 111111... padding until reaching 0x880/2176 (offset multiple of 128 ?)
 
 then a sort of material header ? first material :
-0 06000000 0 03000000				<- 0 to 6 (poly ids?), 0, 3 (there's 7 materials in total)
+0 06000000 0 03000000				<- 0 to 6 (vertex ids?), 0, 3 (there's 7 materials in total)
 then FFFFFFFF... padding until reaching (offset+16) multiple of 32/material header + 48
  6000000  3000000 
 ÿÿÿÿ ÿÿÿÿ ÿÿÿÿ ÿÿÿÿ 
 ÿÿÿÿ ÿÿÿÿ ÿÿÿÿ ÿÿÿÿ 
 708ffff ÿÿÿÿ ffff0204 dfc94894 
-80510100 6000000   
+80510100 6000000   					<- something, number of vertices ?
     
    80000000 
 2080    
@@ -256,4 +256,109 @@ EOF-----------------------------------------------
 rather end of part
 
 
+
+
+
+
+
+
+MATERIALS RESEARCH - AUD_RS4_K00_BASE_A
+
+a vert must be composed of an id, xyz pos, xyz normal, uv texcoord
+
+flags
+80 const
+?? 51 for most shaders, 50 for CHASSIS and PLAINNOTHING 
+?? 01=reflections? A2=normal? A3=normaldamage?
+?? 02=body_swatch? 22=window_swatch?
+
+80510100 : brakelightglassred but also misc on body
+80510000 : brakerotor, interior
+80510022 : window
+
+there's no flag for glow, only the usage
+
+rear window : ShaderUsage:DiffuseAlpha, TexUsage:Diffuse WINDOW_REAR, TexUsage:Alpha WINDOW_FRONT, TexUsage:Swatch %_SKIN1
+
+shader usage specific settings (4bytes) :
+Diffuse				none
+DiffuseNormal		1	1 (normal tex pos ?)
+DiffuseAlpha		1	1 (explicit alpha texture pos ?)	OR 0 (brakerotor, reference to a single texture)	OR 2	1,2 (weird one, pretty sure they wanted to use DiffuseAlphaSwatch)
+DiffuseAlphaNormal	2	3,1 (?, normal tex pos ?)
+DiffuseGlow			1	1 (glow tex pos ?)
+DiffuseGlowAlpha	1	3 (on base) OR 1 (on brakelight_glass)
+DiffuseNormalSwatch	2	1,2 (normal tex pos, swatch tex pos ?)
+
+
+BRAKELIGHTGLASSRED
+blender info :
+4 vertices
+5 edges
+2 triangles -> 6 vertex ids
+
+material data :
+00000000 06000000 00000000 03000000 	<- vert index from=0, vert index to=6, 0, [specific to DiffGlowAlpha]?=3
+FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF 	<- 
+FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF 	<- 
+0708FFFF FFFFFFFF FFFF0204 DFC94894 	<- texture ids ?=7 ?=8 xx, , xx numtextures?=2 shaderid?=4, some texture hash most likely ?
+80510100 06000000 00000000 00000000 	<- flags=80 51 01 00, vert index length=6, 0, 0
+00000000 00000000 00000000 00000000 	<- , , , 
+00000000 00000000 00000000 80000000 	<- offset in materials list?=0, , , ?=128
+00002080 00000000 00000000 00000000 	<- const?=0x2080, , , 
+00000000 5C6CDD0D 00000000 AE76334E 	<- , ShaderUsage:DiffuseGlowAlpha, , TexUsage:Diffuse
+39143000 00000000 00000000 00000000 	<- TexUsage:Glow, , , 
+00000000 00000000 00000000 00000000 	<- , , , 
+00000000 7FA4D736 2181E7F9 00000000 	<- , %_K00_BKGLASS_OFF, %_K00_BKGLASS_ON, 
+00000000 00000000 00000000 00000000 	<- , , , 
+00000000 00000000 00000000 00000000 	<- , , , 
+00000000 00000000 00000000 00000000 	<- , , , 
+00000000 00000000 00000000 00000000		<- , , , 
+
+CARSKIN METAL SWATCH
+blender info :
+484 vertices
+673 edges
+276 triangles -> 828 vertex ids
+
+material data :
+06000000 42030000 00000000 01000000 	<- vert index from=6, vert index to=834, 0, normaltextureindex?=1
+02000000 FFFFFFFF FFFFFFFF FFFFFFFF 	<- swatchtextureindex?=2
+FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF 
+010203FF FFFFFFFF FFFF0301 35E70209 	<- texture IDs for the part ?=1 ?=2 ?=3 x, , xx numtextures?=3 shaderid?=1, some texture hash ?
+8051A302 3C030000 00000000 00000000 	<- flags?=80 51 A3 02, vert index length=828, 0, 0
+00000000 00000000 00000000 00000000 
+00010000 00000000 00000000 803C0000 	<- offset in materials list?=256, , , ?=15488 might be an offset/length in the mesh data
+00002080 00000000 00000000 00000000 	<- ?=0x2080
+00000000 C52DA6A8 00000000 AE76334E 	<- ShaderUsage:DiffuseNormalSwatch, , TexUsage:Diffuse,
+958A9502 0C8C5ED6 00000000 00000000 	<- TexUsage:Normal, TexUsage:Swatch, , 
+00000000 00000000 00000000 00000000 
+00000000 1E17FF65 EB19E790 9B8830BF 	<- , CARBONFIBRE_PLACEHOLDER, DAMAGE_N, METAL_SWATCH
+00000000 00000000 00000000 00000000 
+00000000 00000000 00000000 00000000 
+00000000 00000000 00000000 00000000 
+00000000 00000000 00000000 00000000
+
+CARSKIN DOORJAM
+blender info :
+12 verts
+18 edges
+8 tris -> 24 vert ids
+
+material data :
+2A0F0000 420F0000 00000000 FFFFFFFF 	<- vert index from=3882, vert index to=3906, 0, [not filled for ShaderUsage:Diffuse]
+FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF 
+FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF 
+04FFFFFF FFFFFFFF FFFF0101 6BA24144 	<- tex1id?=4 xxx, , xx numtextures?=1 shaderid?=1, DOORJAM
+80510000 18000000 00000000 00000000 	<- flags?=80 51 00 00, vert index length=24, , 
+00000000 00000000 00000000 00000000 
+00020000 00000000 00000000 80010000 	<- offset in materials list?=512, , , ?=384			//offset maxes out at 512 ???? it's a pretty weird thing
+00002080 00000000 00000000 00000000 	<- ?=0x2080, probably the length of the usage section and the length of the usage + the textures sections
+00000000 EB5337A1 00000000 AE76334E 	<- , ShaderUsage:Diffuse, , TexUsage:Diffuse
+00000000 00000000 00000000 00000000 
+00000000 00000000 00000000 00000000 
+00000000 6BA24144 00000000 00000000 	<- , DOORJAM
+00000000 00000000 00000000 00000000 
+00000000 00000000 00000000 00000000 
+00000000 00000000 00000000 00000000 
+00000000 00000000 00000000 00000000
 

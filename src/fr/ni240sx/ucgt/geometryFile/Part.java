@@ -23,7 +23,7 @@ public class Part extends Block {
 	
 	public byte[] compressedData;
 	
-	public static CompressionLevel defaultCompressionLevel = CompressionLevel.High;
+	public static CompressionLevel defaultCompressionLevel = CompressionLevel.Minimum;
 	
 	public Part(ByteBuffer in, int partKey) {
 		this.partKey = partKey;		
@@ -89,8 +89,10 @@ public class Part extends Block {
 			
 			File f;
 			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BASE_A"));
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_MUFFLER_05_C"));
 //			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKE_FRONT_A"));
 //			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKE_REAR_A"));
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_FENDER_FRONT_RIGHT_T1_A"));
 			byte [] arr = new byte[(int)f.length()];
 			fis.read(arr);
 			fis.close();
@@ -104,8 +106,10 @@ public class Part extends Block {
 			t = System.currentTimeMillis();
 
 			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BASE_A-recompiled"));
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_MUFFLER_05_C-recompiled"));
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKE_FRONT_A-recompiled"));
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKE_REAR_A-recompiled"));
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_FENDER_FRONT_RIGHT_T1_A-recompiled"));
 			fos.write(part.save(0));
 			fos.close();
 						

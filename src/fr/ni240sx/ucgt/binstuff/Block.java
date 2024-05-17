@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Dictionary;
 import java.util.HashMap;
 
 import fr.ni240sx.ucgt.geometryFile.*;
 import fr.ni240sx.ucgt.geometryFile.geometry.*;
 import fr.ni240sx.ucgt.geometryFile.part.*;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.*;
 
 public abstract class Block {
 	public abstract GeomBlock getBlockID();
@@ -19,7 +19,7 @@ public abstract class Block {
 	public ArrayList<Block> subBlocks = new ArrayList<Block>();
 	public byte[] data;
 	
-	public abstract byte[] save(int currentPosition) throws IOException, InterruptedException;
+	public abstract byte[] save(int currentPosition) throws IOException, InterruptedException; //TODO check whether these throws are still useful
 	
 	public static Block read(ByteBuffer in) {
 		int chunkToInt;
@@ -55,18 +55,21 @@ public abstract class Block {
 			return new Strings(in);
 		case Part_ShaderList:
 			return new Shaders(in);
-		case Part_MPoints:
-			return new MPoints(in);
+//		case Part_MPoints:
+//			return new MPoints(in); //something got fucked up here
 		case Part_Mesh:
 			return new Mesh(in);
+		case Part_Mesh_Info:
+			return new Mesh_Info(in);
+		case Part_Mesh_Shaders:
+			return new ShadersUsage(in);
+		case Part_Mesh_Materials:
+			return new Materials(in);
+		case Part_Mesh_Indices:
+		case Part_Mesh_Padding:
+		case Part_Mesh_Triangles:
 		case Part_HashAssign:
 		case Part_HashList:
-		case Part_Mesh_Indices:
-		case Part_Mesh_Materials:
-		case Part_Mesh_Padding:
-		case Part_Mesh_Shaders:
-		case Part_Mesh_Triangles:
-		case Part_Mesh_UNKNOWN:
 		case Part_Padding:
 		case INVALID:
 		default:
@@ -105,7 +108,7 @@ public abstract class Block {
 		}
 		bb.put((byte)0);
 		//4-byte alignment
-		if (bb.position()%4 != 0) bb.put(new byte[4 - bb.position()%4]);
+		if (bb.position()%4 != 0) bb.put(new byte[4 - bb.position()%4]); //TODO changed since the last working version
 	}
 	
 	public static int stringLengthAligned(String s) {

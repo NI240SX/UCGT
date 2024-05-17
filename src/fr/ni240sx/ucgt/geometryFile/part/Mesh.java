@@ -20,7 +20,6 @@ public class Mesh extends Block {
 		Block block;
 		
 		while(in.position() < blockStart+blockLength) {
-			System.out.println("Position : "+in.position()+", end : "+(blockStart+blockLength));
 			if ((block = Block.read(in)) != null) subBlocks.add(block);
 		}
 	}
@@ -37,7 +36,7 @@ public class Mesh extends Block {
 		out.write(buf.array());
 		
 		for (var b : subBlocks) {
-			out.write(b.save(out.size()));
+			out.write(b.save(currentPosition + out.size()));
 		}
 
 		buf = ByteBuffer.wrap(new byte[4]);
