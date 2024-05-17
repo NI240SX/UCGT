@@ -46,12 +46,12 @@ public class DBMPPlus extends Application {
 	//stuff to put in a config file
 	public static String lastDirectoryLoaded = Paths.get("").toAbsolutePath().toString();
 	public static String lastFileLoaded = "";
-//	  public static String lastFileLoaded = "C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\LOT_ELI_111_06.bin"
 	public static String lastFileSaved = Paths.get("").toAbsolutePath().toString(); //now unused
 	public static String lastGeomRepLoaded = Paths.get("").toAbsolutePath().toString();
 	public static boolean useDarkMode = false;
 	public static boolean disableWarnings = false;
 	public static boolean widebodyAutoCorrect = true;
+	public static String optimizedCVName = "FIRE_CV";
 
 	static String currentKitTemplate = "UC-KIT00";
 	static String currentKitASZones = "11";
@@ -66,7 +66,7 @@ public class DBMPPlus extends Application {
 	static String currentExhASZones = "11";
 	
 	public static final String programName = "fire";
-	public static final String programVersion = "1.1.1";
+	public static final String programVersion = "1.1.2";
 	
 	public static void main(String[] args) {
 		try {
@@ -80,6 +80,7 @@ public class DBMPPlus extends Application {
 			String s;
 			if(!(s=br.readLine()).isBlank()) lastGeomRepLoaded = s;
 			disableWarnings = Boolean.valueOf(br.readLine());
+			if(!(s=br.readLine()).isBlank()) optimizedCVName = s;
 			
 			br.close();
 		} catch (Exception e) {}
@@ -99,7 +100,8 @@ public class DBMPPlus extends Application {
 					+ Boolean.toString(useDarkMode) + "\n"
 					+ Boolean.toString(widebodyAutoCorrect) + "\n"
 					+ lastGeomRepLoaded + "\n"
-					+ Boolean.toString(disableWarnings) + "\n");
+					+ Boolean.toString(disableWarnings) + "\n"
+					+ optimizedCVName +"\n");
 			bw.close();
 		} catch (IOException e1) {
 			e1.printStackTrace();
@@ -228,6 +230,7 @@ public class DBMPPlus extends Application {
 
         MenuItem dbSortPartsByName = new MenuItem("Sort parts by kit + name");
         MenuItem dbSortPartsByName2 = new MenuItem("Sort parts by name");
+        MenuItem dbOptimizeAttributes = new MenuItem("Optimize attributes");
         MenuItem dbSortAttributes = new MenuItem("Sort attributes");
 //        CheckMenuItem dbSortPartsByNameExport = new CheckMenuItem("Sort parts by name at export");
 //        CheckMenuItem dbSortAttributesExport = new CheckMenuItem("Sort attributes at export");
@@ -247,6 +250,41 @@ public class DBMPPlus extends Application {
 	        if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All parts sorted.").show();
         	updateAllPartsDisplay();
         	e.consume();
+        });
+        dbOptimizeAttributes.setOnAction(e -> {
+        	for (DBMPPart p : mainDBMP.dBMPParts) {
+        		// autosculpt either missing or maxed (11) + removed for parts that forcefully don't have it
+        		if (p.getAttribute("MORPHTARGET_NUM")!=null) {
+        			if (p.getAttributeInteger("MORPHTARGET_NUM").value != 0 
+        					&& p.getAttributeCarPartID("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST
+        					&& p.getAttributeCarPartID("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST_TIPS_CENTER
+        					&& p.getAttributeCarPartID("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST_TIPS_LEFT
+        					&& p.getAttributeCarPartID("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST_TIPS_RIGHT) {
+        				p.getAttributeInteger("MORPHTARGET_NUM").value = 11;
+        			} else {
+                		try {
+                			p.removeAttribute("MORPHTARGET_NUM");
+                		} catch (Exception e2) {
+                			// a ConcurrentModificationException occurs but this still works somehow
+                			//e2.printStackTrace();
+                		}
+        			}
+        		}
+
+        		// all CVs set to a custom value
+        		if (p.getAttribute("CV")!=null) {
+        			p.getAttributeKey("CV").value = new Hash(optimizedCVName);
+        		}
+
+	        	// uniformized characters offsets 
+	        	p.getAttributeString("LOD_CHARACTERS_OFFSET").value1 = "ABCDE";
+        		
+	        	// fixed name offsets
+	        	((AttributeString)p.getAttribute("NAME_OFFSET")).value1 = ((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value1.replace("KIT", "").replace("W", "");
+        	}
+        	
+        	updateAllPartsDisplay();
+        	if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Attributes cleaned up.").show();
         });
         dbSortAttributes.setOnAction(e -> {
         	for(DBMPPart p: mainDBMP.dBMPParts) {
@@ -344,7 +382,7 @@ public class DBMPPlus extends Application {
 					
 					for (DBMPPart p : toRemove) {
 //						System.out.println("Removing part : "+p.displayName);
-						if ((((AttributeCarPartID) p.getAttribute("PARTID_UPGRADE_GROUP")).ID != PartUndercover.EXHAUST_TIPS_CENTER) &&
+						if ((((AttributeCarPartID) p.getAttribute("PARTID_UPGRADE_GROUP")).ID != PartUndercover.EXHAUST_TIPS_CENTER) && //prevents exhausts from bugging out
 							(((AttributeCarPartID) p.getAttribute("PARTID_UPGRADE_GROUP")).ID != PartUndercover.EXHAUST_TIPS_LEFT) &&
 							(((AttributeCarPartID) p.getAttribute("PARTID_UPGRADE_GROUP")).ID != PartUndercover.EXHAUST_TIPS_RIGHT)){
 							mainDBMP.dBMPParts.remove(p);
@@ -361,7 +399,8 @@ public class DBMPPlus extends Application {
         	}
         });
         
-        menuDBMP.getItems().addAll(dbSortPartsByName, dbSortPartsByName2, dbSortAttributes, dbFixNameOffsets, dbFixCVs, dbChangeName, dbTrimToGeom/*, dbSortPartsByNameExport, dbSortAttributesExport*/);
+        menuDBMP.getItems().addAll(dbOptimizeAttributes, dbSortPartsByName2, dbSortPartsByName, dbSortAttributes, dbFixNameOffsets, dbFixCVs, dbChangeName, 
+        		dbTrimToGeom/*, dbSortPartsByNameExport, dbSortAttributesExport*/);
         
         
         Menu menuAttributes = new Menu("Attributes");
