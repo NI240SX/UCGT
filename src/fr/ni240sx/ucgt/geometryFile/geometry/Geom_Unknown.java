@@ -16,6 +16,8 @@ public class Geom_Unknown extends Block {
 		var blockStart = in.position();
 		data = new byte[length];
 		in.get(data); //raw data if there's any
+
+		if (length > 0) System.out.println("Found Geom>Unknown block with length="+length);
 	}
 	
 	@Override

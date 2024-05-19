@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
@@ -43,5 +44,15 @@ public class PartsList extends Block {
 		for (var p : parts) {
 			partKeys.add(p.partKey);
 		}
+		partKeys.sort(new PartKeysSorter());
 	}
+}
+
+class PartKeysSorter implements Comparator<Integer>{
+
+	@Override
+	public int compare(Integer o1, Integer o2) {
+		return Integer.compareUnsigned(o1, o2);
+	}
+
 }

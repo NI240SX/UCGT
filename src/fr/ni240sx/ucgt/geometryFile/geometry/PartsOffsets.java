@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 
 import fr.ni240sx.ucgt.binstuff.Block;
@@ -50,10 +51,10 @@ public class PartsOffsets extends Block {
 	public void refresh(ArrayList<Part> parts) {
 		partOffsets.clear();
 		for (var p : parts) {
-			var po = new PartOffset(p.partKey, 0, p.compressedLength, p.decompressedLength);
-			partOffsets.add(po);
+			partOffsets.add(new PartOffset(p.partKey, 0, p.compressedLength, p.decompressedLength));
 //			partOffsets.put(po.partKey, po);
 		}
+		partOffsets.sort(new PartOffsetsSorter());
 	}
 
 	public void setOffset(Part p, int offset) {
@@ -66,4 +67,13 @@ public class PartsOffsets extends Block {
 			}
 		}
 	}
+}
+
+class PartOffsetsSorter implements Comparator<PartOffset>{
+
+	@Override
+	public int compare(PartOffset o1, PartOffset o2) {
+		return Integer.compareUnsigned(o1.partKey, o2.partKey);
+	}
+
 }

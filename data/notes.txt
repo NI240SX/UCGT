@@ -204,7 +204,7 @@ EMPTY BLOCK--------------------------------------- 3968
 blockid=024C1300, length 0
 another padding block ?
 
-POLYGONS? OR VERTICES?-------- 3976
+VERTICES-------- 3976
 blockid=01491300, length 240
 starts with 1111... padding (128 bytes padding)
 repeating pattern, 6 hashes, 00000000 00000000 padding, sometimes the 00000000s are replaced by hashes too
@@ -212,22 +212,22 @@ repeating pattern, 6 hashes, 00000000 00000000 padding, sometimes the 00000000s 
 more of these blocks
 EMPTY BLOCK--------------------------------------- 4224
 blockid=024C1300, length 0
-POLYGONS? OR VERTICES?--------4232
+VERTICES--------4232
 blockid=01491300, length 15600
 
 EMPTY BLOCK--------------------------------------- 19840
 blockid=024C1300, length 0
-POLYGONS? OR VERTICES?-------- 19848
+VERTICES-------- 19848
 blockid=01491300, length 32592
 
 EMPTY BLOCK--------------------------------------- 52448
 blockid=024C1300, length 0
-POLYGONS? OR VERTICES?-------- 52456
+VERTICES-------- 52456
 blockid=01491300, length 400
 
 ... (3 more)
 
-???----------------- 69952
+TRIANGLES----------------- 69952
 blockid=03491300, length 11184
 starts with 11111 32 Byte alignment padding (not 128!)
 stores 2-byte indexes next to each other without separation -> looks like triangles
@@ -251,6 +251,36 @@ SOMETHING----------------------------------------- at 82708 d
 blockid=19401300, length 3768
 hash or id, int, int, repeat
 
+AUTOSCULPT LINKING-------------------------------- on KITW01_BUMPER_FRONT_A
+blockid=1E401300, length 80
+ADCEE948 01000100 01000100 00000000 <- linked part binkey, passes zone 1
+A00C613D 01000100 01000100 00000000 
+9BFC37F4 01000100 01000100 00000000 
+BEC04957 01000100 01000100 00000000 
+D140BF17 01000100 01000100 00000000
+
+AUTOSCULPT LINKING (on the 240SX KIT04_BUMPER_FRONT_A)
+Part_AutosculptLinking 96 
+NIS_240_SX_89_KIT04_FENDER_FRONT_LEFT_A 01000100 01000100 00000000	<- passes zone 1
+NIS_240_SX_89_KIT04_FENDER_FRONT_RIGHT_A 01000100 01000100 00000000
+NIS_240_SX_89_KIT04_FENDER_FRONT_LEFT_A 02000200 02000200 00000000	<- passes zone 2
+NIS_240_SX_89_KIT04_FENDER_FRONT_RIGHT_A 02000200 02000200 00000000
+NIS_240_SX_89_KIT04_FENDER_FRONT_LEFT_A 06000600 06000600 00000000	<- passes zone 6
+NIS_240_SX_89_KIT04_FENDER_FRONT_RIGHT_A 06000600 06000600 00000000
+
+AUTOSCULPT DATA----------------------------------- on KITW01_BUMPER_FRONT_A
+blockid=1D401300, length 132
+9D7BF36C 00000000 00000000	<- binkeys of the corresponding as zones from T0-T10 (AUD_RS4_STK_08_KITW01_BUMPER_FRONT_T0_A)
+DE7FF36C 00000000 00000000 	<- AUD_RS4_STK_08_KITW01_BUMPER_FRONT_T1_A
+1F84F36C 00000000 00000000 	<- 
+6088F36C 00000000 00000000 	<- 
+A18CF36C 00000000 00000000 	<- 
+E290F36C 00000000 00000000 	<- 
+2395F36C 00000000 00000000 	<- 
+6499F36C 00000000 00000000 	<- 
+A59DF36C 00000000 00000000 	<- 
+E6A1F36C 00000000 00000000 	<- 
+CEB7620B 00000000 00000000	<- AUD_RS4_STK_08_KITW01_BUMPER_FRONT_T10_A
 
 EOF-----------------------------------------------
 rather end of part
@@ -259,22 +289,43 @@ rather end of part
 
 
 
-
+MESHINFO
+flags
+80
+41
+?? 00=?(brake,exhaust_tip), A3=full_detail?
+?? 00=?(brake,exhaust_tip), 02=full_detail?
 
 
 MATERIALS RESEARCH - AUD_RS4_K00_BASE_A
+
+material 1 - blabla + verts index start/end/length + verticesdata length
+material 0 - blabla + verts index start/end/length + verticesdata length
+material 2 - blabla + verts index start/end/length + verticesdata length
+...
+empty 024C1300 block
+01491300 vertices block for material 1, length = verticesdata length + padding
+empty 024C1300 block
+01491300 vertices block for material 0, length = verticesdata length + padding
+empty 024C1300 block
+01491300 vertices block for material 2, length = verticesdata length + padding
+
+seemingly no custom normal data in misc and black, unless they're normalmap uv
+EAEB420B 0E05CD0C C1025F02 323232FF 69822D17 8D08FF7F 00000000 00000000
+oh and triangle data is 32 bits (im guessing thats triangle but would make sense)
 
 a vert must be composed of an id, xyz pos, xyz normal, uv texcoord
 
 flags
 80 const
 ?? 51 for most shaders, 50 for CHASSIS and PLAINNOTHING 
-?? 01=reflections? A2=normal? A3=normaldamage?
-?? 02=body_swatch? 22=window_swatch?
+?? 00, 01=reflections? A2=normal? A3=normaldamage?
+?? 00, 02=body_swatch? 22=window_swatch?
 
 80510100 : brakelightglassred but also misc on body
 80510000 : brakerotor, interior
 80510022 : window
+80500100 : plainnothing on body
 
 there's no flag for glow, only the usage
 
@@ -321,13 +372,13 @@ blender info :
 276 triangles -> 828 vertex ids
 
 material data :
-06000000 42030000 00000000 01000000 	<- vert index from=6, vert index to=834, 0, normaltextureindex?=1
+06000000 42030000 00000000 01000000 	<- tri index from=6, tri index to=834, 0, normaltextureindex?=1
 02000000 FFFFFFFF FFFFFFFF FFFFFFFF 	<- swatchtextureindex?=2
 FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF 
 010203FF FFFFFFFF FFFF0301 35E70209 	<- texture IDs for the part ?=1 ?=2 ?=3 x, , xx numtextures?=3 shaderid?=1, some texture hash ?
 8051A302 3C030000 00000000 00000000 	<- flags?=80 51 A3 02, vert index length=828, 0, 0
 00000000 00000000 00000000 00000000 
-00010000 00000000 00000000 803C0000 	<- offset in materials list?=256, , , ?=15488 might be an offset/length in the mesh data
+00010000 00000000 00000000 803C0000 	<- offset in materials list?=256, , , ?=15488 vertices data raw length (without header and padding : blocklength-paddinglength) = vertCount*32
 00002080 00000000 00000000 00000000 	<- ?=0x2080
 00000000 C52DA6A8 00000000 AE76334E 	<- ShaderUsage:DiffuseNormalSwatch, , TexUsage:Diffuse,
 958A9502 0C8C5ED6 00000000 00000000 	<- TexUsage:Normal, TexUsage:Swatch, , 

@@ -1,4 +1,4 @@
-package fr.ni240sx.ucgt.geometryFile.geometry;
+package fr.ni240sx.ucgt.geometryFile.part.mesh;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -7,18 +7,18 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 
-public class UnknownBlock extends Block {
+public class Mesh_Unknown extends Block {
+	//apparently always empty, still saves data in case it's not
 
-	public GeomBlock getBlockID() {return GeomBlock.INVALID;}
+	public GeomBlock getBlockID() {return GeomBlock.Part_Mesh_UNKNOWN;}
 	
-	public int ID;
-	
-	public UnknownBlock(ByteBuffer in, int ID) {
-		//System.out.println("Unknown block, ID="+Integer.toHexString(Integer.reverseBytes(ID)));
-		this.ID = ID;
+	public Mesh_Unknown(ByteBuffer in) {
 		var length = in.getInt();
+		var blockStart = in.position();
 		data = new byte[length];
 		in.get(data); //raw data if there's any
+		
+		if (length > 0) System.out.println("Found Geom>Part>Mesh>Unknown block with length="+length);
 	}
 	
 	@Override
@@ -28,7 +28,7 @@ public class UnknownBlock extends Block {
 		
 		var buf = ByteBuffer.wrap(arr);
 		buf.order(ByteOrder.LITTLE_ENDIAN);
-		buf.putInt(ID); 
+		buf.putInt(getBlockID().getKey()); 
 		buf.putInt(data.length); //length for later
 		buf.put(data);
 		

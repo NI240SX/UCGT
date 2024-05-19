@@ -49,13 +49,13 @@ public class Materials extends Block {
 			m.textureHash = in.getInt();
 			
 			in.get(m.flags);
-			m.numVertIDs = in.getInt();
+			m.numVertices = in.getInt();
 			
 			in.position(matStart+96);
 			m.materialsListOffset = in.getInt();
 			in.getInt();
 			in.getInt();
-			m.offsetOrLengthInMesh = in.getInt();
+			m.verticesDataLength = in.getInt();
 			//0x00002080, it's always the same, prolly will never change
 			
 			in.position(matStart+132);
@@ -87,7 +87,7 @@ public class Materials extends Block {
 		Block.makeAlignment(out, alignment, (byte) 0x11);
 		
 		//randomize for the lolz
-		for (int i=0; i<5; i++) {
+		for (int i=0; i<0; i++) {
 			int randmat = (int)(Math.random()*(materials.size()-1));
 			int randmat2 = (int)(Math.random()*(materials.size()-1));
 	
@@ -150,13 +150,13 @@ public class Materials extends Block {
 			out.putInt(m.textureHash);
 			
 			out.put(m.flags);
-			out.putInt(m.numVertIDs);
+			out.putInt(m.numVertices);
 			
 			out.position(matStart+96);
 			out.putInt(m.materialsListOffset);
 			out.putInt(0);
 			out.putInt(0);
-			out.putInt(m.offsetOrLengthInMesh);
+			out.putInt(m.verticesDataLength);
 			out.putInt(-2145386496); //0x00002080
 			
 			out.position(matStart+132);

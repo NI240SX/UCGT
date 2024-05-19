@@ -28,6 +28,7 @@ public enum TextureUsage {
         for (TextureUsage c : values()) {
             if (c.key == key) return c;
         }
+        System.out.println("WARNING : unknown texture usage "+Integer.toHexString(Integer.reverseBytes(key)));
         return INVALID; // Handle invalid value
     }
 }

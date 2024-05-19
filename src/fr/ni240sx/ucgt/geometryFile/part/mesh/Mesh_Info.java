@@ -19,7 +19,7 @@ public class Mesh_Info extends Block {
 	public int const01 = 0;
 	public int const02 = 0;
 	public int const03 = 48;
-	public short const04_1 = 0x4180; //found on most parts, may be linked to how simplified the part is : 0x8041A302 = full part, 80410000 = less detail (brake, exhaust_tip)
+	public short const04_1 = 0x4180; //flags, may be linked to how simplified the part is : 0x8041A302 = full part, 80410000 = less detail (brake, exhaust_tip)
 	public short const04_2 = 0x02A3;
 	
 	public int numMaterials = 0;

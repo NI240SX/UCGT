@@ -7,10 +7,14 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Hash;
+import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
 import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
@@ -54,7 +58,7 @@ public class GeomDump extends Application {
 	
 	
 	static int startFrom = 0; //63400
-	static int length = 4096;//2048 recommended
+	static int length = 8192;//2048 recommended
 	
 //	AUD_RS4_K00_BASE_A blocks
 //	blockid=18401300	81164	1536+8
@@ -81,7 +85,10 @@ public class GeomDump extends Application {
 	//base : 61732
 	
 	
-	
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_240_SX_89\\GEOMETRY.BIN");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_240_SX_89\\DecompressedParts\\NIS_240_SX_89_KIT11_BODY_A");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_240_SX_89\\DecompressedParts\\NIS_240_SX_89_KIT04_BUMPER_FRONT_A");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_240_SX_89\\DecompressedParts\\NIS_240_SX_89_KIT01_BUMPER_REAR_A");
 	
 
 	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BASE_A");
@@ -93,20 +100,20 @@ public class GeomDump extends Application {
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKELIGHT_GLASS_LEFT_A");
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_HEADLIGHT_LEFT_A");
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_HEADLIGHT_GLASS_LEFT_A");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BUMPER_REAR_A");
 
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT01_BUMPER_FRONT_A");	
 
-//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_BODY_A.dat");
-//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_BASE_A.dat");
-//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_BRAKEROTOR_FRONT_A.dat");
-//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_BRAKELIGHT_LEFT_A.dat");
-//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_BRAKELIGHT_GLASS_LEFT_A.dat");
-//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_HEADLIGHT_LEFT_A.dat");
-//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\AUD_RS4_STK_08\\AUD_RS4_STK_08_KIT00_HEADLIGHT_GLASS_LEFT_A.dat");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_BODY_A");	
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_BODY_T0_A");	
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_BUMPER_FRONT_T0_A");	
 
-//	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\NIS_240_SX_89\\NIS_240_SX_89_KIT00_BRAKELIGHT_GLASS_RIGHT_A.dat");
-// 	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\quickbms\\files\\ctk_NIS_240_SX_89\\ctk_NIS_240_SX_89_KIT00_BRAKELIGHT_GLASS_RIGHT_A.dat");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_A");	
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_B");
 	
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_TRUNK_A");
+	
+
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
 	
 //	File f = new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\UCGT-UC_WINDOW_FRONT.BIN");
@@ -139,7 +146,8 @@ public class GeomDump extends Application {
 		Scene scene = new Scene(root,1280,720);
 		primaryStage.setScene(scene);
 		hex.setPrefWidth(400);
-		
+
+        scene.getRoot().setStyle("-fx-base:black");
 
 		hex.setOnKeyPressed(new EventHandler<KeyEvent>() {
 			public void handle(KeyEvent event) {
@@ -223,7 +231,7 @@ public class GeomDump extends Application {
 			fis.read(arr);
 			fis.close();
 			ByteBuffer bb = ByteBuffer.wrap(arr);
-			
+			bb.order(ByteOrder.LITTLE_ENDIAN);
 			
 			
 			
@@ -236,111 +244,10 @@ public class GeomDump extends Application {
 			
 			bb.position(startFrom);
 			while (bb.position()<startFrom+length && bb.position()<arr.length-16) {//65536
-/*				for (int i=0; i<4; i++) {
-					int current = bb.getInt();
-					
-					hex.appendText(Integer.toHexString(current)+" ");
-					
-					String s;
-					if ((s = decodeSimple4B(current, Hashlist)) != null) dmp.appendText(s+ " ");
-					else dmp.appendText(Integer.toHexString(current)+ " ");
-					
-				}
-*/				
-				byte off = 0;
 				for (int i=0; i<4; i++) {
-					
-					
-				/*	byte[] current = new byte[7];
-					bb.get(current, bb.position(), 7);
-					bb.position(bb.position()-3);
-					
-					ByteBuffer curr = ByteBuffer.wrap(current);
-					
-					hex.appendText(Integer.toHexString(curr.getInt(0))+" ");
-					
-					String unh = "";
-					byte j;
-					for (j=0; j<4;j++) {
-						if ((unh = decodeSimple4B(curr.getInt(j), Hashlist)) != null ){							
-							break;
-						}
-					}
-					if (unh == null) {
-						for (byte k=off;k<4;k++) System.out.print(Integer.toHexString(curr.get(k))+" ");
-						off = 0;
-						dmp.appendText(" ");
-					}else {
-						for (byte k=off;k<j;k++) System.out.print(Integer.toHexString(curr.get(k)));
-						System.out.print(unh + " ");
-						off = j;
-					}			
-					*/
-					//TODO work on an array of 7 or 8 bytes !!!!!!!!!!! this is dogshit !!!
-					int current = bb.getInt();
-					hex.appendText(Integer.toHexString(current)+" ");
-					
-					String s;
-					if ((s = decodeSimple4B(current, Hashlist)) != null) dmp.appendText(s+ " ");
-					else {
-						//if off alignment hash
-						String t = "";
-						bb.position(bb.position()-4);
-						if (off<1) t=t+Integer.toHexString(bb.get() & 0xFF);
-						if ((s = decodeSimple4B(bb.getInt(), Hashlist)) != null) {
-							dmp.appendText(t+s);
-							bb.position(bb.position()-1);
-							off=1;
-						}else {
-							bb.position(bb.position()-4);
-							if (off<2) t=t+Integer.toHexString(bb.get() & 0xFF);
-							if ((s = decodeSimple4B(bb.getInt(), Hashlist)) != null) {
-								dmp.appendText(t+s);
-								bb.position(bb.position()-2);
-								off=2;
-							}else {
-								bb.position(bb.position()-4);								
-								if (off<3) t=t+Integer.toHexString(bb.get() & 0xFF);
-								if ((s = decodeSimple4B(bb.getInt(), Hashlist)) != null) {
-									dmp.appendText(t+s);
-									bb.position(bb.position()-3);
-									off=3;
-								}else {
-									off=0;
-									bb.position(bb.position()-3);
-									boolean v=true;
-									byte[] bytes = new byte[4];
-									bb.get(bb.position()-4, bytes);
-									String str = new String(bytes, StandardCharsets.ISO_8859_1);
-//									System.out.println(str);
-									for (char c :str.toCharArray()) {
-										if (!(Character.isLetterOrDigit(c) || c =='_' || c==' ' || c=='.' || c=='\00')) v=false;
-									}
-									if(v) {
-										dmp.appendText(str+" ");
-									}else {
-										dmp.appendText(Integer.toHexString(current)+" ");
-									}
-									
-//									bb.position(bb.position()-3);
-//									byte[] bytes = new byte[4];
-//									bb.get(bb.position()-4, bytes);
-//									dmp.appendText(new String(bytes, StandardCharsets.ISO_8859_1)+" ");
-								}
-								
-								
-								
-							}
-							
-							
-							
-						}
-					}
-					
-					
-					
+					hex.appendText(Integer.toHexString(Integer.reverseBytes(bb.getInt(bb.position())))+" ");
+					dmp.appendText(tryDecode4B(bb, Hashlist)+" ");
 				}
-				
 				hex.appendText("\n");
 				dmp.appendText("\n");
 			}
@@ -463,88 +370,98 @@ public class GeomDump extends Application {
 	}
 
 	private static void addSpecificHashes(ArrayList<Hash> l) {
-		l.add(new Hash("BLOCK:GEOM",Integer.reverseBytes(0x00401380))); 
-		l.add(new Hash("BLOCK:GEOM_HEADER",Integer.reverseBytes(0x01401380))); 
-		l.add(new Hash("BLOCK:GEOM_INFO",Integer.reverseBytes(0x02401300))); 
-		l.add(new Hash("BLOCK:GEOM_PARTSLIST",Integer.reverseBytes(0x03401300))); 
-		l.add(new Hash("BLOCK:GEOM_PARTSOFSSETS",Integer.reverseBytes(0x04401300))); 
-		l.add(new Hash("BLOCK:GEOM_???",Integer.reverseBytes(0x08401380))); 
-		l.add(new Hash("BLOCK:COMPRESSED",Integer.reverseBytes(0x22114455))); 
-		l.add(new Hash("BLOCK:PART",Integer.reverseBytes(0x10401380))); 
-		l.add(new Hash("BLOCK:PART_HEADER",Integer.reverseBytes(0x11401300)));
-		l.add(new Hash("BLOCK:PART_TEXUSAGE",Integer.reverseBytes(0x12401300)));
-		l.add(new Hash("BLOCK:PART_STRINGS",Integer.reverseBytes(0x15401300)));
-		l.add(new Hash("BLOCK:PART_SHADERLIST",Integer.reverseBytes(0x13401300)));
-		l.add(new Hash("BLOCK:PART_MPOINTS",Integer.reverseBytes(0x1A401300)));
-		l.add(new Hash("BLOCK:PART_MESH",Integer.reverseBytes(0x00411380)));
-		l.add(new Hash("BLOCK:PART_MESH_?",Integer.reverseBytes(0x00491300)));
-		l.add(new Hash("BLOCK:PART_MESH_SHADERS",Integer.reverseBytes(0x014F1300)));
-		l.add(new Hash("BLOCK:PART_MESH_MATERIALS",Integer.reverseBytes(0x02491300)));
-		l.add(new Hash("BLOCK:PART_MESH_PADDING?",Integer.reverseBytes(0x024C1300)));
-		l.add(new Hash("BLOCK:PART_MESH_TRIANGLES?",Integer.reverseBytes(0x01491300)));
-		l.add(new Hash("BLOCK:PART_MESH_INDICES?",Integer.reverseBytes(0x03491300)));
-		l.add(new Hash("BLOCK:PART_PADDING?",Integer.reverseBytes(0x17401300)));
-		l.add(new Hash("BLOCK:PART_HASHLIST?",Integer.reverseBytes(0x18401300)));
-		l.add(new Hash("BLOCK:PART_HASHASSIGN?",Integer.reverseBytes(0x19401300)));
-
-		l.add(new Hash("SHADER:Diffuse",Integer.reverseBytes(0xeb5337a1))); //diffuse tex
-		l.add(new Hash("SHADER:DiffuseNormal",Integer.reverseBytes(0xf5bbcc3f))); //diffuse tex
-		l.add(new Hash("SHADER:DiffuseAlpha",Integer.reverseBytes(0xe12db62e))); //diffuse tex (in BRAKEDISC) OR diffuse tex, alpha tex (in HEADLIGHTGLASS)
-		l.add(new Hash("SHADER:DiffuseAlphaNormal",Integer.reverseBytes(0xd70a7771))); //diffuse tex, alpha tex, normalmap ; used for DOORLINE, seems a bit weird
-		l.add(new Hash("SHADER:DiffuseGlow",Integer.reverseBytes(0x88155cb2))); //diffuse tex, glow tex
-		l.add(new Hash("SHADER:DiffuseGlowAlpha",Integer.reverseBytes(0x5c6cdd0d))); //diffuse tex, glow tex
-		l.add(new Hash("SHADER:DiffuseNormalPaintable",Integer.reverseBytes(0xc52da6a8))); //diffuse tex, normal tex, swatch tex
 		
-		l.add(new Hash("TEXUSAGE_DIFFUSE",1311995566));	//AE76334E
-		l.add(new Hash("TEXUSAGE_NORMAL",43354773));	//958A9502
-		l.add(new Hash("TEXUSAGE_ALPHA",Integer.reverseBytes(0x5aff315c)));	
-		l.add(new Hash("TEXUSAGE_GLOW",3150905));		//39143000²
-		l.add(new Hash("TEXUSAGE_SWATCH",-698446836)); 	//0C8C5ED6
+		for (var b : GeomBlock.values()) {
+			l.add(new Hash(b.getName(), b.getKey()));
+		}
+		for (var b : TextureUsage.values()) {
+			l.add(new Hash(b.getName(), b.getKey()));
+		}
+		for (var b : ShaderUsage.values()) {
+			l.add(new Hash(b.getName(), b.getKey()));
+		}
+		
+//		
+//		l.add(new Hash("BLOCK:GEOM",Integer.reverseBytes(0x00401380))); 
+//		l.add(new Hash("BLOCK:GEOM_HEADER",Integer.reverseBytes(0x01401380))); 
+//		l.add(new Hash("BLOCK:GEOM_INFO",Integer.reverseBytes(0x02401300))); 
+//		l.add(new Hash("BLOCK:GEOM_PARTSLIST",Integer.reverseBytes(0x03401300))); 
+//		l.add(new Hash("BLOCK:GEOM_PARTSOFSSETS",Integer.reverseBytes(0x04401300))); 
+//		l.add(new Hash("BLOCK:GEOM_???",Integer.reverseBytes(0x08401380))); 
+//		l.add(new Hash("BLOCK:COMPRESSED",Integer.reverseBytes(0x22114455))); 
+//		l.add(new Hash("BLOCK:PART",Integer.reverseBytes(0x10401380))); 
+//		l.add(new Hash("BLOCK:PART_HEADER",Integer.reverseBytes(0x11401300)));
+//		l.add(new Hash("BLOCK:PART_TEXUSAGE",Integer.reverseBytes(0x12401300)));
+//		l.add(new Hash("BLOCK:PART_STRINGS",Integer.reverseBytes(0x15401300)));
+//		l.add(new Hash("BLOCK:PART_SHADERLIST",Integer.reverseBytes(0x13401300)));
+//		l.add(new Hash("BLOCK:PART_MPOINTS",Integer.reverseBytes(0x1A401300)));
+//		l.add(new Hash("BLOCK:PART_MESH",Integer.reverseBytes(0x00411380)));
+//		l.add(new Hash("BLOCK:PART_MESH_?",Integer.reverseBytes(0x00491300)));
+//		l.add(new Hash("BLOCK:PART_MESH_SHADERS",Integer.reverseBytes(0x014F1300)));
+//		l.add(new Hash("BLOCK:PART_MESH_MATERIALS",Integer.reverseBytes(0x02491300)));
+//		l.add(new Hash("BLOCK:PART_MESH_PADDING?",Integer.reverseBytes(0x024C1300)));
+//		l.add(new Hash("BLOCK:PART_MESH_TRIANGLES?",Integer.reverseBytes(0x01491300)));
+//		l.add(new Hash("BLOCK:PART_MESH_INDICES?",Integer.reverseBytes(0x03491300)));
+//		l.add(new Hash("BLOCK:PART_PADDING?",Integer.reverseBytes(0x17401300)));
+//		l.add(new Hash("BLOCK:PART_HASHLIST?",Integer.reverseBytes(0x18401300)));
+//		l.add(new Hash("BLOCK:PART_HASHASSIGN?",Integer.reverseBytes(0x19401300)));
+
+//		l.add(new Hash("SHADER:Diffuse",Integer.reverseBytes(0xeb5337a1))); //diffuse tex
+//		l.add(new Hash("SHADER:DiffuseNormal",Integer.reverseBytes(0xf5bbcc3f))); //diffuse tex
+//		l.add(new Hash("SHADER:DiffuseAlpha",Integer.reverseBytes(0xe12db62e))); //diffuse tex (in BRAKEDISC) OR diffuse tex, alpha tex (in HEADLIGHTGLASS)
+//		l.add(new Hash("SHADER:DiffuseAlphaNormal",Integer.reverseBytes(0xd70a7771))); //diffuse tex, alpha tex, normalmap ; used for DOORLINE, seems a bit weird
+//		l.add(new Hash("SHADER:DiffuseGlow",Integer.reverseBytes(0x88155cb2))); //diffuse tex, glow tex
+//		l.add(new Hash("SHADER:DiffuseGlowAlpha",Integer.reverseBytes(0x5c6cdd0d))); //diffuse tex, glow tex
+//		l.add(new Hash("SHADER:DiffuseNormalPaintable",Integer.reverseBytes(0xc52da6a8))); //diffuse tex, normal tex, swatch tex
+		
+//		l.add(new Hash("TEXUSAGE_DIFFUSE",1311995566));	//AE76334E
+//		l.add(new Hash("TEXUSAGE_NORMAL",43354773));	//958A9502
+//		l.add(new Hash("TEXUSAGE_ALPHA",Integer.reverseBytes(0x5aff315c)));	
+//		l.add(new Hash("TEXUSAGE_GLOW",3150905));		//39143000²
+//		l.add(new Hash("TEXUSAGE_SWATCH",-698446836)); 	//0C8C5ED6
 		
 		
 		l.add(new Hash("[PART DECLARATION]",4194329)); // 19004000
-		l.add(new Hash("[RFPK/BEGINNING OF ???]",1263552082)); // 5246504b
 //		l.add(new Hash("[before carskin]",2499937291));
 //		l.add(new Hash("[???]",3943825699));
 	}
 	
 	
-	public static String tryDecode4B(ByteBuffer bb, int integer, ArrayList<Hash> Hashlist){
-		/*
-		 * hash
-		 * number
-		 * letters
-		 * hex
-		 */
-		boolean v=false;
-		String r = Integer.toHexString(integer);
+	public static String tryDecode4B(ByteBuffer bb, ArrayList<Hash> Hashlist){
+		int in = bb.getInt();
+		// Padding lookup
+		if (in == 0) return "        ";
+		if (in == 0x11111111) return "--------";
+		if (in == 0xFFFFFFFF) return "////////";
+		// Hash lookup
 		for (Hash h: Hashlist) {
-			if (h.reversedBinHash == integer) {
-				r = h.label;
-				v=true;
+			if (h.binHash == in || h.vltHash == in) {
+				return h.label;
 			}
 		}
-		if (!v) {
-			byte[] bytes = new byte[4];
-			bb.get(bb.position()-4, bytes);
-			String s = new String(bytes, StandardCharsets.ISO_8859_1);
-//			System.out.println(s);
-			r=s;
-			v=true;
-			for (char c :s.toCharArray()) {
-				if (!(Character.isLetterOrDigit(c) || c =='_' || c==' ' || c=='.' || c=='\00')) v=false;
+
+		// Plain string lookup
+		boolean valString = true;
+		byte[] bytes = new byte[4];
+		bb.get(bb.position()-4, bytes);
+		String s = new String(bytes, StandardCharsets.ISO_8859_1);
+		for (char c :s.toCharArray()) {
+			if (!(Character.isLetterOrDigit(c) || c =='_' || c==' ' || c=='.' || c=='\00')) {
+				valString = false;
 			}
 		}
-		if (!v) {
-			float f = bb.getFloat(bb.position()-4);
-			if (Math.abs(f)>0.001 && Math.abs(f)<1000000) {
-				r =  Float.toString(f);
-				v=true;
-			}
-		}
-		if (!v)r = Integer.toHexString(integer);
+		if (valString) return s;
 		
-		return r;
+		// Float lookup
+		boolean valFloat = false;
+		float f = bb.getFloat(bb.position()-4);
+		if (Math.abs(f)>0.0001 && Math.abs(f)<10000 || f == 0) {
+			valFloat=true;
+		}
+		if (valFloat) return Float.toString(f);
+				
+		// Default to integer
+		return Integer.toString(in);
 	}
 	
 	public static String decodeSimple4B(int integer, ArrayList<Hash> Hashlist) {

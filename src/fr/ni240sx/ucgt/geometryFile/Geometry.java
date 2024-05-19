@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -62,8 +63,9 @@ public class Geometry extends Block {
 //			FileOutputStream fos;
 //			try {
 ////				fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\"+Hash.guess(o.partKey, keys, "DEFAULT", "BIN").label));
-//				fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts-ctk\\"+Hash.guess(o.partKey, keys, "DEFAULT", "BIN").label));
+////				fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts-ctk\\"+Hash.guess(o.partKey, keys, "DEFAULT", "BIN").label));
 ////				fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\NIS_240_SX_89\\DecompressedParts\\"+Hash.guess(o.partKey, keys, "DEFAULT", "BIN").label));
+//				fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_240_SX_89\\DecompressedParts\\"+p.header.partName));
 //				//omg this takes forever with the 240SX
 //				fos.write(p.save(0));
 //				fos.close();
@@ -93,7 +95,30 @@ public class Geometry extends Block {
 		System.out.println("Compressing parts...");
 
 		long t = System.currentTimeMillis();
-			
+	
+		parts.sort(new PartSorterLodKitName()); //not necessary but makes the file look cleaner
+		
+
+		
+		
+		//for debugging
+//		var toRemove = new ArrayList<Part>();
+//		for (var p : parts) {
+//			if (p.header.partName.contains("KITW01") && p.header.partName.contains("DOOR_REAR") && p.header.partName.contains("_B")) {
+//				toRemove.add(p);
+//				System.out.println(p.header.partName);
+//			}
+//		}
+//		
+//		for (var p : toRemove) {
+//			parts.remove(p);
+//		}
+
+		
+		// lists exported parts
+//		for (var p : parts) System.out.println(p.kit+"_"+p.part+"_"+p.lod);
+		
+		
 		if (USE_MULTITHREADING) {
 			ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 			System.out.println("Using "+Runtime.getRuntime().availableProcessors()+" CPUs");
@@ -125,12 +150,14 @@ public class Geometry extends Block {
 		
 
 		System.out.println("Parts compressed in "+(System.currentTimeMillis()-t)+" ms.");
+		t = System.currentTimeMillis();
 		
-		
-		geomHeader.partsList.refresh(parts);
-		geomHeader.partsOffsets.refresh(parts);
+		geomHeader.refresh(parts);
 
 		System.out.println("Part lists and offsets refreshed in "+(System.currentTimeMillis()-t)+" ms.");
+		t = System.currentTimeMillis();
+
+		System.out.println("Preparing file...");
 		
 		var out = new ByteArrayOutputStream();
 
@@ -150,7 +177,6 @@ public class Geometry extends Block {
 //			if (b != null) out.write(b.save());
 //		}
 
-		System.out.println("Saving parts to file...");
 		for (var p : parts) {
 			Padding.makePadding(out);
 			geomHeader.partsOffsets.setOffset(p, out.size());
@@ -164,7 +190,8 @@ public class Geometry extends Block {
 
 		buf.position(16);
 		buf.put(geomHeader.save(0)); //save the header again, this time with correct offsets
-		
+
+		System.out.println("File prepared in "+(System.currentTimeMillis()-t)+" ms.");
 		return buf.array();
 	}
 	
@@ -177,6 +204,9 @@ public class Geometry extends Block {
 			
 			File f;
 			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak"));
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN"));
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_240_SX_89\\GEOMETRY.BIN"));
+			
 //			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY-ctk.BIN"));
 //			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\NIS_240_SX_89\\GEOMETRY.BIN"));
 //			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\MER_G63AMG\\GEOMETRY.BIN"));
@@ -193,13 +223,16 @@ public class Geometry extends Block {
 			t = System.currentTimeMillis();
 
 			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN"));
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY-recompiled.BIN"));
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_240_SX_89\\GEOMETRY-recompiled.BIN"));
+			
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY-ctk recompiled.BIN"));
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\NIS_240_SX_89\\GEOMETRY-recompiled.BIN"));
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\MER_G63AMG\\GEOMETRY-recompiled.BIN"));
 			fos.write(geom.save(0));
 			fos.close();
 						
-			System.out.println("File saved in "+(System.currentTimeMillis()-t)+" ms.");
+			System.out.println("Total saving time "+(System.currentTimeMillis()-t)+" ms.");
 			t = System.currentTimeMillis();
 
 		
@@ -211,5 +244,12 @@ public class Geometry extends Block {
 			e.printStackTrace();
 		}
 		
+	}
+}
+
+
+class PartSorterLodKitName implements Comparator<Part> {
+	public int compare(Part a, Part b) {
+		return (a.lod + a.kit + a.part).compareTo(b.lod + b.kit + b.part);
 	}
 }

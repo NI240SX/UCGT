@@ -7,6 +7,7 @@ public enum ShaderUsage {
 	DiffuseAlphaNormal(0xd70a7771, "DiffuseAlphaNormal"),
 	DiffuseGlow(0x88155cb2, "DiffuseGlow"),
 	DiffuseGlowAlpha(0x5c6cdd0d, "DiffuseGlowAlpha"),
+	DiffuseSwatch(0xA2ABF064, "DiffuseSwatch"),
 	DiffuseNormalSwatch(0xc52da6a8, "DiffuseNormalSwatch"),
 	INVALID(0xFFFFFFFF, "INVALID");
 	
@@ -30,6 +31,7 @@ public enum ShaderUsage {
         for (ShaderUsage c : values()) {
             if (c.key == key) return c;
         }
+        System.out.println("WARNING : unknown shader usage "+Integer.toHexString(Integer.reverseBytes(key)));
         return INVALID; // Handle invalid value
     }
 }

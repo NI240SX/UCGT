@@ -7,10 +7,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Comparator;
+
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.binstuff.Hash;
+import fr.ni240sx.ucgt.collisionsEditor.CollisionBound;
+import fr.ni240sx.ucgt.collisionsEditor.CollisionsEditor;
 import fr.ni240sx.ucgt.compression.Compression;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
+import fr.ni240sx.ucgt.geometryFile.part.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.input.KeyCode;
 
 public class Part extends Block {
 
@@ -25,6 +33,18 @@ public class Part extends Block {
 	
 	public static CompressionLevel defaultCompressionLevel = CompressionLevel.Minimum;
 	
+	public PartHeader header;
+	public TexUsage texusage;
+	public Strings strings;
+	public Shaders shaderlist;
+	public MPoints mpoints;
+	public Mesh mesh;
+	
+	public String kit;
+	public String part;
+//	public byte autosculptZone = -1;
+	public String lod;
+	
 	public Part(ByteBuffer in, int partKey) {
 		this.partKey = partKey;		
 		in.order(ByteOrder.LITTLE_ENDIAN);
@@ -32,13 +52,58 @@ public class Part extends Block {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
 		
-		Block b;
-
 		while((in.position() < blockStart+blockLength)) {
-			subBlocks.add(b=Block.read(in));
+			subBlocks.add(Block.read(in));
 		}
 		
 		//TODO read blocks properly and find partName
+		// SUB-BLOCKS PRE-TREATMENT TO REFERENCE THEM ALL
+		// if there's more than one block only the last one is taken into account
+		for (var b : subBlocks) {
+			switch (b.getBlockID()) {
+			case Part_Header:
+				header = (PartHeader) b;
+				break;
+			case Part_TexUsage:
+				texusage = (TexUsage) b;
+				break;
+			case Part_Strings:
+				strings = (Strings) b;
+				break;
+			case Part_ShaderList:
+				shaderlist = (Shaders) b;
+				break;
+			case Part_MPoints:
+				mpoints = (MPoints) b;
+				break;
+			case Part_Mesh:
+				mesh = (Mesh) b;
+				break;
+			case Part_HashAssign:
+				break;
+			case Part_HashList:
+				break;
+			case Part_AutosculptLinking:
+				break;
+			case Part_AutosculptZones:
+				break;
+			default:
+				break;
+			}
+		}
+		
+		if (header != null) {
+			if (new Hash(header.partName).binHash != partKey) System.out.println("WARNING : incorrect part name "+header.partName);
+			
+			kit = "KIT" + header.partName.split("_KIT")[1].split("_")[0];
+			lod = header.partName.split("_")[header.partName.split("_").length-1];
+//			String s = header.partName.split("_")[header.partName.split("_").length-2];
+//			if (s.length() == 2 && s.charAt(0) == 'T') autosculptZone = Byte.parseByte(s.substring(1));
+			part = header.partName.split(kit+"_")[1].replace("_"+lod, "")/*.replace("_T"+autosculptZone, "")*/;
+//			if (autosculptZone == -1) 
+//				System.out.println("Kit : "+kit+", part : "+part+", lod : "+lod);
+//			else System.out.println("Kit : "+kit+", part : "+part+", autosculpt : T"+autosculptZone+", lod : "+lod);
+		}
 	}
 	
 	@Override
@@ -93,6 +158,22 @@ public class Part extends Block {
 //			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKE_FRONT_A"));
 //			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKE_REAR_A"));
 //			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_FENDER_FRONT_RIGHT_T1_A"));
+
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_A"));
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_A"));
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_T0_A"));
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_T0_A"));
+
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_C"));
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_C"));
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_T0_C"));
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_T0_C"));
+
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_B"));
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_B"));
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_T0_B"));
+//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_T0_B"));
+
 			byte [] arr = new byte[(int)f.length()];
 			fis.read(arr);
 			fis.close();
@@ -110,6 +191,22 @@ public class Part extends Block {
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKE_FRONT_A-recompiled"));
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKE_REAR_A-recompiled"));
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_FENDER_FRONT_RIGHT_T1_A-recompiled"));
+
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_A-recompiled"));
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_A-recompiled"));
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_T0_A-recompiled"));
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_T0_A-recompiled"));
+
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_C-recompiled"));
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_C-recompiled"));
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_T0_C-recompiled"));
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_T0_C-recompiled"));
+
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_B-recompiled"));
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_B-recompiled"));
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_T0_B-recompiled"));
+//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_T0_B-recompiled"));
+
 			fos.write(part.save(0));
 			fos.close();
 						
@@ -125,4 +222,5 @@ public class Part extends Block {
 			e.printStackTrace();
 		}	
 	}
+	
 }

@@ -4,9 +4,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.Part;
 
 public class GeomHeader extends Block {
 
@@ -75,4 +77,9 @@ public class GeomHeader extends Block {
 		return arr;	
 	}
 
+	public void refresh(ArrayList<Part> parts) {
+		partsOffsets.refresh(parts);
+		partsList.refresh(parts);
+		geomInfo.partsCount = parts.size();
+	}
 }

@@ -7,4 +7,5 @@ module UCGT {
 	opens fr.ni240sx.ucgt.testing to javafx.graphics, javafx.fxml;
 	opens fr.ni240sx.ucgt.dbmpPlus to javafx.graphics, javafx.fxml;
 	opens fr.ni240sx.ucgt.collisionsEditor to javafx.graphics, javafx.fxml;
+	opens fr.ni240sx.ucgt.geometryFile to javafx.graphics, javafx.fxml;
 }

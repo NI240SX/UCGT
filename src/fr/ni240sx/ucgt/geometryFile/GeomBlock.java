@@ -20,14 +20,16 @@ public enum GeomBlock {
 	Part_MPoints(0x1A401300, "Part_MPoints"),
 	Part_Mesh(0x00411380, "Part_Mesh"),
 	Part_Mesh_Info(0x00491300, "Part_Mesh_Info"),
-	Part_Mesh_Shaders(0x014F1300, "Part_Mesh_Shaders"),
+	Part_Mesh_ShadersUsage(0x014F1300, "Part_Mesh_Shaders"),
 	Part_Mesh_Materials(0x02491300, "Part_Mesh_Materials"),
-	Part_Mesh_Padding(0x024C1300, "Part_Mesh_Padding?"),
-	Part_Mesh_Triangles(0x01491300, "Part_Mesh_Triangles?"),
-	Part_Mesh_Indices(0x03491300, "Part_Mesh_Indices?"),
+	Part_Mesh_UNKNOWN(0x024C1300, "Part_Mesh_???"),
+	Part_Mesh_Vertices(0x01491300, "Part_Mesh_Vertices"),
+	Part_Mesh_Triangles(0x03491300, "Part_Mesh_Triangles"),
 	Part_Padding(0x17401300, "Part_Padding?"),
 	Part_HashList(0x18401300, "Part_HashList?"),
 	Part_HashAssign(0x19401300, "Part_HashAssign?"),
+	Part_AutosculptLinking(0x1E401300, "Part_AutosculptLinking"),
+	Part_AutosculptZones(0x1D401300, "Part_AutosculptZones"),
 	INVALID(0xFFFFFFFF, "INVALID");
 	
     private final int key;

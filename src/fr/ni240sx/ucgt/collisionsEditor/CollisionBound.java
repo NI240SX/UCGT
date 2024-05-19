@@ -60,9 +60,9 @@ public class CollisionBound {
 	CollisionConvexTransform shapeTransform = null;
 	CollisionConvexTranslate shapeTranslate = null;
 	
-	Shape3D displayShape = new Box(1,1,1);
-	Sphere displayPivot = new Sphere(0.05);
-	boolean render = true;
+	public Shape3D displayShape = new Box(1,1,1);
+	public Sphere displayPivot = new Sphere(0.05);
+	public boolean render = true;
 	
 	double colorR = Math.random();
 	double colorG = Math.random();

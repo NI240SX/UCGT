@@ -62,7 +62,7 @@ public class MPoints extends Block {
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 
-		var alignment = Block.findAlignment(currentPosition+8, 128);
+		var alignment = Block.findAlignment(currentPosition+8, 16); //TODO does this fix it
 		var out = ByteBuffer.wrap(new byte[mpoints.size()*80 + 8 + alignment]);
 		out.order(ByteOrder.LITTLE_ENDIAN);
 

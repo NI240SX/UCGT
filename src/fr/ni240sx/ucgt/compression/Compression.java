@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
 public class Compression {
 	
@@ -109,6 +110,9 @@ public class Compression {
 			return new RefPackDecompress().decompress(in);
 		case "JDLZ":
 			return JDLZDecompress.decompress(in);
+		case "RAWW":
+			// raw data
+			return Arrays.copyOfRange(arr, 16, arr.length);
 		default:
 			System.out.println("Compression type not supported.");	
 			return null;

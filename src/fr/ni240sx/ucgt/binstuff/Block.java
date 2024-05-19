@@ -55,24 +55,31 @@ public abstract class Block {
 			return new Strings(in);
 		case Part_ShaderList:
 			return new Shaders(in);
-//		case Part_MPoints:
-//			return new MPoints(in); //something got fucked up here
+		case Part_MPoints:
+			return new MPoints(in);
 		case Part_Mesh:
 			return new Mesh(in);
 		case Part_Mesh_Info:
 			return new Mesh_Info(in);
-		case Part_Mesh_Shaders:
+		case Part_Mesh_ShadersUsage:
 			return new ShadersUsage(in);
 		case Part_Mesh_Materials:
 			return new Materials(in);
-		case Part_Mesh_Indices:
-		case Part_Mesh_Padding:
+		case Part_Mesh_UNKNOWN:
+			return new Mesh_Unknown(in);
+		case Part_Mesh_Vertices:
+			return new Vertices(in);
 		case Part_Mesh_Triangles:
+			return new Triangles(in);
 		case Part_HashAssign:
 		case Part_HashList:
 		case Part_Padding:
+		case Part_AutosculptLinking:
+		case Part_AutosculptZones:
+			return new UnknownBlock(in, chunkToInt);
 		case INVALID:
 		default:
+			System.out.println("Unknown block, ID="+Integer.toHexString(Integer.reverseBytes(chunkToInt)));
 			return new UnknownBlock(in, chunkToInt);
 		}
 		else return new UnknownBlock(in, chunkToInt);

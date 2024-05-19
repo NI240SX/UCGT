@@ -12,7 +12,7 @@ import javafx.util.Pair;
 
 public class ShadersUsage extends Block {
 
-	public GeomBlock getBlockID() {return GeomBlock.Part_Mesh_Shaders;}
+	public GeomBlock getBlockID() {return GeomBlock.Part_Mesh_ShadersUsage;}
 
 	// texture binhash, usage type
 	public ArrayList<Integer> shadersUsage = new ArrayList<Integer>();
@@ -28,11 +28,11 @@ public class ShadersUsage extends Block {
 			shadersUsage.add(in.getInt());
 		}
 		
-		System.out.print("Shaders usage");
-		for (var s : shadersUsage) {
-			System.out.print(", "+ShaderUsage.get(s).getName());
-		}
-		System.out.println();
+//		System.out.print("Shaders usage");
+//		for (var s : shadersUsage) {
+//			System.out.print(", "+ShaderUsage.get(s).getName());
+//		}
+//		System.out.println();
 		
 //		for (var p : texusage) {
 //			System.out.println("Texture "+Integer.toHexString(p.getKey())+" has usage "+Usage.get(p.getValue()).getName());
