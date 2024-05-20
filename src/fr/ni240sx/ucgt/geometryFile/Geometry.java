@@ -1,9 +1,12 @@
 package fr.ni240sx.ucgt.geometryFile;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -17,6 +20,7 @@ import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.compression.Compression;
 import fr.ni240sx.ucgt.geometryFile.geometry.*;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.testing.GeomDump;
 
 public class Geometry extends Block {
@@ -25,8 +29,20 @@ public class Geometry extends Block {
 	
 	public GeomHeader geomHeader;
 	public ArrayList<Part> parts = new ArrayList<Part>();
+	public ArrayList<Material> materials = new ArrayList<Material>();
+	public ArrayList<Hash> hashlist = new ArrayList<Hash>();
+	
+	public String carname = "CAR";
 	
 	public static boolean USE_MULTITHREADING = true;
+	
+	public static Geometry load(File f) throws IOException {
+		FileInputStream fis = new FileInputStream(f);
+		byte [] arr = new byte[(int)f.length()];
+		fis.read(arr);
+		fis.close();
+		return new Geometry(ByteBuffer.wrap(arr));
+	}
 	
 	public Geometry(ByteBuffer in) {
 		in.order(ByteOrder.LITTLE_ENDIAN);
@@ -36,13 +52,8 @@ public class Geometry extends Block {
 		in.getInt(); // skip common stuff
 //		var blockStart = in.position();
 		
-
 		// read the header, if this goes wrong the file is probably corrupted or smth
 		geomHeader = (GeomHeader) Block.read(in);
-		
-//		var keys = GeomDump.generateHashes("AUD_RS4_STK_08", new int[] {0,1,4,6,11}, new int[] {1});
-//		var keys = GeomDump.generateHashes("NIS_240_SX_89", new int[] {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32}, new int[] {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16});
-		
 		
 		// decompress and read parts by offsets
 		for (var o : geomHeader.partsOffsets.partOffsets) { //.values()
@@ -57,35 +68,97 @@ public class Geometry extends Block {
 			}
 			
 			dataWriter.position(0);
-//			Part p;
 			parts.add(new Part(dataWriter, o.partKey));
-			
-//			FileOutputStream fos;
-//			try {
-////				fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\"+Hash.guess(o.partKey, keys, "DEFAULT", "BIN").label));
-////				fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts-ctk\\"+Hash.guess(o.partKey, keys, "DEFAULT", "BIN").label));
-////				fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\NIS_240_SX_89\\DecompressedParts\\"+Hash.guess(o.partKey, keys, "DEFAULT", "BIN").label));
-//				fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_240_SX_89\\DecompressedParts\\"+p.header.partName));
-//				//omg this takes forever with the 240SX
-//				fos.write(p.save(0));
-//				fos.close();
-//			} catch (IOException e) {
-//				e.printStackTrace();
-//			} catch (InterruptedException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
 			
 		}
 
-//		Block b;
-
-//		// dumb method, works as a first approach but needs to be done as 1. readHeader 2. get the parts list then read them according to the header
-//		while((in.position() < blockStart+blockLength-4) && in.hasRemaining()) {
-//			subBlocks.add(b=Block.read(in));
-//			System.out.println("Block read : "+b.getBlockID().getName());
-//		}
+		try {
+			carname = parts.get(0).header.partName.split("_KIT")[0];
+		} catch (Exception e) {
+			System.out.println("Could not determine car name.");
+		}
+		
+		updateHashes();
+		
+		// check global materials and update names and hashes
+		for (var p : parts) {
+//			System.out.println(p.kit+"_"+p.part+"_"+p.lod);
+			if (p.mesh != null) for (var m : p.mesh.materials.materials) {
+				m.ShaderHash = Hash.guess(p.shaderlist.shaders.get(m.shaderID), hashlist, String.format("0x%08X", p.shaderlist.shaders.get(m.shaderID)), "BIN");
+				m.DefaultTextureHash = Hash.guess(m.textureHash, hashlist, String.format("0x%08X",m.textureHash), "BIN");
+				for (var t : m.textures) {
+					m.TextureHashes.add(Hash.guess(t, hashlist, String.format("0x%08X",t), "BIN"));
+				}
+				if (!materials.contains(m)) {
+					materials.add(m); // this gets random vertex and triangle data, these can be ignored and will be computed if a mesh is imported
+				}
+			}
+		}
+		
+		materials.sort(new MaterialsSorterName());
+		for (var m : materials) {
+			var name = String.format("%1.38s", m.generateName().replace(carname+"_", "").replace("KIT00_", ""));
+			int duplicate = 0;
+			for (var m2 : materials) {
+				if (m2.uniqueName.equals(name)) {
+					duplicate++;
+				}
+			}
+			if (duplicate != 0) {
+				name += "-"+duplicate;
+			}
+			m.uniqueName = name;
+		}
+		System.out.println(materials.size() + " global materials");
 	}
+	
+	
+	public void updateHashes() {
+		hashlist.clear();
+		hashlist.add(new Hash(carname));
+		
+		try {
+			for (var p : parts) {
+				hashlist.add(new Hash(p.header.partName));
+			} 
+		} catch (Exception e) {}
+		
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(new File("data/textures")));
+			String tex;
+			while ((tex = br.readLine())!=null){
+				hashlist.add(new Hash(carname + "_" + tex));
+			}
+			
+			br = new BufferedReader(new FileReader(new File("data/gentextures")));
+			while ((tex = br.readLine())!=null){
+				hashlist.add(new Hash(tex));
+			}
+
+			br = new BufferedReader(new FileReader(new File("data/shaders")));
+			while ((tex = br.readLine())!=null){
+				hashlist.add(new Hash(tex));
+			}
+
+			br = new BufferedReader(new FileReader(new File("data/mpoints")));
+			while ((tex = br.readLine())!=null){
+				hashlist.add(new Hash(tex));
+				for (int as=0; as<11; as++) {
+					hashlist.add(new Hash(tex + "_T" + as));
+				}
+			}
+			
+//			br = new BufferedReader(new FileReader(new File("data/stuff")));
+//			while ((tex = br.readLine())!=null){
+//				l.add(new Hash(tex.strip()));
+//			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
 	
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
@@ -171,11 +244,6 @@ public class Geometry extends Block {
 		out.write(buf.array());
 
 		out.write(geomHeader.save(0)); //temporary without offsets
-		
-//		// dumb method, works as a first approach but needs to be done as WriteHeader then WriteData
-//		for (var b : subBlocks) {
-//			if (b != null) out.write(b.save());
-//		}
 
 		for (var p : parts) {
 			Padding.makePadding(out);
@@ -222,6 +290,8 @@ public class Geometry extends Block {
 			System.out.println("Geom read in "+(System.currentTimeMillis()-t)+" ms.");
 			t = System.currentTimeMillis();
 
+			var save = geom.save(0);
+			
 			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN"));
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY-recompiled.BIN"));
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_240_SX_89\\GEOMETRY-recompiled.BIN"));
@@ -229,7 +299,7 @@ public class Geometry extends Block {
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY-ctk recompiled.BIN"));
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\NIS_240_SX_89\\GEOMETRY-recompiled.BIN"));
 //			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\MER_G63AMG\\GEOMETRY-recompiled.BIN"));
-			fos.write(geom.save(0));
+			fos.write(save);
 			fos.close();
 						
 			System.out.println("Total saving time "+(System.currentTimeMillis()-t)+" ms.");
@@ -252,4 +322,12 @@ class PartSorterLodKitName implements Comparator<Part> {
 	public int compare(Part a, Part b) {
 		return (a.lod + a.kit + a.part).compareTo(b.lod + b.kit + b.part);
 	}
+}
+class MaterialsSorterName implements Comparator<Material>{
+
+	@Override
+	public int compare(Material o1, Material o2) {
+		return o1.generateName().compareTo(o2.generateName());
+	}
+	
 }

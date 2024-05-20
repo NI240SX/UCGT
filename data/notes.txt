@@ -361,14 +361,37 @@ a vert must be composed of an id, xyz pos, xyz normal, uv texcoord
 
 flags
 80 const
-?? 51 for most shaders, 50 for CHASSIS and PLAINNOTHING 
-?? 00, 01=reflections? A2=normal? A3=normaldamage?
+?? 51 for most shaders (reflections?), 50 for CHASSIS and PLAINNOTHING (no reflections?)
+?? 00, 01=reflections/shadows? A2=normal? A3=normaldamage?
 ?? 00, 02=body_swatch? 22=window_swatch?
 
 80510100 : brakelightglassred but also misc on body
 80510000 : brakerotor, interior
 80510022 : window
 80500100 : plainnothing on body
+
+
+0x80500000 : %_INTERIOR, PERP_PLAYER, TIRE_BACK, very basic rendering
+0x80500100 : PLAINNOTHING BLACK gets the cheap ass 50 but still the 01 of reflections/shadows ? what
+0x8050A200 : exclusively DiffuseNormal CHASSIS (doesn't have the fancy 51 but has normals, for some reason)
+
+0x80510000 : Diffuse, DiffuseAlpha without 2nd texture mostly (except REAR_DEFROSTER for some reason) + DiffuseGlow
+0x80510022 : exclusively windows with DiffuseAlpha but a swatch value just chilling
+
+0x80510100 : Diffuse + METAL_SWATCH, %_MISC, REGPAINTBLACK, SIRENS, and DiffuseGlowAlpha/DiffuseAlpha headlight/brakelight glass -> could really be a reflections/shadows thing
+0x80510122 : exclusively DiffuseSwatch CARSKIN, METAL_SWATCH METAL_SWATCH or CARBONFIBRE_PLACEHOLDER METAL_SWATCH
+
+0x8051A200 : normalmaps, incl BADGING, DOORLINE, WHEEL (DULLPLASTIC & MAGSILVER), TIRE_STYLE01, MAGLIP METAL_SWATCH RIM_DISH_N
+0x8051A300 : exclusively for DiffuseNormalSwatch CARBONFIBER CARBONFIBRE DAMAGE_N (declared as Swatch but no swatch texture)
+0x8051A302 : exclusively DiffuseNormalSwatch CARSKIN, CARBONFIBRE_PLACEHOLDER DAMAGE_N %_SKIN1 or METAL_SWATCH
+
+
+
+
+
+
+
+
 
 there's no flag for glow, only the usage
 
@@ -389,6 +412,8 @@ blender info :
 4 vertices
 5 edges
 2 triangles -> 6 vertex ids
+
+texture and shader ids correspond to the order the data is stored in the part's TexUsage and ShaderList blocks
 
 material data :
 00000000 06000000 00000000 03000000 	<- vert index from=0, vert index to=6, 0, [specific to DiffGlowAlpha]?=3
@@ -456,3 +481,15 @@ FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF
 00000000 00000000 00000000 00000000 
 00000000 00000000 00000000 00000000
 
+
+
+
+hash in binary = bin memory
+
+defTex=0x74D2E713	flags=0x8051A300	DIFFUSE=CARBONFIBRE	NORMAL=DAMAGE_N
+defTex=0x0A8A3494	flags=0x8051A302	DIFFUSE=CARBONFIBRE_PLACEHOLDER	NORMAL=DAMAGE_N	SWATCH=NIS_GTR_R35_08_SKIN1
+defTex=0x0902E735	flags=0x8051A302	DIFFUSE=CARBONFIBRE_PLACEHOLDER	NORMAL=DAMAGE_N	SWATCH=METAL_SWATCH
+defTex=0x520A99B0	flags=0x80510000	DIFFUSE=NIS_GTR_R35_08_KIT00_BRAKELIGHT_OFF	SELFILLUMINATION=NIS_GTR_R35_08_KIT00_BRAKELIGHT_ON
+defTex=0x0721357D	flags=0x80510000	DIFFUSE=NIS_240_SX_89_KIT00_BRAKELIGHT_OFF	SELFILLUMINATION=NIS_240_SX_89_KIT00_BRAKELIGHT_ON
+defTex=0xCE811DF9	flags=0x8051A200	DIFFUSE=AUD_RS4_STK_08_BADGING	ALPHA=AUD_RS4_STK_08_BADGING	NORMAL=AUD_RS4_STK_08_BADGING_N
+defTex=0xA619FAB5	flags=0x8051A200	DIFFUSE=AUD_RS4_STK_08_WHEEL	NORMAL=BLANK_2X2_N

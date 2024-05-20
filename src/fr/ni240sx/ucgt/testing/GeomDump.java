@@ -35,8 +35,8 @@ public class GeomDump extends Application {
 	String dmpSearch = "";
 
 //	static String car = "UCGT";
-	static String car = "AUD_RS4_STK_08";
-//	static String car = "NIS_240_SX_89";
+//	static String car = "AUD_RS4_STK_08";
+	static String car = "NIS_240_SX_89";
 //	static String car = "BMW_M3_E92_08";
 //	static String car = "240SX";
 	static int[] art = new int[]{0, 1, 2, 3, 4, 5, 6, 11, 12};
@@ -57,8 +57,8 @@ public class GeomDump extends Application {
 	
 	
 	
-	static int startFrom = 0; //63400
-	static int length = 90000;//2048 recommended
+	static int startFrom = 170000; //63400
+	static int length = 8192;//2048 recommended
 	
 //	AUD_RS4_K00_BASE_A blocks
 //	blockid=18401300	81164	1536+8
@@ -91,7 +91,7 @@ public class GeomDump extends Application {
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_240_SX_89\\DecompressedParts\\NIS_240_SX_89_KIT01_BUMPER_REAR_A");
 	
 
-	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BASE_A");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BASE_A");
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BODY_A");
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKEROTOR_FRONT_A");
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_WINDOW_REAR_A");
@@ -115,6 +115,11 @@ public class GeomDump extends Application {
 	
 
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
+
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_GTR_R35_08\\GEOMETRY.BIN-parts\\NIS_GTR_R35_08_KIT00_WHEEL_TIRE_FRONT_C");
+	
+	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\NIS_240_SX_89\\GEOMETRY.BIN-parts\\NIS_240_SX_89_KIT01_BUMPER_FRONT_A");
+	
 	
 //	File f = new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\UCGT-UC_WINDOW_FRONT.BIN");
 //	File f = new File("C:\\Program Files (x86)\\EA Games\\Need for Speed Undercover\\CARS\\LEX_LFA\\GEOMETRY.BIN"); //UCE on laptop

@@ -31,7 +31,7 @@ public class Part extends Block {
 	
 	public byte[] compressedData;
 	
-	public static CompressionLevel defaultCompressionLevel = CompressionLevel.Max;
+	public static CompressionLevel defaultCompressionLevel = CompressionLevel.High;
 	
 	public PartHeader header;
 	public TexUsage texusage;
