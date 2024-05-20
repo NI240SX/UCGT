@@ -242,14 +242,57 @@ blockid=17401300, length 12
 padding block ?
 
 
-SOMETHING----------------------------------------- at 81164 d
+hashlist----------------------------------------- at 81164 d
 blockid=18401300, length 1536
 most likely a list of the hashes or ids used in the next block
 
 
-SOMETHING----------------------------------------- at 82708 d
+hashassign----------------------------------------- at 82708 d
 blockid=19401300, length 3768
 hash or id, int, int, repeat
+
+hashlist kit00_body_a
+1BDF7006 03A00C51 
+
+A7D9E40B 03A1DC4C 
+
+87B71F36 02005B58 
+
+3BB18B3B 0200A658 
+
+B0945364 02038417 
+B0945364 0328902B 
+
+0C92C769 02027E09 
+0C92C769 032B6D2F 
+
+6CD25970 02FFA658 
+
+D0D4CD7D 02FF5A58
+
+hashassign kit00_body_a
+1BDF7006 08000000 04030000 
+1BDF7006 08000000 03030000 
+
+A7D9E40B 08000000 F4040000 
+A7D9E40B 08000000 F3040000 
+
+87B71F36 04000000 AC060000 
+
+3BB18B3B 04000000 EA060000 
+
+B0945364 04000000 63040000 
+B0945364 08000000 04040000 
+
+0C92C769 04000000 FB020000 
+0C92C769 08000000 67020000 
+
+6CD25970 04000000 E9060000 
+
+D0D4CD7D 04000000 AD060000
+
+
+
 
 AUTOSCULPT LINKING-------------------------------- on KITW01_BUMPER_FRONT_A
 blockid=1E401300, length 80

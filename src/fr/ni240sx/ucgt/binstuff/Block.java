@@ -41,7 +41,9 @@ public abstract class Block {
 		case Geom_PartsOffsets:
 			return new PartsOffsets(in);
 		case Geom_UNKNOWN:
-			return new Geom_Unknown(in);
+			in.position(in.getInt()+in.position()); //skips the block
+			return null;
+//			return new Geom_Unknown(in);
 		case CompressedData:
 			return new CompressedData(in);
 		case Part:
@@ -71,12 +73,20 @@ public abstract class Block {
 			return new Vertices(in);
 		case Part_Mesh_Triangles:
 			return new Triangles(in);
-		case Part_HashAssign:
-		case Part_HashList:
 		case Part_Padding:
+			in.position(in.getInt()+in.position()); //skips the block
+			return null;
+//			return new Part_Padding(in);
+		case Part_HashList:
+			in.position(in.getInt()+in.position()); //skips the block
+			return null;
+		case Part_HashAssign:
+			in.position(in.getInt()+in.position()); //skips the block
+			return null;
 		case Part_AutosculptLinking:
+			return new AutosculptLinking(in);
 		case Part_AutosculptZones:
-			return new UnknownBlock(in, chunkToInt);
+			return new AutosculptZones(in);
 		case INVALID:
 		default:
 			System.out.println("Unknown block, ID="+Integer.toHexString(Integer.reverseBytes(chunkToInt)));

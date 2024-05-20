@@ -58,7 +58,7 @@ public class GeomDump extends Application {
 	
 	
 	static int startFrom = 0; //63400
-	static int length = 8192;//2048 recommended
+	static int length = 90000;//2048 recommended
 	
 //	AUD_RS4_K00_BASE_A blocks
 //	blockid=18401300	81164	1536+8

@@ -23,8 +23,8 @@ public class Materials extends Block {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
 
-		while(in.get() == (byte) 0x11) {} // skip alignment
-		in.position(in.position()-1);
+		while(in.getInt() == 0x11111111) {} // skip alignment
+		in.position(in.position()-4);
 
 		while (in.position() < blockStart+blockLength) {
 			Material m = new Material();

@@ -20,8 +20,8 @@ public class ShadersUsage extends Block {
 	public ShadersUsage(ByteBuffer in) {
 		var blockLength = in.getInt();
 
-		while(in.get() == (byte) 0x11) {} // skip alignment
-		in.position(in.position()-1);
+		while(in.getInt() == 0x11111111) {} // skip alignment
+		in.position(in.position()-4);
 
 		var numUsages = in.getInt();
 		for (int i=0; i< numUsages; i++) {
