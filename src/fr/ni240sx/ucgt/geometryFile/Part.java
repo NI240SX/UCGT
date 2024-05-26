@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Comparator;
 
 import fr.ni240sx.ucgt.binstuff.Block;
@@ -31,7 +32,7 @@ public class Part extends Block {
 	
 	public byte[] compressedData;
 	
-	public static CompressionLevel defaultCompressionLevel = CompressionLevel.High;
+	public static CompressionLevel defaultCompressionLevel = CompressionLevel.Low;
 	
 	public PartHeader header;
 	public TexUsage texusage;
@@ -39,6 +40,8 @@ public class Part extends Block {
 	public Shaders shaderlist;
 	public MPoints mpoints;
 	public Mesh mesh;
+	public AutosculptLinking asLinking;
+	public AutosculptZones asZones;
 	
 	public String kit;
 	public String part;
@@ -85,8 +88,10 @@ public class Part extends Block {
 			case Part_HashList:
 				break;
 			case Part_AutosculptLinking:
+				asLinking = (AutosculptLinking) b;
 				break;
 			case Part_AutosculptZones:
+				asZones = (AutosculptZones) b;
 				break;
 			default:
 				break;
@@ -100,7 +105,7 @@ public class Part extends Block {
 			lod = header.partName.split("_")[header.partName.split("_").length-1];
 //			String s = header.partName.split("_")[header.partName.split("_").length-2];
 //			if (s.length() == 2 && s.charAt(0) == 'T') autosculptZone = Byte.parseByte(s.substring(1));
-			part = header.partName.split(kit+"_")[1].replace("_"+lod, "")/*.replace("_T"+autosculptZone, "")*/;
+			part = header.partName.split(kit+"_")[1].substring(0, header.partName.split(kit+"_")[1].length()-2) /*.replace("_T"+autosculptZone, "")*/;
 //			if (autosculptZone == -1) 
 //				System.out.println("Kit : "+kit+", part : "+part+", lod : "+lod);
 //			else System.out.println("Kit : "+kit+", part : "+part+", autosculpt : T"+autosculptZone+", lod : "+lod);
@@ -146,6 +151,14 @@ public class Part extends Block {
 		compressedLength = compressedData.length + 24;
 	}
 	
+	public ArrayList<Integer> generateASZones() {
+		ArrayList<Integer> zones = new ArrayList<Integer>();
+		for (int i=0;i<11;i++) {
+			zones.add(new Hash(header.partName.substring(0,header.partName.length()-1) +"T"+i+"_"+lod).binHash);
+		}
+		return zones;
+	}
+
 	
 	public static void main(String[] args) {
 		try {
@@ -224,6 +237,5 @@ public class Part extends Block {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}	
-	}
-	
+	}	
 }

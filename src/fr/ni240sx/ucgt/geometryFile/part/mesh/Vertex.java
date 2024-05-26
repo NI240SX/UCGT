@@ -31,7 +31,7 @@ public class Vertex {
 		posW = (float)(in.getShort())*10/32768;
 		
 		texU = (float)(in.getShort())/1024;
-		texV = ((float)(in.getShort())/1024);
+		texV = (1-(float)(in.getShort())/1024);
 		
 		unknX = (float)(in.getShort())*10/32768;
 		unknY = (float)(in.getShort())*10/32768;
@@ -56,7 +56,7 @@ public class Vertex {
 		out.putShort((short) (posW*32768/10));
 
 		out.putShort((short) (texU*1024));
-		out.putShort((short) ((texV)*1024));
+		out.putShort((short) ((1-texV)*1024));
 
 		out.putShort((short) (unknX*32768/10));
 		out.putShort((short) (unknY*32768/10));

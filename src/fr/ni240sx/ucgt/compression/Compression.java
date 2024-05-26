@@ -120,7 +120,7 @@ public class Compression {
 	}
 	
 	private static byte[] compressFile(File f, String compressionType){
-		return compressFile(f, compressionType, CompressionLevel.Max);
+		return compressFile(f, compressionType, CompressionLevel.Maximum);
 	}
 	
 	private static byte[] compressFile(File f, String compressionType, CompressionLevel compressionLevel){

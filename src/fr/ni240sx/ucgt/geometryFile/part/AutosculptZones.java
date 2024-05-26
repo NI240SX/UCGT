@@ -30,6 +30,10 @@ public class AutosculptZones extends Block {
 		}
 	}
 
+	public AutosculptZones() {
+		// TODO Auto-generated constructor stub
+	}
+
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 

@@ -7,31 +7,32 @@ import java.util.Objects;
 
 import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.Geometry;
+import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 
 public class Material {
-
+	
 	public int fromVertID = 0;
 	public int toVertID = 0;
 	public int numVertices = 0;
 
-	public int usageSpecific1 = -1;
-	public int usageSpecific2 = -1;
-	public int usageSpecific3 = -1;
+	public int usageSpecific1 = -1; //apparently unused
+	public int usageSpecific2 = -1; //apparently unused
+	public int usageSpecific3 = -1; //apparently unused
 	
-	public byte[] flags = {-128, 81, 0, 0};
+	public byte[] flags = {-128, 81, 0, 0}; //apparently unused
 
 	public byte shaderID = 0;
 	public ArrayList<Byte> textureIDs = new ArrayList<Byte>();
 	
-	public int textureHash = 0;
+	public int textureHash = 0; //apparently unused
 	
-	public int materialsListOffset = 0;
+	public int frontendRenderingData = 0; //controls FE rendering somehow
 	public int verticesDataLength = 0;
 	
 	public ShaderUsage shaderUsage = ShaderUsage.Diffuse;
 	public ArrayList<TextureUsage> textureUsages = new ArrayList<TextureUsage>();
-	public ArrayList<Integer> textures = new ArrayList<Integer>();
+	public ArrayList<Integer> textures = new ArrayList<Integer>(); //apparently unused
 	
 	public Vertices verticesBlock;
 	public List<Triangle> triangles;
@@ -42,6 +43,90 @@ public class Material {
 	
 	public String uniqueName = "";
 	
+	public void tryGuessHashes(Geometry geometry, Part p) {
+		ShaderHash = Hash.guess(p.shaderlist.shaders.get(shaderID), geometry.hashlist, String.format("0x%08X", p.shaderlist.shaders.get(shaderID)), "BIN");
+//		DefaultTextureHash = Hash.guess(textureHash, geometry.hashlist, String.format("0x%08X",textureHash), "BIN"); //apparently unused
+//		for (var t : textures) {
+//			TextureHashes.add(Hash.guess(t, geometry.hashlist, String.format("0x%08X",t), "BIN"));
+//		}
+		for (var t : textureIDs) { //this is actually what's being done by the game
+			TextureHashes.add(Hash.guess(p.texusage.texusage.get(t).getKey(), geometry.hashlist, String.format("0x%08X",p.texusage.texusage.get(t).getKey()), "BIN"));
+		}
+	}
+	
+	public void tryGuessUsageSpecific() { // TODO find what ACTUALLY controls this value
+		usageSpecific1 = -1;
+		usageSpecific2 = -1;
+		usageSpecific3 = -1;
+		
+		if (textures.size() == 2) usageSpecific1 = 1; //diffuse+smth else
+		else if (textures.size() == 3) {
+			// alpha normal 3 1
+			// normal swatch 1 2
+			// alpha swatch 1 2
+			if (textureUsages.contains(TextureUsage.ALPHA) && textureUsages.contains(TextureUsage.NORMAL)) {
+				usageSpecific1 = 3;
+				usageSpecific2 = 1;
+			} else {
+				usageSpecific1 = 1;
+				usageSpecific2 = 2;				
+			}
+		} else if (textures.size() == 4) {
+			usageSpecific1 = 1;
+			usageSpecific2 = 2;
+			usageSpecific3 = 3;			
+		}
+	}
+	
+	public void tryGuessFlags(Geometry geometry) {
+		flags[0] = (byte) 0x80;
+		flags[1] = (byte) 0x51;
+		flags[2] = (byte) 0x00;
+		flags[3] = (byte) 0x00;
+	
+		textures.set(0, new Hash("DEFAULTTEXTURE").binHash);
+		textureHash = new Hash("DEFAULTTEXTURE").binHash;
+
+		//low quality rendering or smth
+		if (ShaderHash.label.equals("PLAINNOTHING") || ShaderHash.label.equals("INTERIOR") || ShaderHash.label.equals("CHASSIS")) flags[1] -= (byte) 0x01;
+		
+		//reflections ? shadows ? METAL_SWATCH, %_MISC, REGPAINTBLACK, SIRENS, BLACK
+		if (//ShaderHash.label.equals("CARSKIN") ||
+				ShaderHash.label.equals("CARBONFIBER") || ShaderHash.label.equals("HEADLIGHTGLASS") ||
+				ShaderHash.label.equals("BRAKELIGHTGLASS") || ShaderHash.label.equals("BRAKELIGHTGLASSRED") ||
+				TextureHashes.get(0).label.equals("CARBONFIBRE_PLACEHOLDER") || TextureHashes.get(0).label.equals("CARBONFIBRE") || TextureHashes.get(0).label.equals("METAL_SWATCH") ||
+				TextureHashes.get(0).label.equals(geometry.carname+"_MISC") || TextureHashes.get(0).label.equals("BLACK") || 
+				TextureHashes.get(0).label.equals("SIRENS")) flags[2] += (byte) 0x01;
+		
+		//normals
+		if (textureUsages.contains(TextureUsage.NORMAL)) flags[2] += (byte) 0xA2;
+		
+		//idk
+		if(!textureUsages.contains(TextureUsage.NORMAL) && textureUsages.contains(TextureUsage.SWATCH)) flags[3] = (byte) 0x22;
+		if(textureUsages.contains(TextureUsage.NORMAL) && textureUsages.contains(TextureUsage.SWATCH)) flags[3] = (byte) 0x02;
+	}
+	
+	public void tryGuessDefaultTex() {
+		textureHash = textures.get(0);
+		DefaultTextureHash = TextureHashes.get(0);
+		
+	}
+
+	public void removeUnneeded() {
+		usageSpecific1 = -1;
+		usageSpecific2 = -1;
+		usageSpecific3 = -1;
+		flags[0] = (byte) 0x00;
+		flags[1] = (byte) 0x00;
+		flags[2] = (byte) 0x00;
+		flags[3] = (byte) 0x00;
+		textureHash = 0; //we apparently can not give a shit about those ???
+		for (int i=0; i<textures.size(); i++) {
+			textures.set(i, 0);
+		}
+//		frontendRenderingData = 0;
+	}
+	
 	public String generateName() {
 		String s = ShaderHash.label;
 		for (var t : TextureHashes) s += "_"+t.label;
@@ -51,26 +136,25 @@ public class Material {
 	public String toConfig() { //	MATERIAL	SHADER=ShaderUsage[1,2,3] 0xFLAGS000 DEFAULTTEX TEX1=TexUsage TEX2=TexUsage
 //		System.out.println("TextureHash "+DefaultTextureHash.label+" : "+String.format("0x%08X", textureHash));
 		String s = "";
-		s += "MATERIAL	"+uniqueName+"	"+ShaderHash.label+"="+shaderUsage.getName()+"[";
-		if (usageSpecific1 != -1) s+=usageSpecific1;
-		if (usageSpecific2 != -1) s+=","+usageSpecific2;
-		if (usageSpecific3 != -1) s+=","+usageSpecific3;
-		s +="]	defTex=" + DefaultTextureHash.label+"	flags=0x"+String.format("%02X",flags[0])+String.format("%02X",flags[1])+String.format("%02X",flags[2])+String.format("%02X",flags[3]);
+		s += "MATERIAL	"+uniqueName;
+		s += " feRenderData=" + frontendRenderingData;
+		s += "	"+ShaderHash.label+"="+shaderUsage.getName();
+		//+"[";
+//		if (usageSpecific1 != -1) s+=usageSpecific1;
+//		if (usageSpecific2 != -1) s+=","+usageSpecific2;
+//		if (usageSpecific3 != -1) s+=","+usageSpecific3;
+//		s +="]	defTex=" + DefaultTextureHash.label+"	flags=0x"+String.format("%02X",flags[0])+String.format("%02X",flags[1])+String.format("%02X",flags[2])+String.format("%02X",flags[3]);
 		for (int i=0; i<textures.size(); i++) {
-			s += "	" + textureUsages.get(i).getName() + "=" + TextureHashes.get(i).label;
+			s += "	" + TextureHashes.get(i).label + "=" + textureUsages.get(i).getName();
 		}
 		return s;
 	}
 	
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + Arrays.hashCode(flags);
-		result = prime * result + Objects.hash(shaderUsage, textureHash, textureUsages, textures,
-				usageSpecific1, usageSpecific2, usageSpecific3);
-		return result;
+		return Objects.hash(ShaderHash, TextureHashes, shaderUsage, textureUsages, frontendRenderingData);
 	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -80,10 +164,24 @@ public class Material {
 		if (getClass() != obj.getClass())
 			return false;
 		Material other = (Material) obj;
-		return Arrays.equals(flags, other.flags) && shaderUsage == other.shaderUsage
-				&& textureHash == other.textureHash && ShaderHash.binHash == other.ShaderHash.binHash
-				&& Objects.equals(textureUsages, other.textureUsages) && Objects.equals(textures, other.textures)
-				&& usageSpecific1 == other.usageSpecific1 && usageSpecific2 == other.usageSpecific2
-				&& usageSpecific3 == other.usageSpecific3;
+		return Objects.equals(ShaderHash, other.ShaderHash) && Objects.equals(TextureHashes, other.TextureHashes) && frontendRenderingData == other.frontendRenderingData
+				&& shaderUsage == other.shaderUsage && Objects.equals(textureUsages, other.textureUsages);
 	}
+	
+//	@Override
+//	public boolean equals(Object obj) {
+//		if (this == obj)
+//			return true;
+//		if (obj == null)
+//			return false;
+//		if (getClass() != obj.getClass())
+//			return false;
+//		Material other = (Material) obj;
+//		return Arrays.equals(flags, other.flags) && shaderUsage == other.shaderUsage
+//				&& textureHash == other.textureHash && ShaderHash.binHash == other.ShaderHash.binHash
+//				&& Objects.equals(textureUsages, other.textureUsages) && Objects.equals(textures, other.textures)
+//				&& usageSpecific1 == other.usageSpecific1 && usageSpecific2 == other.usageSpecific2
+//				&& usageSpecific3 == other.usageSpecific3;
+//	}
+
 }

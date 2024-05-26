@@ -7,7 +7,10 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
+import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.Geometry;
+import fr.ni240sx.ucgt.geometryFile.Part;
 import javafx.util.Pair;
 
 public class AutosculptLinking extends Block {
@@ -54,5 +57,14 @@ public class AutosculptLinking extends Block {
 		}
 		
 		return out.array();	
+	}
+
+	public String toConfig(Geometry g, Part p) {
+		// TODO Auto-generated method stub
+		//Hash.guess(partKey, g.hashlist, String.format("0x%08X", partKey), "BIN");
+		String s = "ASLINK	"+p.header.partName.replace(g.carname+"_", "");
+		for (var l : links) s += "	" + Hash.guess(l.partKey, g.hashlist, String.format("0x%08X", l.partKey), "BIN").label.replace(g.carname+"_", "")
+				+","+l.passZone1+","+l.passZone2+","+l.passZone3+","+l.passZone4;
+		return s;
 	}
 }

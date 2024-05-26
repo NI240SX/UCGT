@@ -11,12 +11,15 @@ import fr.ni240sx.ucgt.collisionsEditor.OrbitCameraViewport;
 import javafx.application.Application;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
+import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
+import javafx.scene.shape.Box;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
 import javafx.scene.shape.VertexFormat;
@@ -27,7 +30,7 @@ public class PartVisualizer extends Application{
 	public static Group viewportGroup = new Group();
 	public static OrbitCameraViewport viewport;
 	
-	public static ArrayList<MeshView> partMeshView = new ArrayList<MeshView>();
+//	public static ArrayList<MeshView> partMeshView = new ArrayList<MeshView>();
 	
 	public static List<Part> partsList = new ArrayList<Part>();
 		
@@ -35,6 +38,12 @@ public class PartVisualizer extends Application{
 	public void start(Stage primaryStage) throws Exception {
 
 		viewport = new OrbitCameraViewport(viewportGroup, 1024, 600);
+
+		viewport.rotationX.setAngle(90);
+		viewport.rotationY.setAngle(60);
+		viewport.rotationZ.setAngle(180);
+		
+        viewportGroup.getChildren().clear();
 		for (Part part : partsList) {
 			for (var m : part.mesh.materials.materials) {
 				TriangleMesh matMesh = new TriangleMesh();
@@ -44,7 +53,7 @@ public class PartVisualizer extends Application{
 				for (var v : m.verticesBlock.vertices) {
 					matMesh.getPoints().addAll(v.posX, v.posY, v.posZ);
 					matMesh.getNormals().addAll(v.normX, v.normY, v.normZ);
-					matMesh.getTexCoords().addAll(v.texU, v.texV);
+					matMesh.getTexCoords().addAll(v.texU, 1-v.texV);
 				}
 				
 				for (var tr : m.triangles) {
@@ -69,26 +78,59 @@ public class PartVisualizer extends Application{
 	//				setBumpMap(new Image("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\textures\\AUD_RS4_STK_08_ENGINE_N.png"));
 	//			}});
 				
-				partMeshView.add(mv);
+//				partMeshView.add(mv);
+				viewportGroup.getChildren().add(mv);
+			}
+			
+			//position markers
+			if (part.mpoints != null) for (var mp : part.mpoints.mpoints) {
+				var mpMesh = new TriangleMesh();
+				mpMesh.getTexCoords().addAll(0, 0);
+				mpMesh.getPoints().addAll(
+						0.05f, 0, 0,
+						-0.05f, 0, 0,
+						0, 0.05f, 0,
+						0, -0.05f, 0);
+				mpMesh.getFaces().addAll(
+						0,0, 2,0, 3,0, 
+						3,0, 2,0, 1,0);
+				
+				var mpointShape = new MeshView(mpMesh);//new Box(0.1, 0.1, 0.1);
+				mpointShape.setMaterial(new PhongMaterial(Color.rgb(255, 0, 0, 0.3)));
+				mpointShape.setTranslateX(mp.positionX);
+				mpointShape.setTranslateY(mp.positionY);
+				mpointShape.setTranslateZ(mp.positionZ);
+				var m = mp.matrix;
+				double d = Math.acos((m[0][0] + m[1][1] + m[2][2] - 1d)/2d);
+			    if(d!=0d){
+			        double den=2d*Math.sin(d);
+			        Point3D p= new Point3D((m[1][2] - m[2][1])/den,
+			        		(m[2][0] - m[0][2])/den,
+			        		(m[0][1] - m[1][0])/den);
+			        mpointShape.setRotationAxis(p);
+			        mpointShape.setRotate(Math.toDegrees(d));                    
+			    }
+			    viewportGroup.getChildren().add(mpointShape);
 			}
 		}
-		updateRender();
+		viewport.buildAxes();
+//		updateRender();
 		
 		BorderPane root = new BorderPane();
         root.setCenter(viewport);
 
-		viewport.widthProperty().addListener(new InvalidationListener() {
-			@Override
-			public void invalidated(Observable evt) {
-				updateRender();
-			}
-		});
-        viewport.heightProperty().addListener(new InvalidationListener() {
-			@Override
-			public void invalidated(Observable evt) {
-				updateRender();
-			}
-		});
+//		viewport.widthProperty().addListener(new InvalidationListener() {
+//			@Override
+//			public void invalidated(Observable evt) {
+//				updateRender();
+//			}
+//		});
+//        viewport.heightProperty().addListener(new InvalidationListener() {
+//			@Override
+//			public void invalidated(Observable evt) {
+//				updateRender();
+//			}
+//		});
 		viewport.widthProperty().bind(root.widthProperty());
 		viewport.heightProperty().bind(root.heightProperty());
 		
@@ -101,11 +143,11 @@ public class PartVisualizer extends Application{
 	}
 	
 	
-    public static void updateRender() {
-    	viewport.viewportGroup.getChildren().clear();
-    	viewport.buildAxes();
-    	viewport.viewportGroup.getChildren().addAll(partMeshView);
-    }
+//    public static void updateRender() {
+//    	viewport.viewportGroup.getChildren().clear();
+////    	viewport.buildAxes();
+//    	viewport.viewportGroup.getChildren().addAll(partMeshView);
+//    }
 
     public static void setParts(String geomFile, String parts) {
     	partsList.clear();

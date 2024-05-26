@@ -7,7 +7,11 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
+import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.Geometry;
+import fr.ni240sx.ucgt.geometryFile.Part;
+import javafx.geometry.Point3D;
 import javafx.util.Pair;
 
 public class MPoints extends Block {

@@ -15,10 +15,10 @@ public class OrbitCameraViewport extends SubScene {
 
 	public Group viewportGroup;
     public PerspectiveCamera camera = new PerspectiveCamera(true);
-    Rotate rotationX = new Rotate(0, 0, 0, 10, Rotate.X_AXIS);
-    Rotate rotationY = new Rotate(0, 0, 0, 10, Rotate.Y_AXIS);
-    Rotate rotationZ = new Rotate(0, 0, 0, 10, Rotate.Z_AXIS);
-    Translate translation = new Translate();
+    public Rotate rotationX = new Rotate(0, 0, 0, 10, Rotate.X_AXIS);
+    public Rotate rotationY = new Rotate(0, 0, 0, 10, Rotate.Y_AXIS);
+    public Rotate rotationZ = new Rotate(0, 0, 0, 10, Rotate.Z_AXIS);
+    public Translate translation = new Translate();
 	
 	/**
 	 * @param viewportGroup

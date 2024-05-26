@@ -2,13 +2,13 @@ package fr.ni240sx.ucgt.compression;
 
 public class CompressionLevel
 {
-    public static CompressionLevel Max = new CompressionLevel(1, 1, 10, 65536);
-    public static CompressionLevel Ultra = new CompressionLevel(1, 1, 10, 32768);
-    public static CompressionLevel VeryHigh = new CompressionLevel(1, 1, 10, 16384);
-    public static CompressionLevel High = new CompressionLevel(1, 1, 10, 8192);
-    public static CompressionLevel Medium = new CompressionLevel(1, 1, 10, 2048);
-    public static CompressionLevel Low = new CompressionLevel(1, 1, 10, 512);
-    public static CompressionLevel Minimum = new CompressionLevel(1, 1, 10, 64);
+    public static CompressionLevel Maximum = new CompressionLevel(1, 1, 10, 65536, "Maximum");
+    public static CompressionLevel Ultra = new CompressionLevel(1, 1, 10, 32768, "Ultra");
+    public static CompressionLevel VeryHigh = new CompressionLevel(1, 1, 10, 16384, "VeryHigh");
+    public static CompressionLevel High = new CompressionLevel(1, 1, 10, 8192, "High");
+    public static CompressionLevel Medium = new CompressionLevel(1, 1, 10, 2048, "Medium");
+    public static CompressionLevel Low = new CompressionLevel(1, 1, 10, 512, "Low");
+    public static CompressionLevel Minimum = new CompressionLevel(1, 1, 10, 64, "Minimum");
 
     public int BlockInterval;
     public int SearchLength;
@@ -16,6 +16,7 @@ public class CompressionLevel
     public int QueueLength;
     public int SameValToTrack;
     public int BruteForceLength;
+    public String name;
 
     public CompressionLevel(int blockInterval, 
     						int searchLength,
@@ -31,14 +32,33 @@ public class CompressionLevel
         this.SameValToTrack = sameValToTrack;
         this.BruteForceLength = bruteForceLength;
     }
+    public CompressionLevel(int blockInterval, int searchLength, int sameValToTrack, int bruteForceLength) {
+    	this(blockInterval, searchLength, sameValToTrack, bruteForceLength, "CompressionLevel");
+    }
 
-    public CompressionLevel(int blockInterval, int searchLength, int sameValToTrack, int bruteForceLength)
+    public CompressionLevel(int blockInterval, int searchLength, int sameValToTrack, int bruteForceLength, String name)
     {
+    	this.name = name;
         this.BlockInterval = blockInterval;
         this.SearchLength = searchLength;
         this.PrequeueLength = this.SearchLength / this.BlockInterval;
         this.QueueLength = 131000 / this.BlockInterval - this.PrequeueLength;
         this.SameValToTrack = sameValToTrack;
         this.BruteForceLength = bruteForceLength;
+    }
+    
+    public String getName() {
+    	return name;
+    }
+    public CompressionLevel fromName(String name) {
+    	switch (name) {
+    	case "Maximum": return Maximum;
+    	case "Ultra": return Ultra;
+    	case "VeryHigh": return VeryHigh;
+    	case "High": return High;
+    	case "Medium": return Medium;
+    	case "Low": return Low;
+    	default: return Minimum;
+    	}
     }
 }

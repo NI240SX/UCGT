@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import javafx.util.Pair;
 
@@ -52,7 +53,7 @@ public class Materials extends Block {
 			m.numVertices = in.getInt();
 			
 			in.position(matStart+96);
-			m.materialsListOffset = in.getInt();
+			m.frontendRenderingData = in.getInt();
 			in.getInt();
 			in.getInt();
 			m.verticesDataLength = in.getInt();
@@ -153,7 +154,7 @@ public class Materials extends Block {
 			out.putInt(m.numVertices);
 			
 			out.position(matStart+96);
-			out.putInt(m.materialsListOffset);
+			out.putInt(m.frontendRenderingData);
 			out.putInt(0);
 			out.putInt(0);
 			out.putInt(m.verticesDataLength);

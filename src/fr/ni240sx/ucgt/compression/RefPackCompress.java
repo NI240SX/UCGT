@@ -19,7 +19,7 @@ public class RefPackCompress {
     public int sequenceIndex = 0;
     
 	public byte[] compress(ByteBuffer in) {
-		return compress(in, CompressionLevel.Max);
+		return compress(in, CompressionLevel.Maximum);
 	}
 
 	public byte[] compress(ByteBuffer input, CompressionLevel level)

@@ -13,10 +13,11 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.*;
 
 public abstract class Block {
 	public abstract GeomBlock getBlockID();
-
+	
 	public static HashMap<GeomBlock, Boolean> doNotRead = new HashMap<GeomBlock, Boolean>(); //allows speeding up file loading by blocking unnecessary blocks from being read
 	
 	public ArrayList<Block> subBlocks = new ArrayList<Block>();
+
 	public byte[] data;
 	
 	public abstract byte[] save(int currentPosition) throws IOException, InterruptedException; //TODO check whether these throws are still useful
@@ -25,7 +26,7 @@ public abstract class Block {
 		int chunkToInt;
 		GeomBlock block = GeomBlock.get(chunkToInt = in.getInt());
 //		System.out.println("Block read : "+block.getName());
-		if (doNotRead.get(block) == null)
+		if (doNotRead.get(block) == null) //use the doNotRead with caution !
 		switch (block) {
 		case Padding:
 			return new Padding(in);
@@ -47,7 +48,7 @@ public abstract class Block {
 		case CompressedData:
 			return new CompressedData(in);
 		case Part:
-			System.out.println("initializing a part block - this shouldn't happen");
+			System.out.println("initializing a part block without geometry - this shouldn't happen");
 			return new Part(in, 0);
 		case Part_Header:
 			return new PartHeader(in);
