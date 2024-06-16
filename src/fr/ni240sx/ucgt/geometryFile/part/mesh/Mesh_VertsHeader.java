@@ -7,20 +7,24 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 
-public class Mesh_Unknown extends Block {
+public class Mesh_VertsHeader extends Block {
 	//apparently always empty, still saves data in case it's not
 
-	public GeomBlock getBlockID() {return GeomBlock.Part_Mesh_UNKNOWN;}
+	public GeomBlock getBlockID() {return GeomBlock.Part_Mesh_VertsHeader;}
 	
-	public Mesh_Unknown(ByteBuffer in) {
+	public Mesh_VertsHeader(ByteBuffer in) {
 		var length = in.getInt();
-		var blockStart = in.position();
+//		var blockStart = in.position();
 		data = new byte[length];
 		in.get(data); //raw data if there's any
 		
-		if (length > 0) System.out.println("Found Geom>Part>Mesh>Unknown block with length="+length);
+		if (length > 0) System.out.println("Found VertsHeader block with length="+length+", this shouldn't happen !");
 	}
 	
+	public Mesh_VertsHeader() {
+		data = new byte[0];
+	}
+
 	@Override
 	public byte[] save(int currentPosition) throws IOException {
 		

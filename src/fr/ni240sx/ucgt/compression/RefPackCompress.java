@@ -3,15 +3,13 @@ package fr.ni240sx.ucgt.compression;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.PriorityQueue;
-
 import javafx.util.Pair;
 
 // Original code by Rick Gibbed https://github.com/gibbed/Gibbed.RefPack/tree/master
 // Ported to Java by NI240SX
+// TODO look for possible performance improvements
 public class RefPackCompress {
 
 	public int sequenceStart = 0;

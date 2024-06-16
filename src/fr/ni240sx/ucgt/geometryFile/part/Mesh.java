@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.*;
-import javafx.util.Pair;
 
 public class Mesh extends Block {
 
@@ -42,7 +41,7 @@ public class Mesh extends Block {
 			case Part_Mesh_ShadersUsage:
 				shadersUsage = (ShadersUsage) b;
 				break;
-			case Part_Mesh_UNKNOWN:
+			case Part_Mesh_VertsHeader:
 				break;
 			case Part_Mesh_Vertices:
 				verticesBlocks.add((Vertices) b);
@@ -60,10 +59,17 @@ public class Mesh extends Block {
 			verticesBlocks.get(i).material = materials.materials.get(i);
 			materials.materials.get(i).verticesBlock = verticesBlocks.get(i);
 //			System.out.println("Requesting triangles from "+(materials.materials.get(i).fromVertID/3) + " to " + (materials.materials.get(i).toVertID/3));
-			materials.materials.get(i).triangles = triangles.triangles.subList(materials.materials.get(i).fromVertID/3, (materials.materials.get(i).toVertID/3));
+			materials.materials.get(i).triangles = triangles.triangles.subList(materials.materials.get(i).fromTriVertID/3, (materials.materials.get(i).toTriVertID/3));
 		}
 		
 		
+	}
+
+	public Mesh() {
+		this.info = new Mesh_Info();
+		this.materials = new Materials();
+		this.shadersUsage = new ShadersUsage();
+		this.triangles = new Triangles();
 	}
 
 	@Override
@@ -78,7 +84,7 @@ public class Mesh extends Block {
 		out.write(buf.array());
 		
 		for (var b : subBlocks) {
-			out.write(b.save(currentPosition + out.size()));
+			if (b != null) out.write(b.save(currentPosition + out.size()));
 		}
 
 		buf = ByteBuffer.wrap(new byte[4]);

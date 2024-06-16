@@ -502,3 +502,84 @@ defTex=0x520A99B0	flags=0x80510000	DIFFUSE=NIS_GTR_R35_08_KIT00_BRAKELIGHT_OFF	S
 defTex=0x0721357D	flags=0x80510000	DIFFUSE=NIS_240_SX_89_KIT00_BRAKELIGHT_OFF	SELFILLUMINATION=NIS_240_SX_89_KIT00_BRAKELIGHT_ON
 defTex=0xCE811DF9	flags=0x8051A200	DIFFUSE=AUD_RS4_STK_08_BADGING	ALPHA=AUD_RS4_STK_08_BADGING	NORMAL=AUD_RS4_STK_08_BADGING_N
 defTex=0xA619FAB5	flags=0x8051A200	DIFFUSE=AUD_RS4_STK_08_WHEEL	NORMAL=BLANK_2X2_N
+
+
+
+WAVEFRONT OBJ
+
+aspose3d export=====================
+
+mtllib GEOMETRY.mtl
+g KIT00_BASE_A
+
+v -1.7141724 -0.16113281 0.9399414
+... vertices
+
+vn -0.66845703 -3.0517578E-5 0.7437134
+... normals
+
+vt 0.5810547 0.625 0.0
+... texcoords
+
+usemtl BRAKELIGHTGLASSRED_BRAKELIGHT_GLASS_OF
+s 1
+f 1/1/1 2/2/2 3/3/3
+... triangles
+
+usemtl CARSKIN_CARBONFIBRE_PLACEHOLDER_DAMAGE-1
+s 2
+f 484/484/484 485/485/485 486/486/486
+... triangles
+
+s : 1,2,4,8,16,32,64... always x2 in the whole file
+
+g KIT00_BOSY_A (next part)
+
+ctk export========================== somehow heavier
+
+mtllib AUD_RS4_STK_08.mtl
+
+v -1.7142247 -0.16113773 0.9399701
+... vertices for every single part
+
+vn -0.6684774 -3.051851e-05 0.7437361
+... normals for every part
+
+vt 0.58107245 0.37501144
+... texcoord for every part
+
+o KIT00_BASE_A
+
+g KIT00_BASE_A
+
+usemtl BRAKELIGHTGLASSRED_KIT00_BRAKELIGHT_GLASS_OFF
+f 1/1/1 2/2/2 3/3/3
+...
+usemtl CARSKIN_CARBONFIBRE_PLACEHOLDER
+f 484/484/484 485/485/485 486/486/486
+...
+
+o KIT00_...
+
+g KIT00_...
+
+usemtl...
+
+blender export====================== much lighter because it bothers to compress duplicated vertex coords/normals/texcoords
+mtllib AUD_RS4_STK_08 blender re-export.mtl
+o KIT00_BASE_A
+v -1.714225 0.939970 0.161138
+...
+vn -0.6688 0.7434 -0.0000
+...
+vt 0.581072 0.624989
+...
+s 1
+usemtl BRAKELIGHTGLASSRED_KIT00_BRAKELIGHT_GLASS_OFF
+f 1/1/1 2/2/2 3/3/2
+...
+usemtl CARSKIN_CARBONFIBRE_PLACEHOLDER
+f 484/5/3 485/6/4 486/7/5
+...
+o KIT00_BASE_B
+...

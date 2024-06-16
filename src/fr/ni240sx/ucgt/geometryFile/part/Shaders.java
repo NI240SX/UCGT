@@ -1,6 +1,5 @@
 package fr.ni240sx.ucgt.geometryFile.part;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -8,7 +7,6 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
-import javafx.util.Pair;
 
 public class Shaders extends Block {
 
@@ -28,6 +26,9 @@ public class Shaders extends Block {
 //		for (var p : texusage) {
 //			System.out.println("Texture "+Integer.toHexString(p.getKey())+" has usage "+Usage.get(p.getValue()).getName());
 //		}
+	}
+
+	public Shaders() {
 	}
 
 	@Override

@@ -1,6 +1,5 @@
 package fr.ni240sx.ucgt.geometryFile.part.mesh;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -8,7 +7,6 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
-import javafx.util.Pair;
 
 public class ShadersUsage extends Block {
 
@@ -18,7 +16,8 @@ public class ShadersUsage extends Block {
 	public ArrayList<Integer> shadersUsage = new ArrayList<Integer>();
 	
 	public ShadersUsage(ByteBuffer in) {
-		var blockLength = in.getInt();
+//		var blockLength = 
+				in.getInt();
 
 		while(in.getInt() == 0x11111111) {} // skip alignment
 		in.position(in.position()-4);
@@ -37,6 +36,9 @@ public class ShadersUsage extends Block {
 //		for (var p : texusage) {
 //			System.out.println("Texture "+Integer.toHexString(p.getKey())+" has usage "+Usage.get(p.getValue()).getName());
 //		}
+	}
+
+	public ShadersUsage() {
 	}
 
 	@Override

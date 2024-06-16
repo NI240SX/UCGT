@@ -1,6 +1,5 @@
 package fr.ni240sx.ucgt.geometryFile.part;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -8,7 +7,6 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
-import javafx.util.Pair;
 
 public class Strings extends Block {
 
@@ -32,6 +30,9 @@ public class Strings extends Block {
 			strings.add(Block.readString(in));
 		}
 		in.position(blockStart+blockLength);
+	}
+
+	public Strings() {
 	}
 
 	@Override

@@ -4,7 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
+import java.util.List;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
@@ -48,6 +48,15 @@ public class GeomHeader extends Block {
 		}
 	}
 
+	public GeomHeader() {
+		this.geomInfo = new GeomInfo();
+		this.partsList = new PartsList();
+		this.partsOffsets = new PartsOffsets();
+		this.subBlocks.add(geomInfo);
+		this.subBlocks.add(partsList);
+		this.subBlocks.add(partsOffsets);
+	}
+
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 		var out = new ByteArrayOutputStream();
@@ -77,7 +86,7 @@ public class GeomHeader extends Block {
 		return arr;	
 	}
 
-	public void refresh(ArrayList<Part> parts) {
+	public void refresh(List<Part> parts) {
 		partsOffsets.refresh(parts);
 		partsList.refresh(parts);
 		geomInfo.partsCount = parts.size();

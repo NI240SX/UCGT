@@ -7,7 +7,7 @@ import java.nio.ByteOrder;
 // Ported to Java by NI240SX
 public class RefPackDecompress {
 
-	public static boolean stop = true;
+	public boolean stop = true;
 	
 	//decompression stuff
 	public int[] m_prefix = new int[4];
@@ -23,7 +23,7 @@ public class RefPackDecompress {
 		return decompress(in, true);
 	}
 
-	public byte[] decompress(ByteBuffer in, boolean chunkData) {
+	public byte[] decompress(ByteBuffer inData, boolean chunkData) {
 		byte[] header = new byte[2];
 //		int flags;
 		int compressedSize = 0;
@@ -31,7 +31,7 @@ public class RefPackDecompress {
 
 //		System.out.println("RefPackDecompress");
 		
-		this.in = in;
+		this.in = inData;
 		
 		if(chunkData) {
 			//this method is called right after detecting the compressiontype (RFPK magic)

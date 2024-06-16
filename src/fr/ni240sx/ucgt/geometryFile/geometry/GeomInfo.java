@@ -15,7 +15,7 @@ public class GeomInfo extends Block {
 	
 	public int const01=0, const02=3, const03=30, partsCount=0;
 	public String filename="Compiled with UCGT | NI240SX 2024", blockname="DEFAULT";
-	public int const1=128, const21=0, const22=0, const23=0, const24=0;
+	public int const1=128, const21=4403336, const22=4403336, const23=4403344, const24=4403344;
 	
 	
 	public GeomInfo(ByteBuffer in) {
@@ -40,6 +40,19 @@ public class GeomInfo extends Block {
 		const22 = in.getInt();
 		const23 = in.getInt();
 		const24 = in.getInt();
+	}
+
+	public GeomInfo() {
+	}
+	
+	public void setHeaderVanilla() {
+		filename = "GEOMETRY.BIN";
+		blockname = "DEFAULT";
+	}
+	
+	public void setHeaderCtk() {
+		filename = "NFS-CarToolkit by nfsu360 | Jul  7 2020";
+		blockname = "TOOLKIT";
 	}
 
 	@Override

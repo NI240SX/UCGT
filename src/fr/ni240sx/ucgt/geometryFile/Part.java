@@ -1,31 +1,20 @@
 package fr.ni240sx.ucgt.geometryFile;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Comparator;
-
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.binstuff.Hash;
-import fr.ni240sx.ucgt.collisionsEditor.CollisionBound;
-import fr.ni240sx.ucgt.collisionsEditor.CollisionsEditor;
 import fr.ni240sx.ucgt.compression.Compression;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.geometryFile.part.*;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.input.KeyCode;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.Mesh_VertsHeader;
 
 public class Part extends Block {
 
 	public GeomBlock getBlockID() {return GeomBlock.Part;}
-	
-	public int partKey;
 	
 	public int decompressedLength;
 	public int compressedLength;
@@ -45,11 +34,10 @@ public class Part extends Block {
 	
 	public String kit;
 	public String part;
-//	public byte autosculptZone = -1;
 	public String lod;
 	
 	public Part(ByteBuffer in, int partKey) {
-		this.partKey = partKey;		
+		
 		in.order(ByteOrder.LITTLE_ENDIAN);
 		in.getInt(); //ID
 		var blockLength = in.getInt();
@@ -60,7 +48,6 @@ public class Part extends Block {
 			if ((block = Block.read(in)) != null) subBlocks.add(block);
 		}
 		
-		//TODO read blocks properly and find partName
 		// SUB-BLOCKS PRE-TREATMENT TO REFERENCE THEM ALL
 		// if there's more than one block only the last one is taken into account
 		for (var b : subBlocks) {
@@ -101,17 +88,35 @@ public class Part extends Block {
 		if (header != null) {
 			if (new Hash(header.partName).binHash != partKey) System.out.println("WARNING : incorrect part name "+header.partName);
 			
-			kit = "KIT" + header.partName.split("_KIT")[1].split("_")[0];
-			lod = header.partName.split("_")[header.partName.split("_").length-1];
+			findKitLodPart();
+		}
+	}
+
+
+	public void findKitLodPart() {
+		kit = "KIT" + header.partName.split("_KIT")[1].split("_")[0];
+		lod = header.partName.split("_")[header.partName.split("_").length-1];
 //			String s = header.partName.split("_")[header.partName.split("_").length-2];
 //			if (s.length() == 2 && s.charAt(0) == 'T') autosculptZone = Byte.parseByte(s.substring(1));
-			part = header.partName.split(kit+"_")[1].substring(0, header.partName.split(kit+"_")[1].length()-2) /*.replace("_T"+autosculptZone, "")*/;
+		part = header.partName.split(kit+"_")[1].substring(0, header.partName.split(kit+"_")[1].length()-2) /*.replace("_T"+autosculptZone, "")*/;
 //			if (autosculptZone == -1) 
 //				System.out.println("Kit : "+kit+", part : "+part+", lod : "+lod);
 //			else System.out.println("Kit : "+kit+", part : "+part+", autosculpt : T"+autosculptZone+", lod : "+lod);
-		}
 	}
 	
+
+	public Part(String carname, String substring) {
+
+		this.header = new PartHeader(carname+"_"+substring);
+		this.texusage = new TexUsage();
+		this.strings = new Strings();
+		this.shaderlist = new Shaders();
+		this.mesh = new Mesh();
+		
+		findKitLodPart();
+	}
+
+
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 		var out = new ByteArrayOutputStream();
@@ -142,13 +147,56 @@ public class Part extends Block {
 	
 	public void precompress() throws IOException, InterruptedException {
 		
-		//TODO check partKey according to the partName
-		
 		var partBytes = this.save(0);
 		decompressedLength = partBytes.length;
 		
 		compressedData  = Compression.compress(partBytes, "RFPK", defaultCompressionLevel);
 		compressedLength = compressedData.length + 24;
+	}
+	
+	public void rebuildSubBlocks() {
+		subBlocks.clear();
+		subBlocks.add(header);
+		subBlocks.add(texusage);
+		subBlocks.add(strings);
+		subBlocks.add(shaderlist);
+		if (mpoints != null) subBlocks.add(mpoints);
+		subBlocks.add(mesh);
+		if (asLinking != null) subBlocks.add(asLinking);
+		if (asZones != null) subBlocks.add(asZones);
+		
+		mesh.subBlocks.clear();
+		mesh.subBlocks.add(mesh.info);
+		mesh.subBlocks.add(mesh.shadersUsage);
+		mesh.subBlocks.add(mesh.materials);
+		for (var v : mesh.verticesBlocks) {
+			mesh.subBlocks.add(new Mesh_VertsHeader());
+			mesh.subBlocks.add(v);
+		}
+		mesh.subBlocks.add(mesh.triangles);
+	}
+	
+	public void computeBounds() {
+		this.header.boundsXmax = Float.NEGATIVE_INFINITY;
+		this.header.boundsYmax = Float.NEGATIVE_INFINITY;
+		this.header.boundsZmax = Float.NEGATIVE_INFINITY;
+		this.header.boundsXmin = Float.POSITIVE_INFINITY;
+		this.header.boundsYmin = Float.POSITIVE_INFINITY;
+		this.header.boundsZmin = Float.POSITIVE_INFINITY;
+		for (var vb : this.mesh.verticesBlocks) for (var v : vb.vertices) {
+			if (v.posX > header.boundsXmax) header.boundsXmax = (float)v.posX;
+			if (v.posY > header.boundsYmax) header.boundsYmax = (float)v.posY;
+			if (v.posZ > header.boundsZmax) header.boundsZmax = (float)v.posZ;
+			if (v.posX < header.boundsXmin) header.boundsXmin = (float)v.posX;
+			if (v.posY < header.boundsYmin) header.boundsYmin = (float)v.posY;
+			if (v.posZ < header.boundsZmin) header.boundsZmin = (float)v.posZ;
+		}
+		header.boundsXmax += 0.01;
+		header.boundsYmax += 0.01;
+		header.boundsZmax += 0.01;
+		header.boundsXmin -= 0.01;
+		header.boundsYmin -= 0.01;
+		header.boundsZmin -= 0.01;
 	}
 	
 	public ArrayList<Integer> generateASZones() {
@@ -158,84 +206,4 @@ public class Part extends Block {
 		}
 		return zones;
 	}
-
-	
-	public static void main(String[] args) {
-		try {
-			long t = System.currentTimeMillis();
-			
-//			Block.doNotRead.put(GeomBlock.Part_Mesh, true);
-			
-			File f;
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BASE_A"));
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_MUFFLER_05_C"));
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKE_FRONT_A"));
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKE_REAR_A"));
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_FENDER_FRONT_RIGHT_T1_A"));
-			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_BUMPER_FRONT_A"));
-
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_A"));
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_A"));
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_T0_A"));
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_T0_A"));
-
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_C"));
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_C"));
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_T0_C"));
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_T0_C"));
-
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_B"));
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_B"));
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_T0_B"));
-//			FileInputStream fis = new FileInputStream(f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_T0_B"));
-
-			byte [] arr = new byte[(int)f.length()];
-			fis.read(arr);
-			fis.close();
-			
-			System.out.println("File loaded in "+(System.currentTimeMillis()-t)+" ms.");
-			t = System.currentTimeMillis();
-
-			var part = new Part(ByteBuffer.wrap(arr), new Hash("AUD_RS4_STK_08_KIT00_BASE_A").binHash);
-			
-			System.out.println("Part read in "+(System.currentTimeMillis()-t)+" ms.");
-			t = System.currentTimeMillis();
-
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BASE_A-recompiled"));
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_MUFFLER_05_C-recompiled"));
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKE_FRONT_A-recompiled"));
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKE_REAR_A-recompiled"));
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_FENDER_FRONT_RIGHT_T1_A-recompiled"));
-			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_BUMPER_FRONT_A-recompiled"));
-
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_A-recompiled"));
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_A-recompiled"));
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_T0_A-recompiled"));
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_T0_A-recompiled"));
-
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_C-recompiled"));
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_C-recompiled"));
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_T0_C-recompiled"));
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_T0_C-recompiled"));
-
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_B-recompiled"));
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_B-recompiled"));
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_LEFT_T0_B-recompiled"));
-//			var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KITW01_DOOR_REAR_RIGHT_T0_B-recompiled"));
-
-			fos.write(part.save(0));
-			fos.close();
-						
-			System.out.println("File saved in "+(System.currentTimeMillis()-t)+" ms.");
-			t = System.currentTimeMillis();
-
-		
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}	
-	}	
 }

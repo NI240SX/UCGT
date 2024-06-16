@@ -1,82 +1,124 @@
 package fr.ni240sx.ucgt.geometryFile.part.mesh;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 public class Vertex {
-	public float posX=0;
-	public float posY=0;
-	public float posZ=0;
-	public float posW=0;
+	public double posX=0x0CCD/3276.8; //position
+	public double posY=0x0CCD/3276.8;
+	public double posZ=0x0CCD/3276.8;
+	public double posW=0x0CCD/3276.8;
 	
-	public float texU=0;
-	public float texV=0;
+	public double texU=0.0; //texcoord
+	public double texV=0.0;
 	
-	public float unknX=0;
-	public float unknY=0;
+	public byte colorR=(byte) 255; //color
+	public byte colorG=(byte) 255;
+	public byte colorB=(byte) 255;
+	public byte colorA=(byte) 255;
 
-	public float normX=1;
-	public float normY=0;
-	public float normZ=0;
-	public float normW=1;
+	public double normX=0x7FFF/32768.0; //normals
+	public double normY=0.0;
+	public double normZ=0.0;
+	public double normW=0x7FFF/32768.0;
 
-	public float norm2X=0;
-	public float norm2Y=0;
-	public float norm2Z=0;
-	public float norm2W=0;
+	public double tanX=0.0; //tangents, usually no data included
+	public double tanY=0.0;
+	public double tanZ=0.0;
+	public double tanW=0.0;
 	
 	public Vertex(ByteBuffer in) {
-		posX = (float)(in.getShort())*10/32768;
-		posY = (float)(in.getShort())*10/32768;
-		posZ = (float)(in.getShort())*10/32768;
-		posW = (float)(in.getShort())*10/32768;
+		posX = (double)(in.getShort())/3276.8; //half4
+		posY = (double)(in.getShort())/3276.8;
+		posZ = (double)(in.getShort())/3276.8;
+		posW = (double)(in.getShort())/3276.8;
 		
-		texU = (float)(in.getShort())/1024;
-		texV = (1-(float)(in.getShort())/1024);
+		texU = (double)(in.getShort())/1024.0;	//half2
+		texV = (double)(1-(in.getShort())/1024.0);
+
+		colorR = in.get();	//color
+		colorG = in.get();
+		colorB = in.get();
+		colorA = in.get();
 		
-		unknX = (float)(in.getShort())*10/32768;
-		unknY = (float)(in.getShort())*10/32768;
+		normX = (double)(in.getShort())/32768.0; //dec4n
+		normY = (double)(in.getShort())/32768.0;
+		normZ = (double)(in.getShort())/32768.0;
+		normW = (double)(in.getShort())/32768.0;
 
-		normX = (float)(in.getShort())/32768;
-		normY = (float)(in.getShort())/32768;
-		normZ = (float)(in.getShort())/32768;
-		normW = (float)(in.getShort())/32768;
-
-		norm2X = (float)(in.getShort())/32768;
-		norm2Y = (float)(in.getShort())/32768;
-		norm2Z = (float)(in.getShort())/32768;
-		norm2W = (float)(in.getShort())/32768;
+		tanX = (double)(in.getShort())/32768.0; //dec4n
+		tanY = (double)(in.getShort())/32768.0;
+		tanZ = (double)(in.getShort())/32768.0;
+		tanW = (double)(in.getShort())/32768.0;
 		
 //		System.out.println(this);
 	}
 
+	public Vertex() {
+	}
+
 	public void save(ByteBuffer out) {
-		out.putShort((short) (posX*32768/10));
-		out.putShort((short) (posY*32768/10));
-		out.putShort((short) (posZ*32768/10));
-		out.putShort((short) (posW*32768/10));
+		out.putShort((short) (posX*3276.8));
+		out.putShort((short) (posY*3276.8));
+		out.putShort((short) (posZ*3276.8));
+		out.putShort((short) (posW*3276.8));
 
 		out.putShort((short) (texU*1024));
 		out.putShort((short) ((1-texV)*1024));
 
-		out.putShort((short) (unknX*32768/10));
-		out.putShort((short) (unknY*32768/10));
-
+		out.put(colorR);
+		out.put(colorG);
+		out.put(colorB);
+		out.put(colorA);
+		
 		out.putShort((short) (normX*32768));
 		out.putShort((short) (normY*32768));
 		out.putShort((short) (normZ*32768));
 		out.putShort((short) (normW*32768));
 
-		out.putShort((short) (norm2X*32768));
-		out.putShort((short) (norm2Y*32768));
-		out.putShort((short) (norm2Z*32768));
-		out.putShort((short) (norm2W*32768));
+		out.putShort((short) (tanX*32768));
+		out.putShort((short) (tanY*32768));
+		out.putShort((short) (tanZ*32768));
+		out.putShort((short) (tanW*32768));
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(colorA, colorB, colorG, colorR, normW, normX, normY, normZ, posW, posX, posY, posZ, tanW,
+				tanX, tanY, tanZ, texU, texV);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Vertex other = (Vertex) obj;
+		return colorA == other.colorA && colorB == other.colorB && colorG == other.colorG && colorR == other.colorR
+				&& Double.doubleToLongBits(normW) == Double.doubleToLongBits(other.normW)
+				&& Double.doubleToLongBits(normX) == Double.doubleToLongBits(other.normX)
+				&& Double.doubleToLongBits(normY) == Double.doubleToLongBits(other.normY)
+				&& Double.doubleToLongBits(normZ) == Double.doubleToLongBits(other.normZ)
+				&& Double.doubleToLongBits(posW) == Double.doubleToLongBits(other.posW)
+				&& Double.doubleToLongBits(posX) == Double.doubleToLongBits(other.posX)
+				&& Double.doubleToLongBits(posY) == Double.doubleToLongBits(other.posY)
+				&& Double.doubleToLongBits(posZ) == Double.doubleToLongBits(other.posZ)
+				&& Double.doubleToLongBits(tanW) == Double.doubleToLongBits(other.tanW)
+				&& Double.doubleToLongBits(tanX) == Double.doubleToLongBits(other.tanX)
+				&& Double.doubleToLongBits(tanY) == Double.doubleToLongBits(other.tanY)
+				&& Double.doubleToLongBits(tanZ) == Double.doubleToLongBits(other.tanZ)
+				&& Double.doubleToLongBits(texU) == Double.doubleToLongBits(other.texU)
+				&& Double.doubleToLongBits(texV) == Double.doubleToLongBits(other.texV);
 	}
 
 	@Override
 	public String toString() {
 		return "Vertex [posX=" + posX + ", posY=" + posY + ", posZ=" + posZ + ", posW=" + posW + ", texU=" + texU
-				+ ", texV=" + texV + ", unknX=" + unknX + ", unknY=" + unknY + ", normX=" + normX + ", normY=" + normY
-				+ ", normZ=" + normZ + ", normW=" + normW + ", norm2X=" + norm2X + ", norm2Y=" + norm2Y + ", norm2Z="
-				+ norm2Z + ", norm2W=" + norm2W + "]";
+				+ ", texV=" + texV + ", colorR=" + colorR + ", colorG=" + colorG + ", colorB=" + colorB + ", colorA="
+				+ colorA + ", normX=" + normX + ", normY=" + normY + ", normZ=" + normZ + ", normW=" + normW + ", tanX="
+				+ tanX + ", tanY=" + tanY + ", tanZ=" + tanZ + ", tanW=" + tanW + "]";
 	}
 }

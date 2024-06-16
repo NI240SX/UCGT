@@ -1,8 +1,5 @@
 package fr.ni240sx.ucgt.geometryFile;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
-import fr.ni240sx.ucgt.collisionsEditor.CollisionBound.BoundConstraintType;
-
 public enum GeomBlock {
 	Padding(0x00000000, "Padding"),
 	Geometry(0x00401380, "Geometry"),
@@ -22,7 +19,7 @@ public enum GeomBlock {
 	Part_Mesh_Info(0x00491300, "Part_Mesh_Info"),
 	Part_Mesh_ShadersUsage(0x014F1300, "Part_Mesh_Shaders"),
 	Part_Mesh_Materials(0x02491300, "Part_Mesh_Materials"),
-	Part_Mesh_UNKNOWN(0x024C1300, "Part_Mesh_???"),
+	Part_Mesh_VertsHeader(0x024C1300, "Part_Mesh_VertsHeader"),
 	Part_Mesh_Vertices(0x01491300, "Part_Mesh_Vertices"),
 	Part_Mesh_Triangles(0x03491300, "Part_Mesh_Triangles"),
 	Part_Padding(0x17401300, "Part_Padding?"),

@@ -1,6 +1,5 @@
 package fr.ni240sx.ucgt.geometryFile.part;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -9,10 +8,6 @@ import java.util.ArrayList;
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
-import fr.ni240sx.ucgt.geometryFile.Geometry;
-import fr.ni240sx.ucgt.geometryFile.Part;
-import javafx.geometry.Point3D;
-import javafx.util.Pair;
 
 public class MPoints extends Block {
 
@@ -31,7 +26,8 @@ public class MPoints extends Block {
 		while(in.position() < blockStart+blockLength) {
 			var mp = new MPoint();
 			mpoints.add(mp);
-			mp.key = in.getInt();
+			int key = in.getInt();
+			mp.nameHash = new Hash(String.format("0x%08X", key), key);
 			in.getInt(); //0
 			in.getInt(); //0
 			in.getInt(); //0
@@ -56,10 +52,9 @@ public class MPoints extends Block {
 			mp.positionZ = in.getFloat();
 			mp.scale = in.getFloat();
 		}
-		
-//		for (var p : texusage) {
-//			System.out.println("Texture "+Integer.toHexString(p.getKey())+" has usage "+Usage.get(p.getValue()).getName());
-//		}
+	}
+
+	public MPoints() {
 	}
 
 	@Override
@@ -75,7 +70,7 @@ public class MPoints extends Block {
 		Block.makeAlignment(out, alignment, (byte) 0x11);
 
 		for (var mp : mpoints) {
-			out.putInt(mp.key);
+			out.putInt(mp.nameHash.binHash);
 			out.putInt(0);
 			out.putInt(0);
 			out.putInt(0);

@@ -29,6 +29,9 @@ public class TexUsage extends Block {
 //		}
 	}
 
+	public TexUsage() {
+	}
+
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 

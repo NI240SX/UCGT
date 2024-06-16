@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.List;
 
 // Contains code from 379Felipe
 public class Hash {
@@ -56,7 +57,7 @@ public class Hash {
 	}
 	
 	/**
-	 * BIN Hash only !
+	 * BIN Hash only ! Force a label on a hash
 	 * @param label
 	 * @param hex
 	 */
@@ -248,7 +249,7 @@ public class Hash {
 	 * @param type "BIN" or "VLT"
 	 * @return
 	 */
-	public static Hash guess(int hash, ArrayList<Hash> hashlist, String defaultName, String type) {
+	public static Hash guess(int hash, List<Hash> hashlist, String defaultName, String type) {
 		if (hash==0) return new Hash("");
 		for (Hash h : hashlist) {
 			if (h.binHash == hash || h.reversedBinHash == hash || h.vltHash == hash || h.reversedVltHash == hash) {

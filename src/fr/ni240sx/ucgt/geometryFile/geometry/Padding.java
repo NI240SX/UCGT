@@ -20,8 +20,6 @@ public class Padding extends Block {
 		var blockStart = in.position();
 		in.position(blockStart+length);
 	}
-
-	//TODO will need another save() method to create proper padding with proper saving
 	
 	@Override
 	public byte[] save(int currentPosition) throws IOException {

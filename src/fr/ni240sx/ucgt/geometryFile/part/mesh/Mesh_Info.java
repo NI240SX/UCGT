@@ -1,14 +1,10 @@
 package fr.ni240sx.ucgt.geometryFile.part.mesh;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
-import javafx.util.Pair;
 
 public class Mesh_Info extends Block {
 
@@ -19,9 +15,10 @@ public class Mesh_Info extends Block {
 	public int const01 = 0;
 	public int const02 = 0;
 	public int const03 = 48;
-	public short const04_1 = 0x4180; //flags, may be linked to how simplified the part is : 0x8041A302 = full part, 80410000 = less detail (brake, exhaust_tip)
-	public short const04_2 = 0x02A3;
-	
+
+	//flags, may be linked to how simplified the part is : 0x8041A302 = full part, 80410000 = less detail (brake, exhaust_tip)
+	public byte[] flags = {(byte) 0x80, 0x41, (byte) 0xA3, 0x02};
+			
 	public int numMaterials = 0;
 	public int const12 = 0; //these constants are most likely always 0
 	public int const13 = 0;
@@ -41,8 +38,9 @@ public class Mesh_Info extends Block {
 	public int const42 = 0;
 	
 	public Mesh_Info(ByteBuffer in) {
-		var blockLength = in.getInt();
-		var blockStart = in.position();
+		//var blockLength = 
+		in.getInt();
+		//var blockStart = in.position();
 
 		while(in.getInt() == 0x11111111) {} // skip alignment
 		in.position(in.position()-4);
@@ -50,8 +48,8 @@ public class Mesh_Info extends Block {
 		const01 = in.getInt();
 		const02 = in.getInt();
 		const03 = in.getInt();
-		const04_1 = in.getShort();
-		const04_2 = in.getShort();
+		
+		in.get(flags);
 		
 		numMaterials = in.getInt();
 		const12 = in.getInt();
@@ -72,6 +70,9 @@ public class Mesh_Info extends Block {
 		const42 = in.getInt();
 	}
 
+	public Mesh_Info() {
+	}
+
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 
@@ -87,8 +88,8 @@ public class Mesh_Info extends Block {
 		out.putInt(const01);
 		out.putInt(const02);
 		out.putInt(const03);
-		out.putShort(const04_1);
-		out.putShort(const04_2);
+		
+		out.put(flags);
 		
 		out.putInt(numMaterials);
 		out.putInt(const12);

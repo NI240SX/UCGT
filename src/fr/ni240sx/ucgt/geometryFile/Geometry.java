@@ -5,7 +5,6 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -13,7 +12,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -22,20 +23,25 @@ import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.compression.Compression;
 import fr.ni240sx.ucgt.geometryFile.geometry.*;
+import fr.ni240sx.ucgt.geometryFile.part.AutosculptLinking;
 import fr.ni240sx.ucgt.geometryFile.part.AutosculptZones;
 import fr.ni240sx.ucgt.geometryFile.part.MPoint;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
-import fr.ni240sx.ucgt.testing.GeomDump;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
+import fr.ni240sx.ucgt.geometryFile.sorters.MPointSorterName;
+import fr.ni240sx.ucgt.geometryFile.sorters.MaterialsSorterName;
+import fr.ni240sx.ucgt.geometryFile.sorters.PartSorterLodKitName;
 
 public class Geometry extends Block {
 
 	public GeomBlock getBlockID() {return GeomBlock.Geometry;}
 	
 	public GeomHeader geomHeader;
-	public ArrayList<Part> parts = new ArrayList<Part>();
-	public ArrayList<Material> materials = new ArrayList<Material>();
-	public ArrayList<MPoint> mpoints = new ArrayList<MPoint>();
-	public ArrayList<Hash> hashlist = new ArrayList<Hash>();
+	public List<Part> parts = Collections.synchronizedList(new ArrayList<Part>());
+	public List<Material> materials = Collections.synchronizedList(new ArrayList<Material>());
+	public List<MPoint> mpoints = Collections.synchronizedList(new ArrayList<MPoint>());
+	public List<Hash> hashlist = Collections.synchronizedList(new ArrayList<Hash>());
+	public List<AutosculptLinking> asLinking = Collections.synchronizedList(new ArrayList<AutosculptLinking>());
 	
 	public String carname = "CAR";
 	
@@ -67,22 +73,61 @@ public class Geometry extends Block {
 		// read the header, if this goes wrong the file is probably corrupted or smth
 		geomHeader = (GeomHeader) Block.read(in);
 		
-		// decompress and read parts by offsets
-		for (var o : geomHeader.partsOffsets.partOffsets) { //.values()
-			byte[] partData = new byte[o.sizeDecompressed];
-			ByteBuffer dataWriter = ByteBuffer.wrap(partData);
-			
-			in.position(o.offset);
-			//loops on the one or multiple compressed blocks
-			while (in.position() < o.offset + o.sizeCompressed) {
-				CompressedData d = (CompressedData) Block.read(in);
-				dataWriter.put(d.decompressionOffset, Compression.decompress(d.data));
+		//load from offsets
+//		if (USE_MULTITHREADING) {
+//			ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+//			for (final var o : geomHeader.partsOffsets.partOffsets){
+//			    pool.execute(new Runnable() {
+//			        @Override
+//			        public void run() { //for each offset load the corresponding data into memory
+//			        	byte[] partData = new byte[o.sizeDecompressed];
+//						ByteBuffer dataWriter = ByteBuffer.wrap(partData);
+//						
+//						ByteBuffer threadedIn = ByteBuffer.wrap(in.array());
+//						threadedIn.order(ByteOrder.LITTLE_ENDIAN);
+//						
+//						threadedIn.position(o.offset);
+//						//loops on the one or multiple compressed blocks
+//						while (threadedIn.position() < o.offset + o.sizeCompressed) {
+//							CompressedData d = (CompressedData) Block.read(threadedIn);
+//							dataWriter.put(d.decompressionOffset, Compression.decompress(d.data));
+//						}
+//						
+//						dataWriter.position(0);
+//						parts.add(new Part(dataWriter, o.partKey));
+//			        }
+//			    });
+//			}
+//			pool.shutdown();
+//			// wait for them to finish for up to one minute.
+//			try {
+//				pool.awaitTermination(10, TimeUnit.MINUTES);
+//			} catch (InterruptedException e) {
+//				System.out.println("Critical failure ! Please disable multi-threading.");
+//				e.printStackTrace();
+//			}
+//		} else { // useful for debugging
+			for (var o : geomHeader.partsOffsets.partOffsets) { //.values()
+				byte[] partData = new byte[o.sizeDecompressed];
+				ByteBuffer dataWriter = ByteBuffer.wrap(partData);
+				
+				in.position(o.offset);
+				//loops on the one or multiple compressed blocks
+				while (in.position() < o.offset + o.sizeCompressed) {
+					CompressedData d = (CompressedData) Block.read(in);
+					dataWriter.put(d.decompressionOffset, Compression.decompress(d.data));
+				}
+				
+				dataWriter.position(0);
+				parts.add(new Part(dataWriter, o.partKey));	
 			}
-			
-			dataWriter.position(0);
-			parts.add(new Part(dataWriter, o.partKey));
-			
-		}
+//		}
+
+		
+		
+		
+		
+		
 
 		try {
 			carname = parts.get(0).header.partName.split("_KIT")[0];
@@ -96,78 +141,37 @@ public class Geometry extends Block {
 		
 		// check global materials, markers, update names and hashes, optimize the file
 		
-		var toRemove = new ArrayList<Part>(); // parts flagged to be removed to optimize the geometry (eg T0 autosculpt with no other actual morphtargets)
-		for (var p : parts) { // iterate on parts, TODO multithread it, use var toRemove = Collections.synchronizedList(new ArrayList<Part>());
-//			System.out.println(p.kit+"_"+p.part+"_"+p.lod);
+//		for (var p : parts) { // iterate on parts, TODO multithread it, use var toRemove = Collections.synchronizedList(new ArrayList<Part>());
+////			System.out.println(p.kit+"_"+p.part+"_"+p.lod);
+//			computeMatsList(p);
+//			computeMarkersList(p);
+//		}
 
-			
-			// AUTOSCULPT OPTIMIZATION - has to be moved to the saving method
-			
-//			ArrayList<Integer> tempZones = new ArrayList<Integer>();
-			int numZonesFound = 0;
-			Part potentialUselessT0 = null;
-			//link autosculpt zones
-			for (var p2 : parts) if (p2 != p) {
-														//T0-9														T10-99
-				if ((p2.part.substring(0, p2.part.length()-1).equals(p.part+"_T") || p2.part.substring(0, p2.part.length()-2).equals(p.part+"_T"))
-						&& p2.kit.equals(p.kit) && p2.lod.equals(p.lod)) { // as zone found
-//					tempZones.add(new Hash(p2.header.partName).binHash); //TODO assuming the header exists and is up to date
-					potentialUselessT0 = p2;
-					numZonesFound++;
-				}
+//		if (USE_MULTITHREADING) {
+//			ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+//			for (final var p : parts){
+//			    pool.execute(new Runnable() {
+//			        @Override
+//			        public void run() {
+//			        	computeMatsList(p);
+//			        	computeMarkersList(p);
+//			        }
+//			    });
+//			}
+//			pool.shutdown();
+//			// wait for them to finish for up to one minute.
+//			try {
+//				pool.awaitTermination(10, TimeUnit.MINUTES);
+//			} catch (InterruptedException e) {
+//				System.out.println("Critical failure ! Please disable multi-threading.");
+//				e.printStackTrace();
+//			}
+//		} else { // useful for debugging
+			for (var p : parts) {
+				computeMatsList(p);
+				computeMarkersList(p);
 			}
-			
-			if (numZonesFound == 1) { //if only one zone detected, check whether it is T0, if yes yeet it, it should have no point existing
-//				System.out.println("Warning : only one autosculpt zone on "+p.kit+"_"+p.part+"_"+p.lod);
-				toRemove.add(potentialUselessT0);
-//				tempZones.clear();
-			}
-			
-			if (p.asZones != null) {
-				if (numZonesFound < 2) { //preexisting but no as zones detected
-					p.subBlocks.remove(p.asZones);
-					p.asZones = null;
-//					System.out.println("Removed unused autosculpt zones on "+p.kit+"_"+p.part+"_"+p.lod);
-				}
-			} else if (numZonesFound > 1) { //nothing preexisting but as zones detected
-				p.asZones = new AutosculptZones();
-				p.asZones.zones = p.generateASZones();
-				p.subBlocks.add(p.asZones);
-				System.out.println("Added autosculpt zones on "+p.kit+"_"+p.part+"_"+p.lod);
-			}
-			
-			
-			// MESH MATERIALS OPTIMIZATION + GLOBAL MATERIALS (only the global materials part should be kept here)
-			
-			if (p.mesh != null) for (var m : p.mesh.materials.materials) {	
-				m.tryGuessHashes(this, p);
-
-				//destructive tests 
-//				m.tryGuessUsageSpecific();
-//				m.tryGuessFlags(this);
-//				m.tryGuessDefaultTex();
-				m.removeUnneeded();
-				
-				if (!materials.contains(m)) {
-					materials.add(m); // this gets random vertex and triangle data, these can be ignored and will be computed if a mesh is imported
-				}
-			}
-			
-			// GLOBAL MARKERS STORAGE
-			if (p.mpoints != null) for (var mp : p.mpoints.mpoints) {
-				mpoints.add(mp);
-				mp.part = p.header.partName.replace(carname+"_", "");
-				mp.tryGuessName(this, p);
-			}
-		}
-		
-		
-		//remove parts flagged as useless, TODO move to the saving method
-
-		for (var p : toRemove) {
-//			System.out.println("Removing part "+p.header.partName);
-			parts.remove(p);
-		}
+//		}
 
 
 		// sort lists
@@ -175,25 +179,116 @@ public class Geometry extends Block {
 		parts.sort(new PartSorterLodKitName()); //not necessary but makes the file look cleaner
 		materials.sort(new MaterialsSorterName());
 		mpoints.sort(new MPointSorterName());
-		
-		for (var m : materials) { //TODO move this list to a new class GlobalMaterials
-			var name = m.generateName().replace(carname+"_", "").replace("KIT00_", "");
-			if (name.length()>38) name = name.substring(0, 38);
-			int duplicate = 0;
-			for (var m2 : materials) {
-				if (m2.uniqueName.contains(name)) {
-					duplicate++;
+	}
+
+	private void computeMarkersList(Part p) {
+		// GLOBAL MARKERS STORAGE
+		if (p.mpoints != null) for (var mp : p.mpoints.mpoints) {
+			
+			if (!mpoints.contains(mp)) {
+				mpoints.add(mp);
+				mp.parts.add(p);
+				mp.tryGuessName(this, p);
+				String name = "_"+ mp.nameHash.label + "_" + p.kit;
+				int duplicate = 0;
+				for (var m2 : mpoints) {
+					if (m2.uniqueName.contains(name)) {
+						duplicate++;
+					}
 				}
+				if (duplicate != 0) {
+					name += "-"+duplicate;
+				}
+				mp.uniqueName = name;
+			}else {
+				// if there's already the exact same marker, affect it to more parts
+				mpoints.get(mpoints.indexOf(mp)).parts.add(p);
 			}
-			if (duplicate != 0) {
-				name += "-"+duplicate;
-			}
-			m.uniqueName = name;
 		}
-		System.out.println(materials.size() + " global materials");
+	}
+
+	private void computeMatsList(Part p) {
+		HashMap<ShaderUsage, Integer> FERenderData;
+		// MESH MATERIALS OPTIMIZATION + GLOBAL MATERIALS (only the global materials part should be kept here)
+		
+		FERenderData = new HashMap<ShaderUsage, Integer>();
+		if (p.mesh != null) for (var m : p.mesh.materials.materials) {	
+			m.tryGuessHashes(this, p);
+
+			//destructive tests 
+//				m.tryGuessUsageSpecific();
+//				m.tryGuessFlags(this);
+//				m.tryGuessDefaultTex();
+
+			m.tryGuessFEData(FERenderData);
+			
+			if (!materials.contains(m)) { 
+				// if the global materials list doesn't contain a material matching this one, add it
+				// matching here means it has the same texture hashes, shader usage, etc but not the same mesh data
+				// this gets random vertex and triangle data, these are ignored for that list and will be computed if a mesh is imported
+				materials.add(m); 
+				var name = m.generateName().replace(carname+"_", "").replace("KIT00_", "");
+				if (name.length()>38) name = name.substring(0, 38);
+				int duplicate = 0;
+				for (var m2 : materials) {
+					if (m2.uniqueName.contains(name)) {
+						duplicate++;
+					}
+				}
+				if (duplicate != 0) {
+					name += "-"+duplicate;
+				}
+				m.uniqueName = name;
+
+			} else {
+				// if the material already exists, we'll need the name for model exporting
+				m.uniqueName = materials.get(materials.indexOf(m)).uniqueName;
+			}
+		}
+	}
+
+	private void optimizeAutosculpt(List<Part> toRemove, Part p) {
+		// AUTOSCULPT OPTIMIZATION - has to be moved to the saving method
+		
+//			ArrayList<Integer> tempZones = new ArrayList<Integer>();
+		int numZonesFound = 0;
+		Part potentialUselessT0 = null;
+		//link autosculpt zones
+		for (var p2 : parts) if (p2 != p) {
+													//T0-9														T10-99
+			if ((p2.part.substring(0, p2.part.length()-1).equals(p.part+"_T") || p2.part.substring(0, p2.part.length()-2).equals(p.part+"_T"))
+					&& p2.kit.equals(p.kit) && p2.lod.equals(p.lod)) { // as zone found
+//					tempZones.add(new Hash(p2.header.partName).binHash); //TODO assuming the header exists and is up to date
+				potentialUselessT0 = p2;
+				numZonesFound++;
+			}
+		}
+		
+		if (numZonesFound == 1) { //if only one zone detected, check whether it is T0, if yes yeet it, it should have no point existing
+//				System.out.println("Warning : only one autosculpt zone on "+p.kit+"_"+p.part+"_"+p.lod);
+			toRemove.add(potentialUselessT0);
+//				tempZones.clear();
+		}
+		
+		if (p.asZones != null) {
+			if (numZonesFound < 2) { //preexisting but no as zones detected
+				p.subBlocks.remove(p.asZones);
+				p.asZones = null;
+//					System.out.println("Removed unused autosculpt zones on "+p.kit+"_"+p.part+"_"+p.lod);
+			}
+		} else if (numZonesFound > 1) { //nothing preexisting but as zones detected
+			p.asZones = new AutosculptZones();
+			p.asZones.zones = p.generateASZones();
+			p.subBlocks.add(p.asZones);
+			System.out.println("Added autosculpt zones on "+p.kit+"_"+p.part+"_"+p.lod);
+		}
 	}
 	
 	
+	public Geometry() {
+		this.geomHeader = new GeomHeader();
+	}
+
 	public void updateHashes() {
 		hashlist.clear();
 		hashlist.add(new Hash(carname));
@@ -202,6 +297,7 @@ public class Geometry extends Block {
 			for (var p : parts) {
 				hashlist.add(new Hash(p.header.partName));
 			} 
+			
 		} catch (Exception e) {}
 		
 		try {
@@ -252,34 +348,86 @@ public class Geometry extends Block {
 	 */
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
+
+		var toRemove = Collections.synchronizedList(new ArrayList<Part>()); // parts flagged to be removed to optimize the geometry (eg T0 autosculpt with no other actual morphtargets)
+		for (var p : parts) { // iterate on parts, TODO multithread it, use var toRemove = Collections.synchronizedList(new ArrayList<Part>());			
+			optimizeAutosculpt(toRemove, p);
+			
+			computeMatsList(p);
+			computeMarkersList(p);
+			if (p.mesh != null) for (var m : p.mesh.materials.materials) {	
+    			//destructive tests 
+//				m.tryGuessUsageSpecific();
+//				m.tryGuessFlags(this);
+//    			m.tryGuessDefaultTex();
+    			m.removeUnneeded();
+    		}
+		}
+
+//		for (var p : parts) {
+//			if (!p.header.partName.contains("KIT00_BASE_A")) {
+//				toRemove.add(p);
+//			}
+//		}
+		
+//		if (USE_MULTITHREADING) {
+//			ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+//			for (final var p : parts){
+//			    pool.execute(new Runnable() {
+//			        @Override
+//			        public void run() {
+//			        	optimizeAutosculpt(toRemove, p);
+//			        	
+//			        	computeMatsList(p);
+//			        	computeMarkersList(p);
+//			        	if (p.mesh != null) for (var m : p.mesh.materials.materials) {	
+//			    			//destructive tests 
+////			    				m.tryGuessUsageSpecific();
+////			    				m.tryGuessFlags(this);
+////			    				m.tryGuessDefaultTex();
+//
+//			    			m.removeUnneeded();
+//			    		}
+//			        }
+//			    });
+//			}
+//			pool.shutdown();
+//			// wait for them to finish for up to one minute.
+//			pool.awaitTermination(10, TimeUnit.MINUTES);
+//		} else { // useful for debugging
+//			for (var p : parts) {
+//				optimizeAutosculpt(toRemove, p);
+//				
+//				computeMatsList(p);
+//				computeMarkersList(p);
+//	        	if (p.mesh != null) for (var m : p.mesh.materials.materials) {	
+//	    			//destructive tests 
+////	    				m.tryGuessUsageSpecific();
+////	    				m.tryGuessFlags(this);
+////	    				m.tryGuessDefaultTex();
+//
+//	    			m.removeUnneeded();
+//	    		}
+//			}
+//		}
+		
+		//remove parts flagged as useless
+
+		for (var p : toRemove) {
+//			System.out.println("Removing part "+p.header.partName);
+			parts.remove(p);
+		}
+		
+		//sort things once again just in case
+		parts.sort(new PartSorterLodKitName());
+		materials.sort(new MaterialsSorterName());
+		mpoints.sort(new MPointSorterName());
 		
 		// first compresses all parts to get their compressed and decompressed size
 		// using RFPK compression but no blocks, hopefully the game recognizes it properly
 		System.out.println("Compressing parts...");
 
 		long t = System.currentTimeMillis();
-	
-		
-
-		
-		
-		//for debugging
-//		var toRemove = new ArrayList<Part>();
-//		for (var p : parts) {
-//			if (p.header.partName.contains("KITW01") && p.header.partName.contains("DOOR_REAR") && p.header.partName.contains("_B")) {
-//				toRemove.add(p);
-//				System.out.println(p.header.partName);
-//			}
-//		}
-//		
-//		for (var p : toRemove) {
-//			parts.remove(p);
-//		}
-
-		
-		// lists exported parts
-//		for (var p : parts) System.out.println(p.kit+"_"+p.part+"_"+p.lod);
-		
 		
 		if (USE_MULTITHREADING) {
 			ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
@@ -369,16 +517,17 @@ public class Geometry extends Block {
 		bw.write("=== CONFIGURATION FILE FOR CAR "+carname+" ===\n"
 				+ "UCGT by NI240SX\n"
 				+ "\n--- Settings ---\n");
-		bw.write("SETTING	CompressionLevel="+Part.defaultCompressionLevel.getName()+"\n")	;
+		bw.write("SETTING	CompressionLevel="+Part.defaultCompressionLevel.getName()+"\n"
+				+ "SETTING	CarName="+this.carname+"\n")	;
 
 		bw.write("\n--- Materials ---\n");
 		//MATERIAL	MATNAME	MATSHADER=ShaderUsage[...]	defTex=DEFAULTTEXTURE	flags=0XFLAGS000	DIFFUSE=DIFFUSE_TEX	...
 		for (var m : materials) {
-			bw.write(m.toConfig()+"\n");
+			bw.write(m.toConfig(carname)+"\n");
 		}
 		
 		bw.write("\n--- Position markers ---\n");
-		for (var mp : mpoints) bw.write(mp.toConfig()+"\n");
+		for (var mp : mpoints) bw.write(mp.toConfig());
 
 		bw.write("\n--- Autosculpt links ---\n"); //only links, autosculpt zones can be automated and renaming them really would be pointless
 		for (var p : parts) if (p.asLinking != null) bw.write(p.asLinking.toConfig(this, p)+"\n");
@@ -386,6 +535,13 @@ public class Geometry extends Block {
 		bw.close();
 		System.out.println("Configuration file written");
 	}
+	
+	
+	
+	
+	
+	
+	
 	
 	public static void main(String[] args) {
 		
@@ -438,22 +594,5 @@ public class Geometry extends Block {
 			e.printStackTrace();
 		}
 		
-	}
-}
-
-
-class PartSorterLodKitName implements Comparator<Part> {
-	public int compare(Part a, Part b) {
-		return (a.lod + a.kit + a.part).compareTo(b.lod + b.kit + b.part);
-	}
-}
-class MaterialsSorterName implements Comparator<Material>{
-	public int compare(Material o1, Material o2) {
-		return o1.generateName().compareTo(o2.generateName());
-	}
-}
-class MPointSorterName implements Comparator<MPoint>{
-	public int compare(MPoint o1, MPoint o2) {
-		return (o1.nameHash.label+o1.part).compareTo((o2.nameHash.label+o2.part));
 	}
 }

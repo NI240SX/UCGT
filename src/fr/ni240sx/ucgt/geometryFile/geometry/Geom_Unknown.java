@@ -13,7 +13,7 @@ public class Geom_Unknown extends Block {
 	
 	public Geom_Unknown(ByteBuffer in) {
 		var length = in.getInt();
-		var blockStart = in.position();
+//		var blockStart = in.position();
 		data = new byte[length];
 		in.get(data); //raw data if there's any
 

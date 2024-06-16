@@ -1,6 +1,5 @@
 package fr.ni240sx.ucgt.geometryFile.part.mesh;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -8,8 +7,6 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
-import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
-import javafx.util.Pair;
 
 public class Triangles extends Block {
 
@@ -34,6 +31,9 @@ public class Triangles extends Block {
 			t.vert3 = in.getShort();
 		}
 		in.position(blockStart+blockLength);
+	}
+
+	public Triangles() {
 	}
 
 	@Override

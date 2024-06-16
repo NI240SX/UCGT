@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
@@ -26,6 +27,9 @@ public class PartsList extends Block {
 		}
 	}
 
+	public PartsList() {
+	}
+
 	@Override
 	public byte[] save(int currentPosition) throws IOException {
 		var buf = ByteBuffer.wrap(new byte[partKeys.size()*8 + 8]);
@@ -39,10 +43,10 @@ public class PartsList extends Block {
 		return buf.array();
 	}
 
-	public void refresh(ArrayList<Part> parts) {
+	public void refresh(List<Part> parts) {
 		partKeys.clear();
 		for (var p : parts) {
-			partKeys.add(p.partKey);
+			partKeys.add(p.header.binKey);
 		}
 		partKeys.sort(new PartKeysSorter());
 	}

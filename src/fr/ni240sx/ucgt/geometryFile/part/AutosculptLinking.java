@@ -1,6 +1,5 @@
 package fr.ni240sx.ucgt.geometryFile.part;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -11,7 +10,6 @@ import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.Part;
-import javafx.util.Pair;
 
 public class AutosculptLinking extends Block {
 
@@ -21,6 +19,8 @@ public class AutosculptLinking extends Block {
 	public ArrayList<AutosculptLink> links = new ArrayList<AutosculptLink>();
 	
 	public static final int linkLength = 16;
+
+	public String tempPartName; //used only when loading from file
 	
 	public AutosculptLinking(ByteBuffer in) {
 		var blockLength = in.getInt();
@@ -36,6 +36,10 @@ public class AutosculptLinking extends Block {
 			l.passZone4 = in.getShort();
 			in.getInt(); //0
 		}
+	}
+
+	public AutosculptLinking() {
+		// TODO Auto-generated constructor stub
 	}
 
 	@Override

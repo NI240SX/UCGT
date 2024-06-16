@@ -50,7 +50,7 @@ public class CompressionLevel
     public String getName() {
     	return name;
     }
-    public CompressionLevel fromName(String name) {
+    public static CompressionLevel fromName(String name) {
     	switch (name) {
     	case "Maximum": return Maximum;
     	case "Ultra": return Ultra;

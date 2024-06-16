@@ -1,6 +1,5 @@
 package fr.ni240sx.ucgt.geometryFile.part.mesh;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -8,9 +7,7 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
-import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
-import javafx.util.Pair;
 
 public class Materials extends Block {
 
@@ -32,8 +29,8 @@ public class Materials extends Block {
 			materials.add(m);
 			var matStart = in.position();
 			
-			m.fromVertID = in.getInt();
-			m.toVertID = in.getInt();
+			m.fromTriVertID = in.getInt();
+			m.toTriVertID = in.getInt();
 			in.getInt(); //0 ?
 			m.usageSpecific1 = in.getInt(); 
 
@@ -50,7 +47,7 @@ public class Materials extends Block {
 			m.textureHash = in.getInt();
 			
 			in.get(m.flags);
-			m.numVertices = in.getInt();
+			m.numTriVertices = in.getInt();
 			
 			in.position(matStart+96);
 			m.frontendRenderingData = in.getInt();
@@ -75,6 +72,9 @@ public class Materials extends Block {
 		in.position(blockStart+blockLength);
 	}
 
+	public Materials() {
+	}
+
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 
@@ -87,50 +87,11 @@ public class Materials extends Block {
 		
 		Block.makeAlignment(out, alignment, (byte) 0x11);
 		
-		//randomize for the lolz
-		for (int i=0; i<0; i++) {
-			int randmat = (int)(Math.random()*(materials.size()-1));
-			int randmat2 = (int)(Math.random()*(materials.size()-1));
-	
-			var tp0 = materials.get(randmat).flags;
-			var tp1 = materials.get(randmat).shaderID;
-			var tp2 = materials.get(randmat).shaderUsage;
-			var tp3 = materials.get(randmat).textureHash;
-			var tp4 = materials.get(randmat).textureIDs;
-			var tp5 = materials.get(randmat).textures;
-			var tp6 = materials.get(randmat).textureUsages;
-			var tp7 = materials.get(randmat).usageSpecific1;
-			var tp8 = materials.get(randmat).usageSpecific2;
-			var tp9 = materials.get(randmat).usageSpecific3;
-	
-			materials.get(randmat).flags = materials.get(randmat2).flags;
-			materials.get(randmat).shaderID = materials.get(randmat2).shaderID;
-			materials.get(randmat).shaderUsage = materials.get(randmat2).shaderUsage;
-			materials.get(randmat).textureHash = materials.get(randmat2).textureHash;
-			materials.get(randmat).textureIDs = materials.get(randmat2).textureIDs;
-			materials.get(randmat).textures= materials.get(randmat2).textures;
-			materials.get(randmat).textureUsages= materials.get(randmat2).textureUsages;
-			materials.get(randmat).usageSpecific1= materials.get(randmat2).usageSpecific1;
-			materials.get(randmat).usageSpecific2 = materials.get(randmat2).usageSpecific2;
-			materials.get(randmat).usageSpecific3 = materials.get(randmat2).usageSpecific3;
-			
-	
-			materials.get(randmat2).flags = tp0;
-			materials.get(randmat2).shaderID = tp1;
-			materials.get(randmat2).shaderUsage = tp2;
-			materials.get(randmat2).textureHash = tp3;
-			materials.get(randmat2).textureIDs = tp4;
-			materials.get(randmat2).textures= tp5;
-			materials.get(randmat2).textureUsages= tp6;
-			materials.get(randmat2).usageSpecific1= tp7;
-			materials.get(randmat2).usageSpecific2 = tp8;
-			materials.get(randmat2).usageSpecific3 = tp9;
-		}
 		
 		for (var m : materials) {
 			int matStart = out.position();
-			out.putInt(m.fromVertID);
-			out.putInt(m.toVertID);
+			out.putInt(m.fromTriVertID);
+			out.putInt(m.toTriVertID);
 			out.putInt(0);
 			out.putInt(m.usageSpecific1);
 			
@@ -146,12 +107,12 @@ public class Materials extends Block {
 			Block.makeAlignment(out, 10-m.textureIDs.size(), (byte)-1);
 			//normally at pos 58
 			
-			out.put((byte)m.textures.size());
+			out.put((byte)m.textureIDs.size());
 			out.put(m.shaderID);
 			out.putInt(m.textureHash);
 			
 			out.put(m.flags);
-			out.putInt(m.numVertices);
+			out.putInt(m.numTriVertices);
 			
 			out.position(matStart+96);
 			out.putInt(m.frontendRenderingData);

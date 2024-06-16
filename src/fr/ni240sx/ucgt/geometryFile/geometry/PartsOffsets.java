@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.List;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
@@ -31,6 +31,9 @@ public class PartsOffsets extends Block {
 		}
 	}
 
+	public PartsOffsets() {
+	}
+
 	@Override
 	public byte[] save(int currentPosition) throws IOException {
 		var buf = ByteBuffer.wrap(new byte[partOffsets.size()*24 + 8]); 
@@ -48,10 +51,10 @@ public class PartsOffsets extends Block {
 		return buf.array();
 	}
 
-	public void refresh(ArrayList<Part> parts) {
+	public void refresh(List<Part> parts) {
 		partOffsets.clear();
 		for (var p : parts) {
-			partOffsets.add(new PartOffset(p.partKey, 0, p.compressedLength, p.decompressedLength));
+			partOffsets.add(new PartOffset(p.header.binKey, 0, p.compressedLength, p.decompressedLength));
 //			partOffsets.put(po.partKey, po);
 		}
 		partOffsets.sort(new PartOffsetsSorter());
@@ -61,7 +64,7 @@ public class PartsOffsets extends Block {
 //		partOffsets.get(p.partKey).offset = offset;
 		
 		for (var o : partOffsets) { //.values()
-			if (o.partKey == p.partKey) {
+			if (o.partKey == p.header.binKey) {
 				o.offset = offset;
 				break;
 			}

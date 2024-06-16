@@ -68,8 +68,8 @@ public abstract class Block {
 			return new ShadersUsage(in);
 		case Part_Mesh_Materials:
 			return new Materials(in);
-		case Part_Mesh_UNKNOWN:
-			return new Mesh_Unknown(in);
+		case Part_Mesh_VertsHeader:
+			return new Mesh_VertsHeader(in);
 		case Part_Mesh_Vertices:
 			return new Vertices(in);
 		case Part_Mesh_Triangles:

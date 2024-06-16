@@ -39,6 +39,7 @@ public class GeomDump extends Application {
 //	static String car = "NIS_240_SX_89";
 //	static String car = "BMW_M3_E92_08";
 //	static String car = "240SX";
+//	static String car = "NSX";
 	static int[] art = new int[]{0, 1, 2, 3, 4, 5, 6, 11, 12};
 	static int[] wart = new int[]{1, 2, 3, 4, 5};
 //	static int[] art = new int[]{0,1};
@@ -84,15 +85,31 @@ public class GeomDump extends Application {
 	// 370Z
 	//base : 61732
 	
-	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN-parts\\AUD_RS4_STK_08_KIT00_BODY_A");
-
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak-parts\\AUD_RS4_STK_08_KIT00_BODY_A");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak-parts\\AUD_RS4_STK_08_KIT00_BUMPER_FRONT_A");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak-parts\\AUD_RS4_STK_08_KIT00_HOOD_A");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak-parts\\AUD_RS4_STK_08_KIT00_DOOR_LEFT_A");
+	
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\NSX\\GEOMETRY.BIN-parts\\NSX_KIT00_SPOILER_A");
 	
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_240_SX_89\\GEOMETRY.BIN");
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_240_SX_89\\DecompressedParts\\NIS_240_SX_89_KIT11_BODY_A");
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_240_SX_89\\DecompressedParts\\NIS_240_SX_89_KIT04_BUMPER_FRONT_A");
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_240_SX_89\\DecompressedParts\\NIS_240_SX_89_KIT01_BUMPER_REAR_A");
-	
 
+	// decompiled recompiled wit ucgt
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.BIN-parts\\AUD_RS4_STK_08_KIT00_BASE_A");	
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.BIN-parts\\AUD_RS4_STK_08_KIT00_BODY_A");	
+
+	//ctk
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\ctk\\GEOMETRY.BIN-parts\\AUD_RS4_STK_08_KIT00_BASE_A");	
+
+	//recompiled from model 
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak-parts\\AUD_RS4_STK_08_KIT00_BASE_A-recompiled");
+	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak-parts\\AUD_RS4_STK_08_KIT00_BODY_A-recompiled");
+
+	
+	
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BASE_A");
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BODY_A");
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\DecompressedParts\\AUD_RS4_STK_08_KIT00_BRAKEROTOR_FRONT_A");

@@ -15,7 +15,7 @@ public class Part_Padding extends Block {
 	
 	public Part_Padding(ByteBuffer in) {
 		var length = in.getInt();
-		var blockStart = in.position();
+//		var blockStart = in.position();
 		data = new byte[length];
 		in.get(data); //raw data if there's any
 

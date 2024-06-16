@@ -1,11 +1,11 @@
 package fr.ni240sx.ucgt.geometryFile.part;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.binstuff.Block;
+import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 
 public class PartHeader extends Block {
@@ -80,6 +80,11 @@ public class PartHeader extends Block {
 //		System.out.println(partName);
 //		if (in.position()%4 != 0) in.position(in.position()+4-in.position()%4); //unnecessary complication
 		in.position(blockStart+blockLength); //anyways it's that
+	}
+
+	public PartHeader(String name) {
+		this.partName = name;
+		this.binKey = new Hash(name).binHash;
 	}
 
 	@Override
