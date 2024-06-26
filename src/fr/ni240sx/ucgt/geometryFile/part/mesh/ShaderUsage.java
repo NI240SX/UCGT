@@ -31,11 +31,11 @@ public enum ShaderUsage {
 	DiffuseGlowAlpha(0x5c6cdd0d, "DiffuseGlowAlpha", new String[]{"DiffuseGlowAlpha","DiffuseAlphaGlow","DiffuseSelfIlluminationAlpha","DiffuseAlphaSelfIllumination",
 			"GlowAlpha","AlphaGlow","SelfIlluminationAlpha","AlphaSelfIllumination","car_si_a"}),
 	// car_t		uses DIFFUSE, VOLUMEMAP
-	car_t(0x3F8A59F0, "car_t", new String[]{"car_t"}),
+	TrafficDiffuse(0x3F8A59F0, "TrafficDiffuse", new String[]{"TrafficDiffuse","Traffic","car_t"}),
 	// car_t_a		uses DIFFUSE, VOLUMEMAP
-	car_t_a(0x724870AB, "car_t_a", new String[]{"car_t_a"}),
+	TrafficDiffuseAlpha(0x724870AB, "TrafficDiffuseAlpha", new String[]{"TrafficDiffuseAlpha","TrafficAlpha","car_t_a"}),
 	// car_t_nm		uses DIFFUSE, NORMALMAP, MISCMAP1
-	car_t_nm(0x43DDE14C, "car_t_nm", new String[]{"car_t_nm"}),
+	TrafficDiffuseNormal(0x43DDE14C, "TrafficDiffuseNormal", new String[]{"TrafficDiffuseNormal","TrafficNormal","car_t_nm"}),
 	// car_v		uses DIFFUSE, VOLUMEMAP, AMBIENT samplers
 	DiffuseSwatch(0xA2ABF064, "DiffuseSwatch", new String[]{"DiffuseSwatch","Swatch","car_v"}),
 

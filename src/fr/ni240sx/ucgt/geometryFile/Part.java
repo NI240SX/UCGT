@@ -14,6 +14,7 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.Mesh_VertsHeader;
 
 public class Part extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.Part;}
 	
 	public int decompressedLength;
@@ -21,7 +22,6 @@ public class Part extends Block {
 	
 	public byte[] compressedData;
 	
-	public static CompressionLevel defaultCompressionLevel = CompressionLevel.Low;
 	
 	public PartHeader header;
 	public TexUsage texusage;
@@ -150,7 +150,7 @@ public class Part extends Block {
 		var partBytes = this.save(0);
 		decompressedLength = partBytes.length;
 		
-		compressedData  = Compression.compress(partBytes, "RFPK", defaultCompressionLevel);
+		compressedData  = Compression.compress(partBytes, Geometry.defaultCompressionType, Geometry.defaultCompressionLevel);
 		compressedLength = compressedData.length + 24;
 	}
 	

@@ -37,6 +37,7 @@ public class PartVisualizer extends Application{
 		viewport.rotationX.setAngle(90);
 		viewport.rotationY.setAngle(60);
 		viewport.rotationZ.setAngle(180);
+		viewport.translation.setY(-0.8);
 		
         viewportGroup.getChildren().clear();
 		for (Part part : partsList) {
@@ -54,9 +55,9 @@ public class PartVisualizer extends Application{
 				for (var tr : m.triangles) {
 					matMesh.getFaces().addAll(
 							// points normals   texcoords
-							tr.vert1, tr.vert1, tr.vert1, //v1
-							tr.vert2, tr.vert2, tr.vert2, //v2
-							tr.vert3, tr.vert3, tr.vert3);//v3
+							tr.vert0, tr.vert0, tr.vert0, //v1
+							tr.vert1, tr.vert1, tr.vert1, //v2
+							tr.vert2, tr.vert2, tr.vert2);//v3
 				}
 				
 				var mv = new MeshView(matMesh);
@@ -208,12 +209,12 @@ public class PartVisualizer extends Application{
     	launch(args);
     }
 	
-	public static void main(String[] args) {
-		try {
-			launch(args);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}	
-	}
+//	public static void main(String[] args) {
+//		try {
+//			launch(args);
+//		} catch (Exception e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}	
+//	}
 }

@@ -1,21 +1,26 @@
 package fr.ni240sx.ucgt.geometryFile;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
+import fr.ni240sx.ucgt.compression.CompressionType;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
 import fr.ni240sx.ucgt.geometryFile.part.AutosculptLink;
 import fr.ni240sx.ucgt.geometryFile.part.AutosculptLinking;
 import fr.ni240sx.ucgt.geometryFile.part.MPoint;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
+import fr.ni240sx.ucgt.geometryFile.settings.SettingsImport_Tangents;
 
 public class TestingFunctions {
 
@@ -97,7 +102,7 @@ public class TestingFunctions {
 		
 	}
 	
-	public static void exportToFile2(String geomFile, String exportFile) { //ready ?
+	public static void exportToFile(String geomFile, String exportFile) { //ready ?
 		try {
 			long t = System.currentTimeMillis();
 			
@@ -129,98 +134,7 @@ public class TestingFunctions {
 //			ArrayList<AutosculptLinking> asLinking = new ArrayList<AutosculptLinking>();
 			
 			//load config
-			var br = new BufferedReader(new FileReader(new File(configFile)));
-			String l;
-			while ((l=br.readLine())!=null) {
-				switch (l.split("	")[0].split(" ")[0]) { // support for both space and tab separators
-				case "SETTING":
-					for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty() && !s2.equals("SETTING")) {
-						switch (s2.split("=")[0]) {
-						case "CompressionLevel":
-							Part.defaultCompressionLevel = CompressionLevel.fromName(s2.split("=")[1]);
-							System.out.println("Compression level set : "+Part.defaultCompressionLevel.getName());
-							break;
-						case "CarName":
-							geom.carname = s2.split("=")[1];
-							System.out.println("Car name set : "+geom.carname);
-							break;
-						default:
-							System.out.println("Setting not supported : "+s2);
-						}
-					}
-					break;
-					
-				case "MATERIAL": // IF THE CAR NAME ISN'T SET BEFORE THIS, CAR-SPECIFIC TEXTURES WILL BREAK
-					var m = new fr.ni240sx.ucgt.geometryFile.part.mesh.Material();
-					geom.materials.add(m);
-					for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty() && !s2.equals("MATERIAL")) {
-						if (!s2.contains("=")) { //material name
-							m.uniqueName = s2;
-						} else { //shader or texture usage
-							if (TextureUsage.get(s2.split("=")[1]) != TextureUsage.INVALID) {
-								// texture usage
-								m.TextureHashes.add(new Hash(s2.split("=")[0].replace("%", geom.carname)));
-								m.textureUsages.add(TextureUsage.get(s2.split("=")[1]));
-							} else {
-								//shader usage
-								m.ShaderHash = new Hash(s2.split("=")[0]);
-								m.shaderUsage = ShaderUsage.get(s2.split("=")[1]);
-							}
-						}
-					}
-//					System.out.println("Material : "+m.toConfig(geom.carname));
-					break;
-					
-				case "MARKER":
-					var mp = new MPoint();
-					geom.mpoints.add(mp);
-					int iterator = 0;
-					float u=0, v=0, w=0; //euler angles
-					for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty() && !s2.equals("MARKER")) {
-						switch (iterator) {
-						case 0:
-							mp.uniqueName = s2;
-							break;
-						case 1:
-							mp.nameHash = new Hash(s2);
-							break;
-						case 2:
-							mp.tempPartName = s2;
-							break;
-						case 3:
-							u = Float.parseFloat(s2);
-							break;
-						case 4:
-							v = Float.parseFloat(s2);
-							break;
-						case 5:
-							w = Float.parseFloat(s2);
-							break;
-						}
-						iterator++;
-					}
-					mp.matrix = MPoint.eulerAnglesToMatrix(u, v, w);
-//					System.out.println("Marker : "+l);
-					break;
-				case "ASLINK":
-					var asl = new AutosculptLinking();
-					geom.asLinking.add(asl);
-					for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty() && !s2.equals("ASLINK")) {
-						if (!s2.contains(",")) { //part name
-							asl.tempPartName = s2;
-						} else {
-							asl.links.add(new AutosculptLink(new Hash(s2.split(",")[0]).binHash, 
-									Short.parseShort(s2.split(",")[1]), 
-									Short.parseShort(s2.split(",")[2]), 
-									Short.parseShort(s2.split(",")[3]), 
-									Short.parseShort(s2.split(",")[4])  ));
-						}
-					}
-//					System.out.println("Autosculpt link : "+l);
-					break;
-				}
-			}//loop on config file lines
-			br.close();
+			geom.readConfig(new File(configFile));
 			
 
 			System.out.println("Config read in "+(System.currentTimeMillis()-time)+" ms.");
@@ -257,6 +171,25 @@ public class TestingFunctions {
 		}
 	}
 	
+	public static void recompileCar(String car) {
+		if (!new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\"+car+"\\GEOMETRY-VANILLA.BIN").isFile()) {
+			//create vanilla backup if not existing
+			new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\"+car+"\\GEOMETRY.BIN").renameTo(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\"+car+"\\GEOMETRY-VANILLA.BIN"));
+		}
+		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\"+car+"\\GEOMETRY-VANILLA.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\"+car+"\\GEOMETRY_exported.obj");
+		var geom = importFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\"+car+"\\GEOMETRY_exported.obj");
+		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\"+car+"\\GEOMETRY.BIN");
+	}
+	
+	public static void generateConfigFromCtkConfig(String ctkConfig, String ucgtConfig) {
+		try {
+			Geometry.ctkConfigToUCGTConfig(new File(ctkConfig), new File(ucgtConfig));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	public static void main(String[] args) throws Exception {
 
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak");
@@ -271,7 +204,7 @@ public class TestingFunctions {
 //		PartVisualizer.setPartsFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\MER_G63AMG\\GEOMETRY.BIN", 
 //				"KIT00_BODY_A KIT00_BUMPER_FRONT_A KIT00_BUMPER_REAR_A KIT00_CHASSIS_A KIT00_FENDER_FRONT_LEFT_A KIT00_FENDER_FRONT_RIGHT_A KIT00_BASE_A");
 
-//		PartVisualizer.setPartsFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN", "KIT00_BASE_A"
+//		PartVisualizer.setPartsFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak", "KIT00_BASE_A"
 //		+ "KIT00_BODY_A KIT00_BUMPER_FRONT_A KIT00_BUMPER_REAR_A KIT00_CHASSIS_A KIT00_FENDER_FRONT_LEFT_A KIT00_FENDER_FRONT_RIGHT_A "
 //		+ " KIT00_DOOR_LEFT_A KIT00_DOOR_RIGHT_A KIT00_DOOR_REAR_LEFT_A KIT00_DOOR_REAR_RIGHT_A KIT00_HOOD_A KIT00_TRUNK_A"
 //		+ " KIT00_SKIRT_LEFT_A KIT00_SKIRT_RIGHT_A KIT00_HEADLIGHT_LEFT_A KIT00_HEADLIGHT_RIGHT_A KIT00_BRAKELIGHT_LEFT_A KIT00_BRAKELIGHT_RIGHT_A"
@@ -297,31 +230,25 @@ public class TestingFunctions {
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\NSX\\GEOMETRY.BIN");
 
 
-//		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak", "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY", FileFormat.WAVEFRONTOBJ);
-//		exportToFile2("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak", "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.obj");
+//		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak", "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.obj");
 		
 		
 		
 		
 		// RECOMPILING MY SHIT ???
-		var geom = importFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.obj");		//geom.geomHeader.geomInfo.setHeaderVanilla();
+//		var geom = importFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.obj");		//geom.geomHeader.geomInfo.setHeaderVanilla();
 //		var vanilla = Geometry.load(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak"));
 
-		Part.defaultCompressionLevel = CompressionLevel.Maximum;
-//		swapMeshes(geom, vanilla);
-//		geom.materials = vanilla.materials;
-//		geom.geomHeader = vanilla.geomHeader;
+//		Part.defaultCompressionLevel = CompressionLevel.Maximum;
+//		Part.defaultCompressionLevel = CompressionLevel.High;
 //		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
-		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
+//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
 
-//		swapMeshes(vanilla, geom);
 //		save(vanilla, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
 //		save(vanilla, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.BIN");
 		
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.BIN");
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
-
-//		exportToFile2("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade_redecomp.obj");
 	
 //		PartVisualizer.setPartsFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.BIN", "KIT00_BASE_A"
 //		+ "KIT00_BODY_A KIT00_BUMPER_FRONT_A KIT00_BUMPER_REAR_A KIT00_CHASSIS_A KIT00_FENDER_FRONT_LEFT_A KIT00_FENDER_FRONT_RIGHT_A "
@@ -331,7 +258,104 @@ public class TestingFunctions {
 //		+ " KIT00_SIDEMIRROR_LEFT_A KIT00_SIDEMIRROR_RIGHT_A KIT00_SPOILER_A"
 //		);
 //		PartVisualizer.run();
+
+//		PartVisualizer.setPartsFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRY.BIN", "KIT00_BASE_A"
+//		+ "KIT00_BODY_A KIT00_BUMPER_FRONT_A KIT00_BUMPER_REAR_A KIT00_CHASSIS_A KIT00_FENDER_FRONT_LEFT_A KIT00_FENDER_FRONT_RIGHT_A "
+//		+ " KIT00_DOOR_LEFT_A KIT00_DOOR_RIGHT_A KIT00_DOOR_REAR_LEFT_A KIT00_DOOR_REAR_RIGHT_A KIT00_HOOD_A KIT00_TRUNK_A"
+//		+ " KIT00_SKIRT_LEFT_A KIT00_SKIRT_RIGHT_A KIT00_HEADLIGHT_LEFT_A KIT00_HEADLIGHT_RIGHT_A KIT00_BRAKELIGHT_LEFT_A KIT00_BRAKELIGHT_RIGHT_A"
+//		+ " KIT00_MUFFLER_00_A KIT00_EXHAUST_TIPS_LEFT_00_A KIT00_EXHAUST_TIPS_RIGHT_00_A KIT00_EXHAUST_TIPS_CENTER_A"
+//		+ " KIT00_SIDEMIRROR_LEFT_A KIT00_SIDEMIRROR_RIGHT_A KIT00_SPOILER_A"
+//		);
+//		PartVisualizer.run();
+
+//		PartVisualizer.setPartsFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\COP_CAR_MID_05\\GEOMETRY.BIN", "KIT00_BASE_A"
+//		+ "KIT00_BODY_A KIT00_BUMPER_FRONT_A KIT00_BUMPER_REAR_A KIT00_CHASSIS_A KIT00_FENDER_FRONT_LEFT_A KIT00_FENDER_FRONT_RIGHT_A "
+//		+ " KIT00_DOOR_LEFT_A KIT00_DOOR_RIGHT_A KIT00_DOOR_REAR_LEFT_A KIT00_DOOR_REAR_RIGHT_A KIT00_HOOD_A KIT00_TRUNK_A"
+//		+ " KIT00_SKIRT_LEFT_A KIT00_SKIRT_RIGHT_A KIT00_HEADLIGHT_LEFT_A KIT00_HEADLIGHT_RIGHT_A KIT00_BRAKELIGHT_LEFT_A KIT00_BRAKELIGHT_RIGHT_A"
+//		+ " KIT00_MUFFLER_00_A KIT00_EXHAUST_TIPS_LEFT_00_A KIT00_EXHAUST_TIPS_RIGHT_00_A KIT00_EXHAUST_TIPS_CENTER_A"
+//		+ " KIT00_SIDEMIRROR_LEFT_A KIT00_SIDEMIRROR_RIGHT_A KIT00_SPOILER_A KIT00_LIGHTBAR_A"
+//		);
+//		PartVisualizer.run();
 		
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\ctk\\GEOMETRY.BIN");
+		
+		
+//		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY-VANILLA.BIN");//what's wrong with you
+//		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY-VANILLA.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY_exported.obj");
+//		var geom = importFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY_exported.obj");
+//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY.BIN");
+		
+//		Geometry.defaultCompressionLevel = CompressionLevel.Maximum;
+		Geometry.defaultCompressionLevel = CompressionLevel.High;
+//		Geometry.defaultCompressionType = CompressionType.RawDecompressed;
+		Geometry.IMPORT_importVertexColors = true;
+		Geometry.IMPORT_calculateVertexColors = false;
+		Geometry.IMPORT_Tangents = SettingsImport_Tangents.HIGH;
+//		Geometry.EXPORT_vanillaPlusMaterials = true;
+		
+//		long t = System.currentTimeMillis();
+		
+//		recompileCar("AUD_RS4_STK_08");
+		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\COP_CAR_MID_05\\GEOMETRY-VANILLA.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\COP_CAR_MID_05\\GEOMETRY_exported.obj");
+//		recompileCar("COP_CAR_MID_05");
+//		recompileCar("BMW_M3_E46_03");
+//		recompileCar("CHE_VEL_SS_70");
+//		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRY.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRY_redecomp.obj");
+//		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRY-VANILLA.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRY_exported.obj");
+//		PartVisualizer.run();
+
+//		recompileCar("LAM_GAL_560_09");
+//		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\LAM_GAL_560_09\\GEOMETRY.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\LAM_GAL_560_09\\GEOMETRY_redecomp.obj");
+//		recompileCar("FOR_GT_STK_06");
+
+//		recompileCar("BMW_M6_STK_08");
+//		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M6_STK_08\\GEOMETRY.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M6_STK_08\\GEOMETRY_redecomp.obj");
+//		recompileCar("DOD_CHA_CON_06");
+//		var car = "DOD_CHA_CON_06";
+//////		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\"+car+"\\GEOMETRY-VANILLA.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\"+car+"\\GEOMETRY_exported.obj");
+//		var geom = importFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\"+car+"\\GEOMETRY_exported.obj");
+//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\"+car+"\\GEOMETRY.BIN");
+//		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\DOD_CHA_CON_06\\GEOMETRY.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\DOD_CHA_CON_06\\GEOMETRY_redecomp.obj");
+
+//		recompileCar("LEX_IS_F_08");
+//		recompileCar("MIT_EVO_IX_06");
+//		recompileCar("POR_911_GT2_08");
+		
+//		Geometry.defaultCompressionType = CompressionType.RawDecompressed;
+		
+//		recompileCar("TRF_CAR_SED_81");
+//		recompileCar("TRF_CAR_SML_03");
+//		recompileCar("TRF_CAR_STW_83");
+//		recompileCar("TRF_CAR_SUV_01");
+//		recompileCar("TRF_CAR_TAX_96");
+//		recompileCar("TRF_CAR_TRK_97");
+//		recompileCar("TRF_CAR_VAN_93");
+//		recompileCar("TRF_PRO_SUV_01");
+//		recompileCar("TRF_TRA_BOX_83");
+//		recompileCar("TRF_TRA_FLT_84");
+//		recompileCar("TRF_TRA_LOG_84");
+//		recompileCar("TRF_TRK_BUS_87");
+//		recompileCar("TRF_TRK_DMP_91");
+//		recompileCar("TRF_TRK_MOV_94");
+//		recompileCar("TRF_TRK_SEM_95");
+//		recompileCar("TRF_VAN_STD_84");
+		
+//		System.out.println("Fried the laptop for a good "+(int)((System.currentTimeMillis()-t)/1000)+" seconds");
+
+//		var geom = importFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRy blender.obj");
+//		var geom = importFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRy blender ctk.obj");
+//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRY.BIN");
+		
+//		var geom = Geometry.load(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRY-VANILLA.BIN"));
+//		Geometry.defaultCompressionType = CompressionType.RawDecompressed;
+//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRY-clueless.BIN");
+
+//		generateConfigFromCtkConfig("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\AUD_RS4_STK_08.txt","C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\AUD_RS4_STK_08.ini");
+//		generateConfigFromCtkConfig("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\BMW_M3_E46_03.txt","C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\BMW_M3_E46_03.ini");
+
+//		var geom = importFromFile("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\AUD_RS4_STK_08.obj");
+//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
+//		geom = importFromFile("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\BMW_M3_E46_03.obj");
+//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY.BIN");
 	}
 }

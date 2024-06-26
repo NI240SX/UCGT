@@ -8,7 +8,9 @@ import java.util.Comparator;
 import java.util.List;
 
 import fr.ni240sx.ucgt.binstuff.Block;
+import fr.ni240sx.ucgt.compression.CompressionType;
 import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.Part;
 
 public class PartsOffsets extends Block {
@@ -23,10 +25,9 @@ public class PartsOffsets extends Block {
 //		var blockStart = in.position();
 		
 		for(int i=0; i<blockLength/24; i++) {
-			var po = new PartOffset(in.getInt(), in.getInt(), in.getInt(), in.getInt());
+			var po = new PartOffset(in.getInt(), in.getInt(), in.getInt(), in.getInt(), in.getInt());
 			partOffsets.add(po);
 //			partOffsets.put(po.partKey, po);
-			in.getInt(); //512
 			in.getInt(); //0
 		}
 	}
@@ -45,7 +46,7 @@ public class PartsOffsets extends Block {
 			buf.putInt(p.offset);
 			buf.putInt(p.sizeCompressed);
 			buf.putInt(p.sizeDecompressed);
-			buf.putInt(p.unknown);
+			buf.putInt(p.isCompressed);
 			buf.putInt(0);
 		}
 		return buf.array();
@@ -54,7 +55,8 @@ public class PartsOffsets extends Block {
 	public void refresh(List<Part> parts) {
 		partOffsets.clear();
 		for (var p : parts) {
-			partOffsets.add(new PartOffset(p.header.binKey, 0, p.compressedLength, p.decompressedLength));
+			partOffsets.add(new PartOffset(p.header.binKey, 0, p.compressedLength, p.decompressedLength, 
+					Geometry.defaultCompressionType == CompressionType.RawDecompressed ? PartOffset.rawData : PartOffset.compressed));
 //			partOffsets.put(po.partKey, po);
 		}
 		partOffsets.sort(new PartOffsetsSorter());
@@ -66,6 +68,16 @@ public class PartsOffsets extends Block {
 		for (var o : partOffsets) { //.values()
 			if (o.partKey == p.header.binKey) {
 				o.offset = offset;
+				break;
+			}
+		}
+	}
+	
+	public void setLengths(Part p, int length) { //used for raw data only
+		for (var o : partOffsets) { //.values()
+			if (o.partKey == p.header.binKey) {
+				o.sizeCompressed = length;
+				o.sizeDecompressed = length;
 				break;
 			}
 		}

@@ -85,6 +85,7 @@ public class GeomDump extends Application {
 	// 370Z
 	//base : 61732
 	
+	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak-parts\\AUD_RS4_STK_08_KIT00_BASE_A");
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak-parts\\AUD_RS4_STK_08_KIT00_BODY_A");
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak-parts\\AUD_RS4_STK_08_KIT00_BUMPER_FRONT_A");
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak-parts\\AUD_RS4_STK_08_KIT00_HOOD_A");
@@ -106,7 +107,7 @@ public class GeomDump extends Application {
 
 	//recompiled from model 
 //	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak-parts\\AUD_RS4_STK_08_KIT00_BASE_A-recompiled");
-	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak-parts\\AUD_RS4_STK_08_KIT00_BODY_A-recompiled");
+//	File f = new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak-parts\\AUD_RS4_STK_08_KIT00_BODY_A-recompiled");
 
 	
 	

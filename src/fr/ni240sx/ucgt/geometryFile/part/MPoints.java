@@ -50,7 +50,7 @@ public class MPoints extends Block {
 			mp.positionX = in.getFloat();
 			mp.positionY = in.getFloat();
 			mp.positionZ = in.getFloat();
-			mp.scale = in.getFloat();
+			mp.positionW = in.getFloat();
 		}
 	}
 
@@ -60,7 +60,7 @@ public class MPoints extends Block {
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 
-		var alignment = Block.findAlignment(currentPosition+8, 16); //TODO does this fix it
+		var alignment = Block.findAlignment(currentPosition+8, 16);
 		var out = ByteBuffer.wrap(new byte[mpoints.size()*80 + 8 + alignment]);
 		out.order(ByteOrder.LITTLE_ENDIAN);
 
@@ -93,7 +93,7 @@ public class MPoints extends Block {
 			out.putFloat(mp.positionX);
 			out.putFloat(mp.positionY);
 			out.putFloat(mp.positionZ);
-			out.putFloat(mp.scale);
+			out.putFloat(mp.positionW);
 		}
 		
 		return out.array();	

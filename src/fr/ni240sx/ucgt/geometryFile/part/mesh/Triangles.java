@@ -26,9 +26,9 @@ public class Triangles extends Block {
 		Triangle t;
 		while (in.position() <= blockStart+blockLength-triangleLength) {
 			triangles.add(t = new Triangle());
+			t.vert0 = in.getShort();
 			t.vert1 = in.getShort();
 			t.vert2 = in.getShort();
-			t.vert3 = in.getShort();
 		}
 		in.position(blockStart+blockLength);
 	}
@@ -50,9 +50,9 @@ public class Triangles extends Block {
 		Block.makeAlignment(out, alignment, (byte) 0x11);
 		
 		for (var t : triangles) {
+			out.putShort(t.vert0);
 			out.putShort(t.vert1);
 			out.putShort(t.vert2);
-			out.putShort(t.vert3);
 		}
 
 		return out.array();	

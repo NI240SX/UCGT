@@ -57,6 +57,27 @@ public class Vertex {
 	public Vertex() {
 	}
 
+	public Vertex(Vertex v) {
+		posX = v.posX;
+		posY = v.posY;
+		posZ = v.posZ;
+		posW = v.posW;
+		texU = v.texU;
+		texV = v.texV;
+		colorR = v.colorR;
+		colorG = v.colorG;
+		colorB = v.colorB;
+		colorA = v.colorA;
+		normX = v.normX;
+		normY = v.normY;
+		normZ = v.normZ;
+		normW = v.normW;
+		tanX = v.tanX;
+		tanY = v.tanY;
+		tanZ = v.tanZ;
+		tanW = v.tanW;
+	}
+
 	public void save(ByteBuffer out) {
 		out.putShort((short) (posX*3276.8));
 		out.putShort((short) (posY*3276.8));
@@ -84,8 +105,7 @@ public class Vertex {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(colorA, colorB, colorG, colorR, normW, normX, normY, normZ, posW, posX, posY, posZ, tanW,
-				tanX, tanY, tanZ, texU, texV);
+		return Objects.hash(colorA, colorB, colorG, colorR, normX, normY, normZ, posX, posY, posZ, texU, texV);
 	}
 
 	@Override
@@ -98,20 +118,37 @@ public class Vertex {
 			return false;
 		Vertex other = (Vertex) obj;
 		return colorA == other.colorA && colorB == other.colorB && colorG == other.colorG && colorR == other.colorR
-				&& Double.doubleToLongBits(normW) == Double.doubleToLongBits(other.normW)
-				&& Double.doubleToLongBits(normX) == Double.doubleToLongBits(other.normX)
-				&& Double.doubleToLongBits(normY) == Double.doubleToLongBits(other.normY)
-				&& Double.doubleToLongBits(normZ) == Double.doubleToLongBits(other.normZ)
-				&& Double.doubleToLongBits(posW) == Double.doubleToLongBits(other.posW)
-				&& Double.doubleToLongBits(posX) == Double.doubleToLongBits(other.posX)
-				&& Double.doubleToLongBits(posY) == Double.doubleToLongBits(other.posY)
-				&& Double.doubleToLongBits(posZ) == Double.doubleToLongBits(other.posZ)
-				&& Double.doubleToLongBits(tanW) == Double.doubleToLongBits(other.tanW)
-				&& Double.doubleToLongBits(tanX) == Double.doubleToLongBits(other.tanX)
-				&& Double.doubleToLongBits(tanY) == Double.doubleToLongBits(other.tanY)
-				&& Double.doubleToLongBits(tanZ) == Double.doubleToLongBits(other.tanZ)
-				&& Double.doubleToLongBits(texU) == Double.doubleToLongBits(other.texU)
-				&& Double.doubleToLongBits(texV) == Double.doubleToLongBits(other.texV);
+//				&& Double.doubleToLongBits(normW) == Double.doubleToLongBits(other.normW)
+				&& doubleEquals(posX, other.posX, 1000)
+				&& doubleEquals(posY, other.posY, 1000)
+				&& doubleEquals(posZ, other.posZ, 1000)
+				&& doubleEquals(normX, other.normX, 1000)
+				&& doubleEquals(normY, other.normY, 1000)
+				&& doubleEquals(normZ, other.normZ, 1000)
+				&& doubleEquals(texU, other.texU, 1000)
+				&& doubleEquals(texV, other.texV, 1000)
+//				&& Double.doubleToLongBits(posW) == Double.doubleToLongBits(other.posW)
+				;
+	}
+
+	public boolean positionEquals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Vertex other = (Vertex) obj;
+		return doubleEquals(posX, other.posX, 1000)
+				&& doubleEquals(posY, other.posY, 1000)
+				&& doubleEquals(posZ, other.posZ, 1000)
+				&& doubleEquals(texU, other.texU, 1000)
+				&& doubleEquals(texV, other.texV, 1000);
+	}
+	
+	public static boolean doubleEquals(double a, double b, int precision) {
+		//takes in account floating point errors, we don't need more than millimeter precision
+		return (int)(a*precision) == (int)(b*precision);
 	}
 
 	@Override

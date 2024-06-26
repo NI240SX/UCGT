@@ -23,7 +23,7 @@ public class Material {
 	public byte[] flags = {0, 0, 0, 0}; //apparently unused -128 81 0 0
 
 	public byte shaderID = 0;
-	public ArrayList<Byte> textureIDs = new ArrayList<Byte>();
+	public ArrayList<Byte> textureIDs = new ArrayList<>();
 	
 	public int textureHash = 0; //apparently unused
 	
@@ -31,17 +31,18 @@ public class Material {
 	public int verticesDataLength = 0;
 	
 	public ShaderUsage shaderUsage = ShaderUsage.Diffuse;
-	public ArrayList<TextureUsage> textureUsages = new ArrayList<TextureUsage>();
-	public ArrayList<Integer> textures = new ArrayList<Integer>(); //apparently unused
+	public ArrayList<TextureUsage> textureUsages = new ArrayList<>();
+	public ArrayList<Integer> textures = new ArrayList<>(); //apparently unused
 	
 	public Vertices verticesBlock;
-	public List<Triangle> triangles = new ArrayList<Triangle>();
+	public List<Triangle> triangles = new ArrayList<>();
 	
 	public Hash ShaderHash;
 	public Hash DefaultTextureHash;
-	public ArrayList<Hash> TextureHashes = new ArrayList<Hash>();
+	public ArrayList<Hash> TextureHashes = new ArrayList<>();
 	
 	public String uniqueName = "";
+	public boolean useTangents = false;
 	
 	public Material(Material m) {
 		this.ShaderHash = m.ShaderHash;
@@ -64,7 +65,11 @@ public class Material {
 	}
 
 	public void tryGuessHashes(Geometry geometry, Part p) {
-		ShaderHash = Hash.guess(p.shaderlist.shaders.get(shaderID), geometry.hashlist, String.format("0x%08X", p.shaderlist.shaders.get(shaderID)), "BIN");
+		if (p.shaderlist != null) ShaderHash = Hash.guess(p.shaderlist.shaders.get(shaderID), geometry.hashlist, String.format("0x%08X", p.shaderlist.shaders.get(shaderID)), "BIN");
+		else {
+			System.out.println("Critical issue with part "+p.kit+"_"+p.part+"_"+p.lod+" : missing shaders ! defaulting to DULLPLASTIC");
+			ShaderHash = new Hash("DULLPLASTIC");
+		}
 //		DefaultTextureHash = Hash.guess(textureHash, geometry.hashlist, String.format("0x%08X",textureHash), "BIN"); //apparently unused
 //		for (var t : textures) {
 //			TextureHashes.add(Hash.guess(t, geometry.hashlist, String.format("0x%08X",t), "BIN"));
@@ -105,15 +110,15 @@ public class Material {
 		flags[3] = (byte) 0x00;
 
 		//low quality rendering or smth
-		if (ShaderHash.label.equals("PLAINNOTHING") || ShaderHash.label.equals("INTERIOR") || ShaderHash.label.equals("CHASSIS")) flags[1] -= (byte) 0x01;
+		if ("PLAINNOTHING".equals(ShaderHash.label) || "INTERIOR".equals(ShaderHash.label) || "CHASSIS".equals(ShaderHash.label)) flags[1] -= (byte) 0x01;
 		
 		//reflections ? shadows ? METAL_SWATCH, %_MISC, REGPAINTBLACK, SIRENS, BLACK
 		if (//ShaderHash.label.equals("CARSKIN") ||
-				ShaderHash.label.equals("CARBONFIBER") || ShaderHash.label.equals("HEADLIGHTGLASS") ||
-				ShaderHash.label.equals("BRAKELIGHTGLASS") || ShaderHash.label.equals("BRAKELIGHTGLASSRED") ||
-				TextureHashes.get(0).label.equals("CARBONFIBRE_PLACEHOLDER") || TextureHashes.get(0).label.equals("CARBONFIBRE") || TextureHashes.get(0).label.equals("METAL_SWATCH") ||
-				TextureHashes.get(0).label.equals(geometry.carname+"_MISC") || TextureHashes.get(0).label.equals("BLACK") || 
-				TextureHashes.get(0).label.equals("SIRENS")) flags[2] += (byte) 0x01;
+				"CARBONFIBER".equals(ShaderHash.label) || "HEADLIGHTGLASS".equals(ShaderHash.label) ||
+				"BRAKELIGHTGLASS".equals(ShaderHash.label) || "BRAKELIGHTGLASSRED".equals(ShaderHash.label) ||
+				"CARBONFIBRE_PLACEHOLDER".equals(TextureHashes.get(0).label) || "CARBONFIBRE".equals(TextureHashes.get(0).label) || "METAL_SWATCH".equals(TextureHashes.get(0).label) ||
+				TextureHashes.get(0).label.equals(geometry.carname+"_MISC") || "BLACK".equals(TextureHashes.get(0).label) || 
+				"SIRENS".equals(TextureHashes.get(0).label)) flags[2] += (byte) 0x01;
 		
 		//normals
 		if (textureUsages.contains(TextureUsage.NORMAL)) flags[2] += (byte) 0xA2;
@@ -152,6 +157,15 @@ public class Material {
 		}
 	}
 	
+	public boolean needsTangentsLow() {
+		return shaderUsage == ShaderUsage.DiffuseNormalSwatch  || shaderUsage == ShaderUsage.DiffuseNormalSwatchAlpha;
+	}
+	public boolean needsTangentsHigh() {
+//		return shaderUsage == ShaderUsage.DiffuseNormal || shaderUsage == ShaderUsage.DiffuseNormalAlpha || shaderUsage == ShaderUsage.DiffuseNormalSwatch  || shaderUsage == ShaderUsage.DiffuseNormalSwatchAlpha
+//				 || shaderUsage == ShaderUsage.car_t_nm;
+		return textureUsages.contains(TextureUsage.NORMAL);
+	}
+	
 	public String generateName() {
 		String s = ShaderHash.label;
 		for (var t : TextureHashes) s += "_"+t.label;
@@ -162,7 +176,11 @@ public class Material {
 		String s = "";
 		s += "MATERIAL	"+uniqueName;
 //		s += " feRenderData=" + frontendRenderingData;
-		s += "	"+ShaderHash.label+"="+shaderUsage.getName();
+		if (Geometry.EXPORT_vanillaPlusMaterials && TextureHashes.get(0).label.equals("GRILL_02")) {
+			s += "	"+ShaderHash.label+"="+ShaderUsage.DiffuseAlpha.getName();
+		} else if (Geometry.EXPORT_vanillaPlusMaterials && TextureHashes.get(0).label.equals(carname+"_ENGINE")) {
+			s += "	"+ShaderHash.label+"="+ShaderUsage.DiffuseNormal.getName();
+		} else s += "	"+ShaderHash.label+"="+shaderUsage.getName();
 		//+"[";
 //		if (usageSpecific1 != -1) s+=usageSpecific1;
 //		if (usageSpecific2 != -1) s+=","+usageSpecific2;
@@ -170,6 +188,9 @@ public class Material {
 //		s +="]	defTex=" + DefaultTextureHash.label+"	flags=0x"+String.format("%02X",flags[0])+String.format("%02X",flags[1])+String.format("%02X",flags[2])+String.format("%02X",flags[3]);
 		for (int i=0; i<textureUsages.size(); i++) {
 			s += "	" + TextureHashes.get(i).label.replace(carname, "%") + "=" + textureUsages.get(i).getName();
+		}
+		if (Geometry.EXPORT_vanillaPlusMaterials && TextureHashes.get(0).label.equals(carname+"_ENGINE") && TextureHashes.size()==1) {
+			s += "	%_ENGINE_N=NORMAL";
 		}
 		return s;
 	}

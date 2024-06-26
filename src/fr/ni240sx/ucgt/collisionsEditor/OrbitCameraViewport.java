@@ -15,9 +15,9 @@ public class OrbitCameraViewport extends SubScene {
 
 	public Group viewportGroup;
     public PerspectiveCamera camera = new PerspectiveCamera(true);
-    public Rotate rotationX = new Rotate(0, 0, 0, 10, Rotate.X_AXIS);
-    public Rotate rotationY = new Rotate(0, 0, 0, 10, Rotate.Y_AXIS);
-    public Rotate rotationZ = new Rotate(0, 0, 0, 10, Rotate.Z_AXIS);
+    public Rotate rotationX = new Rotate(0, 0, 0, 5, Rotate.X_AXIS);
+    public Rotate rotationY = new Rotate(0, 0, 0, 5, Rotate.Y_AXIS);
+    public Rotate rotationZ = new Rotate(0, 0, 0, 5, Rotate.Z_AXIS);
     public Translate translation = new Translate();
 	
 	/**
@@ -34,7 +34,7 @@ public class OrbitCameraViewport extends SubScene {
 //        if (CollisionsEditor.debug) this.viewportGroup.getChildren().add(new Box(0.1,0.1,0.1));
         
         
-        camera.setTranslateZ(-10);
+        camera.setTranslateZ(-5);
         camera.setRotate(180);
         camera.setNearClip(0.01);
         camera.setFarClip(10000);
@@ -43,8 +43,26 @@ public class OrbitCameraViewport extends SubScene {
         this.setCamera(camera);
         
         this.setOnScroll((final ScrollEvent e) -> {
-            rotationY.setAngle(rotationY.getAngle() - e.getDeltaX() / 10);
-            rotationX.setAngle(rotationX.getAngle() + e.getDeltaY() / 10);
+        	if (e.isControlDown()) {
+        		//zoom
+        		translation.setZ(translation.getZ() + e.getDeltaY()/100);
+        	} else if (e.isAltDown()){
+        		//move
+        		translation.setX(translation.getX() + e.getDeltaX()/100);
+//        		rotationX.setPivotX(translation.getX() + e.getDeltaX()/100);
+        		rotationY.setPivotX(translation.getX() + e.getDeltaX()/100);
+        		rotationZ.setPivotX(translation.getX() + e.getDeltaX()/100);
+        		
+        		translation.setY(translation.getY() + e.getDeltaY()/100);
+//        		rotationX.setPivotY(translation.getY() + e.getDeltaY()/100);
+				rotationY.setPivotY(translation.getY() + e.getDeltaY()/100);
+        		rotationZ.setPivotY(translation.getY() + e.getDeltaY()/100);
+        		
+        	} else {
+        		//rotation
+                rotationY.setAngle(rotationY.getAngle() - e.getDeltaX() / 10);
+                rotationX.setAngle(rotationX.getAngle() + e.getDeltaY() / 10);	
+        	}
 
 //            if (rotationY.getAngle() <= -180) rotationY.setAngle(rotationY.getAngle()+360);
 //            if (rotationY.getAngle() > 180) rotationY.setAngle(rotationY.getAngle()-360);
@@ -58,7 +76,12 @@ public class OrbitCameraViewport extends SubScene {
 //            setTranslateY(getTranslateY() + e.getDeltaY());
         });
         
-        handleMouse();
+        this.setOnZoom(e -> {
+        	System.out.println("zoom");
+        	camera.setTranslateZ(camera.getTranslateZ()*e.getTotalZoomFactor());
+        });
+        
+//        handleMouse();
 	}
 	
 	public void buildAxes() {
