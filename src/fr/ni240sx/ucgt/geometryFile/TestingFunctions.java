@@ -1,25 +1,13 @@
 package fr.ni240sx.ucgt.geometryFile;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.binstuff.Hash;
-import fr.ni240sx.ucgt.compression.CompressionLevel;
-import fr.ni240sx.ucgt.compression.CompressionType;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
-import fr.ni240sx.ucgt.geometryFile.part.AutosculptLink;
-import fr.ni240sx.ucgt.geometryFile.part.AutosculptLinking;
-import fr.ni240sx.ucgt.geometryFile.part.MPoint;
-import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
 import fr.ni240sx.ucgt.geometryFile.settings.SettingsImport_Tangents;
 
 public class TestingFunctions {
@@ -286,7 +274,7 @@ public class TestingFunctions {
 //		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY.BIN");
 		
 //		Geometry.defaultCompressionLevel = CompressionLevel.Maximum;
-		Geometry.defaultCompressionLevel = CompressionLevel.High;
+//		Geometry.defaultCompressionLevel = CompressionLevel.High;
 //		Geometry.defaultCompressionType = CompressionType.RawDecompressed;
 		Geometry.IMPORT_importVertexColors = true;
 		Geometry.IMPORT_calculateVertexColors = false;
@@ -296,8 +284,9 @@ public class TestingFunctions {
 //		long t = System.currentTimeMillis();
 		
 //		recompileCar("AUD_RS4_STK_08");
-		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\COP_CAR_MID_05\\GEOMETRY-VANILLA.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\COP_CAR_MID_05\\GEOMETRY_exported.obj");
+//		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\COP_CAR_MID_05\\GEOMETRY-VANILLA.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\COP_CAR_MID_05\\GEOMETRY_exported.obj");
 //		recompileCar("COP_CAR_MID_05");
+//		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\COP_CAR_MID_05\\GEOMETRY.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\COP_CAR_MID_05\\GEOMETRY_redecomp.obj");
 //		recompileCar("BMW_M3_E46_03");
 //		recompileCar("CHE_VEL_SS_70");
 //		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRY.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRY_redecomp.obj");

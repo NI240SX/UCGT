@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -24,6 +25,7 @@ import fr.ni240sx.ucgt.compression.Compression;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.compression.CompressionType;
 import fr.ni240sx.ucgt.geometryFile.geometry.*;
+import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
 import fr.ni240sx.ucgt.geometryFile.part.AutosculptLink;
 import fr.ni240sx.ucgt.geometryFile.part.AutosculptLinking;
 import fr.ni240sx.ucgt.geometryFile.part.AutosculptZones;
@@ -378,10 +380,10 @@ public class Geometry extends Block {
 		
 		geomHeader.refresh(parts);
 
-		System.out.println("Part lists and offsets refreshed in "+(System.currentTimeMillis()-t)+" ms.");
-		t = System.currentTimeMillis();
+//		System.out.println("Part lists and offsets refreshed in "+(System.currentTimeMillis()-t)+" ms.");
+//		t = System.currentTimeMillis();
 
-		System.out.println("Preparing file...");
+//		System.out.println("Preparing file...");
 		
 		var out = new ByteArrayOutputStream();
 
@@ -417,10 +419,20 @@ public class Geometry extends Block {
 		buf.position(16);
 		buf.put(geomHeader.save(0)); //save the header again, this time with correct offsets
 
-		System.out.println("File prepared in "+(System.currentTimeMillis()-t)+" ms.");
+//		System.out.println("File prepared in "+(System.currentTimeMillis()-t)+" ms.");
 		return buf.array();
 	}
 
+	public void save(File f) throws IOException, InterruptedException {
+		long t = System.currentTimeMillis();
+		System.out.println("Saving geometry...");
+		var save = save(0);
+		var fos = new FileOutputStream(f);
+		fos.write(save);
+		fos.close();		
+		System.out.println("Geom saved in "+(System.currentTimeMillis()-t)+" ms.");
+	}
+	
 	//---------------------------------------------------------------------------------------------------
 	//
 	//										I/O : EXPORT
@@ -473,6 +485,25 @@ public class Geometry extends Block {
 	//
 	//---------------------------------------------------------------------------------------------------
 
+	public static Geometry importFromFile(File modelFile) throws IOException, Exception {
+		return importFromFile(modelFile, new File(modelFile.getPath().replace(modelFile.getName().split("\\.")[modelFile.getName().split("\\.").length-1], "ini")));
+	}
+	public static Geometry importFromFile(File modelFile, File configFile) throws IOException, Exception {
+		if (!modelFile.getName().endsWith(".obj")) {
+			throw new Exception("Wrong file format ! Only Wavefront OBJ is supported.");
+		}
+		long time = System.currentTimeMillis();
+		System.out.println("Loading config from "+configFile.getName());
+		Geometry geom = new Geometry();
+		geom.readConfig(configFile);
+		System.out.println("Config read in "+(System.currentTimeMillis()-time)+" ms.");
+		time = System.currentTimeMillis();
+		System.out.println("Importing meshes from "+modelFile.getName());
+		WavefrontOBJ.load(geom, modelFile);
+		System.out.println("3D model converted in "+(System.currentTimeMillis()-time)+" ms.");			
+		return geom;			
+	}
+	
 	public void readConfig(File f) throws IOException {
 		var br = new BufferedReader(new FileReader(f));
 		String l;
@@ -591,10 +622,23 @@ public class Geometry extends Block {
 					case 5:
 						w = Float.parseFloat(s2);
 						break;
+					case 6:
+						mp.scaleX = Float.parseFloat(s2);
+						break;
+					case 7:
+						mp.scaleY = Float.parseFloat(s2);
+						break;
+					case 8:
+						mp.scaleZ = Float.parseFloat(s2);
+						break;
 					}
 					iterator++;
 				}
-				mp.matrix = MPoint.eulerAnglesToMatrix(u, v, w);
+				if (iterator ==7) {
+					mp.scaleY = mp.scaleX;
+					mp.scaleZ = mp.scaleX;
+				}
+				mp.matrix = mp.eulerAnglesToMatrix(u, v, w);
 
 				if (!mpointsAll.contains(mp)) {
 					mpointsAll.add(mp);

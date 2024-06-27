@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.compression.Compression;
-import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.geometryFile.part.*;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Mesh_VertsHeader;
 

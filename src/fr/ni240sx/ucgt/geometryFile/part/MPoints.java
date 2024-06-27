@@ -32,21 +32,42 @@ public class MPoints extends Block {
 			in.getInt(); //0
 			in.getInt(); //0
 
-			mp.matrix[0][0] = in.getFloat();
-			mp.matrix[0][1] = in.getFloat();
-			mp.matrix[0][2] = in.getFloat();
+			mp.matrix[0][0] = MPoint.round(in.getFloat());
+			mp.matrix[0][1] = MPoint.round(in.getFloat());
+			mp.matrix[0][2] = MPoint.round(in.getFloat());
 			in.getInt(); //0
 			
-			mp.matrix[1][0] = in.getFloat();
-			mp.matrix[1][1] = in.getFloat();
-			mp.matrix[1][2] = in.getFloat();
+			mp.matrix[1][0] = MPoint.round(in.getFloat());
+			mp.matrix[1][1] = MPoint.round(in.getFloat());
+			mp.matrix[1][2] = MPoint.round(in.getFloat());
 			in.getInt(); //0
 
-			mp.matrix[2][0] = in.getFloat();
-			mp.matrix[2][1] = in.getFloat();
-			mp.matrix[2][2] = in.getFloat();
+			mp.matrix[2][0] = MPoint.round(in.getFloat());
+			mp.matrix[2][1] = MPoint.round(in.getFloat());
+			mp.matrix[2][2] = MPoint.round(in.getFloat());
 			in.getInt(); //0
 
+			mp.scaleX = 0;
+			mp.scaleY = 0;
+			mp.scaleZ = 0;
+			
+			//scaling, fixes an issue with some rotations
+			for (var v : mp.matrix[0]) if (Math.abs(v) > mp.scaleX) mp.scaleX = Math.abs(MPoint.round(v));
+			for (var v : mp.matrix[1]) if (Math.abs(v) > mp.scaleY) mp.scaleY = Math.abs(MPoint.round(v));
+			for (var v : mp.matrix[2]) if (Math.abs(v) > mp.scaleZ) mp.scaleZ = Math.abs(MPoint.round(v));
+
+			mp.matrix[0][0] = mp.matrix[0][0]/mp.scaleX;
+			mp.matrix[0][1] = mp.matrix[0][1]/mp.scaleX;
+			mp.matrix[0][2] = mp.matrix[0][2]/mp.scaleX;
+
+			mp.matrix[1][0] = mp.matrix[1][0]/mp.scaleY;
+			mp.matrix[1][1] = mp.matrix[1][1]/mp.scaleY;
+			mp.matrix[1][2] = mp.matrix[1][2]/mp.scaleY;
+
+			mp.matrix[2][0] = mp.matrix[2][0]/mp.scaleZ;
+			mp.matrix[2][1] = mp.matrix[2][1]/mp.scaleZ;
+			mp.matrix[2][2] = mp.matrix[2][2]/mp.scaleZ;
+			
 			mp.positionX = in.getFloat();
 			mp.positionY = in.getFloat();
 			mp.positionZ = in.getFloat();
