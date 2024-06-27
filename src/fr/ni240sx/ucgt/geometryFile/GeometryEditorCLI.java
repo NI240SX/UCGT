@@ -20,8 +20,11 @@ public class GeometryEditorCLI {
 		if (args.length >0) {
 			//launching with arguments runs a special mode without user input
 			String concatenatedArgs = "";
-			for (var s : args) concatenatedArgs += s + " ";
-			System.out.println("Arguments provided : "+concatenatedArgs);
+			for (var s : args) {
+				if (s.contains(" ")) concatenatedArgs += "\"" +s + "\" ";
+				else concatenatedArgs += s + " ";
+			}
+//			System.out.println("Arguments provided : "+concatenatedArgs);
 			parseCommand(concatenatedArgs);
 			
 		} else {
