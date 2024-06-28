@@ -9,8 +9,8 @@ import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
 
 public class GeometryEditorCLI {
 
-	public static final String programVersion = "1.0.0";
-	public static final String programBuild = "2024.06.27";
+	public static final String programVersion = "1.0.1";
+	public static final String programBuild = "2024.06.28";
 	
 	public static Geometry geom;
 //	public static ArrayList<String> commandsHistory = new ArrayList<>();

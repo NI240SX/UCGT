@@ -41,6 +41,7 @@ import fr.ni240sx.ucgt.geometryFile.sorters.MPointPosSorterName;
 import fr.ni240sx.ucgt.geometryFile.sorters.MPointSorterName;
 import fr.ni240sx.ucgt.geometryFile.sorters.MaterialsSorterName;
 import fr.ni240sx.ucgt.geometryFile.sorters.PartSorterLodKitName;
+import javafx.util.Pair;
 import fr.ni240sx.ucgt.geometryFile.settings.*;
 
 public class Geometry extends Block {
@@ -70,6 +71,7 @@ public class Geometry extends Block {
 	public static boolean SAVE_removeUselessAutosculptParts = true;
 	public static boolean SAVE_optimizeMaterials = true;
 	public static boolean SAVE_sortEverythingByName = true;
+	public static boolean SAVE_fixAutosculptNormals = true;
 	
 	public static boolean IMPORT_importVertexColors = true;
 	public static boolean IMPORT_calculateVertexColors = false;
@@ -461,7 +463,8 @@ public class Geometry extends Block {
 		else bw.write("Off\n");
 		bw.write("SETTING	Tangents="+IMPORT_Tangents.getName()+"\n"
 				+ "SETTING	RemoveUselessAutosculpt="+SAVE_removeUselessAutosculptParts+"\n"
-				+ "SETTING	OptimizeMaterials="+SAVE_optimizeMaterials+"\n");
+				+ "SETTING	OptimizeMaterials="+SAVE_optimizeMaterials+"\n"
+				+ "SETTING	FixAutosculptNormals="+SAVE_fixAutosculptNormals+"\n");
 
 		bw.write("\n--- Materials ---\n");
 		//MATERIAL	MATNAME	MATSHADER=ShaderUsage[...]	defTex=DEFAULTTEXTURE	flags=0XFLAGS000	DIFFUSE=DIFFUSE_TEX	...
@@ -565,6 +568,10 @@ public class Geometry extends Block {
 					case "ForceAsFix":
 						forceAsFixOnParts.add(s2.split("=")[1]);
 						System.out.println("Forcing Autosculpt fix : "+s2.split("=")[1]);
+						break;
+					case "FixAutosculptNormals":
+						SAVE_fixAutosculptNormals = Boolean.parseBoolean(s2.split("=")[1]);
+						if (SAVE_fixAutosculptNormals) System.out.println("Attempting to fix normals on Autosculpt zero area triangles");
 						break;
 
 					default:
@@ -1100,6 +1107,8 @@ public class Geometry extends Block {
 			
 			boolean invalidateVertsGlobal = false;
 			
+			ArrayList<Pair<Vertex,Vertex>> swapNormals = new ArrayList<>();
+			
 			//loop on each material for all autosculpt parts
 			for (int mat=0; mat<p.mesh.materials.materials.size(); mat++) {
 				boolean invalidateVertsMat = false;
@@ -1214,6 +1223,7 @@ public class Geometry extends Block {
 						if (move0) { // vert0 == vert1
 							// 1. figure out the correct id
 							short ID0=0, ID1=0, ID2=0;
+							Vertex v0 = null, v1 = null, v2 = null;
 							for (int p2=0; p2<asParts.size(); p2++) {
 								if (
 										//asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf((VertexPosition)partsTris.get(p2).get(i)[0]) != 
@@ -1226,6 +1236,11 @@ public class Geometry extends Block {
 									ID1 = (short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[1]);
 									ID2 = (short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[2]);
 //									System.out.println("move0 : triangle "+i+", taking ID from part "+asParts.get(p2).header.partName);
+
+									// get a vertex in a triangle with non-zero surface to attempt to fix normals
+									v0 = partsTris.get(p2).get(i)[0];
+									v1 = partsTris.get(p2).get(i)[1];
+									v2 = partsTris.get(p2).get(i)[2];
 									break;
 								}
 							}
@@ -1236,14 +1251,23 @@ public class Geometry extends Block {
 								asParts.get(p2).mesh.materials.materials.get(mat).triangles.get( i ).vert0 = ID0;
 								asParts.get(p2).mesh.materials.materials.get(mat).triangles.get( i ).vert1 = ID1;
 								asParts.get(p2).mesh.materials.materials.get(mat).triangles.get( i ).vert2 = ID2;
+
 								//add the vertex							
 								asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.add(new Vertex(partsTris.get(p2).get(i)[1]));
+
+								//attempt to fix normals
+								if (v0 != null && SAVE_fixAutosculptNormals) {
+									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID0), v0));
+									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID1), v1));
+									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID2), v2));
+								}
 							}
 						} else
 
 						if (move1) { // vert0 == vert2
 							// 1. figure out the correct id
 							short ID0=0, ID1=0, ID2=0;
+							Vertex v0 = null, v1 = null, v2 = null;
 							for (int p2=0; p2<asParts.size(); p2++) {
 								if (
 										//asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf((VertexPosition)partsTris.get(p2).get(i)[0]) != 
@@ -1256,6 +1280,11 @@ public class Geometry extends Block {
 									ID1 = (short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[1]);
 									ID2 = (short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[2]);
 //									System.out.println("move1 : triangle "+i+", taking ID from part "+asParts.get(p2).header.partName);
+
+									// get a vertex in a triangle with non-zero surface to attempt to fix normals
+									v0 = partsTris.get(p2).get(i)[0];
+									v1 = partsTris.get(p2).get(i)[1];
+									v2 = partsTris.get(p2).get(i)[2];
 									break;
 								}
 							}
@@ -1266,14 +1295,23 @@ public class Geometry extends Block {
 								asParts.get(p2).mesh.materials.materials.get(mat).triangles.get( i ).vert0 = ID0;
 								asParts.get(p2).mesh.materials.materials.get(mat).triangles.get( i ).vert1 = ID1;
 								asParts.get(p2).mesh.materials.materials.get(mat).triangles.get( i ).vert2 = ID2;
+								
 								//add the vertex							
 								asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.add(new Vertex(partsTris.get(p2).get(i)[2]));
+
+								//attempt to fix normals
+								if (v0 != null && SAVE_fixAutosculptNormals) {
+									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID0), v0));
+									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID1), v1));
+									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID2), v2));
+								}
 							}
 						} else
 
 						if (move2) { // vert1 == vert2
 							// 1. figure out the correct id
 							short ID0=0, ID1=0, ID2=0;
+							Vertex v0 = null, v1 = null, v2 = null;
 							for (int p2=0; p2<asParts.size(); p2++) {
 								if (
 										//asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[1]) != 
@@ -1286,6 +1324,11 @@ public class Geometry extends Block {
 									ID1 = (short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[1]);
 									ID2 = (short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[2]);
 //									System.out.println("move2 : triangle "+i+", taking ID from part "+asParts.get(p2).header.partName);
+
+									// get a vertex in a triangle with non-zero surface to attempt to fix normals
+									v0 = partsTris.get(p2).get(i)[0];
+									v1 = partsTris.get(p2).get(i)[1];
+									v2 = partsTris.get(p2).get(i)[2];
 									break;
 								}
 							}
@@ -1296,8 +1339,16 @@ public class Geometry extends Block {
 								asParts.get(p2).mesh.materials.materials.get(mat).triangles.get( i ).vert0 = ID0;
 								asParts.get(p2).mesh.materials.materials.get(mat).triangles.get( i ).vert1 = ID1;
 								asParts.get(p2).mesh.materials.materials.get(mat).triangles.get( i ).vert2 = ID2;
+								
 								//add the vertex							
 								asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.add(new Vertex(partsTris.get(p2).get(i)[2]));
+
+								//attempt to fix normals
+								if (v0 != null && SAVE_fixAutosculptNormals) {
+									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID0), v0));
+									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID1), v1));
+									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID2), v2));
+								}
 							}
 						} 
 						
@@ -1309,6 +1360,21 @@ public class Geometry extends Block {
 					}
 				}
 			}//loop on materials
+			
+			for (var pair : swapNormals) {
+				pair.getKey().colorR = pair.getValue().colorR;
+				pair.getKey().colorG = pair.getValue().colorG;
+				pair.getKey().colorB = pair.getValue().colorB;
+				pair.getKey().colorA = pair.getValue().colorA;
+				pair.getKey().normX = pair.getValue().normX;
+				pair.getKey().normY = pair.getValue().normY;
+				pair.getKey().normZ = pair.getValue().normZ;
+				pair.getKey().normW = pair.getValue().normW;
+				pair.getKey().tanX = pair.getValue().tanX;
+				pair.getKey().tanY = pair.getValue().tanY;
+				pair.getKey().tanZ = pair.getValue().tanZ;
+				pair.getKey().tanW = pair.getValue().tanW;
+			}
 			
 			if (invalidateVertsGlobal) {
 				//compute necessary stuff again
