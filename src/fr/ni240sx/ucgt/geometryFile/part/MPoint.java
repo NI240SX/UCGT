@@ -203,9 +203,9 @@ public class MPoint {
 	}
 	
 	public static double round(double d) {
-		return (double)((int)(d*roundFactor))/roundFactor;
+		return (double)(Math.round(d*roundFactor))/roundFactor;
 	}
 	public static float round(float d) {
-		return (float)((int)(d*roundFactor))/roundFactor;
+		return (float)(Math.round(d*roundFactor))/roundFactor;
 	}
 }

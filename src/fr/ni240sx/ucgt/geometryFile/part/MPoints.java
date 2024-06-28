@@ -50,11 +50,13 @@ public class MPoints extends Block {
 			mp.scaleX = 0;
 			mp.scaleY = 0;
 			mp.scaleZ = 0;
+		
 			
-			//scaling, fixes an issue with some rotations
-			for (var v : mp.matrix[0]) if (Math.abs(v) > mp.scaleX) mp.scaleX = Math.abs(MPoint.round(v));
-			for (var v : mp.matrix[1]) if (Math.abs(v) > mp.scaleY) mp.scaleY = Math.abs(MPoint.round(v));
-			for (var v : mp.matrix[2]) if (Math.abs(v) > mp.scaleZ) mp.scaleZ = Math.abs(MPoint.round(v));
+			
+			mp.scaleX = MPoint.round((float) Math.sqrt(mp.matrix[0][0] * mp.matrix[0][0] + mp.matrix[0][1] * mp.matrix[0][1] + mp.matrix[0][2] * mp.matrix[0][2]));
+			mp.scaleY = MPoint.round((float) Math.sqrt(mp.matrix[1][0] * mp.matrix[1][0] + mp.matrix[1][1] * mp.matrix[1][1] + mp.matrix[1][2] * mp.matrix[1][2]));
+			mp.scaleZ = MPoint.round((float) Math.sqrt(mp.matrix[2][0] * mp.matrix[2][0] + mp.matrix[2][1] * mp.matrix[2][1] + mp.matrix[2][2] * mp.matrix[2][2]));
+	       
 
 			mp.matrix[0][0] = mp.matrix[0][0]/mp.scaleX;
 			mp.matrix[0][1] = mp.matrix[0][1]/mp.scaleX;
