@@ -7,7 +7,7 @@ It currently contains the following projects :
 - CtkFixer, a shader and texture swapper eg for materials transparency (deprecated)
 - DBMPPlus/fire, an advanced DBModelParts editor (working)
 - a collisions and damage files editor (in progress)
-- UCGT Geometry Editor, a geometry file decompiler and compiler (in progress, CLI only for now, [see associated Readme](README - Geometry Editor.md))
+- UCGT Geometry Editor, a geometry file decompiler and compiler (in progress, CLI only for now, [see associated Readme](README%20-%20Geometry%20Editor.md))
 
 This repo uses code from the following GitHub repos, converted to Java by myself.
 - NFSTools (?) : BIN and VLT hashers
