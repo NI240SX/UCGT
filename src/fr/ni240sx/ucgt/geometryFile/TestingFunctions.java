@@ -7,6 +7,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import fr.ni240sx.ucgt.binstuff.Block;
+import fr.ni240sx.ucgt.compression.CompressionLevel;
+import fr.ni240sx.ucgt.compression.CompressionType;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
 import fr.ni240sx.ucgt.geometryFile.settings.SettingsImport_Tangents;
 
@@ -218,7 +220,7 @@ public class TestingFunctions {
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\NSX\\GEOMETRY.BIN");
 
 
-//		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak", "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.obj");
+//		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY-VANILLA.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.obj");
 		
 		
 		
@@ -274,7 +276,7 @@ public class TestingFunctions {
 //		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY.BIN");
 		
 //		Geometry.defaultCompressionLevel = CompressionLevel.Maximum;
-//		Geometry.defaultCompressionLevel = CompressionLevel.High;
+		Geometry.defaultCompressionLevel = CompressionLevel.High;
 //		Geometry.defaultCompressionType = CompressionType.RawDecompressed;
 		Geometry.IMPORT_importVertexColors = false;
 		Geometry.IMPORT_calculateVertexColors = true;
@@ -283,7 +285,7 @@ public class TestingFunctions {
 		
 //		long t = System.currentTimeMillis();
 		
-		recompileCar("AUD_RS4_STK_08");
+//		recompileCar("AUD_RS4_STK_08");
 //		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\COP_CAR_MID_05\\GEOMETRY-VANILLA.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\COP_CAR_MID_05\\GEOMETRY_exported.obj");
 //		recompileCar("COP_CAR_MID_05");
 //		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\COP_CAR_MID_05\\GEOMETRY.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\COP_CAR_MID_05\\GEOMETRY_redecomp.obj");
@@ -297,7 +299,7 @@ public class TestingFunctions {
 //		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\LAM_GAL_560_09\\GEOMETRY.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\LAM_GAL_560_09\\GEOMETRY_redecomp.obj");
 //		recompileCar("FOR_GT_STK_06");
 
-		recompileCar("BMW_M6_STK_08");
+//		recompileCar("BMW_M6_STK_08");
 //		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M6_STK_08\\GEOMETRY.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M6_STK_08\\GEOMETRY_redecomp.obj");
 //		recompileCar("DOD_CHA_CON_06");
 //		var car = "DOD_CHA_CON_06";
