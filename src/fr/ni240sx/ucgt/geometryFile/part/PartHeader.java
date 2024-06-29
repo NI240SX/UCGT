@@ -87,6 +87,21 @@ public class PartHeader extends Block {
 		this.binKey = new Hash(name).binHash;
 	}
 
+	public PartHeader(PartHeader header, String name) {
+		this.partName = name;
+		this.binKey = new Hash(name).binHash;
+		this.boundsXmax = header.boundsXmax;
+		this.boundsXmin = header.boundsXmin;
+		this.boundsYmax = header.boundsYmax;
+		this.boundsYmin = header.boundsYmin;
+		this.boundsZmax = header.boundsZmax;
+		this.boundsZmin = header.boundsZmin;
+		this.matrix = header.matrix;
+		this.shadersCount = header.shadersCount;
+		this.texturesCount = header.texturesCount;
+		this.trianglesCount = header.trianglesCount;
+	}
+
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 		

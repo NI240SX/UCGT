@@ -123,7 +123,7 @@ public class MPoint {
 //			s += "MARKER	"
 //			+uniqueName+"	"
 //			+nameHash.label +"	"
-//			+p.kit+"_"+p.part+"_"+p.lod+"	";
+//			+p.name+"	";
 ////			+positionX+"	"+positionY+"	"+positionZ+"	"
 ////			s += m[0] + "	" + m[1] + "	" + m[2] + "\n";
 //			// inverted axes and using - to have the same angles as ctk
@@ -138,7 +138,7 @@ public class MPoint {
 		s += "MARKER	"
 		+uniqueName+"	"
 		+nameHash.label +"	"
-		+part.kit+"_"+part.part+"_"+part.lod+"	";
+		+part.name+"	";
 //			+positionX+"	"+positionY+"	"+positionZ+"	"
 //			s += m[0] + "	" + m[1] + "	" + m[2] + "\n";
 		if ((int)m[0] == m[0]) s+=(int)m[0]; else s+=m[0];

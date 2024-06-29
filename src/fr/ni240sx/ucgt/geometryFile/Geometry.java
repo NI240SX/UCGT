@@ -59,20 +59,22 @@ public class Geometry extends Block {
 	
 	public ArrayList<String> forceAsFixOnParts = new ArrayList<>();
 	
-	public String carname = "CAR";
+	public String carname = "UNDETERMINED";
 	
 	public static boolean USE_MULTITHREADING = true;
 
 	public static CompressionType defaultCompressionType = CompressionType.RefPack;
 	public static CompressionLevel defaultCompressionLevel = CompressionLevel.Low;
 	
-	public static boolean LOAD_removeUselessAutosculptParts = true;
+	public static boolean LOAD_removeUselessAutosculptParts = false;
 	
 	public static boolean SAVE_removeUselessAutosculptParts = true;
 	public static boolean SAVE_optimizeMaterials = true;
 	public static boolean SAVE_sortEverythingByName = true;
 	public static boolean SAVE_fixAutosculptNormals = true;
-	
+	public static boolean SAVE_removeInvalid = true;
+	public static boolean SAVE_copyMissingLODs = false;	
+
 	public static boolean IMPORT_importVertexColors = true;
 	public static boolean IMPORT_calculateVertexColors = false;
 	public static SettingsImport_Tangents IMPORT_Tangents = SettingsImport_Tangents.HIGH;
@@ -159,13 +161,14 @@ public class Geometry extends Block {
 		if (geomHeader.partsOffsets.partOffsets.get(0).isCompressed == 512) defaultCompressionType = CompressionType.RefPack;
 		else if (geomHeader.partsOffsets.partOffsets.get(0).isCompressed == 0) defaultCompressionType = CompressionType.RawDecompressed;
 		
-
-		try {
-			carname = parts.get(0).header.partName.split("_KIT")[0];
-		} catch (Exception e) {
-			System.out.println("Could not determine car name.");
+		for (var p : parts) {
+			try {
+				carname = p.header.partName.split("_KIT")[0];
+				break;
+			} catch (Exception e) {}
 		}
-		
+		if (carname.equals("UNDETERMINED")) System.out.println("Could not determine car name.");
+			
 		updateHashes();
 		
 		
@@ -173,7 +176,7 @@ public class Geometry extends Block {
 		// check global materials, markers, update names and hashes, optimize the file
 		
 //		for (var p : parts) { // iterate on parts, TODO multithread it, use var toRemove = Collections.synchronizedList(new ArrayList<Part>());
-////			System.out.println(p.kit+"_"+p.part+"_"+p.lod);
+////			System.out.println(p.name);
 //			computeMatsList(p);
 //			computeMarkersList(p);
 //		}
@@ -202,19 +205,20 @@ public class Geometry extends Block {
 			mpointsAll.clear();
 			mpointsPositions.clear();
 
-			var toRemove = new ArrayList<Part>();
+//			var toRemove = new ArrayList<Part>();
 			for (var p : parts) {
+				p.findName(carname);
 				computeMatsList(p);
 				globalizePartMarkers(p);
 				
-				optimizeAutosculpt(toRemove, p); 
+//				optimizeAutosculpt(toRemove, p); 
 			}
 			computeMarkersList();
 //		}
-			if (LOAD_removeUselessAutosculptParts) for (var p : toRemove) {
+//			if (LOAD_removeUselessAutosculptParts) for (var p : toRemove) {
 //				System.out.println("Removing part "+p.header.partName);
-				parts.remove(p);
-			}
+//				parts.remove(p);
+//			}
 
 			
 			
@@ -266,6 +270,9 @@ public class Geometry extends Block {
 		long t = System.currentTimeMillis();
 		var toRemove = Collections.synchronizedList(new ArrayList<Part>()); // parts flagged to be removed to optimize the geometry (eg T0 autosculpt with no other actual morphtargets)
 		for (var p : parts) { // iterate on parts, TODO multithread it, use var toRemove = Collections.synchronizedList(new ArrayList<Part>());			
+			
+			if (SAVE_removeInvalid) {if (!checkValid(toRemove, p)) continue;}
+			
 			optimizeAutosculpt(toRemove, p); 
 			
 			computeMatsList(p); // IMPORTANT TO KEEP HERE
@@ -277,8 +284,9 @@ public class Geometry extends Block {
 //    			m.tryGuessDefaultTex();
     			m.removeUnneeded();
     		}
-			
 			fixAutosculptMeshes(p);
+			
+			if (SAVE_copyMissingLODs) checkAndCopyMissingLODs(p);
 		}
 
         
@@ -332,7 +340,7 @@ public class Geometry extends Block {
 		
 		//remove parts flagged as useless
 
-		if (SAVE_removeUselessAutosculptParts) for (var p : toRemove) {
+		for (var p : toRemove) {
 //			System.out.println("Removing part "+p.header.partName);
 			parts.remove(p);
 		}
@@ -452,10 +460,10 @@ public class Geometry extends Block {
 		bw.write("=== CONFIGURATION FILE FOR CAR "+carname+" ===\n"
 				+ "UCGT by NI240SX\n"
 				+ "\n--- Settings ---\n");
-		bw.write("SETTING	UseMultithreading="+USE_MULTITHREADING+"\n"
+		bw.write("SETTING	CarName="+this.carname+"\n"
+				+ "SETTING	UseMultithreading="+USE_MULTITHREADING+"\n"
 				+ "SETTING	CompressionType="+defaultCompressionType+"\n"
 				+ "SETTING	CompressionLevel="+defaultCompressionLevel.getName()+"\n"
-				+ "SETTING	CarName="+this.carname+"\n"
 				+ "SETTING	VertexColors="
 				)	;
 		if (IMPORT_importVertexColors) bw.write("Import\n");
@@ -464,7 +472,10 @@ public class Geometry extends Block {
 		bw.write("SETTING	Tangents="+IMPORT_Tangents.getName()+"\n"
 				+ "SETTING	RemoveUselessAutosculpt="+SAVE_removeUselessAutosculptParts+"\n"
 				+ "SETTING	OptimizeMaterials="+SAVE_optimizeMaterials+"\n"
-				+ "SETTING	FixAutosculptNormals="+SAVE_fixAutosculptNormals+"\n");
+				+ "SETTING	FixAutosculptNormals="+SAVE_fixAutosculptNormals+"\n"
+				+ "SETTING	RemoveInvalid="+SAVE_removeInvalid+"\n"
+				+ "SETTING	CopyMissingLODs="+SAVE_copyMissingLODs+"\n"
+				+ "");
 
 		bw.write("\n--- Materials ---\n");
 		//MATERIAL	MATNAME	MATSHADER=ShaderUsage[...]	defTex=DEFAULTTEXTURE	flags=0XFLAGS000	DIFFUSE=DIFFUSE_TEX	...
@@ -562,16 +573,32 @@ public class Geometry extends Block {
 						break;
 					case "FlipV":
 						IMPORT_flipV = Boolean.parseBoolean(s2.split("=")[1]);
-						if (IMPORT_flipV) System.out.println("Flipping V texture coordinates");
+						if (IMPORT_flipV) System.out.println("Flipping V texture coordinates.");
 						break;
 						
+						//EXPERIMENTAL SETTINGS
 					case "ForceAsFix":
 						forceAsFixOnParts.add(s2.split("=")[1]);
 						System.out.println("Forcing Autosculpt fix : "+s2.split("=")[1]);
 						break;
 					case "FixAutosculptNormals":
 						SAVE_fixAutosculptNormals = Boolean.parseBoolean(s2.split("=")[1]);
-						if (SAVE_fixAutosculptNormals) System.out.println("Attempting to fix normals on Autosculpt zero area triangles");
+						if (SAVE_fixAutosculptNormals) System.out.println("Attempting to fix normals on Autosculpt zero area triangles.");
+						break;
+						
+					case "SortAllByName":
+						SAVE_sortEverythingByName = Boolean.parseBoolean(s2.split("=")[1]);
+						if (SAVE_sortEverythingByName) System.out.println("Sorting everything by name.");
+						break;
+						
+					case "CopyMissingLODs":
+						SAVE_copyMissingLODs = Boolean.parseBoolean(s2.split("=")[1]);
+						if (SAVE_copyMissingLODs) System.out.println("Copying missing LODs.");
+						break;
+						
+					case "RemoveInvalid":
+						SAVE_removeInvalid = Boolean.parseBoolean(s2.split("=")[1]);
+						if (SAVE_removeInvalid) System.out.println("Removing invalid parts.");
 						break;
 
 					default:
@@ -1016,25 +1043,53 @@ public class Geometry extends Block {
 		}
 	}
 
-	public void optimizeAutosculpt(List<Part> toRemove, Part p) {
-		// AUTOSCULPT OPTIMIZATION - has to be moved to the saving method
+	public boolean checkValid(List<Part> toRemove, Part p) {
+		boolean valid = true;
 		
-//			ArrayList<Integer> tempZones = new ArrayList<Integer>();
+		if (p.kit.equals("")) valid = false;
+		if (!p.lod.equals("A") && !p.lod.equals("B") && !p.lod.equals("C") && !p.lod.equals("D")) valid = false;
+		
+		if (!valid) {
+			toRemove.add(p);
+			System.out.println("Invalid part : "+p.name);
+		}
+		return valid;
+	}
+	
+	public void checkAndCopyMissingLODs(Part p) {
+		Part A=null;
+		Part B=null;
+		Part C=null;
+		for (var p2 : parts) if (p2.kit.equals(p.kit) && p2.part.equals(p.part)) {
+			if (p2.lod.equals("A")) A = p2;
+			if (p2.lod.equals("B")) B = p2;
+			if (p2.lod.equals("C")) C = p2;
+		}
+		System.out.println(p.name+" has A : "+(A!=null)+", has B : "+(B!=null)+", has C : "+(C!=null));
+
+		if (A == null && B != null) parts.add(A = new Part(B, carname, B.kit+"_"+B.part+"_A"));
+		if (A == null && C != null) parts.add(A = new Part(C, carname, C.kit+"_"+C.part+"_A"));
+		if (B == null && A != null) parts.add(B = new Part(A, carname, A.kit+"_"+A.part+"_B"));
+		if (C == null) parts.add(C = new Part(B, carname, B.kit+"_"+B.part+"_C"));
+	}
+	
+	public void optimizeAutosculpt(List<Part> toRemove, Part p) {
+		// AUTOSCULPT OPTIMIZATION
+		
 		int numZonesFound = 0;
 		Part potentialUselessT0 = null;
 		//link autosculpt zones
 		for (var p2 : parts) if (p2 != p) {
-													//T0-9														T10-99
 			if ((p2.part.substring(0, p2.part.length()-1).equals(p.part+"_T") || p2.part.substring(0, p2.part.length()-2).equals(p.part+"_T"))
 					&& p2.kit.equals(p.kit) && p2.lod.equals(p.lod)) { // as zone found
-//					tempZones.add(new Hash(p2.header.partName).binHash); //TODO assuming the header exists and is up to date
 				potentialUselessT0 = p2;
 				numZonesFound++;
 			}
 		}
 		
-		if (numZonesFound == 1 && toRemove != null) { //if only one zone detected, check whether it is T0, if yes yeet it, it should have no point existing
-//				System.out.println("Warning : only one autosculpt zone on "+p.kit+"_"+p.part+"_"+p.lod);
+		if (SAVE_removeUselessAutosculptParts) if (numZonesFound == 1 && toRemove != null) { 
+			//if only one zone detected, check whether it is T0, if yes yeet it, it should have no point existing
+//				System.out.println("Warning : only one autosculpt zone on "+p.name);
 			toRemove.add(potentialUselessT0);
 //				tempZones.clear();
 		}
@@ -1043,13 +1098,13 @@ public class Geometry extends Block {
 			if (numZonesFound < 2) { //preexisting but no as zones detected
 				p.subBlocks.remove(p.asZones);
 				p.asZones = null;
-//					System.out.println("Removed unused autosculpt zones on "+p.kit+"_"+p.part+"_"+p.lod);
+//					System.out.println("Removed unused autosculpt zones on "+p.name);
 			}
 		} else if (numZonesFound > 1) { //nothing preexisting but as zones detected
 			p.asZones = new AutosculptZones();
 			p.asZones.zones = p.generateASZones();
 			p.subBlocks.add(p.asZones);
-//			System.out.println("Added autosculpt zones on "+p.kit+"_"+p.part+"_"+p.lod);
+//			System.out.println("Added autosculpt zones on "+p.name);
 		}
 	}
 	
@@ -1112,7 +1167,7 @@ public class Geometry extends Block {
 			//loop on each material for all autosculpt parts
 			for (int mat=0; mat<p.mesh.materials.materials.size(); mat++) {
 				boolean invalidateVertsMat = false;
-				if (forceAsFixOnParts.contains(p.kit+"_"+p.part+"_"+p.lod)) {
+				if (forceAsFixOnParts.contains(p.name)) {
 					invalidateVertsGlobal = true;
 	    			invalidateVertsMat = true;
 				} else {

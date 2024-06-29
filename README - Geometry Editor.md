@@ -29,16 +29,29 @@ The configuration file works by line : each line starts with a keyword determini
 
 ### Settings
 This part uses the keyword `SETTING` ; several settings can be written next to each other on a single line. It contains multiple settings concerning compiling, which are the following :
+
+_Base_
 - `CarName` - **mandatory** : sets the car name in the output Geometry.
+
+_Compression_
 - `UseMultithreading` - optional, defaults to true : use single-threaded or multi-threaded compression for car parts, multi-threaded significantly decreases the time needed to compile, especially when using RefPack and high compression settings. Possible values : true or false.
 - `CompressionType` - optional, defaults to RefPack : set the compression type used for parts. Possible values : RefPack/RFPK, RawDecompressed/RAWW.
 - `CompressionLevel` - optional, defaults to Low : set the compression level used. Has no effect if the compression type isn't RefPack. High or better recommended when your model is finalized. Possible values : Minimum, Low, Medium, High, VeryHigh, Ultra, Maximum.
+
+_Optimization_
+- `RemoveInvalid` - optional, defaults to true : removes invalid parts that don't fit with the game's naming scheme. Possible values : true or false.
 - `RemoveUselessAutosculpt` - optional, defaults to true : removes useless _T0 parts when there's no actual morph zones to reduce file size. Possible values : true or false.
 - `OptimizeMaterials` - optional, defaults to true : removes some unnecessary data in material declarations to help reduce file size. Possible values : true or false.
+- `SortAllByName` - optional, defaults to true : sorts parts, markers, materials etc. by name. Possible values : true or false.
+- `CopyMissingLODs` - optional, defaults to false : if one or multiple LODs are missing, copies the mesh from a higher LOD. Possible values : true or false.
+
+_Mesh_
 - `VertexColors` - optional, defaults to Import : import vertex colors (baked AO) from OBJ, generate them with an integrated method, or don't include them. Possible values : Import, Generate/Calculate, No.
 - `Tangents` - optional, defaults to High : whether to calculate vertex tangents for normalmapped materials. High recommended, for Manual see the Materials section. Possible values : Off/No/None, Low/Optimized/ByShaderUsage, High/ByTextureUsage, Manual/PerMaterial, All/On/ForceCalculate.
 - `FlipV` - optional, defaults to false : whether to flip the vertical axis on UV maps. Use in case your textures end up upside down. Possible values : true or false.
-- `ForceAsFix` - optional : force-fixes autosculpt on the specified part if it doesn't get compiled correctly (this happens when there's the same amount of vertices on every morph zone but the welding is different). Possible values : any part name.
+
+_Experimental fixes_
+- `ForceAsFix` - optional : force-fixes autosculpt on the specified part if it doesn't get compiled correctly (this happens when there's the same amount of vertices on every morph zone but the welding is different). You can put this setting multiple times. Possible values : any part name.
 - `FixAutosculptNormals` - optional, defaults to true : attempts to fix normals on zero area triangles, greatly improving the look of some Autosculpt parts, including vanilla. Possible values : true or false.
 
 Example settings :
@@ -57,20 +70,29 @@ This part uses the keyword `MATERIAL` and contains materials definitions, one pe
 The material name, shader name and textures names are nonrestricted.
 
 The possible shader usages are the following :
+
+_Regular_
 - Diffuse : use for most basic materials.
 - DiffuseAlpha/Alpha : use for basic materials with transparency.
 - car_a_nzw : unknown for now, will get a better name when I find more about it.
 - DiffuseNormal/Normal : use for basic materials with normal.
 - DiffuseNormalAlpha/NormalAlpha : use for basic materials with both alpha and normal.
+
+_Skinnable_
+- DiffuseSwatch/Swatch : use for carskin without damage mapping.
 - DiffuseNormalSwatch/NormalSwatch : use for carskin and carbonfiber, probably anything skinnable/damageable.
 - DiffuseNormalSwatchAlpha/NormalSwatchAlpha : unused in vanilla models, probably the same as above with transparency.
+
+_Emissive_
 - DiffuseSelfIllumination/DiffuseGlow/SelfIllumination/Glow : use for head- and taillights.
 - DiffuseSelfIlluminationAlpha/DiffuseGlowAlpha/SelfIlluminationAlpha/GlowAlpha : use for brakelight glass.
-- DiffuseSwatch/Swatch : use for carskin without damage mapping.
+
+_Traffic_
 - TrafficDiffuse/Traffic : use for basic materials on traffic cars.
 - TrafficDiffuseAlpha/TrafficAlpha : use for transparent traffic car materials.
 - TrafficDiffuseNormal/TrafficNormal : use for traffic car materials with normals, including carskin.
-In most cases, you can invert two names, the compiler should still understand it (eg AlphaNormal works the same as NormalAlpha)
+
+In most cases, you can invert two names, the compiler should still understand it (e.g. AlphaNormal works the same as NormalAlpha).
 
 Texture usages must fit with the shader usage, otherwise they might be ignored. The possible texture usages are the following :
 - DIFFUSE : simply use the texture as diffuse (if the shader usage is DiffuseAlpha, the alpha channel is taken from this texture too).

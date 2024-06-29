@@ -67,7 +67,7 @@ public class Material {
 	public void tryGuessHashes(Geometry geometry, Part p) {
 		if (p.shaderlist != null) ShaderHash = Hash.guess(p.shaderlist.shaders.get(shaderID), geometry.hashlist, String.format("0x%08X", p.shaderlist.shaders.get(shaderID)), "BIN");
 		else {
-			System.out.println("Critical issue with part "+p.kit+"_"+p.part+"_"+p.lod+" : missing shaders ! defaulting to DULLPLASTIC");
+			System.out.println("Critical issue with part "+p.name+" : missing shaders ! defaulting to DULLPLASTIC");
 			ShaderHash = new Hash("DULLPLASTIC");
 		}
 //		DefaultTextureHash = Hash.guess(textureHash, geometry.hashlist, String.format("0x%08X",textureHash), "BIN"); //apparently unused

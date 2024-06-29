@@ -276,12 +276,15 @@ public class TestingFunctions {
 //		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY.BIN");
 		
 //		Geometry.defaultCompressionLevel = CompressionLevel.Maximum;
-		Geometry.defaultCompressionLevel = CompressionLevel.High;
+//		Geometry.defaultCompressionLevel = CompressionLevel.High;
 //		Geometry.defaultCompressionType = CompressionType.RawDecompressed;
 		Geometry.IMPORT_importVertexColors = false;
 		Geometry.IMPORT_calculateVertexColors = true;
 		Geometry.IMPORT_Tangents = SettingsImport_Tangents.HIGH;
 //		Geometry.EXPORT_vanillaPlusMaterials = true;
+		
+		var geom = importFromFile("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\a UCE\\CARS- S2000\\onda.obj");
+		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\S2000\\GEOMETRY.BIN");
 		
 //		long t = System.currentTimeMillis();
 		

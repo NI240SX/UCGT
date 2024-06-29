@@ -47,7 +47,7 @@ public class WavefrontOBJ {
         		if (!line.substring(2).startsWith("_")) {
         			// part
         			nextIsMarker = false;
-	        		for (var p : geom.parts) if ((p.kit+"_"+p.part+"_"+p.lod).equals(line.substring(2))) {
+	        		for (var p : geom.parts) if ((p.name).equals(line.substring(2))) {
 	        			curPart = p;
 	        			break lineheader;
 	        		}
@@ -416,8 +416,8 @@ private static void normalizeTangents(ArrayList<Vertex> vertices) {
 		long vl = 1;
         for (var p : geom.parts) {
         	bw.write("\n"
-        			+ "o "+p.kit+"_"+p.part+"_"+p.lod+"\n"
-        			+ "g "+p.kit+"_"+p.part+"_"+p.lod+"\n");
+        			+ "o "+p.name+"\n"
+        			+ "g "+p.name+"\n");
         	//vrite material data one after the other
         	for (var m : p.mesh.materials.materials) {
         		for (var v : m.verticesBlock.vertices) {

@@ -34,6 +34,7 @@ public class Part extends Block {
 	public String kit;
 	public String part;
 	public String lod;
+	public String name = "";
 	
 	public Part(ByteBuffer in, int partKey) {
 		
@@ -84,23 +85,43 @@ public class Part extends Block {
 			}
 		}
 		
+//		if (header != null) {
+//			if (new Hash(header.partName).binHash != partKey) System.out.println("WARNING : incorrect part name "+header.partName);
+//			
+//			findKitLodPart("");
+//		}
+	}
+	
+	public void findName(String carname) {
 		if (header != null) {
-			if (new Hash(header.partName).binHash != partKey) System.out.println("WARNING : incorrect part name "+header.partName);
-			
-			findKitLodPart();
+			name = header.partName.replace(carname+"_", "");
+			findKitLodPart(carname);
 		}
 	}
 
 
-	public void findKitLodPart() {
-		kit = "KIT" + header.partName.split("_KIT")[1].split("_")[0];
-		lod = header.partName.split("_")[header.partName.split("_").length-1];
-//			String s = header.partName.split("_")[header.partName.split("_").length-2];
-//			if (s.length() == 2 && s.charAt(0) == 'T') autosculptZone = Byte.parseByte(s.substring(1));
-		part = header.partName.split(kit+"_")[1].substring(0, header.partName.split(kit+"_")[1].length()-2) /*.replace("_T"+autosculptZone, "")*/;
-//			if (autosculptZone == -1) 
-//				System.out.println("Kit : "+kit+", part : "+part+", lod : "+lod);
-//			else System.out.println("Kit : "+kit+", part : "+part+", autosculpt : T"+autosculptZone+", lod : "+lod);
+	public void findKitLodPart(String carname) {
+		try {
+			kit = "KIT" + header.partName.split("_KIT")[1].split("_")[0];
+			lod = header.partName.split("_")[header.partName.split("_").length-1];
+	//			String s = header.partName.split("_")[header.partName.split("_").length-2];
+	//			if (s.length() == 2 && s.charAt(0) == 'T') autosculptZone = Byte.parseByte(s.substring(1));
+			part = header.partName.split(kit+"_")[1].substring(0, header.partName.split(kit+"_")[1].length()-2) /*.replace("_T"+autosculptZone, "")*/;
+	//			if (autosculptZone == -1) 
+	//				System.out.println("Kit : "+kit+", part : "+part+", lod : "+lod);
+	//			else System.out.println("Kit : "+kit+", part : "+part+", autosculpt : T"+autosculptZone+", lod : "+lod);
+		} catch (Exception e) {
+//			System.out.println("Could not read part kit : "+header.partName);
+			kit = "";
+			try {
+				lod = header.partName.split("_")[header.partName.split("_").length-1];
+				part = header.partName.replaceFirst(carname+"_","").substring(0, header.partName.replaceFirst(carname+"_","").length()-lod.length()-1);
+			} catch (Exception e2) {
+//				System.out.println("Could not read part lod : "+header.partName);
+				lod = "";
+				part = header.partName.replaceFirst(carname+"_","");
+			}
+		}
 	}
 	
 
@@ -112,9 +133,25 @@ public class Part extends Block {
 		this.shaderlist = new Shaders();
 		this.mesh = new Mesh();
 		
-		findKitLodPart();
+		findKitLodPart(carname);
+		this.name = substring;
 	}
 
+
+	public Part(Part p, String carname, String substring) {
+		// no need to be a deep copy (this is used for generated LODs), only the header changes
+		this.header = new PartHeader(p.header, carname+"_"+substring);
+		this.texusage = p.texusage;
+		this.strings = p.strings;
+		this.shaderlist = p.shaderlist;
+		this.mpoints = p.mpoints;
+		this.mesh = p.mesh;
+		this.asLinking = p.asLinking;
+		this.asZones = p.asZones;
+
+		findKitLodPart(carname);
+		this.name = substring;
+	}
 
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {

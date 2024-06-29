@@ -2,6 +2,8 @@
 This repo aims at filling gaps in NFS Undercover modding enlightened during the development of the Undercover Exposed mod.
 As long as you explicitly credit me, you can freely reuse portions of this code or take inspiration from it.
 
+**YOU NEED JAVA 15 OR HIGHER TO RUN ANY OF THE FOLLOWING**
+
 It currently contains the following projects :
 - GeomDump, a helper for creating other tools (working)
 - CtkFixer, a shader and texture swapper eg for materials transparency (deprecated)
