@@ -58,6 +58,7 @@ public class Geometry extends Block {
 	public List<AutosculptLinking> asLinking = new ArrayList<AutosculptLinking>();//Collections.synchronizedList(new ArrayList<AutosculptLinking>());
 	
 	public ArrayList<String> forceAsFixOnParts = new ArrayList<>();
+	public HashMap<String,String> renameParts = new HashMap<>();
 	
 	public String carname = "UNDETERMINED";
 	
@@ -269,6 +270,21 @@ public class Geometry extends Block {
 
 		long t = System.currentTimeMillis();
 		var toRemove = Collections.synchronizedList(new ArrayList<Part>()); // parts flagged to be removed to optimize the geometry (eg T0 autosculpt with no other actual morphtargets)
+		
+		if (!renameParts.isEmpty()) {
+//			System.out.println("parts to rename present :");
+//			for (var k : renameParts.keySet()) {
+//				System.out.println(k+" : "+renameParts.get(k));
+//			}
+			for (var p : parts) if (renameParts.get(p.name) != null) {
+				System.out.print("Rename part "+p.name);
+				p.header.partName = carname+"_"+renameParts.get(p.name);
+				p.header.binKey = new Hash(p.header.partName).binHash;
+				p.name = renameParts.get(p.name);
+				System.out.println(" to "+p.name);
+			}
+		}
+		
 		for (var p : parts) { // iterate on parts, TODO multithread it, use var toRemove = Collections.synchronizedList(new ArrayList<Part>());			
 			
 			if (SAVE_removeInvalid) {if (!checkValid(toRemove, p)) continue;}
@@ -522,6 +538,7 @@ public class Geometry extends Block {
 		var br = new BufferedReader(new FileReader(f));
 		String l;
 		while ((l=br.readLine())!=null) {
+			int iterator;
 			switch (l.split("	")[0].split(" ")[0]) { // support for both space and tab separators
 			case "SETTING":
 				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (s2.contains("=")) {
@@ -608,6 +625,23 @@ public class Geometry extends Block {
 				break;
 				
 				
+			case "RENAME":
+				iterator = 0;
+				String toren = null;
+				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) {
+					switch(iterator) {
+					case 1:
+						toren = s2;
+						break;
+					case 2:
+						renameParts.put(toren, s2);
+						break;
+					}
+					iterator++;
+				}
+				break;
+				
+				
 			case "MATERIAL": // IF THE CAR NAME ISN'T SET BEFORE THIS, CAR-SPECIFIC TEXTURES WILL BREAK
 				var m = new Material();
 				materials.add(m);
@@ -634,7 +668,7 @@ public class Geometry extends Block {
 				
 			case "MARKER":
 				var mp = new MPoint();
-				int iterator = 0;
+				iterator = 0;
 				float u=0, v=0, w=0; //euler angles
 				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty() && !s2.equals("MARKER")) {
 					switch (iterator) {
@@ -724,15 +758,18 @@ public class Geometry extends Block {
 				+ "UCGT by NI240SX\n"
 				+ "Converted from a CTK model - please fill in what's missing and check what's already filled in !\n"
 				+ "\n--- Settings ---\n");
-		bw.write("SETTING	UseMultithreading="+Geometry.USE_MULTITHREADING+"\n"
+		bw.write("SETTING	CarName=MISSING\n"
+				+ "SETTING	UseMultithreading="+Geometry.USE_MULTITHREADING+"\n"
 				+ "SETTING	CompressionType="+Geometry.defaultCompressionType+"\n"
 				+ "SETTING	CompressionLevel="+Geometry.defaultCompressionLevel.getName()+"\n"
-				+ "SETTING	CarName=MISSING\n"
 				+ "SETTING	VertexColors=Calculate\n"
 				+ "SETTING	Tangents="+Geometry.IMPORT_Tangents.getName()+"\n"
 				+ "SETTING	FlipV=true\n"
 				+ "SETTING	RemoveUselessAutosculpt="+Geometry.SAVE_removeUselessAutosculptParts+"\n"
 				+ "SETTING	OptimizeMaterials="+Geometry.SAVE_optimizeMaterials+"\n"
+				+ "SETTING	FixAutosculptNormals="+SAVE_fixAutosculptNormals+"\n"
+				+ "SETTING	RemoveInvalid="+SAVE_removeInvalid+"\n"
+				+ "SETTING	CopyMissingLODs="+SAVE_copyMissingLODs+"\n"
 				+ "\n--- Converted data from CTK config ---\n" );
 		
 		String l;
@@ -740,6 +777,28 @@ public class Geometry extends Block {
 		while ((l=br.readLine())!=null) {
 			switch (l.split("	")[0].split(" ")[0]) { // support for both space and tab separators
 				
+			case "PART":
+				iterator = 0;
+				String meshName = "";
+				String wantedPart = "";
+				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty()) {
+					switch(iterator) {
+					case 2:
+						//mesh in the model
+						meshName = s2;
+						break;
+					case 3:
+						//wanted part name
+						wantedPart = s2;
+						break;
+					}
+					iterator++;
+				}
+				if (!meshName.equals(wantedPart)) {
+					bw.write("RENAME	"+meshName+"	"+wantedPart+"\n");
+				}
+				break;
+			
 			case "MATERIAL":
 				iterator = 0;
 				ShaderUsage usage = ShaderUsage.Diffuse;

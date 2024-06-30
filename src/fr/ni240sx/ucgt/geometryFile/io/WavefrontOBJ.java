@@ -140,7 +140,7 @@ public class WavefrontOBJ {
 	        			}
 	
 	        			v.texU = tex.get(Integer.parseInt(vertdata.split("/")[1])-1).u;
-	        			if (Geometry.IMPORT_flipV) v.texV = -tex.get(Integer.parseInt(vertdata.split("/")[1])-1).v;
+	        			if (Geometry.IMPORT_flipV) v.texV = 1-tex.get(Integer.parseInt(vertdata.split("/")[1])-1).v;
 	        			else v.texV = tex.get(Integer.parseInt(vertdata.split("/")[1])-1).v;
 	        			
 	        			v.normX = normals.get(Integer.parseInt(vertdata.split("/")[2])-1).x;

@@ -140,3 +140,12 @@ Example Autosculpt links :
 `ASLINK	KIT11_BUMPER_FRONT_A	KIT11_FENDER_FRONT_LEFT_A,4,4,3,3	KIT11_FENDER_FRONT_RIGHT_A,4,4,3,3`
 
 `ASLINK	KIT09_BUMPER_REAR_A	KIT09_BODY_A,1,1,1,1	KIT09_BODY_A,3,3,3,3	KIT09_BODY_A,4,4,4,4`
+
+### Parts renaming
+This part uses the keyword `RENAME`. It can be used to manually rename a single part, like you can do in a CTK config. First put the name you have in the model, then the name you want it to be changed to. 
+
+Example renamings : 
+
+`RENAME	KITW01_WIDEBODY_A	KITW01_BODY_A`
+
+`RENAME	STYLE04_HOOD_T3_A	KIT06_HOOD_T3_A`
