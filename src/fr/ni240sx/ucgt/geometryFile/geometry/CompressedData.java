@@ -9,6 +9,7 @@ import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 
 public class CompressedData extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.CompressedData;}
 
 	public int decompressionOffset;

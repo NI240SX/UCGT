@@ -25,9 +25,9 @@ public class PartVisualizer extends Application{
 	
 //	public static ArrayList<MeshView> partMeshView = new ArrayList<MeshView>();
 	
-	public static List<Part> partsList = new ArrayList<Part>();
-	public static ArrayList<Material> materials = new ArrayList<Material>();
-	public static ArrayList<Color> materialColors = new ArrayList<Color>();
+	public static List<Part> partsList = new ArrayList<>();
+	public static ArrayList<Material> materials = new ArrayList<>();
+	public static ArrayList<Color> materialColors = new ArrayList<>();
 		
 	@Override
 	public void start(Stage primaryStage) throws Exception {
@@ -213,7 +213,6 @@ public class PartVisualizer extends Application{
 //		try {
 //			launch(args);
 //		} catch (Exception e) {
-//			// TODO Auto-generated catch block
 //			e.printStackTrace();
 //		}	
 //	}

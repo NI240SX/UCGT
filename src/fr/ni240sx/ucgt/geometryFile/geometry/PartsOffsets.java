@@ -15,9 +15,10 @@ import fr.ni240sx.ucgt.geometryFile.Part;
 
 public class PartsOffsets extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.Geom_PartsOffsets;}
 	
-	public ArrayList<PartOffset> partOffsets = new ArrayList<PartOffset>();
+	public ArrayList<PartOffset> partOffsets = new ArrayList<>();
 //	public HashMap<Integer, PartOffset> partOffsets = new HashMap<Integer, PartOffset>(); //this caused the part offsets to be mismatched
 	
 	public PartsOffsets(ByteBuffer in) {

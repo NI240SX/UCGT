@@ -28,28 +28,28 @@ public class Vertex {
 	public double tanW=0.0;
 	
 	public Vertex(ByteBuffer in) {
-		posX = (double)(in.getShort())/3276.8; //half4
-		posY = (double)(in.getShort())/3276.8;
-		posZ = (double)(in.getShort())/3276.8;
-		posW = (double)(in.getShort())/3276.8;
+		posX = (in.getShort())/3276.8; //half4
+		posY = (in.getShort())/3276.8;
+		posZ = (in.getShort())/3276.8;
+		posW = (in.getShort())/3276.8;
 		
-		texU = (double)(in.getShort())/1024.0;	//half2
-		texV = (double)(1-(in.getShort())/1024.0);
+		texU = (in.getShort())/1024.0;	//half2
+		texV = 1-(in.getShort())/1024.0;
 
 		colorR = in.get();	//color
 		colorG = in.get();
 		colorB = in.get();
 		colorA = in.get();
 		
-		normX = (double)(in.getShort())/32768.0; //dec4n
-		normY = (double)(in.getShort())/32768.0;
-		normZ = (double)(in.getShort())/32768.0;
-		normW = (double)(in.getShort())/32768.0;
+		normX = (in.getShort())/32768.0; //dec4n
+		normY = (in.getShort())/32768.0;
+		normZ = (in.getShort())/32768.0;
+		normW = (in.getShort())/32768.0;
 
-		tanX = (double)(in.getShort())/32768.0; //dec4n
-		tanY = (double)(in.getShort())/32768.0;
-		tanZ = (double)(in.getShort())/32768.0;
-		tanW = (double)(in.getShort())/32768.0;
+		tanX = (in.getShort())/32768.0; //dec4n
+		tanY = (in.getShort())/32768.0;
+		tanZ = (in.getShort())/32768.0;
+		tanW = (in.getShort())/32768.0;
 		
 //		System.out.println(this);
 	}

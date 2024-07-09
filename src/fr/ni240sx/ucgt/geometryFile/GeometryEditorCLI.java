@@ -6,11 +6,12 @@ import java.io.FileReader;
 import java.io.InputStreamReader;
 
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
+import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
 
 public class GeometryEditorCLI {
 
-	public static final String programVersion = "1.0.5";
-	public static final String programBuild = "2024.06.30";
+	public static final String programVersion = "1.1.0";
+	public static final String programBuild = "2024.07.10";
 	
 	public static Geometry geom;
 //	public static ArrayList<String> commandsHistory = new ArrayList<>();
@@ -50,6 +51,7 @@ public class GeometryEditorCLI {
 
 	}
 
+	@SuppressWarnings("unused")
 	public static void parseCommand(String l) {
 		try{
 			String src, dst;
@@ -96,9 +98,9 @@ public class GeometryEditorCLI {
 							System.out.println("Operation successful !");
 							
 						} catch (Exception e) {System.out.printf("Error saving Geometry : %s\n", e.getMessage());}
-					} catch (Exception e) {System.out.printf("Error loading the provided OBJ and converting it into a Geometry : %s\n", e.getMessage());}
+					} catch (Exception e) {System.out.printf("Error loading the provided file and converting it into a Geometry : %s\n", e.getMessage());}
 					
-				} catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : compile <OBJ source> <BIN output>");}
+				} catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : compile <OBJ/Z3D source> <BIN output>");}
 				break;
 				
 			case "decompile":
@@ -130,17 +132,24 @@ public class GeometryEditorCLI {
 						System.out.println("Loading geometry...");
 						geom = Geometry.load(new File(src));
 						System.out.println("Geometry read in "+(System.currentTimeMillis()-t)+" ms."
-								+ "\nSaving OBJ...");
+								+ "\nSaving 3D model...");
 						t = System.currentTimeMillis();
 						try {
-							WavefrontOBJ.save(geom, dst);
-							System.out.println("Wavefront saved in "+(System.currentTimeMillis()-t)+" ms.");
+							if (dst.endsWith(".z3d")) {
+								ZModelerZ3D.save(geom, dst);
+								System.out.println("ZModeler scene saved in "+(System.currentTimeMillis()-t)+" ms.");
+						        geom.writeConfig(new File(dst.replace(".z3d", "")+".ini"));
+							} else {
+								WavefrontOBJ.save(geom, dst);
+								System.out.println("Wavefront saved in "+(System.currentTimeMillis()-t)+" ms.");
+						        geom.writeConfig(new File(dst.replace(".obj", "")+".ini"));
+							}
 							System.out.println("Operation successful !");
 							
 						} catch (Exception e) {System.out.printf("Error saving OBJ : %s\n", e.getMessage());}
 					} catch (Exception e) {System.out.printf("Error loading Geometry : %s\n", e.getMessage());}
 					
-				}catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : decompile <BIN source> <OBJ output>");}
+				}catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : decompile <BIN source> <OBJ/Z3D output>");}
 				break;
 				
 			case "convert":
@@ -231,9 +240,16 @@ public class GeometryEditorCLI {
 				Geometry Editor Command-Line
 				Version %s - %s
 				
+				Supported files :
+					NFS Undercover .BIN car models
+					Wavefront .OBJ 3D models
+					ZModeler 2 .Z3D 3D scenes
+					UCGT .INI configuration files
+					CTK .TXT configuration files
+				
 				Commands :
-					compile <OBJ source> <BIN output>           - compile a Wavefront OBJ to a Geometry
-					decompile <BIN source> <OBJ output>         - extract a Geometry to a Wavefront OBJ
+					compile <OBJ/Z3D source> <BIN output>       - compile a 3D model to a Geometry
+					decompile <BIN source> <OBJ/Z3D output>     - extract a Geometry to a 3D model
 					convert <TXT CTK config> [INI UCGT config]  - convert a CTK .txt config to an UCGT .ini config
 					script <file>                               - load a script containing multiple of these commands
 

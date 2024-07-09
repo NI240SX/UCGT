@@ -1,7 +1,9 @@
 package fr.ni240sx.ucgt.geometryFile.io;
 
 public class VertexData3{
-	double x, y, z;
+	public double x;
+	public double y;
+	public double z;
 
 	public VertexData3(double x, double y, double z) {
 		super();

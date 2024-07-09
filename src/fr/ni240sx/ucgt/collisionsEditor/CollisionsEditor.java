@@ -70,11 +70,11 @@ public class CollisionsEditor extends Application {
 			disableWarnings = Boolean.valueOf(br.readLine());
 			
 			br.close();
-		} catch (Exception e) {}
+		} catch (@SuppressWarnings("unused") Exception e) {}
 		
 		try {
 			mainCollisions = new Collisions(new File(lastDirectoryLoaded + lastFileLoaded));
-		} catch (Exception e){}
+		} catch (@SuppressWarnings("unused") Exception e){}
 		
 		
         launch(args);
@@ -94,7 +94,8 @@ public class CollisionsEditor extends Application {
 		}
 	}
 	
-    public void start(Stage primaryStage) {
+    @Override
+	public void start(Stage primaryStage) {
         primaryStage.setTitle(programName + " - " + mainCollisions.carname.label);
 
         VBox windowTop = new VBox();
@@ -113,6 +114,7 @@ public class CollisionsEditor extends Application {
         MenuItem fileExit = new MenuItem("Exit");
         
         fileLoad.setOnAction(new EventHandler<ActionEvent>(){
+			@Override
 			public void handle(ActionEvent arg0) {
 		        ButtonType sure = null;
 		        if (!disableWarnings) sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to load new collisions ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
@@ -180,7 +182,7 @@ public class CollisionsEditor extends Application {
 				mainCollisions.saveToFile(f);
 				if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Database saved successfully.", ButtonType.OK).show();
 	    		e.consume();        
-			} catch (Exception e1) {
+			} catch (@SuppressWarnings("unused") Exception e1) {
             	new Alert(Alert.AlertType.WARNING, "Error saving collisions, please try again !").show();
 			}
         });
@@ -456,6 +458,6 @@ public class CollisionsEditor extends Application {
     }
     
     public void updateAllPartsDisplay() {
-    	
+    	//
     }
 }

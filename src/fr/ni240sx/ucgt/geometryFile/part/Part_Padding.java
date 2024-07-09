@@ -9,8 +9,10 @@ import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 
 public class Part_Padding extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.Part_Padding;}
 	
+	@SuppressWarnings("hiding")
 	public byte[] data = new byte[12];
 	
 	public Part_Padding(ByteBuffer in) {

@@ -40,6 +40,9 @@ public class Hash {
 			this.vltHash = hex;
 			this.reversedVltHash = Integer.reverseBytes(this.vltHash);
 			break;
+		default:
+			this.label = label;
+			break;
 		}
 	}
 	
@@ -47,13 +50,21 @@ public class Hash {
 	 * @param label
 	 */
 	public Hash(String label) {
-		this.label = label;
-		this.binHash = findBinHash(label);
-		this.vltHash = findVltHash(label);
-		this.reversedBinHash = Integer.reverseBytes(this.binHash);
-		this.reversedVltHash = Integer.reverseBytes(vltHash);
-		this.reversedBinHashBytes = intToBytes(reversedBinHash);
-//		System.out.println(label + "=" + Integer.toHexString(this.binHash));
+		if (label.startsWith("0x")) {
+			//already hashed input, we'll assume it is a BIN hash
+			this.label = label;
+			this.binHash = Integer.parseUnsignedInt(label.substring(2), 16);
+			this.reversedBinHash = Integer.reverseBytes(this.binHash);
+			this.reversedBinHashBytes = intToBytes(reversedBinHash);
+		} else {
+			this.label = label;
+			this.binHash = findBinHash(label);
+			this.vltHash = findVltHash(label);
+			this.reversedBinHash = Integer.reverseBytes(this.binHash);
+			this.reversedVltHash = Integer.reverseBytes(vltHash);
+			this.reversedBinHashBytes = intToBytes(reversedBinHash);
+	//		System.out.println(label + "=" + Integer.toHexString(this.binHash));
+		}
 	}
 	
 	/**
@@ -91,7 +102,7 @@ public class Hash {
 
 	public static char reverseCharHash(byte search) {
 		if (search<binChars.length)return binChars[search];
-		else return 'ù';
+		return 'ù';
 	}
 	
 	
@@ -105,7 +116,8 @@ public class Hash {
 //			System.out.println(Integer.toHexString(l));
 			return l;
 			
-		} else return 0;	
+		}
+		return 0;	
 	}
 	
 	
@@ -168,7 +180,8 @@ public class Hash {
 
             return Mix32_2(a, b, c);
             
-		} else return 0;	
+		}
+		return 0;	
 	}
 	
 	private static int[] Mix32_1(int a, int b, int c)
@@ -228,7 +241,7 @@ public class Hash {
 	
 	
 	public static ArrayList<Hash> loadHashes(File f) {
-		ArrayList<Hash> l = new ArrayList<Hash>();		
+		ArrayList<Hash> l = new ArrayList<>();		
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(f));
 			String key;

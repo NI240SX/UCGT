@@ -10,6 +10,7 @@ import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 
 public class GeomInfo extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.Geom_Info;}
 	public static final int usualLength = 144;
 	

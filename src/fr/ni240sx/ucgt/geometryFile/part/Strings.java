@@ -10,10 +10,11 @@ import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 
 public class Strings extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.Part_Strings;}
 
 	// texture binhash, usage type
-	public ArrayList<String> strings = new ArrayList<String>();
+	public ArrayList<String> strings = new ArrayList<>();
 	
 	public Strings(ByteBuffer in) {
 		var blockLength = in.getInt();

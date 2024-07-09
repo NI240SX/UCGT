@@ -127,12 +127,12 @@ public class Material {
 		if(!textureUsages.contains(TextureUsage.NORMAL) && textureUsages.contains(TextureUsage.SWATCH)) flags[3] = (byte) 0x22;
 		if(textureUsages.contains(TextureUsage.NORMAL) && textureUsages.contains(TextureUsage.SWATCH)) flags[3] = (byte) 0x02;
 	}
-//	
-//	public void tryGuessDefaultTex() {
-//		textureHash = textures.get(0);
-//		DefaultTextureHash = TextureHashes.get(0);
-//		
-//	}
+	
+	public void tryGuessDefaultTex() {
+		textureHash = textures.get(0);
+		DefaultTextureHash = TextureHashes.get(0);
+		
+	}
 	
 	public void tryGuessFEData(HashMap<ShaderUsage, Integer> FERenderData) {
 		if (FERenderData.containsKey(this.shaderUsage)) {

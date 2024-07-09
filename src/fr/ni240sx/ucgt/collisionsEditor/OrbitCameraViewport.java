@@ -118,6 +118,7 @@ public class OrbitCameraViewport extends SubScene {
     double mouseDeltaY;
 	
 	
+	@SuppressWarnings("unused")
 	private void handleMouse() {
 		 
         this.setOnMousePressed(me -> {

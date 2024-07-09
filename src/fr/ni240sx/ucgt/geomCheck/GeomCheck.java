@@ -20,6 +20,7 @@ public class GeomCheck {
 	public static String carname = "";
 	public static String version = "1.0";
 
+	@SuppressWarnings({ "resource", "null" }) //log closing
 	public static void main(String[] args) {
 		
 		BufferedWriter log = null;
@@ -34,9 +35,9 @@ public class GeomCheck {
 			File f = new File("");
 			boolean file = false;
 			boolean car = false;
-			ArrayList<String> autosculptKits = new ArrayList<String>();
-			ArrayList<String> widebodyKits = new ArrayList<String>();
-			ArrayList<String> fullReplacementKits = new ArrayList<String>();
+			ArrayList<String> autosculptKits = new ArrayList<>();
+			ArrayList<String> widebodyKits = new ArrayList<>();
+			ArrayList<String> fullReplacementKits = new ArrayList<>();
 			int exhausts = 99;
 			
 			//checks
@@ -200,16 +201,16 @@ public class GeomCheck {
 //        				System.out.print("Part found : "+h.label + " | ");
         				//part found
         				String partname = h.label.substring(0, h.label.length() - 2).replace(carname + "_", "");
-        				boolean existing = false;
+//        				boolean existing = false;
         				PartCheck partCheck = null;
         				for(PartCheck p : PartCheck.allParts) {
         					if ((p.kit + "_" + p.name).equals(partname)){
         						partCheck = p;
-        						existing = true;
+//        						existing = true;
         						break;
         					}
         				}
-        				if (!existing) partCheck = new PartCheck(partname.split("_")[0], partname.replace(partname.split("_")[0] + "_", ""));
+        				if (partCheck == null) partCheck = new PartCheck(partname.split("_")[0], partname.replace(partname.split("_")[0] + "_", ""));
         				switch (h.label.split("_")[h.label.split("_").length-1]) {
         				case "A":
         					partCheck.lodAExists = true;
@@ -238,6 +239,7 @@ public class GeomCheck {
 			}
         	
         	PartCheck.allParts.sort(new Comparator<PartCheck>() {
+				@Override
 				public int compare(PartCheck p1, PartCheck p2) {
 					return (p1.kit + "_" + p1.name).compareTo(p2.kit + "_" + p2.name);
 				}
@@ -249,7 +251,7 @@ public class GeomCheck {
 			log.write("Parts guessed in " + (System.currentTimeMillis()-t) + " ms.\n");
 			t = System.currentTimeMillis();
 			
-			hashes = new ArrayList<Hash>();
+			hashes = new ArrayList<>();
 			for (PartCheck p : PartCheck.allParts) {
 				if (p.lodAExists) hashes.add(new Hash(carname+"_"+p.kit+"_"+p.name+"_A"));
 				if (p.lodBExists) hashes.add(new Hash(carname+"_"+p.kit+"_"+p.name+"_B"));
@@ -350,7 +352,7 @@ public class GeomCheck {
 					ArrayList<Boolean> resultLOD;
 
 					if (p.lodDExists) { //lod D materials
-						search = new ArrayList<Hash>();
+						search = new ArrayList<>();
 						search.add(new Hash("BRAKEDISC"));
 						search.add(new Hash("BRAKELIGHT"));
 						search.add(new Hash("BRAKELIGHT_ALUMINUM"));
@@ -396,7 +398,7 @@ public class GeomCheck {
 					}
 					
 					if (p.name.equals("WINDOW_FRONT")) {
-						search = new ArrayList<Hash>();
+						search = new ArrayList<>();
 						search.add(new Hash("WINDOW_FRONT"));
 						result = p.scan(fileToBytes, search);
 						for (i=0; i<3; i++) { //i<3 to not check lod D
@@ -407,7 +409,7 @@ public class GeomCheck {
 					}
 
 					if (p.name.equals("WINDOW_FRONT_LEFT")) {
-						search = new ArrayList<Hash>();
+						search = new ArrayList<>();
 						search.add(new Hash("WINDOW_LEFT_FRONT"));
 						search.add(new Hash("WINDOW_FRONT"));
 						result = p.scan(fileToBytes, search);
@@ -423,7 +425,7 @@ public class GeomCheck {
 					}
 
 					if (p.name.equals("WINDOW_FRONT_RIGHT")) {
-						search = new ArrayList<Hash>();
+						search = new ArrayList<>();
 						search.add(new Hash("WINDOW_RIGHT_FRONT"));
 						search.add(new Hash("WINDOW_FRONT"));
 						result = p.scan(fileToBytes, search);
@@ -439,7 +441,7 @@ public class GeomCheck {
 					}
 					
 					if (p.name.equals("WINDOW_REAR")) {
-						search = new ArrayList<Hash>();
+						search = new ArrayList<>();
 						search.add(new Hash("WINDOW_REAR"));
 						search.add(new Hash("REAR_DEFROSTER"));
 						search.add(new Hash("WINDOW_FRONT"));
@@ -457,7 +459,7 @@ public class GeomCheck {
 					}
 
 					if (p.name.equals("WINDOW_REAR_LEFT")) {
-						search = new ArrayList<Hash>();
+						search = new ArrayList<>();
 						search.add(new Hash("WINDOW_LEFT_REAR"));
 						search.add(new Hash("WINDOW_FRONT"));
 						result = p.scan(fileToBytes, search);
@@ -473,7 +475,7 @@ public class GeomCheck {
 					}
 
 					if (p.name.equals("WINDOW_REAR_RIGHT")) {
-						search = new ArrayList<Hash>();
+						search = new ArrayList<>();
 						search.add(new Hash("WINDOW_RIGHT_REAR"));
 						search.add(new Hash("WINDOW_FRONT"));
 						result = p.scan(fileToBytes, search);
@@ -561,7 +563,7 @@ public class GeomCheck {
 			
 			log.close();
 			
-		} catch (FileNotFoundException e) {
+		} catch (@SuppressWarnings("unused") FileNotFoundException e) {
 			try {
 				if (!new File("GeomCheck.ini").exists()) {
 					BufferedWriter bw = new BufferedWriter(new FileWriter(new File("GeomCheck.ini")));
@@ -588,14 +590,14 @@ public class GeomCheck {
 					try {
 						log.write("Missing configuration, it has been generated.");
 						log.close();
-					} catch (Exception e2) {
+					} catch (@SuppressWarnings("unused") Exception e2) {
 					}
 				} else {
 					System.out.println("Invalid configuration, check the car's path.");
 					try {
 						log.write("Invalid configuration, check the car's path.");
 						log.close();
-					} catch (Exception e2) {
+					} catch (@SuppressWarnings("unused") Exception e2) {
 					}
 				}
 				
@@ -625,9 +627,9 @@ public class GeomCheck {
 		}
 	}
 	
-	public static ArrayList<Hash> generateHashes(String carname, ArrayList<String> autosculptKits, ArrayList<String> widebodyKits, ArrayList<String> fullReplacementKits, int exhausts) {
+	public static ArrayList<Hash> generateHashes(@SuppressWarnings("hiding") String carname, ArrayList<String> autosculptKits, ArrayList<String> widebodyKits, ArrayList<String> fullReplacementKits, int exhausts) {
 		
-		ArrayList<Hash> l = new ArrayList<Hash>();
+		ArrayList<Hash> l = new ArrayList<>();
 		l.add(new Hash(carname));
 		try {
 			String part;
@@ -831,11 +833,11 @@ public class GeomCheck {
 }
 
 class MaterialSearch{
-	static ArrayList<MaterialSearch> allSearches = new ArrayList<MaterialSearch>();
+	static ArrayList<MaterialSearch> allSearches = new ArrayList<>();
 	
-	ArrayList<Hash> mats = new ArrayList<Hash>();
-	ArrayList<PartCheck> partChecks = new ArrayList<PartCheck>();
-	ArrayList<Boolean> combination = new ArrayList<Boolean>();
+	ArrayList<Hash> mats = new ArrayList<>();
+	ArrayList<PartCheck> partChecks = new ArrayList<>();
+	ArrayList<Boolean> combination = new ArrayList<>();
 	String partsToCheck = "";
 
 	MaterialSearch(){

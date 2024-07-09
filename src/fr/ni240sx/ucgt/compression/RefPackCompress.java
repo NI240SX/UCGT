@@ -65,11 +65,11 @@ public class RefPackCompress {
                     var tmppair = blockPretrackingQueue.poll();
                     blockTrackingQueue.add(tmppair);
 
-                    ArrayList<Integer> valueList = new ArrayList<Integer>();
+                    ArrayList<Integer> valueList = new ArrayList<>();
                     
                     if (latestBlocks.getOrDefault(tmppair.getKey(), valueList).equals(valueList)) //TODO out valueList
                     {
-                        valueList = unusedLists.size() > 0 ? unusedLists.poll() : new ArrayList<Integer>();
+                        valueList = unusedLists.size() > 0 ? unusedLists.poll() : new ArrayList<>();
                         latestBlocks.put(tmppair.getKey(), valueList);
                     }
 
@@ -118,7 +118,7 @@ public class RefPackCompress {
                     }
                 }
 
-                var newBlock = new Pair<Integer, Integer>(input.getInt(lastBlockStored), lastBlockStored);
+                var newBlock = new Pair<>(input.getInt(lastBlockStored), lastBlockStored);
                 lastBlockStored += level.BlockInterval;
                 blockPretrackingQueue.add(newBlock);
             }
@@ -436,7 +436,7 @@ public class RefPackCompress {
                 var thisPosition = offset + 3 - loop;
                 var adjust = loop > 3 ? loop - 3 : 0;
                 var value = input.getInt(thisPosition); // BitConverter.ToInt32(data, thisPosition);
-                ArrayList<Integer> positions = new ArrayList<Integer>();
+                ArrayList<Integer> positions = new ArrayList<>();
 
                 if (!latestBlocks.getOrDefault(value, positions).equals(positions)) //  latestBlocks.TryGetValue(value, positions)
                 {
@@ -483,7 +483,7 @@ public class RefPackCompress {
         return foundRun;
     }
 
-    private int FindRunLength(ByteBuffer input, int source, int destination)
+    private static int FindRunLength(ByteBuffer input, int source, int destination)
     {
         int endSource = source + 1;
         int endDestination = destination + 1;

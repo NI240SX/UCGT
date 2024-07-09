@@ -13,9 +13,10 @@ import fr.ni240sx.ucgt.geometryFile.Part;
 
 public class PartsList extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.Geom_PartsList;}
 	
-	public ArrayList<Integer> partKeys = new ArrayList<Integer>();
+	public ArrayList<Integer> partKeys = new ArrayList<>();
 	
 	public PartsList(ByteBuffer in) {
 		var blockLength = in.getInt();

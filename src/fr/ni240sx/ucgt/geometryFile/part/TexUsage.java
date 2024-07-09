@@ -11,16 +11,17 @@ import javafx.util.Pair;
 
 public class TexUsage extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.Part_TexUsage;}
 
 	// texture binhash, usage type
-	public ArrayList<Pair<Integer,Integer>> texusage = new ArrayList<Pair<Integer,Integer>>();
+	public ArrayList<Pair<Integer,Integer>> texusage = new ArrayList<>();
 	
 	public TexUsage(ByteBuffer in) {
 		var blockLength = in.getInt();
 		
 		for (int i=0; i< blockLength/12; i++) {
-			texusage.add(new Pair<Integer, Integer>(in.getInt(), in.getInt()));
+			texusage.add(new Pair<>(in.getInt(), in.getInt()));
 			in.getInt(); //0
 		}
 		

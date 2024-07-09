@@ -3,7 +3,6 @@ package fr.ni240sx.ucgt.collisionsEditor.CollisionMesh;
 import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.collisionsEditor.Collisions;
-import fr.ni240sx.ucgt.collisionsEditor.CollisionsEditor;
 
 public class LineEquation {
 	// ax + by + c = 0 in a plane
@@ -12,8 +11,8 @@ public class LineEquation {
 	public float b = 0;
 	public float c = 0;
 
-	public ArrayList<PlaneEquation> intersectedPlanes = new ArrayList<PlaneEquation>();
-	public ArrayList<Vertex> containedVertices = new ArrayList<Vertex>();
+	public ArrayList<PlaneEquation> intersectedPlanes = new ArrayList<>();
+	public ArrayList<Vertex> containedVertices = new ArrayList<>();
 
 	public CollisionConvexVertice convexVerticeShape;
 	
@@ -57,10 +56,10 @@ public class LineEquation {
 				b = p.b/p.a;
 				
 			}else {
-				
+				//
 			}
 		} else if (Math.abs(b) > Math.abs(a) && Math.abs(b) > Math.abs(c)) {
-			
+			//
 		} else { //c >= a & b
 			
 		}
@@ -77,20 +76,19 @@ public class LineEquation {
 				z > convexVerticeShape.HalfExtentsZ+0.1+convexVerticeShape.CenterZ || z < -convexVerticeShape.HalfExtentsZ-0.1+convexVerticeShape.CenterZ || 
 				x != x || y != y || z != z) {
 			return null;
-		}else {
-			for (Vertex v : convexVerticeShape.Vertices) {
-				if(Collisions.similarEnough(v.x, x) && Collisions.similarEnough(v.y, y) && Collisions.similarEnough(v.z, z)) {
-					// the if statements below should never be entered
-					if (!this.containedVertices.contains(v)) this.containedVertices.add(v);
-					if (!l.containedVertices.contains(v)) l.containedVertices.add(v);
-					if (!v.intersectedLines.contains(this)) v.intersectedLines.add(this);
-					if (!v.intersectedLines.contains(l)) v.intersectedLines.add(l);
-					return v;
-				}
-			}
-			return  new Vertex(this, l);
-//			System.out.println(ret);
 		}
+		for (Vertex v : convexVerticeShape.Vertices) {
+			if(Collisions.similarEnough(v.x, x) && Collisions.similarEnough(v.y, y) && Collisions.similarEnough(v.z, z)) {
+				// the if statements below should never be entered
+				if (!this.containedVertices.contains(v)) this.containedVertices.add(v);
+				if (!l.containedVertices.contains(v)) l.containedVertices.add(v);
+				if (!v.intersectedLines.contains(this)) v.intersectedLines.add(this);
+				if (!v.intersectedLines.contains(l)) v.intersectedLines.add(l);
+				return v;
+			}
+		}
+		return  new Vertex(this, l);
+//			System.out.println(ret);
 	}
 
 }

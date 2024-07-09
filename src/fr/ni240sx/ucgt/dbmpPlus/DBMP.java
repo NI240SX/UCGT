@@ -25,12 +25,12 @@ class DBMP{
 	public DBMP() {
 		super();
 		this.carname = new Hash("UNKNOWN");
-		this.dBMPParts = new ArrayList<DBMPPart>();
+		this.dBMPParts = new ArrayList<>();
 	}
 	public DBMP(String carname) {
 		super();
 		this.carname = new Hash(carname);
-		this.dBMPParts = new ArrayList<DBMPPart>();
+		this.dBMPParts = new ArrayList<>();
 	}
 	public DBMP(String carname, ArrayList<DBMPPart> dBMPParts) {
 		super();
@@ -43,6 +43,7 @@ class DBMP{
 		this.dBMPParts = dBMPParts;
 	}
 	
+	@Override
 	public String toString() {
 		String s = "== DBModelParts ==\nCar=" + carname.label;
 		for (DBMPPart p : dBMPParts) {
@@ -112,20 +113,19 @@ class DBMP{
 		DBMP loadDBMP = null;
 		
 		//File f = new File("...");
-		FileInputStream fis;
 		try {
-			fis = new FileInputStream(f);
+			var fis = new FileInputStream(f);
 			byte [] fileToBytes = new byte[(int)f.length()];
 			fis.read(fileToBytes);
 			fis.close();
 
-			ArrayList<Hash> attributesTwoString = new ArrayList<Hash>();
-			ArrayList<Hash> attributesString = new ArrayList<Hash>();
-			ArrayList<Hash> attributesInteger = new ArrayList<Hash>();
-			ArrayList<Hash> attributesCarPartID = new ArrayList<Hash>();
-			ArrayList<Hash> attributesKey = new ArrayList<Hash>();
-			ArrayList<Hash> attributesBoolean = new ArrayList<Hash>();
-			ArrayList<Hash> attributesColor = new ArrayList<Hash>();
+			ArrayList<Hash> attributesTwoString = new ArrayList<>();
+			ArrayList<Hash> attributesString = new ArrayList<>();
+			ArrayList<Hash> attributesInteger = new ArrayList<>();
+			ArrayList<Hash> attributesCarPartID = new ArrayList<>();
+			ArrayList<Hash> attributesKey = new ArrayList<>();
+			ArrayList<Hash> attributesBoolean = new ArrayList<>();
+			ArrayList<Hash> attributesColor = new ArrayList<>();
 			
 			
 			
@@ -179,6 +179,7 @@ class DBMP{
 					for (Hash h : attributesKey) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeKey(h, bb));
 					for (Hash h : attributesBoolean) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeBoolean(h, bb));
 					for (Hash h : attributesColor) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeColor(h, bb));
+					assert (a != null);
 					if (DBMPPlus.debug)System.out.println("Attribute " + (j+1) + "/" + partAttribCount + " : " + a.toString());
 				}
 				p.update();
@@ -189,7 +190,6 @@ class DBMP{
 			// TODO Auto-generated catch block
 			new Alert(Alert.AlertType.ERROR, "File not found", ButtonType.OK).show();
 			e.printStackTrace();
-			loadDBMP = null;
 		} catch (Exception e) {
 			e.printStackTrace();
 			new Alert(Alert.AlertType.ERROR, "Error while loading file", ButtonType.OK).show();

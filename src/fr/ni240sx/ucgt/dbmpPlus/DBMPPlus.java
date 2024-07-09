@@ -37,7 +37,7 @@ public class DBMPPlus extends Application {
 	public static ListView<DBMPPart> partsDisplay;
 	public static VBox attributesDisplay;
 	
-	public static ArrayList<CarPartListCell> carPartListCells = new ArrayList<CarPartListCell>();
+	public static ArrayList<CarPartListCell> carPartListCells = new ArrayList<>();
 
 	public static boolean debug = false;
 
@@ -68,6 +68,7 @@ public class DBMPPlus extends Application {
 	public static final String programName = "fire";
 	public static final String programVersion = "1.1.2";
 	
+	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(new File("fire.dat")));
@@ -109,7 +110,9 @@ public class DBMPPlus extends Application {
 		}
 	}
 	
-    public void start(Stage primaryStage) {
+    @SuppressWarnings("unused")
+	@Override
+	public void start(Stage primaryStage) {
         primaryStage.setTitle(programName + " - " + mainDBMP.carname.label);
 
         VBox windowTop = new VBox();
@@ -128,6 +131,7 @@ public class DBMPPlus extends Application {
         MenuItem fileExit = new MenuItem("Exit");
         
         fileLoad.setOnAction(new EventHandler<ActionEvent>(){
+			@Override
 			public void handle(ActionEvent arg0) {
 		        ButtonType sure = null;
 		        if (!disableWarnings) sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to load a new DBMP ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
@@ -365,7 +369,7 @@ public class DBMPPlus extends Application {
 					fis.read(fileToBytes);
 					fis.close();
 					
-					ArrayList<DBMPPart> toRemove = new ArrayList<DBMPPart>(mainDBMP.dBMPParts);
+					ArrayList<DBMPPart> toRemove = new ArrayList<>(mainDBMP.dBMPParts);
 		        	ByteBuffer bb = ByteBuffer.wrap(fileToBytes);
 		        	bb.position(184);
 		        	int i;
@@ -654,7 +658,7 @@ public class DBMPPlus extends Application {
 				DBMPPart sel = partsDisplay.getSelectionModel().getSelectedItem();
 	        	for(DBMPPart p: partsDisplay.getSelectionModel().getSelectedItems()) {
 	            	if(copyTo.isSelected()) {
-	            		ArrayList<String> copyToKits = new ArrayList<String>();
+	            		ArrayList<String> copyToKits = new ArrayList<>();
 	    				for (String s : copyToInput.getText().split(",")) {
 	    					if (s.contains("-")) {
 	    						for(int i= Integer.parseInt(s.split("-")[0].strip().substring(s.split("-")[0].strip().length() -2));
@@ -851,7 +855,7 @@ public class DBMPPlus extends Application {
         		
 				DBMPPart sel = partsDisplay.getSelectionModel().getSelectedItem();
         		try {
-					ArrayList<String> generateKits = new ArrayList<String>();
+					ArrayList<String> generateKits = new ArrayList<>();
 					for (String s : kitsToGenerateInput.getText().split(",")) {
 						if (s.contains("-")) {
 							for(int i= Integer.parseInt(s.split("-")[0].strip().substring(s.split("-")[0].strip().length() -2));
@@ -862,7 +866,7 @@ public class DBMPPlus extends Application {
 						} else if (!s.strip().isBlank()) generateKits.add(s.strip());
 					}
 					
-					ArrayList<String> exhausts = new ArrayList<String>();
+					ArrayList<String> exhausts = new ArrayList<>();
 					for (String s : rangeInput.getText().split(",")) {
 						if (s.contains("-")) {
 							for(int i= Integer.parseInt(s.split("-")[0].strip()); i<=Integer.parseInt(s.split("-")[1].strip()); i++) {
@@ -872,7 +876,7 @@ public class DBMPPlus extends Application {
 					}				
 					
 					//first load kit parts from template
-					ArrayList<String> parts = new ArrayList<String>();
+					ArrayList<String> parts = new ArrayList<>();
 					BufferedReader br = new BufferedReader(new FileReader(new File("kits\\" + kitTemplateInput.getText())));
 					String line;
 					while((line = br.readLine()) != null) {
@@ -988,7 +992,7 @@ public class DBMPPlus extends Application {
 			ok.setOnAction(evh -> {
         		currentKitASZones = autosculptZonesInput.getText();
 				String copyFromKit = copyFromInput.getText().trim();
-				ArrayList<String> copyToKits = new ArrayList<String>();
+				ArrayList<String> copyToKits = new ArrayList<>();
 				for (String s : copyToInput.getText().split(",")) {
 					if (s.contains("-")) {
 						for(int i= Integer.parseInt(s.split("-")[0].strip().substring(s.split("-")[0].strip().length() -2));
@@ -1130,7 +1134,7 @@ public class DBMPPlus extends Application {
         		currentExhCenterTip = centerTipsInput.getText();
         		currentExhCenterTipEnabled = centerTips.isSelected();
         		currentExhASZones = autosculptZonesInput.getText();
-				ArrayList<String> kits = new ArrayList<String>();
+				ArrayList<String> kits = new ArrayList<>();
 				for (String s : workOnKitsInput.getText().split(",")) {
 					if (s.contains("-")) {
 						for(int i= Integer.parseInt(s.split("-")[0].strip().substring(s.split("-")[0].strip().length() -2));
@@ -1141,7 +1145,7 @@ public class DBMPPlus extends Application {
 					} else if (!s.strip().isBlank()) kits.add(s.strip());
 				}
 				
-				ArrayList<String> exhausts = new ArrayList<String>();
+				ArrayList<String> exhausts = new ArrayList<>();
 				for (String s : rangeInput.getText().split(",")) {
 					if (s.contains("-")) {
 						for(int i= Integer.parseInt(s.split("-")[0].strip()); i<=Integer.parseInt(s.split("-")[1].strip()); i++) {
@@ -1283,7 +1287,7 @@ public class DBMPPlus extends Application {
 			Button ok = new Button("OK");
 			ok.setOnAction(evh -> {
         		currentKitASZones = autosculptZonesInput.getText();
-				ArrayList<String> generateKits = new ArrayList<String>();
+				ArrayList<String> generateKits = new ArrayList<>();
 				for (String s : addToInput.getText().split(",")) {
 					if (s.contains("-")) {
 						for(int i= Integer.parseInt(s.split("-")[0].strip().substring(s.split("-")[0].strip().length() -2));
@@ -1348,7 +1352,7 @@ public class DBMPPlus extends Application {
 			Button ok = new Button("OK");
 			ok.setOnAction(evh -> {
         		currentKitASZones = autosculptZonesInput.getText();
-				ArrayList<String> generateKits = new ArrayList<String>();
+				ArrayList<String> generateKits = new ArrayList<>();
 				for (String s : addToInput.getText().split(",")) {
 					if (s.contains("-")) {
 						for(int i= Integer.parseInt(s.split("-")[0].strip().substring(s.split("-")[0].strip().length() -2));
@@ -1414,7 +1418,7 @@ public class DBMPPlus extends Application {
 			Button ok = new Button("OK");
 			ok.setOnAction(evh -> {
         		currentKitASZones = autosculptZonesInput.getText();
-				ArrayList<String> generateKits = new ArrayList<String>();
+				ArrayList<String> generateKits = new ArrayList<>();
 				for (String s : addToInput.getText().split(",")) {
 					if (s.contains("-")) {
 						for(int i= Integer.parseInt(s.split("-")[0].strip().substring(s.split("-")[0].strip().length() -2));
@@ -1491,7 +1495,7 @@ public class DBMPPlus extends Application {
         
         windowTop.getChildren().addAll(menuBar, shortcutsBar);
         
-        partsDisplay = new ListView<DBMPPart>();
+        partsDisplay = new ListView<>();
         partsDisplay.setCellFactory( lv -> {
         	 CarPartListCell cell = new CarPartListCell() {
                  @Override
@@ -1591,8 +1595,9 @@ public class DBMPPlus extends Application {
     	if (partsDisplay.getSelectionModel().getSelectedItem()!=null) for (Attribute a: partsDisplay.getSelectionModel().getSelectedItem().attributes) DBMPPlus.attributesDisplay.getChildren().add(a.dataHBox);
     }
     
-    public static void deleteSelectedParts() {
-		DBMPPart[] toDelete =  (DBMPPart[]) partsDisplay.getSelectionModel().getSelectedItems().toArray(new DBMPPart[0]);
+    @SuppressWarnings("unused")
+	public static void deleteSelectedParts() {
+		DBMPPart[] toDelete =  partsDisplay.getSelectionModel().getSelectedItems().toArray(new DBMPPart[0]);
 		
 		for(int i=0; i<toDelete.length; i++) {
 			new UndoPartDelete(toDelete[i], DBMPPlus.mainDBMP.dBMPParts.indexOf(toDelete[i]));
@@ -1606,6 +1611,7 @@ public class DBMPPlus extends Application {
 
 
 class PartSorterByNameAsc implements Comparator<DBMPPart>{
+	@Override
 	public int compare(DBMPPart a, DBMPPart b) {
 		return (((AttributeTwoString)a.getAttribute("PART_NAME_OFFSETS")).value1 + "_" + ((AttributeTwoString)a.getAttribute("PART_NAME_OFFSETS")).value2)
 				.compareTo((((AttributeTwoString)b.getAttribute("PART_NAME_OFFSETS")).value1 + "_" + ((AttributeTwoString)b.getAttribute("PART_NAME_OFFSETS")).value2));
@@ -1613,6 +1619,7 @@ class PartSorterByNameAsc implements Comparator<DBMPPart>{
 }
 
 class PartSorterByName2Asc implements Comparator<DBMPPart>{
+	@Override
 	public int compare(DBMPPart a, DBMPPart b) {
 		String stringA = ((AttributeTwoString)a.getAttribute("LOD_BASE_NAME")).value2 + "0" + ((AttributeTwoString)a.getAttribute("LOD_BASE_NAME")).value1.replace("KIT0", "KIT").replace("KITW0", "KITW");
 		String stringB = ((AttributeTwoString)b.getAttribute("LOD_BASE_NAME")).value2 + "0" + ((AttributeTwoString)b.getAttribute("LOD_BASE_NAME")).value1.replace("KIT0", "KIT").replace("KITW0", "KITW");

@@ -52,6 +52,7 @@ public class GeomDumpTest extends Application {
 		
 
 		hex.setOnKeyPressed(new EventHandler<KeyEvent>() {
+			@Override
 			public void handle(KeyEvent event) {
 				dmp.setScrollTop(hex.getScrollTop());
 				if(event.isControlDown() && event.getCode().equals(KeyCode.F)) {
@@ -69,11 +70,13 @@ public class GeomDumpTest extends Application {
 			}
 		});
 		hex.setOnMouseMoved(new EventHandler<MouseEvent>() {
+			@Override
 			public void handle(MouseEvent event) {
 				dmp.setScrollTop(hex.getScrollTop());
 			}
 		});
 		hex.setOnScroll(new EventHandler<ScrollEvent>() {
+			@Override
 			public void handle(ScrollEvent event) {
 				dmp.setScrollTop(hex.getScrollTop());
 			}
@@ -82,6 +85,7 @@ public class GeomDumpTest extends Application {
 		
 		
 		dmp.setOnKeyPressed(new EventHandler<KeyEvent>() {
+			@Override
 			public void handle(KeyEvent event) {
 				hex.setScrollTop(dmp.getScrollTop());
 				if(event.isControlDown() && event.getCode().equals(KeyCode.F)) {
@@ -103,11 +107,13 @@ public class GeomDumpTest extends Application {
 			}
 		});
 		dmp.setOnMouseMoved(new EventHandler<MouseEvent>() {
+			@Override
 			public void handle(MouseEvent event) {
 				hex.setScrollTop(dmp.getScrollTop());
 			}
 		});
 		dmp.setOnScroll(new EventHandler<ScrollEvent>() {
+			@Override
 			public void handle(ScrollEvent event) {
 				hex.setScrollTop(dmp.getScrollTop());
 			}
@@ -205,10 +211,8 @@ public class GeomDumpTest extends Application {
 			
 			
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -217,7 +221,7 @@ public class GeomDumpTest extends Application {
 	
 	public static ArrayList<Hash> generateHashes(String carname, int[] kits, int[] widebodies) {
 		
-		ArrayList<Hash> l = new ArrayList<Hash>();
+		ArrayList<Hash> l = new ArrayList<>();
 		l.add(new Hash(carname));
 		
 		try {
@@ -292,10 +296,8 @@ public class GeomDumpTest extends Application {
 			}
 			
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (NullPointerException e) {
 			e.printStackTrace();

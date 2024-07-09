@@ -14,9 +14,9 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.*;
 public abstract class Block {
 	public abstract GeomBlock getBlockID();
 	
-	public static HashMap<GeomBlock, Boolean> doNotRead = new HashMap<GeomBlock, Boolean>(); //allows speeding up file loading by blocking unnecessary blocks from being read
+	public static HashMap<GeomBlock, Boolean> doNotRead = new HashMap<>(); //allows speeding up file loading by blocking unnecessary blocks from being read
 	
-	public ArrayList<Block> subBlocks = new ArrayList<Block>();
+	public ArrayList<Block> subBlocks = new ArrayList<>();
 
 	public byte[] data;
 	
@@ -49,7 +49,7 @@ public abstract class Block {
 			return new CompressedData(in);
 		case Part:
 			System.out.println("initializing a part block without geometry - this shouldn't happen");
-			return new Part(in, 0);
+			return new Part(in);
 		case Part_Header:
 			return new PartHeader(in);
 		case Part_TexUsage:
@@ -93,7 +93,7 @@ public abstract class Block {
 			System.out.println("Unknown block, ID="+Integer.toHexString(Integer.reverseBytes(chunkToInt)));
 			return new UnknownBlock(in, chunkToInt);
 		}
-		else return new UnknownBlock(in, chunkToInt);
+		return new UnknownBlock(in, chunkToInt);
 	}
 	
 	public static String readString(ByteBuffer bb) {
@@ -131,7 +131,7 @@ public abstract class Block {
 	
 	public static int stringLengthAligned(String s) {
 		if ((s.length()+1)%4 == 0) return s.length()+1;
-		else return s.length() + 5 - (s.length()+1)%4;
+		return s.length() + 5 - (s.length()+1)%4;
 	}
 	
 	public static void makeAlignment(ByteBuffer bb, int length, byte pattern) {
@@ -148,6 +148,6 @@ public abstract class Block {
 	
 	public static int findAlignment(int position, int alignment) {
 		if (position%alignment == 0) return 0;
-		else return alignment-position%alignment;
+		return alignment-position%alignment;
 	}
 }

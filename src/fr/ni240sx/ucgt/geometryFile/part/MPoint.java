@@ -31,8 +31,8 @@ public class MPoint {
 	public String uniqueName = "_";
 	
 	public String tempPartName; //used only when loading from file
-	public ArrayList<String> tempPartNames = new ArrayList<String>();
-	public ArrayList<VertexData3> verts = new ArrayList<VertexData3>();
+	public ArrayList<String> tempPartNames = new ArrayList<>();
+	public ArrayList<VertexData3> verts = new ArrayList<>();
 	
 	public static final int roundFactor = 1000;
 	
@@ -52,7 +52,7 @@ public class MPoint {
 		this.scaleZ = mp.scaleZ;
 	}
 
-	public void tryGuessName(Geometry geometry, Part p) {
+	public void tryGuessName(Geometry geometry) {
 		nameHash = Hash.guess(nameHash.binHash, geometry.hashlist, String.format("0x%08X", nameHash.binHash), "BIN");
 	}
 	
@@ -142,11 +142,7 @@ public class MPoint {
 //			+positionX+"	"+positionY+"	"+positionZ+"	"
 //			s += m[0] + "	" + m[1] + "	" + m[2] + "\n";
 		if ((int)m[0] == m[0]) s+=(int)m[0]; else s+=m[0];
-		s += "	";
-		//shit ass fix for some markers being weird sometimes
-		//TODO figure out why this happens ! affected cars eg COP_CAR_MID_05, LAM_GAL_560_09 (KIT06)
-//		if ((nameHash.label.equals("LICENSE_PLATE_REAR") || nameHash.label.contains("BRAKELIGHT") || nameHash.label.contains("REVERSE")) && m[1]==0) m[1] = -90; 
-		
+		s += "	";		
 		if ((int)m[1] == m[1]) s+=(int)m[1]; else s+=m[1];
 		s += "	";
 		if ((int)m[2] == m[2]) s+=(int)m[2]; else s+=m[2];

@@ -44,6 +44,7 @@ _Optimization_
 - `OptimizeMaterials` - optional, defaults to true : removes some unnecessary data in material declarations to help reduce file size. Possible values : true or false.
 - `SortAllByName` - optional, defaults to true : sorts parts, markers, materials etc. by name. Possible values : true or false.
 - `CopyMissingLODs` - optional, defaults to false : if one or multiple LODs are missing, copies the mesh from a higher LOD. Possible values : true or false.
+- `MakeLodD` - optional, defaults to false : if the KIT00 lod D is missing, copies it from lod C. It is highly advised to make a lod D manually ; setting this option to true will allow multiple lod C parts to be copied as lod D, making it unnecessarily heavy and potentially causing issues. Possible values : true or false.
 
 _Mesh_
 - `VertexColors` - optional, defaults to Import : import vertex colors (baked AO) from OBJ, generate them with an integrated method, or don't include them. Possible values : Import, Generate/Calculate, No.
@@ -141,11 +142,19 @@ Example Autosculpt links :
 
 `ASLINK	KIT09_BUMPER_REAR_A	KIT09_BODY_A,1,1,1,1	KIT09_BODY_A,3,3,3,3	KIT09_BODY_A,4,4,4,4`
 
-### Parts renaming
-This part uses the keyword `RENAME`. It can be used to manually rename a single part, like you can do in a CTK config. First put the name you have in the model, then the name you want it to be changed to. 
+### Parts renaming/removal
+This part uses the keywords `RENAME` and `DELETE`. Rename can be used to manually rename a single part, like you can do in a CTK config, or bulk rename. First put the name you have in the model, then the name you want it to be changed to, partial matches will work. Delete can be used in the same way to delete one or multiple parts based on a full or partial match with the part name.
 
 Example renamings : 
 
 `RENAME	KITW01_WIDEBODY_A	KITW01_BODY_A`
 
-`RENAME	STYLE04_HOOD_T3_A	KIT06_HOOD_T3_A`
+`RENAME	STYLE04_HOOD	KIT06_HOOD` would rename all LODs and Autosculpt zones at the same time.
+
+Example deletings :
+
+`DELETE	DELETEME`
+
+`DELETE	KIT99` prevents any part containing KIT99 from being compiled.
+
+`DELETE	_D` would be a bad idea : it would remove all LOD D parts but also doors, driver which also contain _D : better be more specific.

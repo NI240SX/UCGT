@@ -8,7 +8,7 @@ public class Vertex {
 	public float y = 0;
 	public float z = 0;
 
-	public ArrayList<LineEquation> intersectedLines = new ArrayList<LineEquation>();
+	public ArrayList<LineEquation> intersectedLines = new ArrayList<>();
 
 	public CollisionConvexVertice convexVerticeShape;
 	

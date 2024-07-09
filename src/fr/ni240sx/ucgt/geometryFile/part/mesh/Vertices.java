@@ -10,11 +10,12 @@ import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 
 public class Vertices extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.Part_Mesh_Vertices;}
 	
 	public static final int vertexLength = 32;
 
-	public ArrayList<Vertex> vertices = new ArrayList<Vertex>();
+	public ArrayList<Vertex> vertices = new ArrayList<>();
 
 	public Material material;
 	

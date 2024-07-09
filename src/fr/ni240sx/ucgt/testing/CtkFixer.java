@@ -42,7 +42,7 @@ public class CtkFixer {
 			String carname = s.strip().split(" ")[0];
 			boolean bruteForceFixTripleCut = s.contains("bruteforce fix triple cut");
 			String l;
-			ArrayList<Replacements> replacements = new ArrayList<Replacements>();
+			ArrayList<Replacements> replacements = new ArrayList<>();
 			while ((l = br.readLine()) != null) { //config reading loop
 				if (!l.isBlank() && !l.startsWith("#") && !l.startsWith("//")) {
 					String[] line = l.split(" ");
@@ -442,7 +442,7 @@ public class CtkFixer {
 			log.write("File " + f.getPath() + " saved in " + (System.currentTimeMillis()-t) + " ms.");
 			log.close();
 			
-		} catch (FileNotFoundException e) {
+		} catch (@SuppressWarnings("unused") FileNotFoundException e) {
 			try {
 				if (!new File("CTKFixer.ini").exists()) {
 					BufferedWriter bw = new BufferedWriter(new FileWriter(new File("CTKFixer.ini")));

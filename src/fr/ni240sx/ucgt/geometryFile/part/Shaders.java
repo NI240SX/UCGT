@@ -10,10 +10,11 @@ import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 
 public class Shaders extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.Part_ShaderList;}
 
 	// texture binhash, usage type
-	public ArrayList<Integer> shaders = new ArrayList<Integer>();
+	public ArrayList<Integer> shaders = new ArrayList<>();
 	
 	public Shaders(ByteBuffer in) {
 		var blockLength = in.getInt();

@@ -10,10 +10,11 @@ import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 
 public class AutosculptZones extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.Part_AutosculptZones;}
 
 	// texture binhash, usage type
-	public ArrayList<Integer> zones = new ArrayList<Integer>();
+	public ArrayList<Integer> zones = new ArrayList<>();
 
 	public static final int zoneLength = 12;
 	
@@ -29,7 +30,6 @@ public class AutosculptZones extends Block {
 	}
 
 	public AutosculptZones() {
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override

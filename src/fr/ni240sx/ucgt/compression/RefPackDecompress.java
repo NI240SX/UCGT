@@ -14,11 +14,13 @@ public class RefPackDecompress {
 	public ByteBuffer in;
 	public ByteBuffer out;
 	
+	@SuppressWarnings("hiding")
 	public byte[] decompress(byte[] in) {
 		return decompress(ByteBuffer.wrap(in));
 	}
 	
 
+	@SuppressWarnings("hiding")
 	public byte[] decompress(ByteBuffer in) {
 		return decompress(in, true);
 	}
@@ -50,38 +52,37 @@ public class RefPackDecompress {
 		if ((header[0] & 0x3E)!=16 || header[1]!=-5) { //0x10FB
 			System.out.println("[RFPKDecomp] Error : Input is not compressed."); 
 			return null;
-		} else {
-			boolean isLong  = ((header[0] & 0x80) != 0);
-			boolean isDoubled = ((header[0] & 0x01) != 0);
-			if (isDoubled) System.out.println("[RFPKDecomp] Warning : archive's isDoubled property set to true, this shouldn't happen"); 
-
-			byte[] buf;
-			int length;
-			if (isLong) {
-				in.get(buf = new byte[4]);
-				length = (Byte.toUnsignedInt(buf[0]) << 24) | 
-						(Byte.toUnsignedInt(buf[1]) << 16) |
-						(Byte.toUnsignedInt(buf[2]) << 8) |
-						(Byte.toUnsignedInt(buf[3]) << 0);
-			} else {
-				in.get(buf = new byte[3]);
-				length = (Byte.toUnsignedInt(buf[0]) << 16) |
-						(Byte.toUnsignedInt(buf[1]) << 8) |
-						(Byte.toUnsignedInt(buf[2]) << 0);
-			}
-			
-			if (length != decompressedSize) System.out.println("[RFPKDecomp] Warning : archive size ("+length+") doesn't match announced size ("+decompressedSize+") !");
-			
-			out = ByteBuffer.allocate(length);
-			
-			stop = false;
-			while (!stop ) {
-				decompressionStep();
-			}
-			if (in.position() != (compressedSize+16)) System.out.println("[RFPKDecomp] Warning : archive compressed size ("+in.position()+") doesn't match announced size ("+(compressedSize+16)+") !");
-			
-			return out.array();
 		}
+		boolean isLong  = ((header[0] & 0x80) != 0);
+		boolean isDoubled = ((header[0] & 0x01) != 0);
+		if (isDoubled) System.out.println("[RFPKDecomp] Warning : archive's isDoubled property set to true, this shouldn't happen"); 
+
+		byte[] buf;
+		int length;
+		if (isLong) {
+			in.get(buf = new byte[4]);
+			length = (Byte.toUnsignedInt(buf[0]) << 24) | 
+					(Byte.toUnsignedInt(buf[1]) << 16) |
+					(Byte.toUnsignedInt(buf[2]) << 8) |
+					(Byte.toUnsignedInt(buf[3]) << 0);
+		} else {
+			in.get(buf = new byte[3]);
+			length = (Byte.toUnsignedInt(buf[0]) << 16) |
+					(Byte.toUnsignedInt(buf[1]) << 8) |
+					(Byte.toUnsignedInt(buf[2]) << 0);
+		}
+		
+		if (length != decompressedSize) System.out.println("[RFPKDecomp] Warning : archive size ("+length+") doesn't match announced size ("+decompressedSize+") !");
+		
+		out = ByteBuffer.allocate(length);
+		
+		stop = false;
+		while (!stop ) {
+			decompressionStep();
+		}
+		if (in.position() != (compressedSize+16)) System.out.println("[RFPKDecomp] Warning : archive compressed size ("+in.position()+") doesn't match announced size ("+(compressedSize+16)+") !");
+		
+		return out.array();
 	}
 	
 	public void decompressionStep() {

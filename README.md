@@ -1,6 +1,8 @@
 # UCGT - Undercover Geometry Tool
-This repo aims at filling gaps in NFS Undercover modding enlightened during the development of the Undercover Exposed mod.
+[This repo](https://github.com/NI240SX/UCGT) aims at filling gaps in NFS Undercover modding enlightened during the development of the Undercover Exposed mod.
 As long as you explicitly credit me, you can freely reuse portions of this code or take inspiration from it.
+
+If you wish to support my stuff, you can [buy me a coffee](https://ko-fi.com/ni240sx).
 
 **YOU NEED JAVA 15 OR HIGHER TO RUN ANY OF THE FOLLOWING**
 

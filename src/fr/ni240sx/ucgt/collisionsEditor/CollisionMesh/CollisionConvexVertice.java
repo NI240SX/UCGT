@@ -27,13 +27,13 @@ public class CollisionConvexVertice extends CollisionShape {
 	
 	public float unknownFloat = (float) 0.05;
 
-	public ArrayList<PlaneEquation> PlaneEquations = new ArrayList<PlaneEquation>();
-	public ArrayList<LineEquation> LineEquations = new ArrayList<LineEquation>();
-	public ArrayList<Vertex> Vertices = new ArrayList<Vertex>();
+	public ArrayList<PlaneEquation> PlaneEquations = new ArrayList<>();
+	public ArrayList<LineEquation> LineEquations = new ArrayList<>();
+	public ArrayList<Vertex> Vertices = new ArrayList<>();
 	
-	public ArrayList<RotatedVertice> RotatedVertices = new ArrayList<RotatedVertice>();
+	public ArrayList<RotatedVertice> RotatedVertices = new ArrayList<>();
 
-	public ArrayList<float[]> vertices = new ArrayList<float[]>();
+	public ArrayList<float[]> vertices = new ArrayList<>();
 	
 	public MeshView shape = new MeshView();
 
@@ -77,6 +77,7 @@ public class CollisionConvexVertice extends CollisionShape {
 				+ ",\n RotatedVertices=" + RotatedVertices + "]";
 	}
 
+	@SuppressWarnings("unused")
 	public void calculateVertices() {
 		//I FUCKED UP, 2025 WILL BE MY YEAR
 		//maybe look up the closest planes to the center of gravity on the x, y, z axes instead, then find the closest top/bottom/sides intersections

@@ -10,11 +10,12 @@ import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 
 public class Triangles extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.Part_Mesh_Triangles;}
 	
 	public static final int triangleLength = 6;
 
-	public ArrayList<Triangle> triangles = new ArrayList<Triangle>();
+	public ArrayList<Triangle> triangles = new ArrayList<>();
 	
 	public Triangles(ByteBuffer in) {
 		var blockLength = in.getInt();

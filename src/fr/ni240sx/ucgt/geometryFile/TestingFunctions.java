@@ -7,10 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.compression.CompressionLevel;
-import fr.ni240sx.ucgt.compression.CompressionType;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
-import fr.ni240sx.ucgt.geometryFile.settings.SettingsImport_Tangents;
 
 public class TestingFunctions {
 
@@ -36,6 +33,7 @@ public class TestingFunctions {
 	public static void dumpPartsRecompiled(String geomFile) {
 		dumpPartsRecompiled(geomFile, geomFile+"-parts\\");
 	}
+	@SuppressWarnings("resource")
 	public static void dumpPartsRecompiled(String geomFile, String partsDirectory) {
 		try {
 			long t = System.currentTimeMillis();
@@ -48,8 +46,8 @@ public class TestingFunctions {
 			Files.createDirectories(Paths.get(partsDirectory));
 			
 			for (Part p : geom.parts) {
-				FileOutputStream fos;
 				try {
+					FileOutputStream fos;
 					if (Block.doNotRead.get(GeomBlock.Part_Mesh) == null) fos = new FileOutputStream(new File(partsDirectory + p.header.partName + "-recompiled"));
 					else fos = new FileOutputStream(new File(partsDirectory + p.header.partName));
 					fos.write(p.save(0));
@@ -175,7 +173,6 @@ public class TestingFunctions {
 		try {
 			Geometry.ctkConfigToUCGTConfig(new File(ctkConfig), new File(ucgtConfig));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -240,14 +237,14 @@ public class TestingFunctions {
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.BIN");
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
 	
-//		PartVisualizer.setPartsFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.BIN", "KIT00_BASE_A"
-//		+ "KIT00_BODY_A KIT00_BUMPER_FRONT_A KIT00_BUMPER_REAR_A KIT00_CHASSIS_A KIT00_FENDER_FRONT_LEFT_A KIT00_FENDER_FRONT_RIGHT_A "
-//		+ " KIT00_DOOR_LEFT_A KIT00_DOOR_RIGHT_A KIT00_DOOR_REAR_LEFT_A KIT00_DOOR_REAR_RIGHT_A KIT00_HOOD_A KIT00_TRUNK_A"
-//		+ " KIT00_SKIRT_LEFT_A KIT00_SKIRT_RIGHT_A KIT00_HEADLIGHT_LEFT_A KIT00_HEADLIGHT_RIGHT_A KIT00_BRAKELIGHT_LEFT_A KIT00_BRAKELIGHT_RIGHT_A"
-//		+ " KIT00_MUFFLER_00_A KIT00_EXHAUST_TIPS_LEFT_00_A KIT00_EXHAUST_TIPS_RIGHT_00_A KIT00_EXHAUST_TIPS_CENTER_A"
-//		+ " KIT00_SIDEMIRROR_LEFT_A KIT00_SIDEMIRROR_RIGHT_A KIT00_SPOILER_A"
-//		);
-//		PartVisualizer.run();
+		PartVisualizer.setPartsFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN", "KIT00_BASE_A"
+		+ "KIT00_BODY_A KIT00_BUMPER_FRONT_A KIT00_BUMPER_REAR_A KIT00_CHASSIS_A KIT00_FENDER_FRONT_LEFT_A KIT00_FENDER_FRONT_RIGHT_A "
+		+ " KIT00_DOOR_LEFT_A KIT00_DOOR_RIGHT_A KIT00_DOOR_REAR_LEFT_A KIT00_DOOR_REAR_RIGHT_A KIT00_HOOD_A KIT00_TRUNK_A"
+		+ " KIT00_SKIRT_LEFT_A KIT00_SKIRT_RIGHT_A KIT00_HEADLIGHT_LEFT_A KIT00_HEADLIGHT_RIGHT_A KIT00_BRAKELIGHT_LEFT_A KIT00_BRAKELIGHT_RIGHT_A"
+		+ " KIT00_MUFFLER_00_A KIT00_EXHAUST_TIPS_LEFT_00_A KIT00_EXHAUST_TIPS_RIGHT_00_A KIT00_EXHAUST_TIPS_CENTER_A"
+		+ " KIT00_SIDEMIRROR_LEFT_A KIT00_SIDEMIRROR_RIGHT_A KIT00_SPOILER_A"
+		);
+		PartVisualizer.run();
 
 //		PartVisualizer.setPartsFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRY.BIN", "KIT00_BASE_A"
 //		+ "KIT00_BODY_A KIT00_BUMPER_FRONT_A KIT00_BUMPER_REAR_A KIT00_CHASSIS_A KIT00_FENDER_FRONT_LEFT_A KIT00_FENDER_FRONT_RIGHT_A "
@@ -267,6 +264,18 @@ public class TestingFunctions {
 //		);
 //		PartVisualizer.run();
 		
+//		PartVisualizer.setPartsFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\E36\\GEOMETRY.BIN", 
+//				"KIT00_BASE_A"
+//		+ "KIT00_BODY_A KIT00_BUMPER_FRONT_A KIT00_BUMPER_REAR_A KIT00_CHASSIS_A KIT00_FENDER_FRONT_LEFT_A KIT00_FENDER_FRONT_RIGHT_A "
+//		+ " KIT00_DOOR_LEFT_A KIT00_DOOR_RIGHT_A KIT00_DOOR_REAR_LEFT_A KIT00_DOOR_REAR_RIGHT_A KIT00_HOOD_A KIT00_TRUNK_A"
+//		+ " KIT00_SKIRT_LEFT_A KIT00_SKIRT_RIGHT_A KIT00_HEADLIGHT_LEFT_A KIT00_HEADLIGHT_RIGHT_A KIT00_BRAKELIGHT_LEFT_A KIT00_BRAKELIGHT_RIGHT_A"
+//		+ " KIT00_MUFFLER_00_A KIT00_EXHAUST_TIPS_LEFT_00_A KIT00_EXHAUST_TIPS_RIGHT_00_A KIT00_EXHAUST_TIPS_CENTER_A"
+//		+ " KIT00_SIDEMIRROR_LEFT_A KIT00_SIDEMIRROR_RIGHT_A KIT00_SPOILER_A KIT00_LIGHTBAR_A"
+//		"KIT00_BODY_D KIT00_BUMPER_FRONT_D KIT00_BUMPER_REAR_D KIT00_DOOR_LEFT_D KIT00_DOOR_RIGHT_D KIT00_HOOD_D KIT00_TRUNK_D KIT00_CHASSIS_D"
+//		+ "KIT00_HEADLIGHT_LEFT_D KIT00_HEADLIGHT_RIGHT_D KIT00_BRAKELIGHT_LEFT_D KIT00_BRAKELIGHT_RIGHT_D KIT00_BASE_D"
+//		);
+//		PartVisualizer.run();
+		
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\ctk\\GEOMETRY.BIN");
 		
 		
@@ -278,13 +287,13 @@ public class TestingFunctions {
 //		Geometry.defaultCompressionLevel = CompressionLevel.Maximum;
 //		Geometry.defaultCompressionLevel = CompressionLevel.High;
 //		Geometry.defaultCompressionType = CompressionType.RawDecompressed;
-		Geometry.IMPORT_importVertexColors = false;
-		Geometry.IMPORT_calculateVertexColors = true;
-		Geometry.IMPORT_Tangents = SettingsImport_Tangents.HIGH;
+//		Geometry.IMPORT_importVertexColors = false;
+//		Geometry.IMPORT_calculateVertexColors = true;
+//		Geometry.IMPORT_Tangents = SettingsImport_Tangents.HIGH;
 //		Geometry.EXPORT_vanillaPlusMaterials = true;
 		
-		var geom = importFromFile("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\a UCE\\CARS- S2000\\onda.obj");
-		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\S2000\\GEOMETRY.BIN");
+//		var geom = importFromFile("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\a UCE\\CARS- S2000\\onda.obj");
+//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\S2000\\GEOMETRY.BIN");
 		
 //		long t = System.currentTimeMillis();
 		
@@ -351,5 +360,7 @@ public class TestingFunctions {
 //		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
 //		geom = importFromFile("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\BMW_M3_E46_03.obj");
 //		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY.BIN");
+		
+//		exportToFile("G:\\Autres ordinateurs\\Mon ordinateur\\a UCE BETA 1 PREVIEW PACK\\DATA\\CARS\\E36\\GEOMETRY.BIN", "C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\a UCE\\UCGT\\GEOMETRY_exported.obj");
 	}
 }

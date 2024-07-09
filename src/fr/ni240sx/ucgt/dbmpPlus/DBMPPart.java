@@ -3,7 +3,7 @@ package fr.ni240sx.ucgt.dbmpPlus;
 import java.util.ArrayList;
 
 class DBMPPart {
-	public ArrayList<Attribute> attributes = new ArrayList<Attribute>();
+	public ArrayList<Attribute> attributes = new ArrayList<>();
 	public String displayName = "MISSING ATTRIBUTES";
 	
 	public int kitnumber = 99;
@@ -107,7 +107,7 @@ class DBMPPart {
 					try {
 						kitnumber = Integer.valueOf(att2S.value1.substring(att2S.value1.length()-2));
 						if (att2S.value1.charAt(3) == 'W') isWidebody = true; else isWidebody = false;
-					} catch (Exception e) {
+					} catch (@SuppressWarnings("unused") Exception e) {
 						
 					}
 				}
@@ -186,6 +186,7 @@ class DBMPPart {
 		update();
 	}
 	
+	@Override
 	public String toString() {
 		String s = "Part " + displayName;
 		for (Attribute a : attributes) {

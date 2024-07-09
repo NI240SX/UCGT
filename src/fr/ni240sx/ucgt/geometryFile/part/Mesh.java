@@ -12,12 +12,13 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.*;
 
 public class Mesh extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.Part_Mesh;}
 	
 	public Mesh_Info info;
 	public Materials materials;
 	public ShadersUsage shadersUsage;
-	public ArrayList<Vertices> verticesBlocks = new ArrayList<Vertices>();
+	public ArrayList<Vertices> verticesBlocks = new ArrayList<>();
 	public Triangles triangles;
 	
 	public Mesh(ByteBuffer in) {

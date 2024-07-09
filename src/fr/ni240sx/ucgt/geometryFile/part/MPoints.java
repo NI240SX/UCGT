@@ -11,10 +11,11 @@ import fr.ni240sx.ucgt.geometryFile.GeomBlock;
 
 public class MPoints extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.Part_MPoints;}
 
 	// texture binhash, usage type
-	public ArrayList<MPoint> mpoints = new ArrayList<MPoint>();
+	public ArrayList<MPoint> mpoints = new ArrayList<>();
 	
 	public MPoints(ByteBuffer in) {
 		var blockLength = in.getInt();

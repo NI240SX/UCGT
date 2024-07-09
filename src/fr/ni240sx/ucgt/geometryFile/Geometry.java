@@ -25,7 +25,9 @@ import fr.ni240sx.ucgt.compression.Compression;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.compression.CompressionType;
 import fr.ni240sx.ucgt.geometryFile.geometry.*;
+import fr.ni240sx.ucgt.geometryFile.io.VertexData3;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
+import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
 import fr.ni240sx.ucgt.geometryFile.part.AutosculptLink;
 import fr.ni240sx.ucgt.geometryFile.part.AutosculptLinking;
 import fr.ni240sx.ucgt.geometryFile.part.AutosculptZones;
@@ -50,15 +52,16 @@ public class Geometry extends Block {
 	public GeomBlock getBlockID() {return GeomBlock.Geometry;}
 	
 	public GeomHeader geomHeader;
-	public List<Part> parts = new ArrayList<Part>();//Collections.synchronizedList(new ArrayList<Part>());
-	public List<Material> materials = new ArrayList<Material>();//Collections.synchronizedList(new ArrayList<Material>());
-	public List<MPoint> mpointsAll = new ArrayList<MPoint>();//Collections.synchronizedList(new ArrayList<MPoint>());
+	public List<Part> parts = new ArrayList<>();//Collections.synchronizedList(new ArrayList<Part>());
+	public List<Material> materials = new ArrayList<>();//Collections.synchronizedList(new ArrayList<Material>());
+	public List<MPoint> mpointsAll = new ArrayList<>();//Collections.synchronizedList(new ArrayList<MPoint>());
 	public List<MPointPositionCube> mpointsPositions = new ArrayList<>();//Collections.synchronizedList(new ArrayList<MPoint>());
-	public List<Hash> hashlist = new ArrayList<Hash>();//Collections.synchronizedList(new ArrayList<Hash>());
-	public List<AutosculptLinking> asLinking = new ArrayList<AutosculptLinking>();//Collections.synchronizedList(new ArrayList<AutosculptLinking>());
+	public List<Hash> hashlist = new ArrayList<>();//Collections.synchronizedList(new ArrayList<Hash>());
+	public List<AutosculptLinking> asLinking = new ArrayList<>();//Collections.synchronizedList(new ArrayList<AutosculptLinking>());
 	
 	public ArrayList<String> forceAsFixOnParts = new ArrayList<>();
-	public HashMap<String,String> renameParts = new HashMap<>();
+	public ArrayList<Pair<String,String>> renameParts = new ArrayList<>();
+	public ArrayList<String> deleteParts = new ArrayList<>();
 	
 	public String carname = "UNDETERMINED";
 	
@@ -74,7 +77,8 @@ public class Geometry extends Block {
 	public static boolean SAVE_sortEverythingByName = true;
 	public static boolean SAVE_fixAutosculptNormals = true;
 	public static boolean SAVE_removeInvalid = true;
-	public static boolean SAVE_copyMissingLODs = false;	
+	public static boolean SAVE_copyMissingLODs = false;
+	public static boolean SAVE_copyLOD_D = false;
 
 	public static boolean IMPORT_importVertexColors = true;
 	public static boolean IMPORT_calculateVertexColors = false;
@@ -149,10 +153,10 @@ public class Geometry extends Block {
 					}
 					
 					dataWriter.position(0);
-					parts.add(new Part(dataWriter, o.partKey));	
+					parts.add(new Part(dataWriter));	
 				} else {
 					in.position(o.offset);
-					parts.add(new Part(in, o.partKey));	
+					parts.add(new Part(in));	
 				}
 			}
 //		}
@@ -164,9 +168,11 @@ public class Geometry extends Block {
 		
 		for (var p : parts) {
 			try {
-				carname = p.header.partName.split("_KIT")[0];
+				if (p.header.partName.contains("_KIT")) carname = p.header.partName.split("_KIT")[0];
 				break;
-			} catch (Exception e) {}
+			} catch (@SuppressWarnings("unused") Exception e) {
+				//header is null
+			}
 		}
 		if (carname.equals("UNDETERMINED")) System.out.println("Could not determine car name.");
 			
@@ -174,59 +180,22 @@ public class Geometry extends Block {
 		
 		
 		
-		// check global materials, markers, update names and hashes, optimize the file
-		
-//		for (var p : parts) { // iterate on parts, TODO multithread it, use var toRemove = Collections.synchronizedList(new ArrayList<Part>());
-////			System.out.println(p.name);
-//			computeMatsList(p);
-//			computeMarkersList(p);
-//		}
+		materials.clear();
+		mpointsAll.clear();
+		mpointsPositions.clear();
 
-//		if (USE_MULTITHREADING) {
-//			ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-//			for (final var p : parts){
-//			    pool.execute(new Runnable() {
-//			        @Override
-//			        public void run() {
-//			        	computeMatsList(p);
-//			        	computeMarkersList(p);
-//			        }
-//			    });
-//			}
-//			pool.shutdown();
-//			// wait for them to finish for up to one minute.
-//			try {
-//				pool.awaitTermination(10, TimeUnit.MINUTES);
-//			} catch (InterruptedException e) {
-//				System.out.println("Critical failure ! Please disable multi-threading.");
-//				e.printStackTrace();
-//			}
-//		} else { // useful for debugging
-			materials.clear();
-			mpointsAll.clear();
-			mpointsPositions.clear();
-
-//			var toRemove = new ArrayList<Part>();
-			for (var p : parts) {
-				p.findName(carname);
-				computeMatsList(p);
-				globalizePartMarkers(p);
-				
+		for (var p : parts) {
+			p.findName(carname);
+			computeMatsList(p);
+			globalizePartMarkers(p);
+			
 //				optimizeAutosculpt(toRemove, p); 
-			}
-			computeMarkersList();
-//		}
+		}
+		computeMarkersList();
 //			if (LOAD_removeUselessAutosculptParts) for (var p : toRemove) {
 //				System.out.println("Removing part "+p.header.partName);
 //				parts.remove(p);
 //			}
-
-			
-			
-			
-			
-			
-			
 
 		// sort lists
 		if (SAVE_sortEverythingByName) {
@@ -270,96 +239,55 @@ public class Geometry extends Block {
 
 		long t = System.currentTimeMillis();
 		var toRemove = Collections.synchronizedList(new ArrayList<Part>()); // parts flagged to be removed to optimize the geometry (eg T0 autosculpt with no other actual morphtargets)
+		var toAdd = Collections.synchronizedList(new ArrayList<Part>()); // parts flagged to be added (eg missing LODs)
 		
 		if (!renameParts.isEmpty()) {
 //			System.out.println("parts to rename present :");
 //			for (var k : renameParts.keySet()) {
 //				System.out.println(k+" : "+renameParts.get(k));
 //			}
-			for (var p : parts) if (renameParts.get(p.name) != null) {
-				System.out.print("Rename part "+p.name);
-				p.header.partName = carname+"_"+renameParts.get(p.name);
+			for (var p : parts) for (var r : renameParts) if (p.name.contains(r.getKey())) {
+				System.out.print("Renaming part "+p.name);
+				p.header.partName = p.header.partName.replace(r.getKey(), r.getValue());
 				p.header.binKey = new Hash(p.header.partName).binHash;
-				p.name = renameParts.get(p.name);
+				p.name = p.name.replace(r.getKey(), r.getValue());
 				System.out.println(" to "+p.name);
 			}
 		}
 		
-		for (var p : parts) { // iterate on parts, TODO multithread it, use var toRemove = Collections.synchronizedList(new ArrayList<Part>());			
+		if (!deleteParts.isEmpty()) {
+//			System.out.println("parts to rename present :");
+//			for (var k : renameParts.keySet()) {
+//				System.out.println(k+" : "+renameParts.get(k));
+//			}
+			for (var p : parts) for (var r : deleteParts) if (p.name.contains(r)) {
+				System.out.println("Deleting part "+p.name);
+				toRemove.add(p);
+			}
+		}
+		
+		for (var p : parts) {		
 			
 			if (SAVE_removeInvalid) {if (!checkValid(toRemove, p)) continue;}
 			
 			optimizeAutosculpt(toRemove, p); 
-			
 			computeMatsList(p); // IMPORTANT TO KEEP HERE
 //			globalizePartMarkers(p);
-			if (SAVE_optimizeMaterials) if (p.mesh != null) for (var m : p.mesh.materials.materials) {	
-    			//destructive tests 
-//				m.tryGuessUsageSpecific();
-//				m.tryGuessFlags(this);
-//    			m.tryGuessDefaultTex();
+			if (p.mesh != null) for (var m : p.mesh.materials.materials) if (SAVE_optimizeMaterials) {	
     			m.removeUnneeded();
+    		} else {
+				m.tryGuessUsageSpecific();
+				m.tryGuessFlags(this);
+    			m.tryGuessDefaultTex();
     		}
 			fixAutosculptMeshes(p);
 			
-			if (SAVE_copyMissingLODs) checkAndCopyMissingLODs(p);
+			if (SAVE_copyMissingLODs) checkAndCopyMissingLODs(toAdd, p);
 		}
 
-        
-		
-//		for (var p : parts) {
-//			if (!p.header.partName.contains("KIT00_BASE_A")) {
-//				toRemove.add(p);
-//			}
-//		}
-		
-//		if (USE_MULTITHREADING) {
-//			ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-//			for (final var p : parts){
-//			    pool.execute(new Runnable() {
-//			        @Override
-//			        public void run() {
-//			        	optimizeAutosculpt(toRemove, p);
-//			        	
-//			        	computeMatsList(p);
-//			        	computeMarkersList(p);
-//			        	if (p.mesh != null) for (var m : p.mesh.materials.materials) {	
-//			    			//destructive tests 
-////			    				m.tryGuessUsageSpecific();
-////			    				m.tryGuessFlags(this);
-////			    				m.tryGuessDefaultTex();
-//
-//			    			m.removeUnneeded();
-//			    		}
-//			        }
-//			    });
-//			}
-//			pool.shutdown();
-//			// wait for them to finish for up to one minute.
-//			pool.awaitTermination(10, TimeUnit.MINUTES);
-//		} else { // useful for debugging
-//			for (var p : parts) {
-//				optimizeAutosculpt(toRemove, p);
-//				
-//				computeMatsList(p);
-//				computeMarkersList(p);
-//	        	if (p.mesh != null) for (var m : p.mesh.materials.materials) {	
-//	    			//destructive tests 
-////	    				m.tryGuessUsageSpecific();
-////	    				m.tryGuessFlags(this);
-////	    				m.tryGuessDefaultTex();
-//
-//	    			m.removeUnneeded();
-//	    		}
-//			}
-//		}
-		
-		//remove parts flagged as useless
-
-		for (var p : toRemove) {
-//			System.out.println("Removing part "+p.header.partName);
-			parts.remove(p);
-		}
+		//remove/add parts
+		parts.removeAll(toRemove);
+		parts.addAll(toAdd);
 		
 		//sort things once again just in case
 		if (SAVE_sortEverythingByName) {
@@ -385,6 +313,7 @@ public class Geometry extends Block {
 				    pool.execute(() -> {
 						try {
 							p.precompress();
+							System.out.print("\rProgress " + Math.round(100*((float)(parts.indexOf(p))/parts.size()))+ " %" );
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -396,20 +325,16 @@ public class Geometry extends Block {
 			} else { // useful for debugging
 				for (var p : parts) {
 					p.precompress();
+					System.out.print("\rProgress " + Math.round(100*((float)(parts.indexOf(p))/parts.size()))+ " %" );
 				}
 			}
 		}
 			
 
-		System.out.println("Parts compressed in "+(System.currentTimeMillis()-t)+" ms.");
+		System.out.println("\nParts compressed in "+(System.currentTimeMillis()-t)+" ms.");
 		t = System.currentTimeMillis();
 		
 		geomHeader.refresh(parts);
-
-//		System.out.println("Part lists and offsets refreshed in "+(System.currentTimeMillis()-t)+" ms.");
-//		t = System.currentTimeMillis();
-
-//		System.out.println("Preparing file...");
 		
 		var out = new ByteArrayOutputStream();
 
@@ -491,6 +416,7 @@ public class Geometry extends Block {
 				+ "SETTING	FixAutosculptNormals="+SAVE_fixAutosculptNormals+"\n"
 				+ "SETTING	RemoveInvalid="+SAVE_removeInvalid+"\n"
 				+ "SETTING	CopyMissingLODs="+SAVE_copyMissingLODs+"\n"
+				+ "SETTING	MakeLodD="+SAVE_copyLOD_D+"\n"
 				+ "");
 
 		bw.write("\n--- Materials ---\n");
@@ -519,8 +445,8 @@ public class Geometry extends Block {
 		return importFromFile(modelFile, new File(modelFile.getPath().replace(modelFile.getName().split("\\.")[modelFile.getName().split("\\.").length-1], "ini")));
 	}
 	public static Geometry importFromFile(File modelFile, File configFile) throws IOException, Exception {
-		if (!modelFile.getName().endsWith(".obj")) {
-			throw new Exception("Wrong file format ! Only Wavefront OBJ is supported.");
+		if (!modelFile.getName().endsWith(".obj") && !modelFile.getName().endsWith(".z3d")) {
+			throw new Exception("Wrong file format ! Only Wavefront OBJ and ZModeler 2 Z3D are supported.");
 		}
 		long time = System.currentTimeMillis();
 		System.out.println("Loading config from "+configFile.getName());
@@ -529,7 +455,8 @@ public class Geometry extends Block {
 		System.out.println("Config read in "+(System.currentTimeMillis()-time)+" ms.");
 		time = System.currentTimeMillis();
 		System.out.println("Importing meshes from "+modelFile.getName());
-		WavefrontOBJ.load(geom, modelFile);
+		if (modelFile.getName().endsWith(".obj")) WavefrontOBJ.load(geom, modelFile);
+		if (modelFile.getName().endsWith(".z3d")) ZModelerZ3D.load(geom, modelFile);
 		System.out.println("3D model converted in "+(System.currentTimeMillis()-time)+" ms.");			
 		return geom;			
 	}
@@ -540,7 +467,7 @@ public class Geometry extends Block {
 		while ((l=br.readLine())!=null) {
 			int iterator;
 			switch (l.split("	")[0].split(" ")[0]) { // support for both space and tab separators
-			case "SETTING":
+			case "SETTING": {
 				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (s2.contains("=")) {
 					switch (s2.split("=")[0]) {
 					case "UseMultithreading":
@@ -557,7 +484,7 @@ public class Geometry extends Block {
 						System.out.println("Compression level set : "+defaultCompressionLevel.getName());
 						break;
 					case "CarName":
-						carname = s2.split("=")[1];
+						carname = s2.split("=")[1].toUpperCase();
 						System.out.println("Car name set : "+carname);
 						break;
 						
@@ -612,6 +539,10 @@ public class Geometry extends Block {
 						SAVE_copyMissingLODs = Boolean.parseBoolean(s2.split("=")[1]);
 						if (SAVE_copyMissingLODs) System.out.println("Copying missing LODs.");
 						break;
+					case "MakeLodD":
+						SAVE_copyLOD_D = Boolean.parseBoolean(s2.split("=")[1]);
+						if (SAVE_copyLOD_D) System.out.println("Copying lod D from lod C.");
+						break;
 						
 					case "RemoveInvalid":
 						SAVE_removeInvalid = Boolean.parseBoolean(s2.split("=")[1]);
@@ -622,8 +553,7 @@ public class Geometry extends Block {
 						System.out.println("Setting not supported : "+s2);
 					}
 				}
-				break;
-				
+				break;}
 				
 			case "RENAME":
 				iterator = 0;
@@ -631,16 +561,27 @@ public class Geometry extends Block {
 				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) {
 					switch(iterator) {
 					case 1:
-						toren = s2;
+						toren = s2.toUpperCase();
 						break;
 					case 2:
-						renameParts.put(toren, s2);
+						renameParts.add(new Pair<>(toren, s2.toUpperCase()));
 						break;
 					}
 					iterator++;
 				}
 				break;
 				
+			case "DELETE":
+				iterator = 0;
+				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) {
+					switch(iterator) {
+					case 1:
+						deleteParts.add(s2.toUpperCase());
+						break;
+					}
+					iterator++;
+				}
+				break;
 				
 			case "MATERIAL": // IF THE CAR NAME ISN'T SET BEFORE THIS, CAR-SPECIFIC TEXTURES WILL BREAK
 				var m = new Material();
@@ -651,11 +592,11 @@ public class Geometry extends Block {
 					} else { //shader or texture usage
 						if (TextureUsage.get(s2.split("=")[1]) != TextureUsage.INVALID) {
 							// texture usage
-							m.TextureHashes.add(new Hash(s2.split("=")[0].replace("%", carname)));
+							m.TextureHashes.add(new Hash(s2.split("=")[0].replace("%", carname).toUpperCase()));
 							m.textureUsages.add(TextureUsage.get(s2.split("=")[1]));
 						} else if (ShaderUsage.get(s2.split("=")[1]) != ShaderUsage.INVALID) {
 							//shader usage
-							m.ShaderHash = new Hash(s2.split("=")[0]);
+							m.ShaderHash = new Hash(s2.split("=")[0].toUpperCase());
 							m.shaderUsage = ShaderUsage.get(s2.split("=")[1]);
 						} else if (s2.split("=")[0].equals("UseTangents")) {
 							//material tangents setting
@@ -673,13 +614,13 @@ public class Geometry extends Block {
 				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty() && !s2.equals("MARKER")) {
 					switch (iterator) {
 					case 0:
-						mp.uniqueName = s2;
+						mp.uniqueName = s2.toUpperCase();
 						break;
 					case 1:
-						mp.nameHash = new Hash(s2);
+						mp.nameHash = new Hash(s2.toUpperCase());
 						break;
 					case 2:
-						mp.tempPartName = s2;
+						mp.tempPartName = s2.toUpperCase();
 						break;
 					case 3:
 						u = Float.parseFloat(s2);
@@ -728,14 +669,15 @@ public class Geometry extends Block {
 				
 //				System.out.println("Marker : "+l);
 				break;
+				
 			case "ASLINK":
 				var asl = new AutosculptLinking();
 				asLinking.add(asl);
 				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty() && !s2.equals("ASLINK")) {
 					if (!s2.contains(",")) { //part name
-						asl.tempPartName = s2;
+						asl.tempPartName = s2.toUpperCase();
 					} else {
-						asl.links.add(new AutosculptLink(new Hash(carname+"_"+s2.split(",")[0]).binHash, 
+						asl.links.add(new AutosculptLink(new Hash(carname+"_"+s2.split(",")[0].toUpperCase()).binHash, 
 								Short.parseShort(s2.split(",")[1]), 
 								Short.parseShort(s2.split(",")[2]), 
 								Short.parseShort(s2.split(",")[3]), 
@@ -929,6 +871,7 @@ public class Geometry extends Block {
 						break;
 					}
 				} else {
+					assert texture != null;
 					//real shader compiled with Diffuse
 					if (normal != null) usage = ShaderUsage.DiffuseNormal;
 					if (shader.equals("BRAKEDISC")) usage = ShaderUsage.DiffuseAlpha;
@@ -943,7 +886,7 @@ public class Geometry extends Block {
 					//vanilla plus
 					if (texture.equals("GRILL_02")) usage = ShaderUsage.DiffuseAlpha; 
 					if (texture.equals("%_ENGINE")) {
-						usage = ShaderUsage.DiffuseNormalAlpha;
+						usage = ShaderUsage.DiffuseNormal;
 						normal = "%_ENGINE_N";
 					}
 				}
@@ -1002,7 +945,16 @@ public class Geometry extends Block {
 					// 0.1	90	180 	=>	89.9	89.9	90.1
 					// -25	90	180		=>	-90		65		-90
 					// 25	90	-180	=>	90		65		90
-					if (u == 0) {u=180; v=90; w=0;}
+
+					// 0	90	180 	=>	-180	-90		0
+					
+					
+					// 0	0	-180	=>	0		0		180
+
+					// -90	0	-90		=>	-90		-90		0
+					// 90	0	90		=>	90		-90		0
+					
+					if (u == 0) {u=-180; v=-90; w=0;}
 					else {
 						w = 90 * u / Math.abs(u);
 						v = 90 - u * u / Math.abs(u);
@@ -1013,6 +965,8 @@ public class Geometry extends Block {
 					vS = ((int) v == v) ? Integer.toString((int)v) : Double.toString(v);
 					wS = ((int) w == w) ? Integer.toString((int)w) : Double.toString(w);
 				}
+				if (uS.equals("-90") && vS.equals("0") && wS.equals("-90")) {uS = "-90"; vS="-90"; wS="0";}
+				if (uS.equals("90") && vS.equals("0") && wS.equals("90")) {uS = "90"; vS="-90"; wS="0";}
 				bw.write("	"+uS+"	"+vS+"	"+wS+"\n");
 				break;
 			}
@@ -1034,7 +988,7 @@ public class Geometry extends Block {
 		// GLOBAL MARKERS STORAGE
 		if (p.mpoints != null) for (var mp : p.mpoints.mpoints) {
 			mp.part = p;
-			mp.tryGuessName(this, p);
+			mp.tryGuessName(this);
 			if (!this.mpointsPositions.contains(mp)) { //this was problematic, not anymore
 				this.mpointsPositions.add(new MPointPositionCube(mp));
 			}else {
@@ -1066,7 +1020,7 @@ public class Geometry extends Block {
 		HashMap<ShaderUsage, Integer> FERenderData;
 		// MESH MATERIALS OPTIMIZATION + GLOBAL MATERIALS (only the global materials part should be kept here)
 		
-		FERenderData = new HashMap<ShaderUsage, Integer>();
+		FERenderData = new HashMap<>();
 		if (p.mesh != null) for (var m : p.mesh.materials.materials) {	
 			m.tryGuessHashes(this, p);
 
@@ -1102,7 +1056,7 @@ public class Geometry extends Block {
 		}
 	}
 
-	public boolean checkValid(List<Part> toRemove, Part p) {
+	public static boolean checkValid(List<Part> toRemove, Part p) {
 		boolean valid = true;
 		
 		if (p.kit.equals("")) valid = false;
@@ -1115,21 +1069,32 @@ public class Geometry extends Block {
 		return valid;
 	}
 	
-	public void checkAndCopyMissingLODs(Part p) {
+	public void checkAndCopyMissingLODs(List<Part> toAdd, Part p) {
+		
+		for (var part : toAdd) if (part.kit.equals(p.kit) && part.part.equals(p.part)) return;
+		
 		Part A=null;
 		Part B=null;
 		Part C=null;
+		Part D=null;
 		for (var p2 : parts) if (p2.kit.equals(p.kit) && p2.part.equals(p.part)) {
 			if (p2.lod.equals("A")) A = p2;
 			if (p2.lod.equals("B")) B = p2;
 			if (p2.lod.equals("C")) C = p2;
+			if (p2.lod.equals("D")) D = p2;
 		}
-		System.out.println(p.name+" has A : "+(A!=null)+", has B : "+(B!=null)+", has C : "+(C!=null));
+//		System.out.println(p.name+" has A : "+(A!=null)+", has B : "+(B!=null)+", has C : "+(C!=null));
 
-		if (A == null && B != null) parts.add(A = new Part(B, carname, B.kit+"_"+B.part+"_A"));
-		if (A == null && C != null) parts.add(A = new Part(C, carname, C.kit+"_"+C.part+"_A"));
-		if (B == null && A != null) parts.add(B = new Part(A, carname, A.kit+"_"+A.part+"_B"));
-		if (C == null) parts.add(C = new Part(B, carname, B.kit+"_"+B.part+"_C"));
+		if (A == null && B != null) toAdd.add(A = new Part(B, carname, B.kit+"_"+B.part+"_A"));
+		if (A == null && C != null) toAdd.add(A = new Part(C, carname, C.kit+"_"+C.part+"_A"));
+		if (B == null && A != null) toAdd.add(B = new Part(A, carname, A.kit+"_"+A.part+"_B"));
+		assert B!=null; //B cannot be null since there's at least one part that isn't (the one from which the method got called)
+		if (C == null) toAdd.add(C = new Part(B, carname, B.kit+"_"+B.part+"_C"));
+		
+		if (SAVE_copyLOD_D && D == null && p.kit.equals("KIT00")) {
+			toAdd.add(D = new Part(C, carname, C.kit+"_"+C.part+"_D"));
+		}
+		
 	}
 	
 	public void optimizeAutosculpt(List<Part> toRemove, Part p) {
@@ -1148,9 +1113,7 @@ public class Geometry extends Block {
 		
 		if (SAVE_removeUselessAutosculptParts) if (numZonesFound == 1 && toRemove != null) { 
 			//if only one zone detected, check whether it is T0, if yes yeet it, it should have no point existing
-//				System.out.println("Warning : only one autosculpt zone on "+p.name);
 			toRemove.add(potentialUselessT0);
-//				tempZones.clear();
 		}
 		
 		if (p.asZones != null) {
@@ -1176,7 +1139,9 @@ public class Geometry extends Block {
 				hashlist.add(new Hash(p.header.partName));
 			} 
 			
-		} catch (Exception e) {}
+		} catch (@SuppressWarnings("unused") Exception e) {
+			//header is null or smth
+		}
 		
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(new File("data/textures")));
@@ -1211,6 +1176,285 @@ public class Geometry extends Block {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	public void rebuild() {
+		for (var p : parts) {
+
+        	//sort materials (same as in config file) and add the materials data back to the mesh
+        	if (Geometry.SAVE_sortEverythingByName) p.mesh.materials.materials.sort(new MaterialsSorterName());
+    		p.mesh.verticesBlocks.clear();
+    		p.mesh.triangles.triangles.clear();
+        	
+        	//make hashmaps for textures and shaders
+        	
+        	//    ID		TEX/SHAD        USAGE
+        	HashMap<Integer, Pair<Integer, Integer>> texturesAndUsage = new HashMap<>();
+        	HashMap<Pair<Integer, Integer>, Integer> texturesIDs = new HashMap<>();
+//        	HashMap<Integer, Pair<Integer, Integer>> shadersAndUsage = new HashMap<Integer, Pair<Integer, Integer>>();
+        	HashMap<Integer , Integer> shadersOnly = new HashMap<>();
+        	HashMap<Integer , Integer> shadersIDs = new HashMap<>();
+
+        	List<TextureUsage> allTextureUsages = new ArrayList<>();
+        	List<ShaderUsage> allShaderUsages = new ArrayList<>();
+        	
+        	int texi = 0;
+        	int shai = 0;
+        	for (var m : p.mesh.materials.materials) {
+        		p.mesh.verticesBlocks.add(m.verticesBlock);
+        		p.mesh.triangles.triangles.addAll(m.triangles);
+        		
+        		
+        		if (	(Geometry.IMPORT_Tangents == SettingsImport_Tangents.LOW && m.needsTangentsLow()) || 
+    					(Geometry.IMPORT_Tangents == SettingsImport_Tangents.HIGH && m.needsTangentsHigh()) || 
+    					(Geometry.IMPORT_Tangents == SettingsImport_Tangents.MANUAL && m.useTangents == true) ||
+    					Geometry.IMPORT_Tangents == SettingsImport_Tangents.ON ) {
+        			
+        			addToTangents(m);
+        			normalizeTangents(m.verticesBlock.vertices);
+        		}
+        		
+        		if (Geometry.IMPORT_calculateVertexColors) {
+    				for (var v : m.verticesBlock.vertices) {
+    					// -1 to 1 -> 20 to 255
+        				int color;
+        				if (!p.part.contains("WHEEL") && !p.part.contains("BRAKE"))
+        					color = Math.max(0, Math.min(255, (int)((v.normZ+0.8)*150)));
+        				else color = Math.max(20, Math.min(255, (int)((-v.normY+0.8)*150)));
+        				v.colorR = (byte) color;
+        				v.colorG = (byte) color;
+        				v.colorB = (byte) color;
+    				}
+    			}
+        		
+//        		if (!shadersAndUsage.containsValue(new Pair<Integer,Integer>(m.ShaderHash.binHash, m.shaderUsage.getKey()))) {
+//       			shadersAndUsage.put(shadersAndUsage.size(), new Pair<Integer,Integer>(m.ShaderHash.binHash, m.shaderUsage.getKey()));
+//        		}
+        		if (!shadersOnly.containsValue(m.ShaderHash.binHash)) {
+        			shadersOnly.put(shai, m.ShaderHash.binHash);
+        			shadersIDs.put(m.ShaderHash.binHash, shai);
+        			shai++;
+        		}
+        		if (!allShaderUsages.contains(m.shaderUsage)) allShaderUsages.add(m.shaderUsage);
+
+        		for (int i=0; i<m.TextureHashes.size(); i++) {
+        			if (!texturesAndUsage.containsValue(new Pair<>(m.TextureHashes.get(i).binHash, m.textureUsages.get(i).getKey()))) {
+	        				texturesAndUsage.put(texi, new Pair<>(m.TextureHashes.get(i).binHash, m.textureUsages.get(i).getKey()));
+	        				texturesIDs.put(new Pair<>(m.TextureHashes.get(i).binHash, m.textureUsages.get(i).getKey()), texi);
+	        				texi++;
+            			}
+        			if (!allTextureUsages.contains(m.textureUsages.get(i))) allTextureUsages.add(m.textureUsages.get(i));
+        		}
+        	}
+        	
+//        	System.out.println(texturesAndUsage);
+        	
+        	//post-treatment
+        	//--- header ---
+        	//calculate triangle count
+        	//calculate textures count
+        	//calculate shaders count
+        	//calculate bounds
+        	p.header.trianglesCount = p.mesh.triangles.triangles.size();
+        	p.header.texturesCount = (short) texturesAndUsage.size();
+        	p.header.shadersCount = (short) shadersOnly.size();
+        	p.computeBounds();
+        	//--- texusage ---
+        	//fill in the texusage pairs
+        	for (int i=0; i<texturesAndUsage.size(); i++) {
+        		p.texusage.texusage.add(texturesAndUsage.get(i));
+        	}
+        	//--- strings ---
+        	//fill in the strings based on mesh shader usages
+        	if (allTextureUsages.contains(TextureUsage.DIFFUSE)) p.strings.strings.add("DIFFUSE");
+        	if (allTextureUsages.contains(TextureUsage.NORMAL)) p.strings.strings.add("NORMAL");
+        	if (allTextureUsages.contains(TextureUsage.SWATCH)) p.strings.strings.add("AMBIENT");
+        	if (allTextureUsages.contains(TextureUsage.ALPHA) || allTextureUsages.contains(TextureUsage.OPACITY)) p.strings.strings.add("OPACITY");
+        	if (allTextureUsages.contains(TextureUsage.SELFILLUMINATION)) p.strings.strings.add("SELFILLUMINATION");
+        	//--- shaders ---
+        	//fill in the shaders binhashes
+        	for (int i=0; i<shadersOnly.size(); i++) p.shaderlist.shaders.add(shadersOnly.get(i));
+
+        	//=== mesh ===
+        	//--- info ---
+        	//numMaterials, numTriangles, numVertices
+        	p.mesh.info.numMaterials = p.mesh.materials.materials.size();
+        	p.mesh.info.numTriangles = p.mesh.triangles.triangles.size();
+
+        	for (var vb : p.mesh.verticesBlocks) p.mesh.info.numVertices += vb.vertices.size();
+        	
+        	int triVertI = 0;
+        	//--- materials ---
+        	//for each material :
+        	//numVertices, toVertID
+        	//shaderID, textureIDs
+        	//verticesDataLength
+        	for (var m : p.mesh.materials.materials) {
+        		m.fromTriVertID = triVertI; //actually concerns triangles
+        		m.toTriVertID = m.fromTriVertID + m.triangles.size()*3;
+        		m.numTriVertices = m.toTriVertID - m.fromTriVertID;
+        		triVertI = m.toTriVertID;
+        		int shaderid = shadersIDs.get(m.ShaderHash.binHash);
+        		m.shaderID = (byte) shaderid;
+        		for (int i=0; i<m.TextureHashes.size(); i++) {
+        			int texid = texturesIDs.get(new Pair<>(m.TextureHashes.get(i).binHash, m.textureUsages.get(i).getKey()));
+        			m.textureIDs.add((byte) texid);
+        		}
+        		m.verticesDataLength = m.verticesBlock.vertices.size()*Vertices.vertexLength;
+            }
+        	
+        	//--- shadersusage ---
+        	//fill in the shaders usage
+        	for (var s : allShaderUsages) p.mesh.shadersUsage.shadersUsage.add(s.getKey());
+        	//--- vertices (several blocks) ---
+        	//normally already filled in
+        	//--- triangles (one block) ---
+        	//normally already filled in
+        	//--- autosculpt linking ---
+        	//already filled in
+        	//--- autosculpt zones ---
+        	//recalculated at export time
+        	
+        	p.rebuildSubBlocks();
+        }
+        
+        for (var mp : mpointsAll) {
+
+        	for (var mp2 : mpointsAll) if (mp2 != mp && mp2.uniqueName.equals(mp.uniqueName) && mp2.verts.size()>0) {
+        		mp.verts = mp2.verts;
+        	}
+        	
+        	//calculate mpoint coords
+        	VertexData3 avgPos = new VertexData3(0,0,0);
+        	for (var v : mp.verts) {
+        		avgPos.x += v.x;
+        		avgPos.y += v.y;
+        		avgPos.z += v.z;
+        	}
+        	mp.positionX = (float) (avgPos.x / mp.verts.size());
+        	mp.positionY = (float) (avgPos.y / mp.verts.size());
+        	mp.positionZ = (float) (avgPos.z / mp.verts.size());
+        	
+        	
+        	if (Float.isNaN(mp.positionX)) System.out.println("NaN position for "+mp.uniqueName);
+        }
+//        geom.mpointsAll.clear();
+//        for (var p : geom.parts) geom.globalizePartMarkers(p);
+//        geom.computeMarkersList();
+        Geometry.IMPORT_flipV = false; //reset
+        
+	}
+	
+	private static void addToTangents(Material m) {
+		for (var t : m.triangles) {
+		    m.verticesBlock.vertices.get(t.vert0).tanX += 
+		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).posX-m.verticesBlock.vertices.get(t.vert0).posX) - 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).posX-m.verticesBlock.vertices.get(t.vert0).posX)) / 
+		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    m.verticesBlock.vertices.get(t.vert0).tanY += 
+		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).posY-m.verticesBlock.vertices.get(t.vert0).posY) - 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).posY-m.verticesBlock.vertices.get(t.vert0).posY)) / 
+		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    m.verticesBlock.vertices.get(t.vert0).tanZ += 
+		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).posZ-m.verticesBlock.vertices.get(t.vert0).posZ) - 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).posZ-m.verticesBlock.vertices.get(t.vert0).posZ)) / 
+		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    m.verticesBlock.vertices.get(t.vert1).tanX += 
+		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).posX-m.verticesBlock.vertices.get(t.vert0).posX) - 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).posX-m.verticesBlock.vertices.get(t.vert0).posX)) / 
+		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    m.verticesBlock.vertices.get(t.vert1).tanY += 
+		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).posY-m.verticesBlock.vertices.get(t.vert0).posY) - 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).posY-m.verticesBlock.vertices.get(t.vert0).posY)) / 
+		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    m.verticesBlock.vertices.get(t.vert1).tanZ += 
+		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).posZ-m.verticesBlock.vertices.get(t.vert0).posZ) - 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).posZ-m.verticesBlock.vertices.get(t.vert0).posZ)) / 
+		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    m.verticesBlock.vertices.get(t.vert2).tanX += 
+		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).posX-m.verticesBlock.vertices.get(t.vert0).posX) - 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).posX-m.verticesBlock.vertices.get(t.vert0).posX)) / 
+		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    m.verticesBlock.vertices.get(t.vert2).tanY += 
+		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).posY-m.verticesBlock.vertices.get(t.vert0).posY) - 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).posY-m.verticesBlock.vertices.get(t.vert0).posY)) / 
+		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    m.verticesBlock.vertices.get(t.vert2).tanZ += 
+		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).posZ-m.verticesBlock.vertices.get(t.vert0).posZ) - 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).posZ-m.verticesBlock.vertices.get(t.vert0).posZ)) / 
+		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		}
+	}
+	
+	private static void normalizeTangents(ArrayList<Vertex> vertices) {
+		// Normalize tangents
+	    for (var v : vertices) {
+	        double nx = v.normX;
+	        double ny = v.normY;
+	        double nz = v.normZ;
+
+	        double tx = v.tanX;
+	        double ty = v.tanY;
+	        double tz = v.tanZ;
+
+	        // Gram-Schmidt orthogonalize
+	        double dot = nx * tx + ny * ty + nz * tz;
+	        tx -= nx * dot;
+	        ty -= ny * dot;
+	        tz -= nz * dot;
+
+	        // Normalize the tangent
+	        double length = Math.sqrt(tx * tx + ty * ty + tz * tz);
+	        v.tanX = tx / length;
+	        v.tanY = ty / length;
+	        v.tanZ = tz / length;
+	        v.tanW = 0x7FFF/32768.0;
+	    }
 	}
 
 	public void fixAutosculptMeshes(Part p) {
@@ -1296,33 +1540,15 @@ public class Geometry extends Block {
 								(short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[2])
 							) );
 							
-							if (
-									//using positionEquals because the equals takes normals in account and sometimes they can be different, don't ask me
-									//this can result in broken normals but fixes autosculpt on some desperate cases (BMW M6 KIT06_BUMPER_FRONT_T5)
-									
-									//asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[0]) == 
-									//asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[1])
-									
-									partsTris.get(p2).get(i)[0].positionEquals(partsTris.get(p2).get(i)[1])
-									){
+							if (	partsTris.get(p2).get(i)[0].positionEquals(partsTris.get(p2).get(i)[1])	){
 								//vertex 1 is identical to vertex 0 on at least one part
 								move0 = true;
 							} else
-							if (
-									//asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[0]) == 
-									//asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[2])
-									
-									partsTris.get(p2).get(i)[0].positionEquals(partsTris.get(p2).get(i)[2])
-									){
+							if (	partsTris.get(p2).get(i)[0].positionEquals(partsTris.get(p2).get(i)[2])	){
 								//vertex 2 is identical to vertex 0 on at least one part
 								move1 = true;
 							} else
-							if (
-									//asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[1]) == 
-									//asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[2])
-
-									partsTris.get(p2).get(i)[1].positionEquals(partsTris.get(p2).get(i)[2])							
-									){
+							if (	partsTris.get(p2).get(i)[1].positionEquals(partsTris.get(p2).get(i)[2])	){
 								//vertex 2 is identical to vertex 1 on at least one part
 								move2 = true;
 							}
@@ -1339,12 +1565,7 @@ public class Geometry extends Block {
 							short ID0=0, ID1=0, ID2=0;
 							Vertex v0 = null, v1 = null, v2 = null;
 							for (int p2=0; p2<asParts.size(); p2++) {
-								if (
-										//asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf((VertexPosition)partsTris.get(p2).get(i)[0]) != 
-									//asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf((VertexPosition)partsTris.get(p2).get(i)[1])
-										
-										!partsTris.get(p2).get(i)[0].positionEquals(partsTris.get(p2).get(i)[1])
-										){
+								if (	!partsTris.get(p2).get(i)[0].positionEquals(partsTris.get(p2).get(i)[1])	){
 								// find a part where vertex 1 is different from vertex 0 and store its index
 									ID0 = (short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[0]);
 									ID1 = (short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[1]);
@@ -1371,9 +1592,9 @@ public class Geometry extends Block {
 
 								//attempt to fix normals
 								if (v0 != null && SAVE_fixAutosculptNormals) {
-									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID0), v0));
-									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID1), v1));
-									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID2), v2));
+									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID0), v0));
+									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID1), v1));
+									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID2), v2));
 								}
 							}
 						} else
@@ -1383,12 +1604,7 @@ public class Geometry extends Block {
 							short ID0=0, ID1=0, ID2=0;
 							Vertex v0 = null, v1 = null, v2 = null;
 							for (int p2=0; p2<asParts.size(); p2++) {
-								if (
-										//asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf((VertexPosition)partsTris.get(p2).get(i)[0]) != 
-									//asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf((VertexPosition)partsTris.get(p2).get(i)[2])
-									
-									!partsTris.get(p2).get(i)[0].positionEquals(partsTris.get(p2).get(i)[2])
-										){
+								if (	!partsTris.get(p2).get(i)[0].positionEquals(partsTris.get(p2).get(i)[2])	){
 								// find a part where vertex 2 is different from vertex 0 and store its index
 									ID0 = (short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[0]);
 									ID1 = (short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[1]);
@@ -1415,9 +1631,9 @@ public class Geometry extends Block {
 
 								//attempt to fix normals
 								if (v0 != null && SAVE_fixAutosculptNormals) {
-									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID0), v0));
-									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID1), v1));
-									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID2), v2));
+									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID0), v0));
+									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID1), v1));
+									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID2), v2));
 								}
 							}
 						} else
@@ -1427,12 +1643,7 @@ public class Geometry extends Block {
 							short ID0=0, ID1=0, ID2=0;
 							Vertex v0 = null, v1 = null, v2 = null;
 							for (int p2=0; p2<asParts.size(); p2++) {
-								if (
-										//asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[1]) != 
-									//asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[2])
-									
-										!partsTris.get(p2).get(i)[1].positionEquals(partsTris.get(p2).get(i)[2])
-										){
+								if (	!partsTris.get(p2).get(i)[1].positionEquals(partsTris.get(p2).get(i)[2])	){
 								// find a part where vertex 2 is different from vertex 1 and store its index
 									ID0 = (short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[0]);
 									ID1 = (short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[1]);
@@ -1459,9 +1670,9 @@ public class Geometry extends Block {
 
 								//attempt to fix normals
 								if (v0 != null && SAVE_fixAutosculptNormals) {
-									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID0), v0));
-									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID1), v1));
-									swapNormals.add(new Pair<Vertex, Vertex>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID2), v2));
+									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID0), v0));
+									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID1), v1));
+									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID2), v2));
 								}
 							}
 						} 

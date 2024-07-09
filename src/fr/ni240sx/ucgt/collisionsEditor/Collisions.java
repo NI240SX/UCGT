@@ -41,7 +41,7 @@ public class Collisions {
 
 	//proper bounds sorting
 	public CollisionBound mainBound = new CollisionBound();
-	public ArrayList<CollisionBound> childBounds = new ArrayList<CollisionBound>();
+	public ArrayList<CollisionBound> childBounds = new ArrayList<>();
 	
 	public float X = 0;
 	public float Y = 0;
@@ -51,8 +51,8 @@ public class Collisions {
 	public int NumberOfLocalFixUps = 0;
 	public int NumberOfVirtualFixUps = 0;
 
-	public ArrayList<LocalFixUp> LocalFixUps = new ArrayList<LocalFixUp>();
-	public ArrayList<VirtualFixUp> VirtualFixUps = new ArrayList<VirtualFixUp>();
+	public ArrayList<LocalFixUp> LocalFixUps = new ArrayList<>();
+	public ArrayList<VirtualFixUp> VirtualFixUps = new ArrayList<>();
 	
 	public static ArrayList<Hash> commonCollisionHashes = Hash.loadHashes(new File("data/collisionshashes"));
 	
@@ -69,19 +69,18 @@ public class Collisions {
 		int NumberOfConvexVerticesShapes = 0;
 		int NumberOfSphereShapes = 0;
 		
-		ArrayList<CollisionBound> bounds = new ArrayList<CollisionBound>();
-		ArrayList<CollisionBoxShape> boxShapes = new ArrayList<CollisionBoxShape>();
-		ArrayList<CollisionConvexTransform> convexTransformShapes = new ArrayList<CollisionConvexTransform>();
-		ArrayList<CollisionConvexTranslate> convexTranslateShapes = new ArrayList<CollisionConvexTranslate>();
-		ArrayList<CollisionConvexVertice> convexVerticesShapes = new ArrayList<CollisionConvexVertice>();
-		ArrayList<CollisionSphereShape> sphereShapes = new ArrayList<CollisionSphereShape>();
+		ArrayList<CollisionBound> bounds = new ArrayList<>();
+		ArrayList<CollisionBoxShape> boxShapes = new ArrayList<>();
+		ArrayList<CollisionConvexTransform> convexTransformShapes = new ArrayList<>();
+		ArrayList<CollisionConvexTranslate> convexTranslateShapes = new ArrayList<>();
+		ArrayList<CollisionConvexVertice> convexVerticesShapes = new ArrayList<>();
+		ArrayList<CollisionSphereShape> sphereShapes = new ArrayList<>();
 		
 		
 		
 		//File f = new File("...");
-		FileInputStream fis;
 		try {
-			fis = new FileInputStream(file);
+			var fis = new FileInputStream(file);
 			byte [] fileToBytes = new byte[(int)file.length()];
 			fis.read(fileToBytes);
 			fis.close();
@@ -227,7 +226,7 @@ public class Collisions {
 			// TODO Auto-generated catch block
 			new Alert(Alert.AlertType.ERROR, "File not found", ButtonType.OK).show();
 			e.printStackTrace();
-		} catch (NullPointerException e) {
+		} catch (@SuppressWarnings("unused") NullPointerException e) {
 //			e.printStackTrace();
 			//no file selected by the user
 		} catch (Exception e) {
@@ -236,6 +235,7 @@ public class Collisions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public void saveToFile(File f) {
 		// TODO Auto-generated method stub
 		

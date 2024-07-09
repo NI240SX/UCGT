@@ -6,7 +6,7 @@ import fr.ni240sx.ucgt.binstuff.Hash;
 
 class PartCheck {
 
-	static ArrayList<PartCheck> allParts = new ArrayList<PartCheck>();
+	static ArrayList<PartCheck> allParts = new ArrayList<>();
 	
 	String kit;
 	String name;
@@ -34,13 +34,14 @@ class PartCheck {
 		allParts.add(this);
 	}
 
+	@Override
 	public String toString() {
 		return kit + " " + name + " | lod A :" + lodAExists + ", lod B :" + lodBExists + " lod C :" + lodCExists + " lod D :" + lodDExists + " lod E :" + lodEExists;
 	}
 	
 	public ArrayList<ArrayList<Boolean>> scan(byte [] fileToBytes, ArrayList<Hash> toScan){
 		// for all lists check if the hash can be found in the 512 first bytes
-		ArrayList<ArrayList<Boolean>> ret = new ArrayList<ArrayList<Boolean>>();
+		ArrayList<ArrayList<Boolean>> ret = new ArrayList<>();
 		for (int i = 0; i<4; i++) { //pre-fill with one arraylist per lod
 			ret.add(null);
 		}
@@ -65,10 +66,10 @@ class PartCheck {
 		return ret;
 	}
 
-	ArrayList<Boolean> searchForHashes(byte[] fileToBytes, ArrayList<Hash> toScan, int position){
+	static ArrayList<Boolean> searchForHashes(byte[] fileToBytes, ArrayList<Hash> toScan, int position){
 
 		int off = position + 32;
-		ArrayList<Boolean> ret = new ArrayList<Boolean>();
+		ArrayList<Boolean> ret = new ArrayList<>();
 		for (int i=0; i<toScan.size(); i++) {
 			ret.add(false);
 		}

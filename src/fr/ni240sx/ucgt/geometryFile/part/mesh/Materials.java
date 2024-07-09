@@ -11,11 +11,12 @@ import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 
 public class Materials extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.Part_Mesh_Materials;}
 	
 	public static final int materialLength = 256;
 
-	public ArrayList<Material> materials = new ArrayList<Material>();
+	public ArrayList<Material> materials = new ArrayList<>();
 	
 	public Materials(ByteBuffer in) {
 		var blockLength = in.getInt();

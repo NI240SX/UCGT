@@ -38,18 +38,15 @@ abstract class Attribute {
 		bb.putInt(Key.binHash);
 	}
 	
-	public void revertFrom(Attribute a) {
-		
-	}
+	public abstract void revertFrom(Attribute a);
 	
 	public void update() {
 		
 	}
 	
-	public String getAttribType() {
-		return null;
-	}
+	public abstract String getAttribType();
 	
+	@Override
 	public String toString() {
 		return "Generic " + super.toString();
 	}
@@ -82,6 +79,7 @@ class AttributeString extends Attribute{
 		this.value1 = copyFrom.value1;
 		initGUI();
 	}
+	@SuppressWarnings("unused")
 	public void initGUI() {
 		value1gui.setText(value1);
 		dataHBox.getChildren().addAll(value1gui);
@@ -95,22 +93,27 @@ class AttributeString extends Attribute{
 			e.consume();
 		});
 	}
+	@Override
 	public void update() {
 		value1gui.setText(value1);
 	}
+	@Override
 	public void revertFrom(Attribute a) {
 		this.value1 = ((AttributeString)a).value1;
 		this.value1Exists = ((AttributeString)a).value1Exists;
 		value1gui.setText(value1);
 	}
+	@Override
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
 		bb.put(value1Exists);
 		if (value1Exists == 1) DBMP.writeString(value1, bb);
 	}
+	@Override
 	public String getAttribType() {
 		return "String";
 	}
+	@Override
 	public String toString() {
 		return "String" + Key + ": " + value1 + "," + (value1Exists==1);
 	}
@@ -152,6 +155,7 @@ class AttributeTwoString extends Attribute{
 		this.value2 = copyFrom.value2;
 		initGUI();
 	}
+	@SuppressWarnings("unused")
 	public void initGUI() {
 		value1gui.setText(value1);
 		value2gui.setText(value2);
@@ -179,10 +183,12 @@ class AttributeTwoString extends Attribute{
 			value2gui.positionCaret(caretB4Save);
 		});
 	}
+	@Override
 	public void update() {
 		value1gui.setText(value1);
 		value2gui.setText(value2);
 	}
+	@Override
 	public void revertFrom(Attribute a) {
 		this.value1 = ((AttributeTwoString)a).value1;
 		this.value1Exists = ((AttributeTwoString)a).value1Exists;
@@ -191,6 +197,7 @@ class AttributeTwoString extends Attribute{
 		value1gui.setText(value1);
 		value2gui.setText(value2);
 	}
+	@Override
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
 		bb.put(value1Exists);
@@ -198,9 +205,11 @@ class AttributeTwoString extends Attribute{
 		if (value1Exists == 1) DBMP.writeString(value1, bb);
 		if (value2Exists == 1) DBMP.writeString(value2, bb);
 	}
+	@Override
 	public String getAttribType() {
 		return "TwoString";
 	}
+	@Override
 	public String toString() {
 		return "TwoString" + Key + ": " + value1 + "," + (value1Exists==1) + "," + value2 + "," + (value2Exists==1);
 	}
@@ -229,6 +238,7 @@ class AttributeInteger extends Attribute{
 		this.value = copyFrom.value;
 		initGUI();
 	}
+	@SuppressWarnings("unused")
 	public void initGUI() {
 		valuegui.setText(Integer.toString(value));
 		dataHBox.getChildren().addAll(valuegui);
@@ -246,20 +256,25 @@ class AttributeInteger extends Attribute{
 			e.consume();
 		});
 	}
+	@Override
 	public void update() {
 		valuegui.setText(Integer.toString(value));
 	}
+	@Override
 	public void revertFrom(Attribute a) {
 		this.value = ((AttributeInteger)a).value;
 		valuegui.setText(Integer.toString(value));
 	}
+	@Override
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
 		bb.putInt(value);
 	}
+	@Override
 	public String getAttribType() {
 		return "Integer";
 	}
+	@Override
 	public String toString() {
 		return "Integer" + Key + ": " + value;
 	}
@@ -293,6 +308,7 @@ class AttributeCarPartID extends Attribute{
 		this.level = copyFrom.level;
 		initGUI();
 	}
+	@SuppressWarnings("unused")
 	public void initGUI() {
 		IDgui.setText(ID.getText());
 		levelgui.setPrefWidth(40);
@@ -323,24 +339,29 @@ class AttributeCarPartID extends Attribute{
 			e.consume();
 		});
 	}
+	@Override
 	public void update() {
 		IDgui.setText(ID.getText());
 		levelgui.setText(Integer.toString(level));
 	}
+	@Override
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
 		bb.put(level);
 		bb.put(ID.getValue());
 	}
+	@Override
 	public void revertFrom(Attribute a) {
 		this.ID = ((AttributeCarPartID)a).ID;
 		this.level = ((AttributeCarPartID)a).level;
 		IDgui.setText(ID.getText());
 		levelgui.setText(Integer.toString(level));
 	}
+	@Override
 	public String getAttribType() {
 		return "CarPartID";
 	}
+	@Override
 	public String toString() {
 		return "CarPartID" + Key + ": " + ID + "/" + ID.getValue() + ", level " + level;
 	}
@@ -369,6 +390,7 @@ class AttributeKey extends Attribute{
 		this.value = copyFrom.value;
 		initGUI();
 	}
+	@SuppressWarnings("unused")
 	public void initGUI() {
 		valuegui.setText(this.value.label);
 		dataHBox.getChildren().addAll(valuegui);
@@ -382,20 +404,25 @@ class AttributeKey extends Attribute{
 			e.consume();
 		});
 	}
+	@Override
 	public void update() {
 		valuegui.setText(this.value.label);
 	}
+	@Override
 	public void revertFrom(Attribute a) {
 		this.value = ((AttributeKey)a).value;
 		valuegui.setText(value.label);
 	}
+	@Override
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
 		DBMP.writeString(value.label, bb);
 	}
+	@Override
 	public String getAttribType() {
 		return "Key";
 	}
+	@Override
 	public String toString() {
 		return "Key" + Key + ": " + value;
 	}
@@ -429,6 +456,7 @@ class AttributeBoolean extends Attribute{
 		this.value = copyFrom.value;
 		initGUI();
 	}
+	@SuppressWarnings("unused")
 	public void initGUI() {
 		valuegui.setText(Boolean.toString(value));
 		dataHBox.getChildren().addAll(valuegui);
@@ -446,20 +474,25 @@ class AttributeBoolean extends Attribute{
 			e.consume();
 		});
 	}
+	@Override
 	public void update() {
 		valuegui.setText(Boolean.toString(value));
 	}
+	@Override
 	public void revertFrom(Attribute a) {
 		this.value = ((AttributeBoolean)a).value;
 		valuegui.setText(Boolean.toString(value));
 	}
+	@Override
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
 		if (value) bb.put((byte)1); else bb.put((byte)0);
 	}
+	@Override
 	public String getAttribType() {
 		return "Boolean";
 	}
+	@Override
 	public String toString() {
 		return "Boolean" + Key + ": " + value;
 	}
@@ -507,6 +540,7 @@ class AttributeColor extends Attribute{
 		this.alpha = copyFrom.alpha;
 		initGUI();
 	}
+	@SuppressWarnings("unused")
 	public void initGUI() {
 		redgui.setText(Integer.toString(red & 0xFF));
 		greengui.setText(Integer.toString(green & 0xFF));
@@ -575,12 +609,14 @@ class AttributeColor extends Attribute{
 			e.consume();
 		});
 		}
+	@Override
 	public void update() {
 		redgui.setText(Integer.toString(red & 0xFF));
 		greengui.setText(Integer.toString(green & 0xFF));
 		bluegui.setText(Integer.toString(blue & 0xFF));
 		alphagui.setText(Integer.toString(alpha & 0xFF));
 	}
+	@Override
 	public void revertFrom(Attribute a) {
 		this.red = ((AttributeColor)a).red;
 		this.green = ((AttributeColor)a).green;
@@ -591,6 +627,7 @@ class AttributeColor extends Attribute{
 		bluegui.setText(Integer.toString(blue & 0xFF));
 		alphagui.setText(Integer.toString(alpha & 0xFF));
 	}
+	@Override
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
 		bb.put(red);
@@ -598,9 +635,11 @@ class AttributeColor extends Attribute{
 		bb.put(blue);
 		bb.put(alpha);
 	}
+	@Override
 	public String getAttribType() {
 		return "Color";
 	}
+	@Override
 	public String toString() {
 		return "Color" + Key + ": R=" + (red & 0xFF) + ", G=" + (green & 0xFF) + ", B=" + (blue & 0xFF) + ", A=" + (alpha & 0xFF);
 	}

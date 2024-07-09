@@ -13,10 +13,11 @@ import fr.ni240sx.ucgt.geometryFile.Part;
 
 public class AutosculptLinking extends Block {
 
+	@Override
 	public GeomBlock getBlockID() {return GeomBlock.Part_AutosculptLinking;}
 
 	// texture binhash, usage type
-	public ArrayList<AutosculptLink> links = new ArrayList<AutosculptLink>();
+	public ArrayList<AutosculptLink> links = new ArrayList<>();
 	
 	public static final int linkLength = 16;
 
@@ -39,7 +40,6 @@ public class AutosculptLinking extends Block {
 	}
 
 	public AutosculptLinking() {
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
@@ -64,7 +64,6 @@ public class AutosculptLinking extends Block {
 	}
 
 	public String toConfig(Geometry g, Part p) {
-		// TODO Auto-generated method stub
 		//Hash.guess(partKey, g.hashlist, String.format("0x%08X", partKey), "BIN");
 		String s = "ASLINK	"+p.header.partName.replace(g.carname+"_", "");
 		for (var l : links) s += "	" + Hash.guess(l.partKey, g.hashlist, String.format("0x%08X", l.partKey), "BIN").label.replace(g.carname+"_", "")

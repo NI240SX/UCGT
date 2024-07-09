@@ -4,8 +4,8 @@ import java.util.ArrayList;
 
 public abstract class Undo {
 
-	public static ArrayList<Undo> pastEvents = new ArrayList<Undo>();
-	public static ArrayList<Undo> futureEvents = new ArrayList<Undo>();
+	public static ArrayList<Undo> pastEvents = new ArrayList<>();
+	public static ArrayList<Undo> futureEvents = new ArrayList<>();
 	public static final int maxUndoCount = 1000;
 	public static final int maxRedoCount = 1000;
 
@@ -48,6 +48,7 @@ class UndoPartDelete extends Undo{
 		this.index = index;
 	}
 	
+	@Override
 	public void undoThis() {
 		super.undoThis();
 		DBMPPlus.mainDBMP.dBMPParts.add(index, p);
@@ -55,6 +56,7 @@ class UndoPartDelete extends Undo{
 //		DBMPPlus.updateAllPartsDisplay();
 	}
 	
+	@Override
 	public void redoThis() {
 		super.redoThis();
 		index = DBMPPlus.mainDBMP.dBMPParts.indexOf(p);
@@ -88,6 +90,7 @@ class UndoAttributeChange extends Undo{
 		}
 	}
 	
+	@Override
 	public void undoThis() {
 		super.undoThis();
 		if (reference.getAttribType().equals("String")) {
@@ -108,6 +111,7 @@ class UndoAttributeChange extends Undo{
 		this.reference.revertFrom(this.backup);
 	}
 
+	@Override
 	public void redoThis() {
 		super.redoThis();
 		if (reference.getAttribType().equals("String")) {

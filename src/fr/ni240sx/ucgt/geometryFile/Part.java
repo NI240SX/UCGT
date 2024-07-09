@@ -36,7 +36,7 @@ public class Part extends Block {
 	public String lod;
 	public String name = "";
 	
-	public Part(ByteBuffer in, int partKey) {
+	public Part(ByteBuffer in) {
 		
 		in.order(ByteOrder.LITTLE_ENDIAN);
 		in.getInt(); //ID
@@ -100,6 +100,7 @@ public class Part extends Block {
 	}
 
 
+	@SuppressWarnings("unused")
 	public void findKitLodPart(String carname) {
 		try {
 			kit = "KIT" + header.partName.split("_KIT")[1].split("_")[0];
@@ -151,7 +152,31 @@ public class Part extends Block {
 
 		findKitLodPart(carname);
 		this.name = substring;
+		
+		this.rebuildSubBlocks();
 	}
+
+	/**
+	 * Creates a part with the specified name and adds it to the Geometry.
+	 * This also assigns markers and autosculpt links with the corresponding tempPartName.
+	 * @param geom
+	 * @param name
+	 */
+	public Part(Geometry geom, String name) {
+		this(geom.carname, name);
+		geom.parts.add(this);
+
+		for (var mp : geom.mpointsAll) if (mp.tempPartNames.contains(name)) { // binding mpoints read from config, if existing
+			if (this.mpoints == null) this.mpoints = new MPoints();
+			this.mpoints.mpoints.add(mp);
+//			mp.part = curPart;
+//			mp.parts.add(curPart);
+		}
+		
+		for (var asl : geom.asLinking) if (asl.tempPartName.equals(name)) { // binding autosculpt linking data read from ini
+			this.asLinking = asl;
+			break;
+		}	}
 
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
@@ -236,7 +261,7 @@ public class Part extends Block {
 	}
 	
 	public ArrayList<Integer> generateASZones() {
-		ArrayList<Integer> zones = new ArrayList<Integer>();
+		ArrayList<Integer> zones = new ArrayList<>();
 		for (int i=0;i<11;i++) {
 			zones.add(new Hash(header.partName.substring(0,header.partName.length()-1) +"T"+i+"_"+lod).binHash);
 		}
