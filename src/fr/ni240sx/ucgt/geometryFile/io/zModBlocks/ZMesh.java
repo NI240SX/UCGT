@@ -101,7 +101,7 @@ public class ZMesh extends ZModBlock {
 }
 
 	@Override
-	public void readData(ByteBuffer in) {
+	public void readData(ByteBuffer in) throws Exception {
 		vertexFormat = in.getInt();
 		var numVerts = in.getInt();
 		polyFormat = in.getInt(); //gotta triangulate quads if there's some, clueful | tri 3, quad 4, both 1
@@ -177,7 +177,7 @@ public class ZMesh extends ZModBlock {
 		public float x=0, y=0, z=0, nx=0, ny=0, nz=0, u=0, v=0;
 		public byte r=(byte)255, g=(byte)255, b=(byte)255, a=(byte)255;
 
-		public ZVertex(ByteBuffer in) {
+		public ZVertex(ByteBuffer in) throws Exception {
 			viewStatus = in.getInt();
 			int2 = in.getInt();
 			int3 = in.getInt();
@@ -248,8 +248,7 @@ public class ZMesh extends ZModBlock {
 			default:
 //				System.out.println("Unknown vertex format : "+format);
 				for (var b1 : ZModelerZ3D.blocks.values()) if (b1.getClass() == MeshNode.class) if (((MeshNode)b1).meshUID == UID) {
-					System.out.println("Unknown vertex format for mesh "+((MeshNode)b1).embeddedNode.name+" ("+String.format("0x%08X",Integer.reverseBytes(UID))+") : "+vertexFormat+" ("+String.format("0x%08X",Integer.reverseBytes(vertexFormat))+")");
-					break;
+					throw new Exception("Unknown vertex format for mesh "+((MeshNode)b1).embeddedNode.name+" ("+String.format("0x%08X",Integer.reverseBytes(UID))+") : "+vertexFormat+" ("+String.format("0x%08X",Integer.reverseBytes(vertexFormat))+")");
 				}
 			}
 		}

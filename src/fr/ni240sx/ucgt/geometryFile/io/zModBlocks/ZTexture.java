@@ -14,7 +14,15 @@ public class ZTexture{
 		path = ZModBlock.readString(in);
 		in.getInt(); //1
 		in.get();
-		in.getLong(); //0
+		in.getInt(); //0
+		if (in.getInt() != 0) { //0 if no texture, magic if embedded texture (example DXT3)
+			//embedded texture
+			in.getInt(); //width ?
+			in.getInt(); //height ?
+			in.getInt(); //?
+			var length = in.getInt(); //texture data length
+			in.position(in.position()+length); //skip texture data
+		}
 	}
 	
 	public ZTexture(String tex, String path) {

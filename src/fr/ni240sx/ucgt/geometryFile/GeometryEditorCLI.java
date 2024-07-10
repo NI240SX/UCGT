@@ -10,7 +10,7 @@ import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
 
 public class GeometryEditorCLI {
 
-	public static final String programVersion = "1.1.0";
+	public static final String programVersion = "1.1.1";
 	public static final String programBuild = "2024.07.10";
 	
 	public static Geometry geom;

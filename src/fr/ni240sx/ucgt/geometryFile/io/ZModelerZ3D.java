@@ -29,7 +29,7 @@ public class ZModelerZ3D {
 	
 	public static boolean useCompression = true;
 	
-	public static void load(Geometry geom, File f) throws IOException{
+	public static void load(Geometry geom, File f) throws Exception{
 
 		System.out.println("Note : Z3D support is complex to implement because of the lack of documentation, and therefore still in beta. If you face issues, please report them !");
 		long time = System.currentTimeMillis();
@@ -49,8 +49,7 @@ public class ZModelerZ3D {
 		System.out.println("Number of declarations : "+numDecl);
 		switch (signature) {
 		case "Z3DM":
-			System.out.println("ZModeler 1 file detected : "+f.getName()+". Not implemented, please use ZModeler 2 (version 2.2.6 recommended).");
-			break;
+			throw new Exception("ZModeler 1 file detected : "+f.getName()+". Not implemented, please use ZModeler 2 (version 2.2.6 recommended).");
 		case "ZM2S":
 			System.out.println("ZModeler 2 file detected : "+f.getName());
 			if (!(verMajor==2 && verMinor==6)) System.out.println("This file was saved with a ZModeler2 version different from 2.2.6 (2."+verMajor+"."+verMinor+"). Issues may occur.");
@@ -289,18 +288,21 @@ public class ZModelerZ3D {
 		
 	}
 
-	public static boolean readBlock(ByteBuffer in) {
+	public static boolean readBlock(ByteBuffer in) throws Exception {
 		
 		String blockType="[UNABLE TO READ TYPE]";
 		int blockUID = -1;
 		int blockVersion = -1;
+		byte[] decompressed = null;
+		
+		int blockStart=0, blockLength=0;
 		
 		try {
 			blockType = String.valueOf(new char[] {(char)(in.get()), (char)(in.get()), (char)(in.get()), (char)(in.get())});
 			blockUID = in.getInt();
 			blockVersion = in.getInt();
-			var blockLength = in.getInt();
-			var blockStart = in.position();
+			blockLength = in.getInt();
+			blockStart = in.position();
 		
 			switch (blockType) {
 			case "THMB":{
@@ -330,7 +332,7 @@ public class ZModelerZ3D {
 					in.get(GZippedData, offset, blockLength-substreamType.length()-9);
 					try {
 						GZIPInputStream gz = new GZIPInputStream(new ByteArrayInputStream(GZippedData));
-						var decompressed = gz.readNBytes(substreamLength); //there's no header and footer, this is the way to get around exceptions
+						decompressed = gz.readNBytes(substreamLength); //there's no header and footer, this is the way to get around exceptions
 						gz.close();
 						
 						ByteBuffer stream = ByteBuffer.wrap(decompressed);
@@ -462,6 +464,23 @@ public class ZModelerZ3D {
 			in.position(blockStart+blockLength); //security in case a block is not read/misread
 		} catch (Exception e) {
 			System.out.println("An error occured reading "+blockType+" block version "+blockVersion+", UID "+String.format("0x%08X",Integer.reverseBytes(blockUID))+" : "+e.getMessage());
+			try {
+				if (blockStart != 0 && blockLength != 0) in.position(blockStart+blockLength);
+				//try to proceed to the next block anyways
+			} catch (@SuppressWarnings("unused") Exception e2) {
+				//we are cooked
+			}
+			if (blockType.equals("SBST")) {
+				try {
+					System.out.println("Compressed input detected; dumping substream data to substreamdump.dat for further analysis");
+					var fos = new FileOutputStream("substreamdump.dat");
+					assert (decompressed != null);
+					fos.write(decompressed);
+					fos.close();
+				} catch (Exception e2) {
+					System.out.println("Failed to dump substream data  : "+e2.getMessage());
+				}
+			}
 		}
 			
 		return true;
@@ -474,23 +493,6 @@ public class ZModelerZ3D {
 	public static void resetUID() {
 		UID = 1413956436; //UCGS, first ID will be UCGT
 //		UID = 16845328;
-	}
-
-	public static void main(String[] args) throws IOException {
-		
-//		var geom = Geometry.load(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY-VANILLA.BIN"));
-//		geom.writeConfig(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.ini"));
-//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.z3d");
-		
-
-//		var geom = new Geometry();
-//		geom.readConfig(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.ini"));
-//		load(geom, new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.z3d"));
-
-//		var geom = new Geometry();
-//		geom.readConfig(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY ucgt cli.ini"));
-//		load(geom, new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY ucgt cli.z3d"));
-
 	}
 	
 }

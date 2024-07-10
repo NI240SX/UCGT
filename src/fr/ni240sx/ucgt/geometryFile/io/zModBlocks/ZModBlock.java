@@ -24,7 +24,7 @@ public abstract class ZModBlock {
 	
 	public abstract String getName();
 	
-	public abstract void readData(ByteBuffer in);
+	public abstract void readData(ByteBuffer in) throws Exception;
 	
 	public static String readString(ByteBuffer bb) {
 		byte[] stringBytesOversize = new byte[bb.getInt()];
