@@ -7,8 +7,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import fr.ni240sx.ucgt.binstuff.Block;
+import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
+import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
 
+@SuppressWarnings("unused")
 public class TestingFunctions {
 
 	public static void dumpPartsAsIs(String geomFile) {
@@ -129,7 +132,8 @@ public class TestingFunctions {
 			time = System.currentTimeMillis();
 			
 			//load 3D model file and create parts and materials			
-			WavefrontOBJ.load(geom, new File(modelFile));
+			if (modelFile.endsWith(".obj")) WavefrontOBJ.load(geom, new File(modelFile));
+			if (modelFile.endsWith(".z3d")) ZModelerZ3D.load(geom, new File(modelFile));
 			
 			
 
@@ -237,14 +241,14 @@ public class TestingFunctions {
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.BIN");
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
 	
-		PartVisualizer.setPartsFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN", "KIT00_BASE_A"
-		+ "KIT00_BODY_A KIT00_BUMPER_FRONT_A KIT00_BUMPER_REAR_A KIT00_CHASSIS_A KIT00_FENDER_FRONT_LEFT_A KIT00_FENDER_FRONT_RIGHT_A "
-		+ " KIT00_DOOR_LEFT_A KIT00_DOOR_RIGHT_A KIT00_DOOR_REAR_LEFT_A KIT00_DOOR_REAR_RIGHT_A KIT00_HOOD_A KIT00_TRUNK_A"
-		+ " KIT00_SKIRT_LEFT_A KIT00_SKIRT_RIGHT_A KIT00_HEADLIGHT_LEFT_A KIT00_HEADLIGHT_RIGHT_A KIT00_BRAKELIGHT_LEFT_A KIT00_BRAKELIGHT_RIGHT_A"
-		+ " KIT00_MUFFLER_00_A KIT00_EXHAUST_TIPS_LEFT_00_A KIT00_EXHAUST_TIPS_RIGHT_00_A KIT00_EXHAUST_TIPS_CENTER_A"
-		+ " KIT00_SIDEMIRROR_LEFT_A KIT00_SIDEMIRROR_RIGHT_A KIT00_SPOILER_A"
-		);
-		PartVisualizer.run();
+//		PartVisualizer.setPartsFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN", "KIT00_BASE_A"
+//		+ "KIT00_BODY_A KIT00_BUMPER_FRONT_A KIT00_BUMPER_REAR_A KIT00_CHASSIS_A KIT00_FENDER_FRONT_LEFT_A KIT00_FENDER_FRONT_RIGHT_A "
+//		+ " KIT00_DOOR_LEFT_A KIT00_DOOR_RIGHT_A KIT00_DOOR_REAR_LEFT_A KIT00_DOOR_REAR_RIGHT_A KIT00_HOOD_A KIT00_TRUNK_A"
+//		+ " KIT00_SKIRT_LEFT_A KIT00_SKIRT_RIGHT_A KIT00_HEADLIGHT_LEFT_A KIT00_HEADLIGHT_RIGHT_A KIT00_BRAKELIGHT_LEFT_A KIT00_BRAKELIGHT_RIGHT_A"
+//		+ " KIT00_MUFFLER_00_A KIT00_EXHAUST_TIPS_LEFT_00_A KIT00_EXHAUST_TIPS_RIGHT_00_A KIT00_EXHAUST_TIPS_CENTER_A"
+//		+ " KIT00_SIDEMIRROR_LEFT_A KIT00_SIDEMIRROR_RIGHT_A KIT00_SPOILER_A"
+//		);
+//		PartVisualizer.run();
 
 //		PartVisualizer.setPartsFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRY.BIN", "KIT00_BASE_A"
 //		+ "KIT00_BODY_A KIT00_BUMPER_FRONT_A KIT00_BUMPER_REAR_A KIT00_CHASSIS_A KIT00_FENDER_FRONT_LEFT_A KIT00_FENDER_FRONT_RIGHT_A "
@@ -362,5 +366,21 @@ public class TestingFunctions {
 //		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY.BIN");
 		
 //		exportToFile("G:\\Autres ordinateurs\\Mon ordinateur\\a UCE BETA 1 PREVIEW PACK\\DATA\\CARS\\E36\\GEOMETRY.BIN", "C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\a UCE\\UCGT\\GEOMETRY_exported.obj");
+		
+		
+//
+//		var geom = importFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.z3d");
+//		
+//		//blockinterval, searchlength, samevaltotrack, bruteforcelength
+//		Geometry.defaultCompressionLevel = new CompressionLevel(1, 1, 10, 8192, "High"); 	//	27976 ms, 7511 kB
+//		Geometry.defaultCompressionLevel = new CompressionLevel(1, 256, 10, 8192, "High"); 	//	 ms,  kB
+//		Geometry.defaultCompressionLevel = new CompressionLevel(4, 16, 10, 8192, "High"); 	//	26033 ms, 7511 kB and lower ram usage
+//		Geometry.defaultCompressionLevel = new CompressionLevel(64, 256, 32, 8192, "High"); //	27003 ms, 7511 kB
+//		Geometry.defaultCompressionLevel = new CompressionLevel(8, 64, 10, 8192, "High"); 	//	25384 ms, 7511 kB
+//		Geometry.defaultCompressionLevel = new CompressionLevel(16, 16, 50, 8192, "High"); 	//	27341 ms,  kB much lower ram usage
+//		Geometry.defaultCompressionLevel = new CompressionLevel(8, 64, 10, 8192, "High"); 	//	 ms,  kB
+////		Geometry.defaultCompressionLevel = new CompressionLevel(1, 1, 10, 8192, "High"); 	//	 ms,  kB
+//
+//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\compression tests\\GEOMETRY 8 64 10 8192.BIN");
 	}
 }

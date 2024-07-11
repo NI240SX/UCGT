@@ -1,6 +1,5 @@
 package fr.ni240sx.ucgt.geometryFile.part.mesh;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -27,9 +26,9 @@ public class Triangles extends Block {
 		Triangle t;
 		while (in.position() <= blockStart+blockLength-triangleLength) {
 			triangles.add(t = new Triangle());
-			t.vert0 = in.getShort();
-			t.vert1 = in.getShort();
-			t.vert2 = in.getShort();
+			t.vert0 = Short.toUnsignedInt(in.getShort());
+			t.vert1 = Short.toUnsignedInt(in.getShort());
+			t.vert2 = Short.toUnsignedInt(in.getShort());
 		}
 		in.position(blockStart+blockLength);
 	}
@@ -38,7 +37,7 @@ public class Triangles extends Block {
 	}
 
 	@Override
-	public byte[] save(int currentPosition) throws IOException, InterruptedException {
+	public byte[] save(int currentPosition) {
 
 		var alignment = Block.findAlignment(currentPosition+8, 32);
 		var dataLength = triangleLength*triangles.size() + Block.findAlignment(triangleLength*triangles.size(), 4);
@@ -51,9 +50,10 @@ public class Triangles extends Block {
 		Block.makeAlignment(out, alignment, (byte) 0x11);
 		
 		for (var t : triangles) {
-			out.putShort(t.vert0);
-			out.putShort(t.vert1);
-			out.putShort(t.vert2);
+			if (t.vert0 > 65535 || t.vert1 > 65535 || t.vert2 > 65535) System.out.println("[Error] Vertex index overflow; proceeding anyways !");
+			out.putShort((short) t.vert0);
+			out.putShort((short) t.vert1);
+			out.putShort((short) t.vert2);
 		}
 
 		return out.array();	

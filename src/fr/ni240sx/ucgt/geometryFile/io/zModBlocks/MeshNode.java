@@ -12,7 +12,7 @@ import fr.ni240sx.ucgt.geometryFile.part.MPointPositionCube;
 public class MeshNode extends ZModBlock {
 
 	public Node embeddedNode = new Node(0);
-	public int viewStatus=7, //1 displayed 3 focused 7 hidden 13 hidden&selected
+	public int viewStatus=5, //0 disabled 1 displayed 3 focused 5 hidden 7 hidden&focused 13 hidden&selected
 			int2=0, int3=3;
 	
 	public float Xmin, Ymin, Zmin, Wmin=1, Xmax, Ymax, Zmax, Wmax=1;

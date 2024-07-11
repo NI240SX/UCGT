@@ -6,7 +6,9 @@ import java.io.FileReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 // Contains code from 379Felipe
 public class Hash {
@@ -50,10 +52,11 @@ public class Hash {
 	 * @param label
 	 */
 	public Hash(String label) {
-		if (label.startsWith("0x")) {
+		if (label.startsWith("0x") || label.startsWith("0X")) {
 			//already hashed input, we'll assume it is a BIN hash
 			this.label = label;
 			this.binHash = Integer.parseUnsignedInt(label.substring(2), 16);
+			System.out.println("Unknown hash : "+label+", "+binHash);
 			this.reversedBinHash = Integer.reverseBytes(this.binHash);
 			this.reversedBinHashBytes = intToBytes(reversedBinHash);
 		} else {
@@ -91,7 +94,6 @@ public class Hash {
 							  'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p',	//4
 							  'q','r','s','t','u','v','w','x','y','z','ù','ù','ù','ù','ù','ù'};
 	
-
 	public static short getCharHash(char search) {
 		short i=0;
 		while (i<binChars.length && binChars[i]!=search) {
@@ -104,7 +106,6 @@ public class Hash {
 		if (search<binChars.length)return binChars[search];
 		return 'ù';
 	}
-	
 	
 	public static int findBinHash(String s) {
 		s = s.strip();
@@ -119,7 +120,6 @@ public class Hash {
 		}
 		return 0;	
 	}
-	
 	
 	public static int findVltHash(String s) {
 		s = s.strip();
@@ -210,7 +210,6 @@ public class Hash {
         return b >>> 15 ^ (c - a - b);
     }
 	
-	
 	@Override
 	public String toString() {
 		return "["+label + ": BIN=" + Integer.toHexString(this.binHash)+", VLT="+ Integer.toHexString(vltHash) +"]";
@@ -238,8 +237,6 @@ public class Hash {
 	    };
 	}
 	
-	
-	
 	public static ArrayList<Hash> loadHashes(File f) {
 		ArrayList<Hash> l = new ArrayList<>();		
 		try {
@@ -255,6 +252,30 @@ public class Hash {
 		return l;
 	}
 	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Arrays.hashCode(reversedBinHashBytes);
+		result = prime * result + Objects.hash(binHash, label, reversedBinHash, reversedVltHash, vltHash);
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Hash other = (Hash) obj;
+		return binHash == other.binHash && Objects.equals(label, other.label)
+				&& reversedBinHash == other.reversedBinHash
+				&& Arrays.equals(reversedBinHashBytes, other.reversedBinHashBytes)
+				&& reversedVltHash == other.reversedVltHash && vltHash == other.vltHash;
+	}
+
 	/**
 	 * @param hash to look for
 	 * @param hashlist to look into

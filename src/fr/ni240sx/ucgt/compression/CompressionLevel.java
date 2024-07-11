@@ -2,20 +2,20 @@ package fr.ni240sx.ucgt.compression;
 
 public class CompressionLevel
 {
-    public static CompressionLevel Maximum = new CompressionLevel(1, 1, 10, 65536, "Maximum");
-    public static CompressionLevel Ultra = new CompressionLevel(1, 1, 10, 32768, "Ultra");
-    public static CompressionLevel VeryHigh = new CompressionLevel(1, 1, 10, 16384, "VeryHigh");
-    public static CompressionLevel High = new CompressionLevel(1, 1, 10, 8192, "High");
-    public static CompressionLevel Medium = new CompressionLevel(1, 1, 10, 2048, "Medium");
-    public static CompressionLevel Low = new CompressionLevel(1, 1, 10, 512, "Low");
-    public static CompressionLevel Minimum = new CompressionLevel(1, 1, 10, 64, "Minimum");
+    public static CompressionLevel Maximum = 	new CompressionLevel(8, 64, 10, 65536, "Maximum");
+    public static CompressionLevel Ultra = 		new CompressionLevel(8, 64, 10, 32768, "Ultra");
+    public static CompressionLevel VeryHigh = 	new CompressionLevel(8, 64, 10, 16384, "VeryHigh");
+    public static CompressionLevel High = 		new CompressionLevel(8, 64, 10, 8192, "High");
+    public static CompressionLevel Medium = 	new CompressionLevel(1, 1, 10, 2048, "Medium");
+    public static CompressionLevel Low = 		new CompressionLevel(1, 1, 10, 512, "Low");
+    public static CompressionLevel Minimum = 	new CompressionLevel(1, 1, 10, 64, "Minimum");
 
-    public int BlockInterval;
-    public int SearchLength;
-    public int PrequeueLength;
-    public int QueueLength;
-    public int SameValToTrack;
-    public int BruteForceLength;
+    public int BlockInterval;		//
+    public int SearchLength;		//
+    public int PrequeueLength;		//
+    public int QueueLength;			// increasing may be faster
+    public int SameValToTrack;		// very high can be faster after a certain thresold
+    public int BruteForceLength;	// high is slower and compresses better
     public String name;
 
     public CompressionLevel(int blockInterval, 

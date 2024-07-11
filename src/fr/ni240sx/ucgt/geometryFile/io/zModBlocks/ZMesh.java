@@ -41,7 +41,7 @@ public class ZMesh extends ZModBlock {
 			}
 			if (matID == 0) System.out.println("Z3D export error : cannot identify material "+m.uniqueName);
 			for (var t : m.triangles) {
-				polys.add(new Polygon(matID, (short)(off+t.vert2), (short)(off+t.vert1), (short)(off+t.vert0)));
+				polys.add(new Polygon(matID, off+t.vert2, off+t.vert1, off+t.vert0));
 			}
 			off += m.verticesBlock.vertices.size();
 //			var t = m.triangles.get(0);
@@ -325,7 +325,7 @@ public class ZMesh extends ZModBlock {
 		public int viewStatus=1, int2=0, int3=0;
 		
 		public int materialUID;
-		public short[] vertIDs;
+		public int[] vertIDs;
 		
 		public Polygon(ByteBuffer in) {
 			
@@ -337,9 +337,9 @@ public class ZMesh extends ZModBlock {
 			
 			var numVerts = in.getInt();
 			
-			vertIDs = new short[numVerts];
+			vertIDs = new int[numVerts];
 			for (int i=0; i<numVerts; i++) {
-				vertIDs[i] = in.getShort();
+				vertIDs[i] = Short.toUnsignedInt(in.getShort());
 			}
 			in.getInt(); //0
 
@@ -354,18 +354,21 @@ public class ZMesh extends ZModBlock {
 			block.putInt(int3);
 			block.putInt(materialUID);
 			block.putInt(vertIDs.length);
-			for (var v : vertIDs) block.putShort(v);
+			for (var v : vertIDs) {
+				if (v>65535) System.out.println("[Z3DExporter] Vertex index overflow !");
+				block.putShort((short) v);
+			}
 			block.putInt(0);
 		}
 
-		public Polygon(int matUID, short i, short j, short k) {
+		public Polygon(int matUID, int i, int j, int k) {
 			materialUID = matUID;
-			vertIDs = new short[]{i, j, k};
+			vertIDs = new int[]{i, j, k};
 		}
 		
-		public Polygon(int matUID, short i, short j, short k, short l) {
+		public Polygon(int matUID, int i, int j, int k, int l) {
 			materialUID = matUID;
-			vertIDs = new short[]{i, j, k, l};
+			vertIDs = new int[]{i, j, k, l};
 		}
 	}
 }

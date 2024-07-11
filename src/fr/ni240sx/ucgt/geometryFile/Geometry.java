@@ -936,37 +936,42 @@ public class Geometry extends Block {
 					}
 					iterator++;
 				}
-				if (vS.equals("90") && (wS.equals("180") || wS.equals("-180"))) {
-					double u = Double.parseDouble(uS);
-					double v;
-					double w;
-					//try to fix rotation based on how ucgt reads it
-					// 0	90	180 	=>	180		90		0
-					// 0.1	90	180 	=>	89.9	89.9	90.1
-					// -25	90	180		=>	-90		65		-90
-					// 25	90	-180	=>	90		65		90
+				//	TODO try to fix rotations
+				//	CTK				UCGT
+				//	0 0 0			0	0	0			-> ok
+				
+				//	0 -90 0			0	-90	-180		-> specific ok
+				
+				//	0 0 -180		0	0	180			-> should be ok
+				
+				//	-70 180 90		180	-70.052	90		-> +/-90 ok
+				//	70 180 -90		180	-70.052	-90
+				//	10 0 90			0	-10.02	90
+				//	-10 0 -90		0	-10.02	-90
+				//	0 0 -90			0	0	-90
+				//	0 0 90			0	0	90
+				
+				//	-25.26 90 180	0	-90	-25.283		-> 90 +/-180 ok
+				//	25 90 180		0	-90	25.027
+				//	0 90 -180		0	-90	0
+				//	0.1 90 -180		0	-90	0.115
+				//	-89.19 90 -180	0	-90	-90
+				//	-89.19 90 -180	0	-90	-90
+				//	89.19 -90 0		0	-90	90
+				
+				// 	89.19 180 180	90	0	0
 
-					// 0	90	180 	=>	-180	-90		0
-					
-					
-					// 0	0	-180	=>	0		0		180
+				if (uS.equals("0") && vS.equals("-90") && wS.equals("0")) {uS = "0"; vS="-90"; wS="-180";}
+				else if (vS.equals("90") && (wS.equals("180") || wS.equals("-180"))) {wS = uS; uS = "0"; vS = "-90";}
+				else if ((vS.equals("180") || vS.equals("-180")) && (wS.equals("180") || wS.equals("-180"))) {vS = "0"; wS = "0";}
+				else if ((wS.equals("90") || wS.equals("-90"))) {var tp = vS; vS = "-"+uS.replace("-", ""); uS = tp;}
+				/*	double u = Double.parseDouble(uS);
+					double v = Double.parseDouble(vS);
+					double w = Double.parseDouble(wS);
 
-					// -90	0	-90		=>	-90		-90		0
-					// 90	0	90		=>	90		-90		0
-					
-					if (u == 0) {u=-180; v=-90; w=0;}
-					else {
-						w = 90 * u / Math.abs(u);
-						v = 90 - u * u / Math.abs(u);
-						u = w;
-					}
 					uS = ((int) u == u) ? Integer.toString((int)u) : Double.toString(u);
-//					uS = Double.toString(u);
 					vS = ((int) v == v) ? Integer.toString((int)v) : Double.toString(v);
-					wS = ((int) w == w) ? Integer.toString((int)w) : Double.toString(w);
-				}
-				if (uS.equals("-90") && vS.equals("0") && wS.equals("-90")) {uS = "-90"; vS="-90"; wS="0";}
-				if (uS.equals("90") && vS.equals("0") && wS.equals("90")) {uS = "90"; vS="-90"; wS="0";}
+					wS = ((int) w == w) ? Integer.toString((int)w) : Double.toString(w); */
 				bw.write("	"+uS+"	"+vS+"	"+wS+"\n");
 				break;
 			}

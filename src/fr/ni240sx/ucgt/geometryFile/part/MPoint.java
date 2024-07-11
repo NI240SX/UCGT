@@ -56,66 +56,64 @@ public class MPoint {
 		nameHash = Hash.guess(nameHash.binHash, geometry.hashlist, String.format("0x%08X", nameHash.binHash), "BIN");
 	}
 	
-	public static float[] rotationMatrixToEulerAngles(float[][] R){
-		//based on code from danceswithcode.net
-		double x, y, z;
-		y = -Math.asin(R[0][2]);
-		
-		//Gymbal lock: pitch = -90
-        if( R[0][2] == 1 ){    
-            x = 0.0;             //yaw = 0
-            z = Math.atan2( -R[1][0], -R[2][0] );    //Roll
-//            System.out.println(this.uniqueName+" Gimbal lock: pitch = -90");
-        }
+	public static float[] rotationMatrixToEulerAngles(float[][] R) {
+	    double sy = -Math.asin(R[0][2]);
+	    double cy = Math.cos(sy);
 
-        //Gymbal lock: pitch = 90
-        else if( R[0][2] == -1 ){    
-            x = 0.0;             //yaw = 0
-            z = Math.atan2( R[1][0], R[2][0]);    //Roll
-//            System.out.println(this.uniqueName+" Gimbal lock: pitch = 90");
-        }
-        //General solution
-        else{
-            x = Math.atan2(  R[0][1], R[0][0] );
-            z = Math.atan2(  R[1][2], R[2][2] );
-//            System.out.println(this.uniqueName+" No gimbal lock");
-        }
-	    return new float[] {(float)round(Math.toDegrees(z)), (float)round(Math.toDegrees(y)), (float)round(Math.toDegrees(x))};
-//	    return new float[] {(float)Math.round(Math.toDegrees(z)*1000)/1000, (float)Math.round(Math.toDegrees(y)*1000)/1000, (float)Math.round(Math.toDegrees(x)*1000)/1000};
-//	    return new float[] {(float) Math.toDegrees(x), (float) Math.toDegrees(y), (float) Math.toDegrees(z)};
-//	    return new int[] {(int) Math.round(Math.toDegrees(x)), (int) Math.round(Math.toDegrees(y)), (int) Math.round(Math.toDegrees(z))};
-	 
+	    double x, y, z;
+	    if (Math.abs(cy) > 1e-6) { // Avoid division by zero
+	        x = Math.atan2(R[1][2], R[2][2]);
+	        y = sy;
+	        z = Math.atan2(R[0][1], R[0][0]);
+	    } else { // Gimbal lock situation
+	        x = 0.0; 
+//	        z = 0.0;
+//	    	System.out.println("Gymbal lock "+this.nameHash.label+" on "+this.part.name);
+	        if (R[0][2] < 0) {
+//	        	x = Math.atan2(R[1][0], R[2][0] );
+	            y = Math.PI / 2;
+	            z = Math.atan2(R[1][0], R[1][1]);
+	        } else {
+//	        	x = Math.atan2( -R[1][0], -R[2][0] );
+	            y = -Math.PI / 2;
+	            z = Math.atan2(-R[1][0], -R[1][1]);
+	        }
+	    }
+	    return new float[]{(float) round(Math.toDegrees(x)), (float) round(Math.toDegrees(y)), (float) round(Math.toDegrees(z))};
+	}
+	
+	public float[][] eulerAnglesToMatrix(double w, double v, double u) {
+	    float[] inversion = rotationMatrixToEulerAngles(eulerAnglesToMatrixCalculation(u, v, w)); //doing it twice fixes issues with rotations
+	    return eulerAnglesToMatrixCalculation(inversion[0], inversion[1], inversion[2]);
+	}
+	
+	public float[][] eulerAnglesToMatrixCalculation(double u, double v, double w) {
+	    u = Math.toRadians(u);
+	    v = Math.toRadians(v);
+	    w = Math.toRadians(w);
+
+	    double cu = Math.cos(u);
+	    double su = Math.sin(u);
+	    double cv = Math.cos(v);
+	    double sv = Math.sin(v);
+	    double cw = Math.cos(w);
+	    double sw = Math.sin(w);
+
+	    float[][] R = new float[3][3];
+	    R[0][0] = (float) (cv * cw)*scaleX;
+	    R[0][1] = (float) (cv * sw)*scaleX;
+	    R[0][2] = (float) -sv*scaleX;
+	    R[1][0] = (float) (su * sv * cw - cu * sw)*scaleY;
+	    R[1][1] = (float) (su * sv * sw + cu * cw)*scaleY;
+	    R[1][2] = (float) (su * cv)*scaleY;
+	    R[2][0] = (float) (cu * sv * cw + su * sw)*scaleZ;
+	    R[2][1] = (float) (cu * sv * sw - su * cw)*scaleZ;
+	    R[2][2] = (float) (cu * cv)*scaleZ;
+	    return R;
 	}
 	
 	
-	public float[][] eulerAnglesToMatrix(double u, double v, double w ) {
-		//based on code from danceswithcode.net
-		u = Math.toRadians(u);
-		v = Math.toRadians(v);
-		w = Math.toRadians(w);
-		
-        //Precompute sines and cosines of Euler angles
-        double su = Math.sin(w);
-        double cu = Math.cos(w);
-        double sv = Math.sin(v);
-        double cv = Math.cos(v);
-        double sw = Math.sin(u);
-        double cw = Math.cos(u);
-        
-        float[][] R = new float[3][3];
-        R[0][0] = (float) (cv*cw)*scaleX;
-        R[1][0] = (float) (su*sv*cw - cu*sw)*scaleY;
-        R[2][0] = (float) (su*sw + cu*sv*cw)*scaleZ;
-        R[0][1] = (float) (cv*sw)*scaleX;
-        R[1][1] = (float) (cu*cw + su*sv*sw)*scaleY;
-        R[2][1] = (float) (cu*sv*sw - su*cw)*scaleZ;
-        R[0][2] = (float) -sv*scaleX;
-        R[1][2] = (float) (su*cv)*scaleY;
-        R[2][2] = (float) (cu*cv)*scaleZ;  
-        
-        return R;
-	}
-
+	
 	public String toConfig() {
 		String s = "";
 		var m = rotationMatrixToEulerAngles(matrix);
@@ -204,4 +202,48 @@ public class MPoint {
 	public static float round(float d) {
 		return (float)(Math.round(d*roundFactor))/roundFactor;
 	}
+	
+//	public static void printMat(float[][] mat) {
+//		for (var arr : mat) printArr(arr);
+//	}
+//	
+//	public static void printArr(float[] arr) {
+//		System.out.print("[");
+//		if (arr.length>0) System.out.print(arr[0]);
+//		for (int i=1;i<arr.length;i++) System.out.print(", "+arr[i]);
+//		System.out.println("]");
+//	}
+//	
+//	public static void main(String[] args) {
+//		
+//
+//		var mp = new MPoint();
+//
+//		//rotations test
+//		float[][] matrix0 = {{-0.34202015f,	0, 0.9396926f},
+//							{0.9396926f, -1.763115E-16f, 0.34202015f},
+//							{1.8000426E-16f, 1.0f, 0}};
+//		printMat(matrix0);
+//
+//		System.out.println(); //simulates first extraction
+////		float[] euler0 = {180, -70, 90};
+//		var euler0 = mp.rotationMatrixToEulerAngles(matrix0);
+//		printArr(euler0);
+//		
+//		System.out.println(); //simulates first compiling
+//		var matrix1 = mp.eulerAnglesToMatrix(euler0[0], euler0[1], euler0[2]);
+//		printMat(matrix1);
+//
+//		System.out.println(); //simulates second extraction
+//		var euler1 = mp.rotationMatrixToEulerAngles(matrix1);
+//		printArr(euler1);
+//		
+//		System.out.println(); //simulates second compiling
+//		var matrix2 = mp.eulerAnglesToMatrix(euler1[0], euler1[1], euler1[2]);
+//		printMat(matrix2);
+//
+//		System.out.println(); //simulates third extraction
+//		var euler2 = mp.rotationMatrixToEulerAngles(matrix2);
+//		printArr(euler2);
+//	}
 }
