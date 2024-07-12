@@ -965,13 +965,11 @@ public class Geometry extends Block {
 				else if (vS.equals("90") && (wS.equals("180") || wS.equals("-180"))) {wS = uS; uS = "0"; vS = "-90";}
 				else if ((vS.equals("180") || vS.equals("-180")) && (wS.equals("180") || wS.equals("-180"))) {vS = "0"; wS = "0";}
 				else if ((wS.equals("90") || wS.equals("-90"))) {var tp = vS; vS = "-"+uS.replace("-", ""); uS = tp;}
-				/*	double u = Double.parseDouble(uS);
+				else if (vS.equals("90") || vS.equals("-90")) {
 					double v = Double.parseDouble(vS);
-					double w = Double.parseDouble(wS);
-
-					uS = ((int) u == u) ? Integer.toString((int)u) : Double.toString(u);
+					v = v + 180*Math.abs(v)/v;					
 					vS = ((int) v == v) ? Integer.toString((int)v) : Double.toString(v);
-					wS = ((int) w == w) ? Integer.toString((int)w) : Double.toString(w); */
+				}
 				bw.write("	"+uS+"	"+vS+"	"+wS+"\n");
 				break;
 			}
