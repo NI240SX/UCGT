@@ -4,10 +4,10 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 
 public class Vertex {
-	public double posX=0x0CCD/3276.8; //position
-	public double posY=0x0CCD/3276.8;
-	public double posZ=0x0CCD/3276.8;
-	public double posW=0x0CCD/3276.8;
+	public double posX=0x0CCD/posFactor; //position
+	public double posY=0x0CCD/posFactor;
+	public double posZ=0x0CCD/posFactor;
+	public double posW=0x0CCD/posFactor;
 	
 	public double texU=0.0; //texcoord
 	public double texV=0.0;
@@ -17,39 +17,48 @@ public class Vertex {
 	public byte colorB=(byte) 255;
 	public byte colorA=(byte) 255;
 
-	public double normX=0x7FFF/32768.0; //normals
+	public double normX=0x7FFF/vecFactor; //normals
 	public double normY=0.0;
 	public double normZ=0.0;
-	public double normW=0x7FFF/32768.0;
+	public double normW=0x7FFF/vecFactor;
 
 	public double tanX=0.0; //tangents, usually no data included
 	public double tanY=0.0;
 	public double tanZ=0.0;
 	public double tanW=0.0;
+
+	public static final double posFactor = 3276.7;
+	public static final double UVFactor = 1023.0;
+	public static final double vecFactor = 32767.0;
+
+	public static final double posMin = Short.MIN_VALUE/posFactor;
+	public static final double posMax = Short.MAX_VALUE/posFactor;
+	public static final double UVMin = Short.MIN_VALUE/UVFactor;
+	public static final double UVMax = Short.MAX_VALUE/UVFactor;
 	
 	public Vertex(ByteBuffer in) {
-		posX = (in.getShort())/3276.8; //half4
-		posY = (in.getShort())/3276.8;
-		posZ = (in.getShort())/3276.8;
-		posW = (in.getShort())/3276.8;
+		posX = (in.getShort())/posFactor; //half4
+		posY = (in.getShort())/posFactor;
+		posZ = (in.getShort())/posFactor;
+		posW = (in.getShort())/posFactor;
 		
-		texU = (in.getShort())/1024.0;	//half2
-		texV = 1-(in.getShort())/1024.0;
+		texU = (in.getShort())/UVFactor;	//half2
+		texV = 1-(in.getShort())/UVFactor;
 
 		colorR = in.get();	//color
 		colorG = in.get();
 		colorB = in.get();
 		colorA = in.get();
 		
-		normX = (in.getShort())/32768.0; //dec4n
-		normY = (in.getShort())/32768.0;
-		normZ = (in.getShort())/32768.0;
-		normW = (in.getShort())/32768.0;
+		normX = (in.getShort())/vecFactor; //dec4n
+		normY = (in.getShort())/vecFactor;
+		normZ = (in.getShort())/vecFactor;
+		normW = (in.getShort())/vecFactor;
 
-		tanX = (in.getShort())/32768.0; //dec4n
-		tanY = (in.getShort())/32768.0;
-		tanZ = (in.getShort())/32768.0;
-		tanW = (in.getShort())/32768.0;
+		tanX = (in.getShort())/vecFactor; //dec4n
+		tanY = (in.getShort())/vecFactor;
+		tanZ = (in.getShort())/vecFactor;
+		tanW = (in.getShort())/vecFactor;
 		
 //		System.out.println(this);
 	}
@@ -79,28 +88,28 @@ public class Vertex {
 	}
 
 	public void save(ByteBuffer out) {
-		out.putShort((short) (posX*3276.8));
-		out.putShort((short) (posY*3276.8));
-		out.putShort((short) (posZ*3276.8));
-		out.putShort((short) (posW*3276.8));
+		out.putShort((short) (posX*posFactor));
+		out.putShort((short) (posY*posFactor));
+		out.putShort((short) (posZ*posFactor));
+		out.putShort((short) (posW*posFactor));
 
-		out.putShort((short) (texU*1024));
-		out.putShort((short) ((1-texV)*1024));
+		out.putShort((short) (texU*UVFactor));
+		out.putShort((short) ((1-texV)*UVFactor));
 
 		out.put(colorR);
 		out.put(colorG);
 		out.put(colorB);
 		out.put(colorA);
 		
-		out.putShort((short) (normX*32768));
-		out.putShort((short) (normY*32768));
-		out.putShort((short) (normZ*32768));
-		out.putShort((short) (normW*32768));
+		out.putShort((short) (normX*vecFactor));
+		out.putShort((short) (normY*vecFactor));
+		out.putShort((short) (normZ*vecFactor));
+		out.putShort((short) (normW*vecFactor));
 
-		out.putShort((short) (tanX*32768));
-		out.putShort((short) (tanY*32768));
-		out.putShort((short) (tanZ*32768));
-		out.putShort((short) (tanW*32768));
+		out.putShort((short) (tanX*vecFactor));
+		out.putShort((short) (tanY*vecFactor));
+		out.putShort((short) (tanZ*vecFactor));
+		out.putShort((short) (tanW*vecFactor));
 	}
 
 	@Override

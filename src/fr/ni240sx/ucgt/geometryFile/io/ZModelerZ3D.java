@@ -438,10 +438,14 @@ public class ZModelerZ3D {
 				case "scene::CPolyMesh":
 					blocks.put(blockUID, new ZMesh(blockUID));
 					break;
+				case "scene::CUVMeshNode":
+					blocks.put(blockUID, new SkipBlock()); //ignore without throwing errors
+					break;
 				case "rend::CHighBlendingExtension":
 				case "rend::CNoBlendingExtension":
 				case "rend::CNoCullExtension":
 				case "rend::CSemitransparencyExtension":
+				case "rend::CUVMeshNodeRenderTechnique":
 					//skip these, they have no attached block
 					break;
 				default:

@@ -10,9 +10,9 @@ public class CompressionLevel
     public static CompressionLevel Low = 		new CompressionLevel(1, 1, 10, 512, "Low");
     public static CompressionLevel Minimum = 	new CompressionLevel(1, 1, 10, 64, "Minimum");
 
-    public int BlockInterval;		//
-    public int SearchLength;		//
-    public int PrequeueLength;		//
+    public int BlockInterval;
+    public int SearchLength;
+    public int PrequeueLength;
     public int QueueLength;			// increasing may be faster
     public int SameValToTrack;		// very high can be faster after a certain thresold
     public int BruteForceLength;	// high is slower and compresses better

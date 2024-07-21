@@ -43,6 +43,9 @@ public class Material {
 	
 	public String uniqueName = "";
 	public boolean useTangents = false;
+
+	// used to fix frontend rendering order in some cases (eg make transparent stuff visible through windows)
+	public int renderingOrder = 0;
 	
 	public Material(Material m) {
 		this.ShaderHash = m.ShaderHash;
@@ -50,6 +53,12 @@ public class Material {
 		for (var h : m.TextureHashes) this.TextureHashes.add(h);
 		for (var u : m.textureUsages) this.textureUsages.add(u);
 		this.uniqueName = m.uniqueName;
+		
+		this.frontendRenderingData = m.frontendRenderingData;
+		this.usageSpecific1 = m.usageSpecific1;
+		this.usageSpecific2 = m.usageSpecific2;
+		this.usageSpecific3 = m.usageSpecific3;
+		this.renderingOrder = m.renderingOrder;
 	}
 
 	public Material() {
@@ -65,16 +74,18 @@ public class Material {
 	}
 
 	public void tryGuessHashes(Geometry geometry, Part p) {
-		if (p.shaderlist != null) ShaderHash = Hash.guess(p.shaderlist.shaders.get(shaderID), geometry.hashlist, String.format("0x%08X", p.shaderlist.shaders.get(shaderID)), "BIN");
-		else {
-			System.out.println("Critical issue with part "+p.name+" : missing shaders ! defaulting to DULLPLASTIC");
-			ShaderHash = new Hash("DULLPLASTIC");
+		if (ShaderHash == null){
+			if (p.shaderlist != null) ShaderHash = Hash.guess(p.shaderlist.shaders.get(shaderID), geometry.hashlist, String.format("0x%08X", p.shaderlist.shaders.get(shaderID)), "BIN");
+			else {
+				System.out.println("Critical issue with part "+p.name+" : missing shaders ! defaulting to DULLPLASTIC");
+				ShaderHash = new Hash("DULLPLASTIC");
+			}
 		}
 //		DefaultTextureHash = Hash.guess(textureHash, geometry.hashlist, String.format("0x%08X",textureHash), "BIN"); //apparently unused
 //		for (var t : textures) {
 //			TextureHashes.add(Hash.guess(t, geometry.hashlist, String.format("0x%08X",t), "BIN"));
 //		}
-		for (var t : textureIDs) { //this is actually what's being done by the game
+		if (TextureHashes.size() == 0) for (var t : textureIDs) { //this is actually what's being done by the game
 			TextureHashes.add(Hash.guess(p.texusage.texusage.get(t).getKey(), geometry.hashlist, String.format("0x%08X",p.texusage.texusage.get(t).getKey()), "BIN"));
 		}
 	}
@@ -134,19 +145,25 @@ public class Material {
 		
 	}
 	
-	public void tryGuessFEData(HashMap<ShaderUsage, Integer> FERenderData) {
-		if (FERenderData.containsKey(this.shaderUsage)) {
-			this.frontendRenderingData = FERenderData.get(shaderUsage);
+	public void tryGuessFEData(HashMap<Integer, Integer> FERenderData) {
+		if (FERenderData.containsKey(this.shaderUsage.getKey())) {
+			this.frontendRenderingData = FERenderData.get(shaderUsage.getKey());
 		} else {
-			this.frontendRenderingData = FERenderData.size()*256;
-			FERenderData.put(shaderUsage, this.frontendRenderingData);
+			// find the lowest usage possible
+			int lowest = 0;
+			while (true) {
+				if (!FERenderData.containsValue(lowest)) break;
+				lowest += 256;
+			}
+			this.frontendRenderingData = lowest;
+			FERenderData.put(shaderUsage.getKey(), this.frontendRenderingData);
 		}
 	}
 
 	public void removeUnneeded() {
-		usageSpecific1 = -1;
-		usageSpecific2 = -1;
-		usageSpecific3 = -1;
+//		usageSpecific1 = -1;
+//		usageSpecific2 = -1;
+//		usageSpecific3 = -1;
 		flags[0] = (byte) 0x00;
 		flags[1] = (byte) 0x00;
 		flags[2] = (byte) 0x00;
@@ -176,11 +193,7 @@ public class Material {
 		String s = "";
 		s += "MATERIAL	"+uniqueName;
 //		s += " feRenderData=" + frontendRenderingData;
-		if (Geometry.EXPORT_vanillaPlusMaterials && TextureHashes.get(0).label.equals("GRILL_02")) {
-			s += "	"+ShaderHash.label+"="+ShaderUsage.DiffuseAlpha.getName();
-		} else if (Geometry.EXPORT_vanillaPlusMaterials && TextureHashes.get(0).label.equals(carname+"_ENGINE")) {
-			s += "	"+ShaderHash.label+"="+ShaderUsage.DiffuseNormal.getName();
-		} else s += "	"+ShaderHash.label+"="+shaderUsage.getName();
+		s += "	"+ShaderHash.label+"="+shaderUsage.getName();
 		//+"[";
 //		if (usageSpecific1 != -1) s+=usageSpecific1;
 //		if (usageSpecific2 != -1) s+=","+usageSpecific2;
@@ -188,9 +201,6 @@ public class Material {
 //		s +="]	defTex=" + DefaultTextureHash.label+"	flags=0x"+String.format("%02X",flags[0])+String.format("%02X",flags[1])+String.format("%02X",flags[2])+String.format("%02X",flags[3]);
 		for (int i=0; i<textureUsages.size(); i++) {
 			s += "	" + TextureHashes.get(i).label.replace(carname, "%") + "=" + textureUsages.get(i).getName();
-		}
-		if (Geometry.EXPORT_vanillaPlusMaterials && TextureHashes.get(0).label.equals(carname+"_ENGINE") && TextureHashes.size()==1) {
-			s += "	%_ENGINE_N=NORMAL";
 		}
 		return s;
 	}
@@ -209,8 +219,12 @@ public class Material {
 		if (getClass() != obj.getClass())
 			return false;
 		Material other = (Material) obj;
-		return Objects.equals(ShaderHash, other.ShaderHash) && Objects.equals(TextureHashes, other.TextureHashes)
-				&& shaderUsage == other.shaderUsage && Objects.equals(textureUsages, other.textureUsages);
+		if (other.TextureHashes.size() != TextureHashes.size()) return false;
+		for (int i=0; i< TextureHashes.size(); i++) if (TextureHashes.get(i).binHash != other.TextureHashes.get(i).binHash) return false;
+		if (other.textureUsages.size() != textureUsages.size()) return false;
+		for (int i=0; i< textureUsages.size(); i++) if (textureUsages.get(i) != other.textureUsages.get(i)) return false;
+		return ShaderHash.binHash == other.ShaderHash.binHash
+				&& shaderUsage == other.shaderUsage;
 	}
 
 	

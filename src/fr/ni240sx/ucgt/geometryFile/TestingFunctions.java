@@ -183,10 +183,8 @@ public class TestingFunctions {
 	
 	public static void main(String[] args) throws Exception {
 
-//		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak");
-//		dumpPartsRecompiled("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak");		
-		
-//		dumpPartsRecompiled("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\LAM_GAL_SUP_08\\GEOMETRY.BIN");
+//		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY-VANILLA.BIN");
+
 
 //		PartVisualizer.setPartsFromFile("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\LAM_GAL_SUP_08\\GEOMETRY.BIN", 
 //				"KIT00_BODY_A KIT00_BUMPER_FRONT_A KIT00_BUMPER_REAR_A");
@@ -204,43 +202,10 @@ public class TestingFunctions {
 //		);
 //		PartVisualizer.run();
 
-//		try {
-//			var g = Geometry.load(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak"));
-//			for (var p : g.parts) for (var m : p.mesh.materials.materials) {
-//				System.out.println(p.header.partName+" - "+m.ShaderHash.label+" - triVertices="+m.numTriVertices+"/vertices="+m.verticesBlock.vertices.size()+"/triangles x3="+(m.triangles.size()*3));
-//			}
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-		
-//		writeConfig("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak");
-//		writeConfig("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_240_SX_89\\GEOMETRY.BIN");
-		
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\NIS_GTR_R35_08\\GEOMETRY.BIN");
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\NIS_240_SX_89\\GEOMETRY.BIN");
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\NSX\\GEOMETRY.BIN");
 
-
-//		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY-VANILLA.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.obj");
-		
-		
-		
-		
-		// RECOMPILING MY SHIT ???
-//		var geom = importFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.obj");		//geom.geomHeader.geomInfo.setHeaderVanilla();
-//		var vanilla = Geometry.load(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN.bak"));
-
-//		Part.defaultCompressionLevel = CompressionLevel.Maximum;
-//		Part.defaultCompressionLevel = CompressionLevel.High;
-//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
-//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
-
-//		save(vanilla, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
-//		save(vanilla, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.BIN");
-		
-//		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY_homemade.BIN");
-//		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
-	
 //		PartVisualizer.setPartsFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN", "KIT00_BASE_A"
 //		+ "KIT00_BODY_A KIT00_BUMPER_FRONT_A KIT00_BUMPER_REAR_A KIT00_CHASSIS_A KIT00_FENDER_FRONT_LEFT_A KIT00_FENDER_FRONT_RIGHT_A "
 //		+ " KIT00_DOOR_LEFT_A KIT00_DOOR_RIGHT_A KIT00_DOOR_REAR_LEFT_A KIT00_DOOR_REAR_RIGHT_A KIT00_HOOD_A KIT00_TRUNK_A"
@@ -280,13 +245,6 @@ public class TestingFunctions {
 //		);
 //		PartVisualizer.run();
 		
-//		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\ctk\\GEOMETRY.BIN");
-		
-		
-//		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY-VANILLA.BIN");//what's wrong with you
-//		exportToFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY-VANILLA.BIN", "C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY_exported.obj");
-//		var geom = importFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY_exported.obj");
-//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY.BIN");
 		
 //		Geometry.defaultCompressionLevel = CompressionLevel.Maximum;
 //		Geometry.defaultCompressionLevel = CompressionLevel.High;
@@ -295,10 +253,7 @@ public class TestingFunctions {
 //		Geometry.IMPORT_calculateVertexColors = true;
 //		Geometry.IMPORT_Tangents = SettingsImport_Tangents.HIGH;
 //		Geometry.EXPORT_vanillaPlusMaterials = true;
-		
-//		var geom = importFromFile("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\a UCE\\CARS- S2000\\onda.obj");
-//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\S2000\\GEOMETRY.BIN");
-		
+
 //		long t = System.currentTimeMillis();
 		
 //		recompileCar("AUD_RS4_STK_08");
@@ -352,22 +307,7 @@ public class TestingFunctions {
 //		var geom = importFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRy blender.obj");
 //		var geom = importFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRy blender ctk.obj");
 //		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRY.BIN");
-		
-//		var geom = Geometry.load(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRY-VANILLA.BIN"));
-//		Geometry.defaultCompressionType = CompressionType.RawDecompressed;
-//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\CHE_VEL_SS_70\\GEOMETRY-clueless.BIN");
 
-//		generateConfigFromCtkConfig("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\AUD_RS4_STK_08.txt","C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\AUD_RS4_STK_08.ini");
-//		generateConfigFromCtkConfig("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\BMW_M3_E46_03.txt","C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\BMW_M3_E46_03.ini");
-
-//		var geom = importFromFile("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\AUD_RS4_STK_08.obj");
-//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
-//		geom = importFromFile("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\BMW_M3_E46_03.obj");
-//		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\BMW_M3_E46_03\\GEOMETRY.BIN");
-		
-//		exportToFile("G:\\Autres ordinateurs\\Mon ordinateur\\a UCE BETA 1 PREVIEW PACK\\DATA\\CARS\\E36\\GEOMETRY.BIN", "C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\a UCE\\UCGT\\GEOMETRY_exported.obj");
-		
-		
 //
 //		var geom = importFromFile("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\GEOMETRY.z3d");
 //		
@@ -382,5 +322,87 @@ public class TestingFunctions {
 ////		Geometry.defaultCompressionLevel = new CompressionLevel(1, 1, 10, 8192, "High"); 	//	 ms,  kB
 //
 //		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\compression tests\\GEOMETRY 8 64 10 8192.BIN");
+		
+		Geometry.SAVE_sortEverythingByName = false;
+		
+
+//		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
+//		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\POR_911_GT2_08\\GEOMETRY.BIN");
+		
+		
+//		var geom1 = Geometry.load(new File("G:\\Autres ordinateurs\\Mon ordinateur\\a UCE BETA 1 PREVIEW PACK\\DATA\\CARS\\LAM_DIA_SV_95\\GEOMETRY.BIN"));
+//		for (var p : geom1.parts) {
+//			if (p.name.contains("BRAKELIGHT") && p.lod.equals("A")) {
+//				System.out.println(p.name);
+//				for (var mat : p.mesh.materials.materials) {
+//					System.out.println(mat.uniqueName+", frontend rendering data : "+mat.frontendRenderingData + " usage specific : "+ mat.usageSpecific1 +", "
+//				+ mat.usageSpecific2+", "+ mat.usageSpecific3+" flags : "+mat.flags[0]+","+mat.flags[1]+","+mat.flags[2]+","+mat.flags[3]);
+//				}
+//				System.out.println();
+//			}
+//		}
+//		System.out.println("ctk ^");
+//		
+		
+		var geom = Geometry.load(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\LAM_DIA_SV_95\\GEOMETRY.BIN"));
+		for (var p : geom.parts) {
+
+			if (p.name.equals("KIT00_BODY_A")) {
+				System.out.println(p.name);
+				for (var mat : p.mesh.materials.materials) {
+					System.out.println(mat.uniqueName+", frontend rendering data : "+mat.frontendRenderingData + " usage specific : "+ mat.usageSpecific1 +", "
+				+ mat.usageSpecific2+", "+ mat.usageSpecific3+" flags : "+mat.flags[0]+","+mat.flags[1]+","+mat.flags[2]+","+mat.flags[3]);
+				}
+				System.out.println();
+				//GRILL, DECAL, CARSKIN, DULLPLASTIC, ENGINE
+				p.mesh.materials.materials.get(0).usageSpecific1 = 3; //3, GRILL
+				p.mesh.materials.materials.get(1).usageSpecific1 = 2; //2, DECAL
+			}
+
+			if (p.name.contains("BRAKELIGHT") && p.lod.equals("A")) {
+				System.out.println(p.name);
+				for (var mat : p.mesh.materials.materials) {
+					System.out.println(mat.uniqueName+", frontend rendering data : "+mat.frontendRenderingData + " usage specific : "+ mat.usageSpecific1 +", "
+				+ mat.usageSpecific2+", "+ mat.usageSpecific3+" flags : "+mat.flags[0]+","+mat.flags[1]+","+mat.flags[2]+","+mat.flags[3]);
+				}
+				System.out.println();
+				if (p.name.equals("KIT00_BRAKELIGHT_LEFT_A")) {//DECAL, DULLPLASTIC, BRAKELIGHT
+					p.mesh.materials.materials.get(0).usageSpecific1 = 0; //2, DECAL
+					p.mesh.materials.materials.get(0).usageSpecific2 = -1; //1, DECAL
+					p.mesh.materials.materials.get(2).usageSpecific1 = -1; //3, BRAKELIGHT
+				}
+				if (p.name.equals("KIT00_BRAKELIGHT_GLASS_LEFT_A")) {//BRAKELIGHTGLASSRED
+					p.mesh.materials.materials.get(0).usageSpecific1 = -1; //1
+				}
+			}
+			
+			
+			if (p.name.contains("BUMPER") && p.lod.equals("A")) {
+				System.out.println(p.name);
+				for (var mat : p.mesh.materials.materials) {
+					System.out.println(mat.uniqueName+", frontend rendering data : "+mat.frontendRenderingData + " usage specific : "+ mat.usageSpecific1 +", "
+				+ mat.usageSpecific2+", "+ mat.usageSpecific3+" flags : "+mat.flags[0]+","+mat.flags[1]+","+mat.flags[2]+","+mat.flags[3]);
+				}
+				System.out.println();
+			}
+		}
+//		geom.save(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\LAM_DIA_SV_95\\GEOMETRY.BIN"));
+		
+//		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\LAM_DIA_SV_95\\GEOMETRY.BIN", "C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\a UCE\\CARS- DIABLO SV\\PARTS-UCGT\\");
+//		dumpPartsAsIs("G:\\Autres ordinateurs\\Mon ordinateur\\a UCE BETA 1 PREVIEW PACK\\DATA\\CARS\\LAM_DIA_SV_95\\GEOMETRY.BIN", "C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\a UCE\\CARS- DIABLO SV\\PARTS-CTK\\");
+		
+		
+//		geom = Geometry.load(new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\POR_911_GT2_08\\GEOMETRY.BIN"));
+//		for (var p : geom.parts) {
+//			if ((p.name.contains("LIGHT")) && p.lod.equals("A")) {
+//				System.out.println(p.name);
+//				for (var mat : p.mesh.materials.materials) {
+//					System.out.println(mat.uniqueName+", frontend rendering data : "+mat.frontendRenderingData + " usage specific : "+ mat.usageSpecific1 +", "
+//				+ mat.usageSpecific2+", "+ mat.usageSpecific3+" flags : "+mat.flags[0]+","+mat.flags[1]+","+mat.flags[2]+","+mat.flags[3]);
+//				}
+//				System.out.println();
+//			}
+//		}
+		
 	}
 }

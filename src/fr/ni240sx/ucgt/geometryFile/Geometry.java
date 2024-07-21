@@ -41,6 +41,7 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertices;
 import fr.ni240sx.ucgt.geometryFile.sorters.MPointPosSorterName;
 import fr.ni240sx.ucgt.geometryFile.sorters.MPointSorterName;
+import fr.ni240sx.ucgt.geometryFile.sorters.MaterialsSorterGlobalList;
 import fr.ni240sx.ucgt.geometryFile.sorters.MaterialsSorterName;
 import fr.ni240sx.ucgt.geometryFile.sorters.PartSorterLodKitName;
 import javafx.util.Pair;
@@ -62,6 +63,8 @@ public class Geometry extends Block {
 	public ArrayList<String> forceAsFixOnParts = new ArrayList<>();
 	public ArrayList<Pair<String,String>> renameParts = new ArrayList<>();
 	public ArrayList<String> deleteParts = new ArrayList<>();
+	public ArrayList<RenderPriority> priorities = new ArrayList<>();
+	
 	
 	public String carname = "UNDETERMINED";
 	
@@ -84,10 +87,6 @@ public class Geometry extends Block {
 	public static boolean IMPORT_calculateVertexColors = false;
 	public static SettingsImport_Tangents IMPORT_Tangents = SettingsImport_Tangents.HIGH;
 	public static boolean IMPORT_flipV = false;
-	
-	//normalmap the engine and make GRILL_02 transparent - use with caution, grills are sometimes inverted on kits from PS
-	//not valid in config as you can just change that
-	public static boolean EXPORT_vanillaPlusMaterials = false; 
 	
 	//---------------------------------------------------------------------------------------------------
 	//
@@ -238,56 +237,8 @@ public class Geometry extends Block {
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 
 		long t = System.currentTimeMillis();
-		var toRemove = Collections.synchronizedList(new ArrayList<Part>()); // parts flagged to be removed to optimize the geometry (eg T0 autosculpt with no other actual morphtargets)
-		var toAdd = Collections.synchronizedList(new ArrayList<Part>()); // parts flagged to be added (eg missing LODs)
-		
-		if (!renameParts.isEmpty()) {
-//			System.out.println("parts to rename present :");
-//			for (var k : renameParts.keySet()) {
-//				System.out.println(k+" : "+renameParts.get(k));
-//			}
-			for (var p : parts) for (var r : renameParts) if (p.name.contains(r.getKey())) {
-				System.out.print("Renaming part "+p.name);
-				p.header.partName = p.header.partName.replace(r.getKey(), r.getValue());
-				p.header.binKey = new Hash(p.header.partName).binHash;
-				p.name = p.name.replace(r.getKey(), r.getValue());
-				System.out.println(" to "+p.name);
-			}
-		}
-		
-		if (!deleteParts.isEmpty()) {
-//			System.out.println("parts to rename present :");
-//			for (var k : renameParts.keySet()) {
-//				System.out.println(k+" : "+renameParts.get(k));
-//			}
-			for (var p : parts) for (var r : deleteParts) if (p.name.contains(r)) {
-				System.out.println("Deleting part "+p.name);
-				toRemove.add(p);
-			}
-		}
-		
-		for (var p : parts) {		
-			
-			if (SAVE_removeInvalid) {if (!checkValid(toRemove, p)) continue;}
-			
-			optimizeAutosculpt(toRemove, p); 
-			computeMatsList(p); // IMPORTANT TO KEEP HERE
-//			globalizePartMarkers(p);
-			if (p.mesh != null) for (var m : p.mesh.materials.materials) if (SAVE_optimizeMaterials) {	
-    			m.removeUnneeded();
-    		} else {
-				m.tryGuessUsageSpecific();
-				m.tryGuessFlags(this);
-    			m.tryGuessDefaultTex();
-    		}
-			fixAutosculptMeshes(p);
-			
-			if (SAVE_copyMissingLODs) checkAndCopyMissingLODs(toAdd, p);
-		}
-
-		//remove/add parts
-		parts.removeAll(toRemove);
-		parts.addAll(toAdd);
+		//process stuff on parts (TODO make a part invalidation list for that and compressing)
+		processParts();
 		
 		//sort things once again just in case
 		if (SAVE_sortEverythingByName) {
@@ -590,7 +541,14 @@ public class Geometry extends Block {
 					if (!s2.contains("=")) { //material name
 						m.uniqueName = s2;
 					} else { //shader or texture usage
-						if (TextureUsage.get(s2.split("=")[1]) != TextureUsage.INVALID) {
+						if (s2.split("=")[0].equals("UseTangents")) {
+							//material tangents setting
+							m.useTangents = Boolean.getBoolean(s2.split("=")[1]);
+						} else if (s2.split("=")[0].equals("FERenderingOrder")) {
+							m.renderingOrder = Integer.parseInt(s2.split("=")[1]);
+						} else if (s2.split("=")[0].equals("RenderingOrder")) { // i don't know
+							m.usageSpecific1 = Integer.parseInt(s2.split("=")[1]);
+						} else if (TextureUsage.get(s2.split("=")[1]) != TextureUsage.INVALID) {
 							// texture usage
 							m.TextureHashes.add(new Hash(s2.split("=")[0].replace("%", carname).toUpperCase()));
 							m.textureUsages.add(TextureUsage.get(s2.split("=")[1]));
@@ -598,9 +556,6 @@ public class Geometry extends Block {
 							//shader usage
 							m.ShaderHash = new Hash(s2.split("=")[0].toUpperCase());
 							m.shaderUsage = ShaderUsage.get(s2.split("=")[1]);
-						} else if (s2.split("=")[0].equals("UseTangents")) {
-							//material tangents setting
-							m.useTangents = Boolean.getBoolean(s2.split("=")[1]);
 						}
 					}
 				}
@@ -685,6 +640,23 @@ public class Geometry extends Block {
 					}
 				}
 //				System.out.println("Autosculpt link : "+l);
+				break;
+				
+			case "PRIORITY":
+				var prio = new RenderPriority();
+				priorities.add(prio);
+				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty() && !s2.equals("PRIORITY")) {
+					if (!s2.contains("=")) { //part name
+						prio.partName = s2.toUpperCase();
+					} else {
+						Material material = null;
+						for (var mat : materials) if (mat.uniqueName.equals(s2.split("=")[0])) {
+							material = mat;
+							break;
+						}
+						if (material != null) prio.values.add(new Pair<>(material, Integer.parseInt(s2.split("=")[1])));
+					}
+				}
 				break;
 			}
 		}//loop on config file lines
@@ -875,20 +847,20 @@ public class Geometry extends Block {
 					//real shader compiled with Diffuse
 					if (normal != null) usage = ShaderUsage.DiffuseNormal;
 					if (shader.equals("BRAKEDISC")) usage = ShaderUsage.DiffuseAlpha;
-					if (shader.equals("DOORLINE")) usage = ShaderUsage.DiffuseNormalAlpha;
+					if (shader.equals("DOORLINE") && normal != null) usage = ShaderUsage.DiffuseNormalAlpha;
 					if (shader.equals("HEADLIGHTREFLECTOR")) {
 						usage = ShaderUsage.DiffuseGlow;
 						glow = texture;
 					}
-					if (texture.equals("TIRE_STYLE01")) usage = ShaderUsage.DiffuseNormalAlpha;
-					if (texture.equals("%_BADGING")) usage = ShaderUsage.DiffuseNormalAlpha;
+//					if (texture.equals("TIRE_STYLE01")) usage = ShaderUsage.DiffuseNormalAlpha;
+					if (texture.equals("%_BADGING") && normal != null) usage = ShaderUsage.DiffuseNormalAlpha;
 					if (normal != null) if (normal.equals("DAMAGE_N")) usage = ShaderUsage.DiffuseNormalSwatch;
 					//vanilla plus
-					if (texture.equals("GRILL_02")) usage = ShaderUsage.DiffuseAlpha; 
-					if (texture.equals("%_ENGINE")) {
-						usage = ShaderUsage.DiffuseNormal;
-						normal = "%_ENGINE_N";
-					}
+//					if (texture.equals("GRILL_02")) usage = ShaderUsage.DiffuseAlpha; 
+//					if (texture.equals("%_ENGINE")) {
+//						usage = ShaderUsage.DiffuseNormal;
+//						normal = "%_ENGINE_N";
+//					}
 				}
 				
 				bw.write("MATERIAL	"+mat+"	"+shader+"="+usage.toString()+"	"+texture+"=DIFFUSE");
@@ -957,18 +929,23 @@ public class Geometry extends Block {
 				//	0.1 90 -180		0	-90	0.115
 				//	-89.19 90 -180	0	-90	-90
 				//	-89.19 90 -180	0	-90	-90
+
 				//	89.19 -90 0		0	-90	90
+				//	70 -90 0		0	-90	110		was broken in 1.1.2 (output 70 -270 0), the vS == +/- 90 case seemed to be completely wrong
 				
 				// 	89.19 180 180	90	0	0
+
 
 				if (uS.equals("0") && vS.equals("-90") && wS.equals("0")) {uS = "0"; vS="-90"; wS="-180";}
 				else if (vS.equals("90") && (wS.equals("180") || wS.equals("-180"))) {wS = uS; uS = "0"; vS = "-90";}
 				else if ((vS.equals("180") || vS.equals("-180")) && (wS.equals("180") || wS.equals("-180"))) {vS = "0"; wS = "0";}
 				else if ((wS.equals("90") || wS.equals("-90"))) {var tp = vS; vS = "-"+uS.replace("-", ""); uS = tp;}
 				else if (vS.equals("90") || vS.equals("-90")) {
-					double v = Double.parseDouble(vS);
-					v = v + 180*Math.abs(v)/v;					
-					vS = ((int) v == v) ? Integer.toString((int)v) : Double.toString(v);
+					double u = Double.parseDouble(uS);
+					u = 180*Math.abs(u)/u - u;					
+					uS = "0";
+					vS = "-90";
+					wS = ((int) u == u) ? Integer.toString((int)u) : Double.toString(u);
 				}
 				bw.write("	"+uS+"	"+vS+"	"+wS+"\n");
 				break;
@@ -985,7 +962,80 @@ public class Geometry extends Block {
 	//									 HELPER FUNCTIONS
 	//
 	//---------------------------------------------------------------------------------------------------
-	
+
+	public void processParts() {
+		var toRemove = Collections.synchronizedList(new ArrayList<Part>()); // parts flagged to be removed to optimize the geometry (eg T0 autosculpt with no other actual morphtargets)
+		var toAdd = Collections.synchronizedList(new ArrayList<Part>()); // parts flagged to be added (eg missing LODs)
+		
+		if (!renameParts.isEmpty()) {
+//			System.out.println("parts to rename present :");
+//			for (var k : renameParts.keySet()) {
+//				System.out.println(k+" : "+renameParts.get(k));
+//			}
+			for (var p : parts) for (var r : renameParts) if (p.name.contains(r.getKey())) {
+				System.out.print("Renaming part "+p.name);
+				p.header.partName = p.header.partName.replace(r.getKey(), r.getValue());
+				p.header.binKey = new Hash(p.header.partName).binHash;
+				p.name = p.name.replace(r.getKey(), r.getValue());
+				System.out.println(" to "+p.name);
+			}
+		}
+		
+		if (!deleteParts.isEmpty()) {
+//			System.out.println("parts to rename present :");
+//			for (var k : renameParts.keySet()) {
+//				System.out.println(k+" : "+renameParts.get(k));
+//			}
+			for (var p : parts) for (var r : deleteParts) if (p.name.contains(r)) {
+				System.out.println("Deleting part "+p.name);
+				toRemove.add(p);
+			}
+		}
+		
+		
+		for (var p : parts) {		
+			HashMap<Integer, Integer> FERenderData; //first int is either shader usage or shader hash
+			FERenderData = new HashMap<>();
+			
+			if (SAVE_removeInvalid) {if (!checkValid(toRemove, p)) continue;}
+			optimizeAutosculpt(toRemove, p); 
+			computeMatsList(p); // IMPORTANT TO KEEP HERE
+			checkVertexBounds(p);
+//			globalizePartMarkers(p);
+			if (p.mesh != null) {				
+				for (var m : p.mesh.materials.materials) if (m.renderingOrder!=0) FERenderData.put(m.ShaderHash.binHash , m.renderingOrder*256);
+				for (var m : p.mesh.materials.materials) {
+					m.tryGuessFEData(FERenderData);
+					if (SAVE_optimizeMaterials) {	
+		    			m.removeUnneeded();
+		    		} else {
+						m.tryGuessUsageSpecific();
+//						m.tryGuessFlags(this);
+//		    			m.tryGuessDefaultTex();
+		    		}
+				}
+				for (var prio : priorities) if (p.name.contains(prio.partName)) {
+//					System.out.println("Changing render priorities for part "+p.name);
+					for (var m : p.mesh.materials.materials) {
+						for (var pair : prio.values) {
+							if (m.equals(pair.getKey())) { //for some reason materials are NOT equal (materials are fucked up for some reason and have texture hashes repeated twice)
+								//HOW IS IT NOT FINDING THE FUCKING MATERIALS
+								m.usageSpecific1 = pair.getValue();
+							}
+						}
+					}
+				}
+			}
+			fixAutosculptMeshes(p);
+			
+			if (SAVE_copyMissingLODs) checkAndCopyMissingLODs(toAdd, p);
+		}
+
+		//remove/add parts
+		parts.removeAll(toRemove);
+		parts.addAll(toAdd);
+	}
+
 	@SuppressWarnings("unlikely-arg-type")
 	public void globalizePartMarkers(Part p) {
 		// GLOBAL MARKERS STORAGE
@@ -1020,10 +1070,10 @@ public class Geometry extends Block {
 	}
 
 	private void computeMatsList(Part p) {
-		HashMap<ShaderUsage, Integer> FERenderData;
+		
 		// MESH MATERIALS OPTIMIZATION + GLOBAL MATERIALS (only the global materials part should be kept here)
 		
-		FERenderData = new HashMap<>();
+		
 		if (p.mesh != null) for (var m : p.mesh.materials.materials) {	
 			m.tryGuessHashes(this, p);
 
@@ -1032,7 +1082,7 @@ public class Geometry extends Block {
 //				m.tryGuessFlags(this);
 //				m.tryGuessDefaultTex();
 
-			m.tryGuessFEData(FERenderData);
+			
 			
 			if (!materials.contains(m)) { 
 				// if the global materials list doesn't contain a material matching this one, add it
@@ -1098,6 +1148,20 @@ public class Geometry extends Block {
 			toAdd.add(D = new Part(C, carname, C.kit+"_"+C.part+"_D"));
 		}
 		
+	}
+	
+	public static void checkVertexBounds(Part p) {
+		boolean posOOB = false;
+		boolean UVOOB = false;
+		for (var m : p.mesh.materials.materials) {
+			for (var v : m.verticesBlock.vertices) {
+				if (v.posX > Vertex.posMax || v.posY > Vertex.posMax || v.posZ > Vertex.posMax || 
+						v.posX < Vertex.posMin || v.posX < Vertex.posMin || v.posX < Vertex.posMin) posOOB = true;
+				if (v.texU > Vertex.UVMax || v.texV > Vertex.UVMax || v.texU < Vertex.UVMin || v.texV < Vertex.UVMin) UVOOB = true;
+			}
+		}
+		if (posOOB) System.out.println("Warning : one or multiple vertices are too far away from the origin on part "+p.name+" ! Please keep X, Y and Z between -10 and +10.");
+		if (UVOOB) System.out.println("Warning : one or multiple UV summits are too far away from the origin on part "+p.name+" ! Please keep U and V between -32 and +32.");
 	}
 	
 	public void optimizeAutosculpt(List<Part> toRemove, Part p) {
@@ -1184,9 +1248,13 @@ public class Geometry extends Block {
 	public void rebuild() {
 		for (var p : parts) {
 
-        	//sort materials (same as in config file) and add the materials data back to the mesh
-        	if (Geometry.SAVE_sortEverythingByName) p.mesh.materials.materials.sort(new MaterialsSorterName());
-    		p.mesh.verticesBlocks.clear();
+        	//sort materials by name and add the materials data back to the mesh
+//        	if (Geometry.SAVE_sortEverythingByName) p.mesh.materials.materials.sort(new MaterialsSorterName());
+        	//same order as in config file
+//        	else 
+        	p.mesh.materials.materials.sort(new MaterialsSorterGlobalList(this));
+    		
+        	p.mesh.verticesBlocks.clear();
     		p.mesh.triangles.triangles.clear();
         	
         	//make hashmaps for textures and shaders
@@ -1471,7 +1539,7 @@ public class Geometry extends Block {
 			ArrayList<Pair<Vertex,Vertex>> swapNormals = new ArrayList<>();
 			
 			//loop on each material for all autosculpt parts
-			for (int mat=0; mat<p.mesh.materials.materials.size(); mat++) {
+			matsloop: for (int mat=0; mat<p.mesh.materials.materials.size(); mat++) {
 				boolean invalidateVertsMat = false;
 				if (forceAsFixOnParts.contains(p.name)) {
 					invalidateVertsGlobal = true;
@@ -1479,7 +1547,8 @@ public class Geometry extends Block {
 				} else {
 					for (var p2 : asParts) {
 			    		if (p2.mesh.materials.materials.get(mat).triangles.size() != p.mesh.materials.materials.get(mat).triangles.size()) {
-			    			System.out.println("[Save] Warning : Different triangle counts across autosculpt zones on part "+p.header.partName+", will not be fixed !");
+			    			System.out.println("Warning : Different triangle counts across Autosculpt zones on part "+p.header.partName+", Autosculpt may break, please check your model !");
+			    			break matsloop; //avoids further issues for the current part
 			    		}
 			    		if (p2.mesh.materials.materials.get(mat).verticesBlock.vertices.size() != p.mesh.materials.materials.get(mat).verticesBlock.vertices.size()) {
 	//		        			System.out.println("Different vertices counts across autosculpt zones on part "+p.header.partName);
@@ -1732,4 +1801,9 @@ public class Geometry extends Block {
 		}
 	}
 	
+}
+
+class RenderPriority{
+	String partName = "";
+	ArrayList<Pair<Material,Integer>> values = new ArrayList<>();
 }

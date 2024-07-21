@@ -251,6 +251,40 @@ hashassign----------------------------------------- at 82708 d
 blockid=19401300, length 3768
 hash or id, int, int, repeat
 
+related to triangles : hash, int, some triangle id
+
+hashes seem car specific, are very commonly repeated at least two times
+same length between left and right but different hashes and triangle ids
+
+both of these blocks appear in parts, including Autosculpt morph zones :
+BASE : yes, long			int values 1,2,16
+BODY : yes except _D, short	int values 8,4 (RS4), 16 (911GT2), 1,2,144,20 (RS4 _C)
+BRAKE : no
+BRAKELIGHT_GLASS : yes		int values 1, only one value on lod c !
+BRAKEROTOR : no
+BUMPER_FRONT : yes			int values 4,2,128,8,1
+BUMPER_REAR : yes			int values 1,2,32,16
+CHASSIS : no
+DOOR_LEFT : yes				int values 1,2,8
+DOOR_REAR_LEFT : yes
+...
+DOOR_RIGHT : yes
+...
+DRIVER : no
+ENGINE : no
+EXH_TIPS_LEFT/RIGHT/CENTER : no
+FENDER : yes				int values 1, RS4 : empty on lods B and C
+HEADLIGHT : no
+HEADLIGHT_GLASS : yes		int values 1
+HOOD : yes/no				int value 1 for RS4, not on 911GT2
+MUFFLER : no
+SEAT : no
+SIDEMIRROR : yes			int values 1
+SKIRT : yes					int values 2,4,8,1
+WHEEL : no
+WINDOW : no
+
+
 hashlist kit00_body_a
 1BDF7006 03A00C51 
 

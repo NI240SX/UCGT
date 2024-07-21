@@ -21,7 +21,6 @@ import java.util.NoSuchElementException;
 import fr.ni240sx.ucgt.binstuff.Hash;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -520,7 +519,7 @@ public class DBMPPlus extends Application {
 			    	for (var p : mainDBMP.dBMPParts) {
 			    		var nameHash = new Hash( mainDBMP.carname.label + "_" + ((AttributeTwoString)p.getAttribute("LOD_BASE_NAME")).value1 + "_" + ((AttributeTwoString)p.getAttribute("LOD_BASE_NAME")).value2 + "_A").binHash;
 			    		if (partHash == nameHash) foundParts.add(p);
-			    		System.out.println("Found "+p.displayName);
+//			    		System.out.println("Found "+p.displayName);
 		    		}
 		    	}
 		    	
