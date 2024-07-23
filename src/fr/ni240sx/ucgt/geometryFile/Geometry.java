@@ -977,6 +977,7 @@ public class Geometry extends Block {
 				p.header.partName = p.header.partName.replace(r.getKey(), r.getValue());
 				p.header.binKey = new Hash(p.header.partName).binHash;
 				p.name = p.name.replace(r.getKey(), r.getValue());
+				p.findKitLodPart(carname);
 				System.out.println(" to "+p.name);
 			}
 		}

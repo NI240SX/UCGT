@@ -117,13 +117,13 @@ Example materials :
 This part uses the keyword `MARKER` and contains position marker definitions, one per line. Position markers both must have a positioning mesh in the model, usually a cube, which name starts with "_". They also need the following definition, separated by spaces or tabs :
 - The marker's positioning cube's name in the model.
 - The marker's ingame name.
-- The part the marker must be attached to.
+- The part the marker must be attached to, partial matches will work.
 - Three Euler angles to rotate the marker, separated by spaces or tabs (pay great attention to these as they differ from the ones you may be used to !)
 - If needed, the marker's scale, 1 is 100% (in all axes or per axis).
 
 Example markers :
 
-`MARKER	_BRAKELIGHT_LEFT	BRAKELIGHT_LEFT	KIT00_BASE_A	0	-90	-180`
+`MARKER	_BRAKELIGHT_LEFT	BRAKELIGHT_LEFT	KIT00_BASE	0	-90	-180` will assign the marker to KIT00_BASE_A, KIT00_BASE_B, KIT00_BASE_C, etc.
 
 `MARKER	_LICENSE_PLATE_REAR_KIT00	LICENSE_PLATE_REAR	KIT00_BUMPER_REAR_A	0	-90	-180	0.979	1	0.979`
 

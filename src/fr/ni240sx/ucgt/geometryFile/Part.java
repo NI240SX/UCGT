@@ -166,7 +166,7 @@ public class Part extends Block {
 		this(geom.carname, name);
 		geom.parts.add(this);
 
-		for (var mp : geom.mpointsAll) if (mp.tempPartNames.contains(name)) { // binding mpoints read from config, if existing
+		for (var mp : geom.mpointsAll) for (var n : mp.tempPartNames) if (name.contains(n)) { // binding mpoints read from config, if existing
 			if (this.mpoints == null) this.mpoints = new MPoints();
 			this.mpoints.mpoints.add(mp);
 //			mp.part = curPart;
