@@ -56,7 +56,7 @@ public class Mesh extends Block {
 		
 //		System.out.println(info.numMaterials+" materials, "+info.numTriangles+"/"+triangles.triangles.size()+" triangles, "+info.numVertices+" vertices");
 		
-		for (int i=0; i<materials.materials.size(); i++) {
+		if (materials != null) for (int i=0; i<materials.materials.size(); i++) {
 			verticesBlocks.get(i).material = materials.materials.get(i);
 			materials.materials.get(i).verticesBlock = verticesBlocks.get(i);
 //			System.out.println("Requesting triangles from "+(materials.materials.get(i).fromVertID/3) + " to " + (materials.materials.get(i).toVertID/3));

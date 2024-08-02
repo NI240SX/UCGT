@@ -140,22 +140,26 @@ public class Geometry extends Block {
 //			}
 //		} else { // useful for debugging
 			for (var o : geomHeader.partsOffsets.partOffsets) { //.values()
-				if (o.isCompressed == 512) {
-					byte[] partData = new byte[o.sizeDecompressed];
-					ByteBuffer dataWriter = ByteBuffer.wrap(partData);
-					
-					in.position(o.offset);
-					//loops on the one or multiple compressed blocks
-					while (in.position() < o.offset + o.sizeCompressed) {
-						CompressedData d = (CompressedData) Block.read(in);
-						dataWriter.put(d.decompressionOffset, Compression.decompress(d.data));
+				try {
+					if (o.isCompressed == 512) {
+						byte[] partData = new byte[o.sizeDecompressed];
+						ByteBuffer dataWriter = ByteBuffer.wrap(partData);
+						
+						in.position(o.offset);
+						//loops on the one or multiple compressed blocks
+						while (in.position() < o.offset + o.sizeCompressed) {
+							CompressedData d = (CompressedData) Block.read(in);
+							dataWriter.put(d.decompressionOffset, Compression.decompress(d.data));
+						}
+						
+						dataWriter.position(0);
+						parts.add(new Part(dataWriter));	
+					} else {
+						in.position(o.offset);
+						parts.add(new Part(in));	
 					}
-					
-					dataWriter.position(0);
-					parts.add(new Part(dataWriter));	
-				} else {
-					in.position(o.offset);
-					parts.add(new Part(in));	
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 //		}
@@ -790,7 +794,7 @@ public class Geometry extends Block {
 					case "UC_PAINT":
 						usage = ShaderUsage.DiffuseNormalSwatch;
 						shader = "CARSKIN";
-						if (texture != null) {if (texture.equals("METAL_SWATCH")) swatch = "METAL_SWATCH";} else swatch = "%_SKIN1";
+						if ("METAL_SWATCH".equals(texture)) swatch = "METAL_SWATCH"; else swatch = "%_SKIN1";
 						texture = "CARBONFIBRE_PLACEHOLDER";
 						normal = "DAMAGE_N";
 						break;
@@ -843,7 +847,6 @@ public class Geometry extends Block {
 						break;
 					}
 				} else {
-					assert texture != null;
 					//real shader compiled with Diffuse
 					if (normal != null) usage = ShaderUsage.DiffuseNormal;
 					if (shader.equals("BRAKEDISC")) usage = ShaderUsage.DiffuseAlpha;
@@ -853,8 +856,8 @@ public class Geometry extends Block {
 						glow = texture;
 					}
 //					if (texture.equals("TIRE_STYLE01")) usage = ShaderUsage.DiffuseNormalAlpha;
-					if (texture.equals("%_BADGING") && normal != null) usage = ShaderUsage.DiffuseNormalAlpha;
-					if (normal != null) if (normal.equals("DAMAGE_N")) usage = ShaderUsage.DiffuseNormalSwatch;
+					if ("%_BADGING".equals(texture) && normal != null) usage = ShaderUsage.DiffuseNormalAlpha;
+					if ("DAMAGE_N".equals(normal)) usage = ShaderUsage.DiffuseNormalSwatch;
 					//vanilla plus
 //					if (texture.equals("GRILL_02")) usage = ShaderUsage.DiffuseAlpha; 
 //					if (texture.equals("%_ENGINE")) {
@@ -1003,6 +1006,7 @@ public class Geometry extends Block {
 			computeMatsList(p); // IMPORTANT TO KEEP HERE
 			checkVertexBounds(p);
 //			globalizePartMarkers(p);
+			if (SAVE_optimizeMaterials && p.strings != null) p.subBlocks.remove(p.strings);
 			if (p.mesh != null) {				
 				for (var m : p.mesh.materials.materials) if (m.renderingOrder!=0) FERenderData.put(m.ShaderHash.binHash , m.renderingOrder*256);
 				for (var m : p.mesh.materials.materials) {
@@ -1075,7 +1079,7 @@ public class Geometry extends Block {
 		// MESH MATERIALS OPTIMIZATION + GLOBAL MATERIALS (only the global materials part should be kept here)
 		
 		
-		if (p.mesh != null) for (var m : p.mesh.materials.materials) {	
+		if (p.mesh != null) if (p.mesh.materials != null) for (var m : p.mesh.materials.materials) {	
 			m.tryGuessHashes(this, p);
 
 			//destructive tests 

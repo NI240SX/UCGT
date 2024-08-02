@@ -147,7 +147,7 @@ contains sub-blocks
 
 MESH INFO-----------------------------------------
 blockid=00491300, length 72, aligned after length declared (16-byte, 0x11 fill)
-00000000 00000000 30000000 8041A302 <- always 0, always 0, always 3, varies
+00000000 00000000 30000000 8041A302 <- always 0, always 0, maybe mesh version (47 in PS, 48 in UC), varies (flags, unused)
 07000000 00000000 00000000 00000000 <- number of materials ?, always 0, 0 and 0
 00000000 00000000 00000000 00000000 <- always 0, 0, 0, 0
 44070000 00000000 00000000 00000000 <- number of triangles, always 0, 0, 0
@@ -160,6 +160,7 @@ blockid=014F1300, length 16
 MATERIALS----------------------------------------- at 2064 d
 blockid=02491300, length 1896
 first contains 104 bytes of 111111... padding until reaching 0x880/2176 (offset multiple of 128 ?)
+fully different in PS, different blockid
 
 then a sort of material header ? first material :
 0 06000000 0 03000000				<- 0 to 6 (vertex ids?), 0, 3 (there's 7 materials in total)
@@ -208,6 +209,7 @@ VERTICES-------- 3976
 blockid=01491300, length 240
 starts with 1111... padding (128 bytes padding)
 repeating pattern, 6 hashes, 00000000 00000000 padding, sometimes the 00000000s are replaced by hashes too
+PS models seem to be the same format, different blockid (maybe UV differs ?)
 
 more of these blocks
 EMPTY BLOCK--------------------------------------- 4224
@@ -231,7 +233,7 @@ TRIANGLES----------------- 69952
 blockid=03491300, length 11184
 starts with 11111 32 Byte alignment padding (not 128!)
 stores 2-byte indexes next to each other without separation -> looks like triangles
-
+same format, different blockid in PS models
 
 BIG BLOCK END_____________________________________
 
@@ -245,11 +247,13 @@ padding block ?
 hashlist----------------------------------------- at 81164 d
 blockid=18401300, length 1536
 most likely a list of the hashes or ids used in the next block
+much longer in PS models
 
 
 hashassign----------------------------------------- at 82708 d
 blockid=19401300, length 3768
 hash or id, int, int, repeat
+much longer in PS models
 
 related to triangles : hash, int, some triangle id
 

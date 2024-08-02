@@ -22,10 +22,10 @@ abstract class Attribute {
 		dataHBox.getChildren().addAll(new Label(displayName));
 	}
 	
-	public Attribute(Hash key) {
+	public Attribute(Hash key, boolean useGUI) {
 		Key = key;
 		displayName = Key.label;
-		dataHBox.getChildren().addAll(new Label(displayName));
+		if (useGUI) dataHBox.getChildren().addAll(new Label(displayName));
 	}
 
 	public Attribute(Attribute copyFrom) {
@@ -52,83 +52,18 @@ abstract class Attribute {
 	}
 }
 
-class AttributeString extends Attribute{
-//	public static final String AttributeIdentifier = "String";
-	public String value1 = "";
-	public byte value1Exists = 0;
-	TextField value1gui = new TextField();
-	public AttributeString(String key) {
-		super(key);
-		dataHBox.getChildren().addAll(value1gui);
-	}
-	public AttributeString(String key, String value1) {
-		super(key);
-		this.value1 = value1.strip();
-		if(!value1.isBlank()) value1Exists = 1;
-		initGUI();
-	}
-	public AttributeString(Hash key, ByteBuffer bb) {
-		super(key);
-		value1Exists = bb.get();
-		if (value1Exists == 1) value1 = DBMP.readString(bb);
-		initGUI();
-	}
-	public AttributeString(AttributeString copyFrom) {
-		super(copyFrom);
-		this.value1Exists = copyFrom.value1Exists;
-		this.value1 = copyFrom.value1;
-		initGUI();
-	}
-	@SuppressWarnings("unused")
-	public void initGUI() {
-		value1gui.setText(value1);
-		dataHBox.getChildren().addAll(value1gui);
-		value1gui.setOnKeyTyped(e -> {
-			int caretB4Save = value1gui.getCaretPosition();
-			new UndoAttributeChange(this);
-			value1 = value1gui.getText().strip();
-			value1gui.setText(value1gui.getText().strip());
-			if (value1.isEmpty()) value1Exists = 0; else value1Exists = 1;
-			value1gui.positionCaret(caretB4Save);
-			e.consume();
-		});
-	}
-	@Override
-	public void update() {
-		value1gui.setText(value1);
-	}
-	@Override
-	public void revertFrom(Attribute a) {
-		this.value1 = ((AttributeString)a).value1;
-		this.value1Exists = ((AttributeString)a).value1Exists;
-		value1gui.setText(value1);
-	}
-	@Override
-	public void writeToFile(ByteBuffer bb) {
-		super.writeToFile(bb);
-		bb.put(value1Exists);
-		if (value1Exists == 1) DBMP.writeString(value1, bb);
-	}
-	@Override
-	public String getAttribType() {
-		return "String";
-	}
-	@Override
-	public String toString() {
-		return "String" + Key + ": " + value1 + "," + (value1Exists==1);
-	}
-}
-
 class AttributeTwoString extends Attribute{
 //	public static final String AttributeIdentifier = "TwoString";
 	public String value1 = "";
 	public byte value1Exists = 0;
 	public String value2 = "";
 	public byte value2Exists = 0;
-	TextField value1gui = new TextField();
-	TextField value2gui = new TextField();
+	TextField value1gui;
+	TextField value2gui;
 	public AttributeTwoString(String key) {
 		super(key);
+		value1gui = new TextField();
+		value2gui = new TextField();
 		initGUI();
 	}
 	public AttributeTwoString(String key, String string1, String string2) {
@@ -137,15 +72,21 @@ class AttributeTwoString extends Attribute{
 		value2 = string2.strip();
 		if(!value1.isBlank()) value1Exists = 1;
 		if(!value2.isBlank()) value2Exists = 1;
+		value1gui = new TextField();
+		value2gui = new TextField();
 		initGUI();
 	}
-	public AttributeTwoString(Hash key, ByteBuffer bb) {
-		super(key);
+	public AttributeTwoString(Hash key, ByteBuffer bb, boolean useGUI) {
+		super(key, useGUI);
 		value1Exists = bb.get();
 		value2Exists = bb.get();
 		if (value1Exists == 1) value1 = DBMP.readString(bb);
 		if (value2Exists == 1) value2 = DBMP.readString(bb);
-		initGUI();
+		if (useGUI) {
+			value1gui = new TextField();
+			value2gui = new TextField();
+			initGUI();
+		}
 	}
 	public AttributeTwoString(AttributeTwoString copyFrom) {
 		super(copyFrom);
@@ -153,6 +94,8 @@ class AttributeTwoString extends Attribute{
 		this.value1 = copyFrom.value1;
 		this.value2Exists = copyFrom.value2Exists;
 		this.value2 = copyFrom.value2;
+		value1gui = new TextField();
+		value2gui = new TextField();
 		initGUI();
 	}
 	@SuppressWarnings("unused")
@@ -218,24 +161,30 @@ class AttributeTwoString extends Attribute{
 class AttributeInteger extends Attribute{
 //	public static String AttributeIdentifier = "Integer";
 	public int value = 0;
-	TextField valuegui = new TextField();
+	TextField valuegui;
 	public AttributeInteger(String key) {
 		super(key);
+		valuegui = new TextField();
 		initGUI();
 	}
 	public AttributeInteger(String key, int value) {
 		super(key);
 		this.value = value;
+		valuegui = new TextField();
 		initGUI();
 	}
-	public AttributeInteger(Hash key, ByteBuffer bb) {
-		super(key);
+	public AttributeInteger(Hash key, ByteBuffer bb, boolean useGUI) {
+		super(key, useGUI);
 		value = bb.getInt();
-		initGUI();
+		if (useGUI) {
+			valuegui = new TextField();
+			initGUI();
+		}
 	}
 	public AttributeInteger(AttributeInteger copyFrom) {
 		super(copyFrom);
 		this.value = copyFrom.value;
+		valuegui = new TextField();
 		initGUI();
 	}
 	@SuppressWarnings("unused")
@@ -280,114 +229,33 @@ class AttributeInteger extends Attribute{
 	}
 }
 
-class AttributeCarPartID extends Attribute{
-//	public static String AttributeIdentifier = "CarPartID";
-	public PartUndercover ID = PartUndercover.INVALID;
-	public byte level = 0;
-	TextField IDgui = new TextField();
-	TextField levelgui = new TextField();
-	public AttributeCarPartID(String key) {
-		super(key);
-		initGUI();
-	}
-	public AttributeCarPartID(String key, PartUndercover ID, int level) {
-		super(key);
-		this.ID = ID;
-		this.level = (byte)level;
-		initGUI();
-	}
-	public AttributeCarPartID(Hash key, ByteBuffer bb) {
-		super(key);
-		level = bb.get();
-		ID = PartUndercover.get(bb.get());
-		initGUI();
-	}
-	public AttributeCarPartID(AttributeCarPartID copyFrom) {
-		super(copyFrom);
-		this.ID = copyFrom.ID;
-		this.level = copyFrom.level;
-		initGUI();
-	}
-	@SuppressWarnings("unused")
-	public void initGUI() {
-		IDgui.setText(ID.getText());
-		levelgui.setPrefWidth(40);
-		levelgui.setText(Integer.toString(level));
-		dataHBox.getChildren().addAll(levelgui, IDgui);
-
-		IDgui.setOnAction(e -> {
-			int caretB4Save = IDgui.getCaretPosition();
-			new UndoAttributeChange(this);
-			if(PartUndercover.get(IDgui.getText().strip())!=null) {
-				ID = PartUndercover.get(IDgui.getText().strip());
-			} else new Alert(Alert.AlertType.ERROR, "Invalid slot", ButtonType.OK).show();
-			IDgui.setText(ID.getText());
-			IDgui.positionCaret(caretB4Save);
-			e.consume();
-		});
-		levelgui.setOnKeyTyped(e -> {
-			int caretB4Save = levelgui.getCaretPosition();
-			if (levelgui.getText().isBlank()) levelgui.setText("0");
-			new UndoAttributeChange(this);
-			try {
-				level = (byte) Integer.parseInt(levelgui.getText().strip());
-			}catch(NumberFormatException ex) {
-				new Alert(Alert.AlertType.ERROR, "Please enter a valid integer", ButtonType.OK).show();
-			}
-			levelgui.setText(Integer.toString(level));
-			levelgui.positionCaret(caretB4Save);
-			e.consume();
-		});
-	}
-	@Override
-	public void update() {
-		IDgui.setText(ID.getText());
-		levelgui.setText(Integer.toString(level));
-	}
-	@Override
-	public void writeToFile(ByteBuffer bb) {
-		super.writeToFile(bb);
-		bb.put(level);
-		bb.put(ID.getValue());
-	}
-	@Override
-	public void revertFrom(Attribute a) {
-		this.ID = ((AttributeCarPartID)a).ID;
-		this.level = ((AttributeCarPartID)a).level;
-		IDgui.setText(ID.getText());
-		levelgui.setText(Integer.toString(level));
-	}
-	@Override
-	public String getAttribType() {
-		return "CarPartID";
-	}
-	@Override
-	public String toString() {
-		return "CarPartID" + Key + ": " + ID + "/" + ID.getValue() + ", level " + level;
-	}
-}
-
 class AttributeKey extends Attribute{
 //	public static String AttributeIdentifier = "Key";
 	public Hash value = new Hash("");
-	TextField valuegui = new TextField();
+	TextField valuegui;
 	public AttributeKey(String key) {
 		super(key);
+		valuegui = new TextField();
 		initGUI();
 	}
 	public AttributeKey(String key, String value) {
 		super(key);
 		this.value = new Hash(value);
+		valuegui = new TextField();
 		initGUI();
 	}
-	public AttributeKey(Hash key, ByteBuffer bb) {
-		super(key);
+	public AttributeKey(Hash key, ByteBuffer bb, boolean useGUI) {
+		super(key, useGUI);
 		value = new Hash(DBMP.readString(bb));
-		initGUI();
+		if (useGUI) {
+			valuegui = new TextField();
+			initGUI();
+		}
 	}
 	public AttributeKey(AttributeKey copyFrom) {
 		super(copyFrom);
 		this.value = copyFrom.value;
+		valuegui = new TextField();
 		initGUI();
 	}
 	@SuppressWarnings("unused")
@@ -436,24 +304,30 @@ class AttributeKey extends Attribute{
 class AttributeBoolean extends Attribute{
 //	public static String AttributeIdentifier = "Integer";
 	public boolean value = false;
-	TextField valuegui = new TextField();
+	TextField valuegui;
 	public AttributeBoolean(String key) {
 		super(key);
+		valuegui = new TextField();
 		initGUI();
 	}
 	public AttributeBoolean(String key, boolean value) {
 		super(key);
 		this.value = value;
+		valuegui = new TextField();
 		initGUI();
 	}
-	public AttributeBoolean(Hash key, ByteBuffer bb) {
-		super(key);
+	public AttributeBoolean(Hash key, ByteBuffer bb, boolean useGUI) {
+		super(key, useGUI);
 		value = bb.get()==1;
-		initGUI();
+		if (useGUI) {
+			valuegui = new TextField();
+			initGUI();
+		}
 	}
 	public AttributeBoolean(AttributeBoolean copyFrom) {
 		super(copyFrom);
 		this.value = copyFrom.value;
+		valuegui = new TextField();
 		initGUI();
 	}
 	@SuppressWarnings("unused")
@@ -508,12 +382,16 @@ class AttributeColor extends Attribute{
 	public byte green=0;
 	public byte blue=0;
 	public byte alpha=0;
-	TextField redgui = new TextField();
-	TextField greengui = new TextField();
-	TextField bluegui = new TextField();
-	TextField alphagui = new TextField();
+	TextField redgui;
+	TextField greengui;
+	TextField bluegui;
+	TextField alphagui;
 	public AttributeColor(String key) {
 		super(key);
+		redgui = new TextField();
+		greengui = new TextField();
+		bluegui = new TextField();
+		alphagui = new TextField();
 		initGUI();
 	}
 	public AttributeColor(String key, byte red, byte blue, byte green, byte alpha) {
@@ -522,15 +400,25 @@ class AttributeColor extends Attribute{
 		this.green = green;
 		this.blue = blue;
 		this.alpha = alpha;
+		redgui = new TextField();
+		greengui = new TextField();
+		bluegui = new TextField();
+		alphagui = new TextField();
 		initGUI();
 	}
-	public AttributeColor(Hash key, ByteBuffer bb) {
-		super(key);
+	public AttributeColor(Hash key, ByteBuffer bb, boolean useGUI) {
+		super(key, useGUI);
 		red = bb.get();
 		green = bb.get();
 		blue = bb.get();
 		alpha = bb.get();
-		initGUI();
+		if (useGUI) {
+			redgui = new TextField();
+			greengui = new TextField();
+			bluegui = new TextField();
+			alphagui = new TextField();
+			initGUI();
+		}
 	}
 	public AttributeColor(AttributeColor copyFrom) {
 		super(copyFrom);
@@ -538,6 +426,10 @@ class AttributeColor extends Attribute{
 		this.green = copyFrom.green;
 		this.blue = copyFrom.blue;
 		this.alpha = copyFrom.alpha;
+		redgui = new TextField();
+		greengui = new TextField();
+		bluegui = new TextField();
+		alphagui = new TextField();
 		initGUI();
 	}
 	@SuppressWarnings("unused")

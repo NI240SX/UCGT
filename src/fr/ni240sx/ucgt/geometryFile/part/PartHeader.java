@@ -75,7 +75,8 @@ public class PartHeader extends Block {
 		const11 = in.getInt(); //might be a float
 		const12 = in.getInt(); //might be a float
 		
-		in.position(in.position()+40);
+		if (const02 == 947640) in.position(in.position()+24); //PS model
+		else in.position(in.position()+40); //UC model
 		partName = Block.readString(in);
 		
 //		System.out.println(partName);
@@ -108,6 +109,7 @@ public class PartHeader extends Block {
 		
 		//process size
 		var blockLength = usualLengthWithoutName + partName.length() + 1;
+		if (const02 == 947640) blockLength -=16;
 		if ((partName.length()+1) % 4 != 0) blockLength += 4 - (partName.length()+1)%4;
 
 		var out = ByteBuffer.wrap(new byte[blockLength + 8]);
@@ -153,7 +155,8 @@ public class PartHeader extends Block {
 		out.putInt(const11);
 		out.putInt(const12);
 		
-		out.position(out.position()+40);
+		if (const02 == 947640) out.position(out.position()+24);
+		else out.position(out.position()+40);
 		Block.putString(out, partName);
 
 		return out.array();	

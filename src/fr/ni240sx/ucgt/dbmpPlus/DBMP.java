@@ -16,7 +16,7 @@ import fr.ni240sx.ucgt.binstuff.Hash;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 
-class DBMP{
+public class DBMP{
 	
 	public static final int maxPartLength = 500; //200 bytes for each part should be more than enough when exporting
 	
@@ -105,8 +105,11 @@ class DBMP{
 		
 	}
 	
-	
 	public static DBMP loadDBMP(File f) {
+		return loadDBMP(f, true);
+	}
+	
+	public static DBMP loadDBMP(File f, boolean useGUI) {
 
 		if (f==null) return null;
 		
@@ -167,32 +170,32 @@ class DBMP{
 			int partsAmount = bb.getInt();
 			for (int i=0; i<partsAmount; i++) { //loop on parts
 				DBMPPart p;
-				loadDBMP.dBMPParts.add(p = new DBMPPart());
+				loadDBMP.dBMPParts.add(p = new DBMPPart(useGUI));
 				int partAttribCount = bb.getInt();
 				for (int j=0; j<partAttribCount; j++) { //loop on attributes
 					int attributeHash = bb.getInt();
 					Attribute a = null;
-					for (Hash h : attributesTwoString) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeTwoString(h, bb));
-					for (Hash h : attributesString) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeString(h, bb));
-					for (Hash h : attributesInteger) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeInteger(h, bb));
-					for (Hash h : attributesCarPartID) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeCarPartID(h, bb));
-					for (Hash h : attributesKey) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeKey(h, bb));
-					for (Hash h : attributesBoolean) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeBoolean(h, bb));
-					for (Hash h : attributesColor) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeColor(h, bb));
+					for (Hash h : attributesTwoString) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeTwoString(h, bb, useGUI));
+					for (Hash h : attributesString) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeString(h, bb, useGUI));
+					for (Hash h : attributesInteger) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeInteger(h, bb, useGUI));
+					for (Hash h : attributesCarPartID) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeCarPartID(h, bb, useGUI));
+					for (Hash h : attributesKey) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeKey(h, bb, useGUI));
+					for (Hash h : attributesBoolean) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeBoolean(h, bb, useGUI));
+					for (Hash h : attributesColor) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeColor(h, bb, useGUI));
 					assert (a != null);
 					if (DBMPPlus.debug)System.out.println("Attribute " + (j+1) + "/" + partAttribCount + " : " + a.toString());
 				}
-				p.update();
+				if (useGUI) p.update();
 				if (DBMPPlus.debug)System.out.println("Part imported : "+p.displayName);
 			}			
 		} catch (FileNotFoundException e) {
 			//dbmp to load not found
 			// TODO Auto-generated catch block
-			new Alert(Alert.AlertType.ERROR, "File not found", ButtonType.OK).show();
+			if (useGUI) new Alert(Alert.AlertType.ERROR, "File not found", ButtonType.OK).show();
 			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
-			new Alert(Alert.AlertType.ERROR, "Error while loading file", ButtonType.OK).show();
+			if (useGUI) new Alert(Alert.AlertType.ERROR, "Error while loading file", ButtonType.OK).show();
 			loadDBMP = null;
 		}
 		return loadDBMP;

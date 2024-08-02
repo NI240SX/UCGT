@@ -2,7 +2,7 @@ package fr.ni240sx.ucgt.dbmpPlus;
 
 import java.util.ArrayList;
 
-class DBMPPart {
+public class DBMPPart {
 	public ArrayList<Attribute> attributes = new ArrayList<>();
 	public String displayName = "MISSING ATTRIBUTES";
 	
@@ -10,9 +10,10 @@ class DBMPPart {
 	public boolean isWidebody = false;
 	public boolean isCarPart = false;
 	
-	CarPartListCell listCell = new CarPartListCell();
+	CarPartListCell listCell;
 	
-	public DBMPPart() {
+	public DBMPPart(boolean useGUI) {
+		if (useGUI) listCell = new CarPartListCell();
 	}
 	
 	public DBMPPart(String kit, String name) {

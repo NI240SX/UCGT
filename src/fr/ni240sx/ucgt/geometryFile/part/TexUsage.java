@@ -19,12 +19,18 @@ public class TexUsage extends Block {
 	
 	public TexUsage(ByteBuffer in) {
 		var blockLength = in.getInt();
+		var blockStart = in.position();
 		
-		for (int i=0; i< blockLength/12; i++) {
-			texusage.add(new Pair<>(in.getInt(), in.getInt()));
-			in.getInt(); //0
+		while (in.position() < blockStart+blockLength) {
+			var tex = in.getInt();
+			var us = in.getInt();
+			texusage.add(new Pair<>(tex, us));
+			if (us != 0) { //PS compatibility (it has no usage)
+				in.getInt(); //0
+			}
 		}
-		
+
+		in.position(blockStart+blockLength);
 //		for (var p : texusage) {
 //			System.out.println("Texture "+Integer.toHexString(p.getKey())+" has usage "+Usage.get(p.getValue()).getName());
 //		}
@@ -36,16 +42,19 @@ public class TexUsage extends Block {
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 
-		var out = ByteBuffer.wrap(new byte[texusage.size()*12 + 8]);
+		int length = texusage.size()*12;
+		if (texusage.size() > 0) if (texusage.get(0).getValue()==0) length = texusage.size()*8; //PS compatibility
+		
+		var out = ByteBuffer.wrap(new byte[length + 8]);
 		out.order(ByteOrder.LITTLE_ENDIAN);
 
 		out.putInt(getBlockID().getKey());
-		out.putInt(texusage.size()*12);
+		out.putInt(length);
 
 		for (var p : texusage) {
 			out.putInt(p.getKey());
 			out.putInt(p.getValue());
-			out.putInt(0);
+			if (p.getValue()!=0) out.putInt(0);
 		}
 		
 		return out.array();	

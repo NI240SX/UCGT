@@ -15,7 +15,7 @@ public class Mesh_Info extends Block {
 	
 	public int const01 = 0;
 	public int const02 = 0;
-	public int const03 = 48;
+	public int version = 48;
 
 	//flags, may be linked to how simplified the part is : 0x8041A302 = full part, 80410000 = less detail (brake, exhaust_tip)
 	public byte[] flags = {(byte) 0x80, 0x41, (byte) 0xA3, 0x02};
@@ -48,7 +48,7 @@ public class Mesh_Info extends Block {
 
 		const01 = in.getInt();
 		const02 = in.getInt();
-		const03 = in.getInt();
+		version = in.getInt();
 		
 		in.get(flags);
 		
@@ -59,13 +59,13 @@ public class Mesh_Info extends Block {
 
 		const21 = in.getInt();
 		const22 = in.getInt();
-		const23 = in.getInt();
-		const24 = in.getInt();
+		if (version > 47) const23 = in.getInt(); //PS compatibility
+		if (version > 47) const24 = in.getInt();
 
 		numTriangles = in.getInt();
 		const32 = in.getInt();
-		const33 = in.getInt();
-		const34 = in.getInt();
+		if (version > 47) const33 = in.getInt();
+		if (version > 47) const34 = in.getInt();
 
 		numVertices = in.getInt();
 		const42 = in.getInt();
@@ -78,6 +78,7 @@ public class Mesh_Info extends Block {
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 
 		var alignment = Block.findAlignment(currentPosition+8, 16);
+		if (version < 48) alignment -= 16; //PS model compatibility
 		var out = ByteBuffer.wrap(new byte[usualLength + 8 + alignment]);
 		out.order(ByteOrder.LITTLE_ENDIAN);
 
@@ -88,7 +89,7 @@ public class Mesh_Info extends Block {
 
 		out.putInt(const01);
 		out.putInt(const02);
-		out.putInt(const03);
+		out.putInt(version);
 		
 		out.put(flags);
 		
@@ -99,13 +100,13 @@ public class Mesh_Info extends Block {
 
 		out.putInt(const21);
 		out.putInt(const22);
-		out.putInt(const23);
-		out.putInt(const24);
+		if (version > 47) out.putInt(const23);
+		if (version > 47) out.putInt(const24);
 
 		out.putInt(numTriangles);
 		out.putInt(const32);
-		out.putInt(const33);
-		out.putInt(const34);
+		if (version > 47) out.putInt(const33);
+		if (version > 47) out.putInt(const34);
 
 		out.putInt(numVertices);
 		out.putInt(const42);

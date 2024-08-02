@@ -18,6 +18,8 @@ public class TestingFunctions {
 		dumpPartsAsIs(geomFile, geomFile+"-parts\\");
 	}
 	public static void dumpPartsAsIs(String geomFile, String partsDirectory) {
+//		Block.doNotRead.put(GeomBlock.Part_Header, true);
+		
 		Block.doNotRead.put(GeomBlock.Part_AutosculptLinking, true);
 		Block.doNotRead.put(GeomBlock.Part_AutosculptZones, true);
 		Block.doNotRead.put(GeomBlock.Part_HashAssign, true);
@@ -344,48 +346,48 @@ public class TestingFunctions {
 //		System.out.println("ctk ^");
 //		
 		
-		var geom = Geometry.load(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\LAM_DIA_SV_95\\GEOMETRY.BIN"));
-		for (var p : geom.parts) {
-
-			if (p.name.equals("KIT00_BODY_A")) {
-				System.out.println(p.name);
-				for (var mat : p.mesh.materials.materials) {
-					System.out.println(mat.uniqueName+", frontend rendering data : "+mat.frontendRenderingData + " usage specific : "+ mat.usageSpecific1 +", "
-				+ mat.usageSpecific2+", "+ mat.usageSpecific3+" flags : "+mat.flags[0]+","+mat.flags[1]+","+mat.flags[2]+","+mat.flags[3]);
-				}
-				System.out.println();
-				//GRILL, DECAL, CARSKIN, DULLPLASTIC, ENGINE
-				p.mesh.materials.materials.get(0).usageSpecific1 = 3; //3, GRILL
-				p.mesh.materials.materials.get(1).usageSpecific1 = 2; //2, DECAL
-			}
-
-			if (p.name.contains("BRAKELIGHT") && p.lod.equals("A")) {
-				System.out.println(p.name);
-				for (var mat : p.mesh.materials.materials) {
-					System.out.println(mat.uniqueName+", frontend rendering data : "+mat.frontendRenderingData + " usage specific : "+ mat.usageSpecific1 +", "
-				+ mat.usageSpecific2+", "+ mat.usageSpecific3+" flags : "+mat.flags[0]+","+mat.flags[1]+","+mat.flags[2]+","+mat.flags[3]);
-				}
-				System.out.println();
-				if (p.name.equals("KIT00_BRAKELIGHT_LEFT_A")) {//DECAL, DULLPLASTIC, BRAKELIGHT
-					p.mesh.materials.materials.get(0).usageSpecific1 = 0; //2, DECAL
-					p.mesh.materials.materials.get(0).usageSpecific2 = -1; //1, DECAL
-					p.mesh.materials.materials.get(2).usageSpecific1 = -1; //3, BRAKELIGHT
-				}
-				if (p.name.equals("KIT00_BRAKELIGHT_GLASS_LEFT_A")) {//BRAKELIGHTGLASSRED
-					p.mesh.materials.materials.get(0).usageSpecific1 = -1; //1
-				}
-			}
-			
-			
-			if (p.name.contains("BUMPER") && p.lod.equals("A")) {
-				System.out.println(p.name);
-				for (var mat : p.mesh.materials.materials) {
-					System.out.println(mat.uniqueName+", frontend rendering data : "+mat.frontendRenderingData + " usage specific : "+ mat.usageSpecific1 +", "
-				+ mat.usageSpecific2+", "+ mat.usageSpecific3+" flags : "+mat.flags[0]+","+mat.flags[1]+","+mat.flags[2]+","+mat.flags[3]);
-				}
-				System.out.println();
-			}
-		}
+//		var geom = Geometry.load(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\LAM_DIA_SV_95\\GEOMETRY.BIN"));
+//		for (var p : geom.parts) {
+//
+//			if (p.name.equals("KIT00_BODY_A")) {
+//				System.out.println(p.name);
+//				for (var mat : p.mesh.materials.materials) {
+//					System.out.println(mat.uniqueName+", frontend rendering data : "+mat.frontendRenderingData + " usage specific : "+ mat.usageSpecific1 +", "
+//				+ mat.usageSpecific2+", "+ mat.usageSpecific3+" flags : "+mat.flags[0]+","+mat.flags[1]+","+mat.flags[2]+","+mat.flags[3]);
+//				}
+//				System.out.println();
+//				//GRILL, DECAL, CARSKIN, DULLPLASTIC, ENGINE
+//				p.mesh.materials.materials.get(0).usageSpecific1 = 3; //3, GRILL
+//				p.mesh.materials.materials.get(1).usageSpecific1 = 2; //2, DECAL
+//			}
+//
+//			if (p.name.contains("BRAKELIGHT") && p.lod.equals("A")) {
+//				System.out.println(p.name);
+//				for (var mat : p.mesh.materials.materials) {
+//					System.out.println(mat.uniqueName+", frontend rendering data : "+mat.frontendRenderingData + " usage specific : "+ mat.usageSpecific1 +", "
+//				+ mat.usageSpecific2+", "+ mat.usageSpecific3+" flags : "+mat.flags[0]+","+mat.flags[1]+","+mat.flags[2]+","+mat.flags[3]);
+//				}
+//				System.out.println();
+//				if (p.name.equals("KIT00_BRAKELIGHT_LEFT_A")) {//DECAL, DULLPLASTIC, BRAKELIGHT
+//					p.mesh.materials.materials.get(0).usageSpecific1 = 0; //2, DECAL
+//					p.mesh.materials.materials.get(0).usageSpecific2 = -1; //1, DECAL
+//					p.mesh.materials.materials.get(2).usageSpecific1 = -1; //3, BRAKELIGHT
+//				}
+//				if (p.name.equals("KIT00_BRAKELIGHT_GLASS_LEFT_A")) {//BRAKELIGHTGLASSRED
+//					p.mesh.materials.materials.get(0).usageSpecific1 = -1; //1
+//				}
+//			}
+//			
+//			
+//			if (p.name.contains("BUMPER") && p.lod.equals("A")) {
+//				System.out.println(p.name);
+//				for (var mat : p.mesh.materials.materials) {
+//					System.out.println(mat.uniqueName+", frontend rendering data : "+mat.frontendRenderingData + " usage specific : "+ mat.usageSpecific1 +", "
+//				+ mat.usageSpecific2+", "+ mat.usageSpecific3+" flags : "+mat.flags[0]+","+mat.flags[1]+","+mat.flags[2]+","+mat.flags[3]);
+//				}
+//				System.out.println();
+//			}
+//		}
 //		geom.save(new File("C:\\jeux\\UCE 1.0.1.18\\CARS\\LAM_DIA_SV_95\\GEOMETRY.BIN"));
 		
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\CARS\\LAM_DIA_SV_95\\GEOMETRY.BIN", "C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\a UCE\\CARS- DIABLO SV\\PARTS-UCGT\\");
@@ -403,6 +405,6 @@ public class TestingFunctions {
 //				System.out.println();
 //			}
 //		}
-		
+		dumpPartsRecompiled("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\GEOMETRY BMWM3E92 PS.BIN");
 	}
 }
