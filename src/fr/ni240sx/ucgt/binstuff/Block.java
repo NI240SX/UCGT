@@ -31,7 +31,7 @@ public abstract class Block {
 		case Padding:
 			return new Padding(in);
 		case Geometry:
-			System.out.println("initializing a geometry block - this shouldn't happen");
+//			System.out.println("initializing a geometry block - this shouldn't happen");
 			return new Geometry(in);
 		case Geom_Header:
 			return new GeomHeader(in);
@@ -88,6 +88,9 @@ public abstract class Block {
 			return new AutosculptLinking(in);
 		case Part_AutosculptZones:
 			return new AutosculptZones(in);
+		case NIS_Skeleton:
+			System.out.println("NIS Skeleton block");
+			return new UnknownBlock(in, chunkToInt);
 		case INVALID:
 		default:
 			System.out.println("Unknown block, ID="+Integer.toHexString(Integer.reverseBytes(chunkToInt)));

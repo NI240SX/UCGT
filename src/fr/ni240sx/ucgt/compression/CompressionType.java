@@ -3,6 +3,7 @@ package fr.ni240sx.ucgt.compression;
 public enum CompressionType {
 	RefPack("RefPack",new String[]{"RefPack", "RFPK"}),
 	JDLZ("JDLZ",new String[]{"JDLZ", "EA_JDLZ"}),
+	HUFF("HUFF",new String[]{"HUFF", "EA_HUFF", "Huffman"}),
 	RawDecompressed("RawDecompressed",new String[]{"RawDecompressed", "RAWW"}),
 	Unknown("Unknown",new String[]{""});
 	

@@ -309,7 +309,11 @@ public class WavefrontOBJ {
         		bw.write("map_Kn "+m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.NORMAL)).label+".dds\r\n");
         		bw.write("map_norm "+m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.NORMAL)).label+".dds\r\n");
         	}
-        	if (m.shaderUsage == ShaderUsage.DiffuseAlpha || m.shaderUsage == ShaderUsage.DiffuseNormalAlpha|| m.shaderUsage == ShaderUsage.DiffuseGlowAlpha)
+        	if (m.shaderUsage.equals(ShaderUsage.get("DiffuseAlpha")) || 
+    				m.shaderUsage.equals(ShaderUsage.get("DiffuseGlowAlpha")) || 
+    				m.shaderUsage.equals(ShaderUsage.get("DiffuseNormalAlpha")) || 
+    				m.shaderUsage.equals(ShaderUsage.get("DiffuseNormalSwatchAlpha")) || 
+    				m.shaderUsage.equals(ShaderUsage.get("TrafficDiffuseAlpha")))
         		bw.write("map_d "+m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.DIFFUSE)).label+".dds\r\n");
         	if (m.textureUsages.contains(TextureUsage.SELFILLUMINATION)) bw.write("map_Ke "+m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.SELFILLUMINATION)).label+".dds\r\n");
         	

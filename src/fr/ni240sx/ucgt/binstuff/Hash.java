@@ -243,7 +243,7 @@ public class Hash {
 			BufferedReader br = new BufferedReader(new FileReader(f));
 			String key;
 			while ((key = br.readLine())!=null){
-				l.add(new Hash(key));
+				if (!key.isBlank()) l.add(new Hash(key.strip()));
 			}
 			br.close();
 		} catch (Exception e) {

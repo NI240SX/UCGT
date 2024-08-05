@@ -41,11 +41,11 @@ public class ZMaterial extends ZModBlock {
 		this.binMat = m;
 		this.name = m.uniqueName;
 
-		if (m.shaderUsage == ShaderUsage.DiffuseAlpha || 
-				m.shaderUsage == ShaderUsage.DiffuseGlowAlpha || 
-				m.shaderUsage == ShaderUsage.DiffuseNormalAlpha || 
-				m.shaderUsage == ShaderUsage.DiffuseNormalSwatchAlpha || 
-				m.shaderUsage == ShaderUsage.TrafficDiffuseAlpha) {
+		if (m.shaderUsage.equals(ShaderUsage.get("DiffuseAlpha")) || 
+				m.shaderUsage.equals(ShaderUsage.get("DiffuseGlowAlpha")) || 
+				m.shaderUsage.equals(ShaderUsage.get("DiffuseNormalAlpha")) || 
+				m.shaderUsage.equals(ShaderUsage.get("DiffuseNormalSwatchAlpha")) || 
+				m.shaderUsage.equals(ShaderUsage.get("TrafficDiffuseAlpha"))) {
 			this.useAlpha = true;
 		}
 //		if (m.textureUsages.contains(TextureUsage.ALPHA)) this.useAlpha = true;

@@ -30,7 +30,7 @@ public class Material {
 	public int frontendRenderingData = 0; //controls FE rendering somehow
 	public int verticesDataLength = 0;
 	
-	public ShaderUsage shaderUsage = ShaderUsage.Diffuse;
+	public ShaderUsage shaderUsage = ShaderUsage.get("Diffuse");
 	public ArrayList<TextureUsage> textureUsages = new ArrayList<>();
 	public ArrayList<Integer> textures = new ArrayList<>(); //apparently unused
 	
@@ -67,7 +67,7 @@ public class Material {
 	public static Material getFallbackMaterial() {
 		Material m = new Material();
 		m.ShaderHash = new Hash("DULLPLASTIC");
-		m.shaderUsage = ShaderUsage.Diffuse;
+		m.shaderUsage = ShaderUsage.get("Diffuse");
 		m.TextureHashes.add(new Hash("DEFAULTTEXTURE"));
 		m.textureUsages.add(TextureUsage.DIFFUSE);
 		return m;
@@ -175,7 +175,7 @@ public class Material {
 	}
 	
 	public boolean needsTangentsLow() {
-		return shaderUsage == ShaderUsage.DiffuseNormalSwatch  || shaderUsage == ShaderUsage.DiffuseNormalSwatchAlpha;
+		return shaderUsage == ShaderUsage.get("DiffuseNormalSwatch")  || shaderUsage == ShaderUsage.get("DiffuseNormalSwatchAlpha");
 	}
 	public boolean needsTangentsHigh() {
 //		return shaderUsage == ShaderUsage.DiffuseNormal || shaderUsage == ShaderUsage.DiffuseNormalAlpha || shaderUsage == ShaderUsage.DiffuseNormalSwatch  || shaderUsage == ShaderUsage.DiffuseNormalSwatchAlpha

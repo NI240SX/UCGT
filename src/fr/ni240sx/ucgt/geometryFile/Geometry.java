@@ -62,6 +62,7 @@ public class Geometry extends Block {
 	
 	public ArrayList<String> forceAsFixOnParts = new ArrayList<>();
 	public ArrayList<Pair<String,String>> renameParts = new ArrayList<>();
+	public ArrayList<ArrayList<String>> copyParts = new ArrayList<>();
 	public ArrayList<String> deleteParts = new ArrayList<>();
 	public ArrayList<RenderPriority> priorities = new ArrayList<>();
 	
@@ -96,7 +97,7 @@ public class Geometry extends Block {
 	
 	public Geometry(ByteBuffer in) {
 		in.order(ByteOrder.LITTLE_ENDIAN);
-		in.getInt(); //ID
+//		in.getInt(); //ID // with this it cannot be read as a normal block
 		/*var blockLength =*/ in.getInt();
 		in.getInt();
 		in.getInt(); // skip common stuff
@@ -105,69 +106,74 @@ public class Geometry extends Block {
 		// read the header, if this goes wrong the file is probably corrupted or smth
 		geomHeader = (GeomHeader) Block.read(in);
 		
-		//load from offsets
-//		if (USE_MULTITHREADING) {
-//			ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-//			for (final var o : geomHeader.partsOffsets.partOffsets){
-//			    pool.execute(new Runnable() {
-//			        @Override
-//			        public void run() { //for each offset load the corresponding data into memory
-//			        	byte[] partData = new byte[o.sizeDecompressed];
-//						ByteBuffer dataWriter = ByteBuffer.wrap(partData);
-//						
-//						ByteBuffer threadedIn = ByteBuffer.wrap(in.array());
-//						threadedIn.order(ByteOrder.LITTLE_ENDIAN);
-//						
-//						threadedIn.position(o.offset);
-//						//loops on the one or multiple compressed blocks
-//						while (threadedIn.position() < o.offset + o.sizeCompressed) {
-//							CompressedData d = (CompressedData) Block.read(threadedIn);
-//							dataWriter.put(d.decompressionOffset, Compression.decompress(d.data));
-//						}
-//						
-//						dataWriter.position(0);
-//						parts.add(new Part(dataWriter, o.partKey));
-//			        }
-//			    });
-//			}
-//			pool.shutdown();
-//			// wait for them to finish for up to one minute.
-//			try {
-//				pool.awaitTermination(10, TimeUnit.MINUTES);
-//			} catch (InterruptedException e) {
-//				System.out.println("Critical failure ! Please disable multi-threading.");
-//				e.printStackTrace();
-//			}
-//		} else { // useful for debugging
-			for (var o : geomHeader.partsOffsets.partOffsets) { //.values()
-				try {
-					if (o.isCompressed == 512) {
-						byte[] partData = new byte[o.sizeDecompressed];
-						ByteBuffer dataWriter = ByteBuffer.wrap(partData);
-						
-						in.position(o.offset);
-						//loops on the one or multiple compressed blocks
-						while (in.position() < o.offset + o.sizeCompressed) {
-							CompressedData d = (CompressedData) Block.read(in);
-							dataWriter.put(d.decompressionOffset, Compression.decompress(d.data));
+		if (geomHeader.partsOffsets == null) {
+			//one single decompressed part in the Geometry, used in NIS
+			parts.add(new Part(in));
+		} else {		
+			//load from offsets
+	//		if (USE_MULTITHREADING) {
+	//			ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+	//			for (final var o : geomHeader.partsOffsets.partOffsets){
+	//			    pool.execute(new Runnable() {
+	//			        @Override
+	//			        public void run() { //for each offset load the corresponding data into memory
+	//			        	byte[] partData = new byte[o.sizeDecompressed];
+	//						ByteBuffer dataWriter = ByteBuffer.wrap(partData);
+	//						
+	//						ByteBuffer threadedIn = ByteBuffer.wrap(in.array());
+	//						threadedIn.order(ByteOrder.LITTLE_ENDIAN);
+	//						
+	//						threadedIn.position(o.offset);
+	//						//loops on the one or multiple compressed blocks
+	//						while (threadedIn.position() < o.offset + o.sizeCompressed) {
+	//							CompressedData d = (CompressedData) Block.read(threadedIn);
+	//							dataWriter.put(d.decompressionOffset, Compression.decompress(d.data));
+	//						}
+	//						
+	//						dataWriter.position(0);
+	//						parts.add(new Part(dataWriter, o.partKey));
+	//			        }
+	//			    });
+	//			}
+	//			pool.shutdown();
+	//			// wait for them to finish for up to one minute.
+	//			try {
+	//				pool.awaitTermination(10, TimeUnit.MINUTES);
+	//			} catch (InterruptedException e) {
+	//				System.out.println("Critical failure ! Please disable multi-threading.");
+	//				e.printStackTrace();
+	//			}
+	//		} else { // useful for debugging
+				for (var o : geomHeader.partsOffsets.partOffsets) { //.values()
+					try {
+						if (o.isCompressed == 512) {
+							byte[] partData = new byte[o.sizeDecompressed];
+							ByteBuffer dataWriter = ByteBuffer.wrap(partData);
+							
+							in.position(o.offset -4); //-4 because we don't have the full file header here
+							//loops on the one or multiple compressed blocks
+							while (in.position() < o.offset -4 + o.sizeCompressed) {
+								CompressedData d = (CompressedData) Block.read(in);
+								dataWriter.put(d.decompressionOffset, Compression.decompress(d.data));
+							}
+							
+							dataWriter.position(0);
+							parts.add(new Part(dataWriter));	
+						} else {
+							in.position(o.offset -4);
+							parts.add(new Part(in));	
 						}
-						
-						dataWriter.position(0);
-						parts.add(new Part(dataWriter));	
-					} else {
-						in.position(o.offset);
-						parts.add(new Part(in));	
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
-				} catch (Exception e) {
-					e.printStackTrace();
 				}
-			}
-//		}
-
-		// determines the compressiontype to put the right one for re-exporting
-		// disabled for testing purposes
-		if (geomHeader.partsOffsets.partOffsets.get(0).isCompressed == 512) defaultCompressionType = CompressionType.RefPack;
-		else if (geomHeader.partsOffsets.partOffsets.get(0).isCompressed == 0) defaultCompressionType = CompressionType.RawDecompressed;
+	//		}
+	
+			// determines the compressiontype to put the right one for re-exporting
+			// disabled for testing purposes
+			if (geomHeader.partsOffsets.partOffsets.get(0).isCompressed == 512) defaultCompressionType = CompressionType.RefPack;
+			else if (geomHeader.partsOffsets.partOffsets.get(0).isCompressed == 0) defaultCompressionType = CompressionType.RawDecompressed;
+		}
 		
 		for (var p : parts) {
 			try {
@@ -221,7 +227,8 @@ public class Geometry extends Block {
 	
 	public static Geometry load(File f) throws IOException {
 		FileInputStream fis = new FileInputStream(f);
-		byte [] arr = new byte[(int)f.length()];
+		byte [] arr = new byte[(int)f.length()-4];
+		fis.skipNBytes(4); //if this method is called on a file, we assume that the file is a geometry, therefore the first blockid can be skipped
 		fis.read(arr);
 		fis.close();
 		return new Geometry(ByteBuffer.wrap(arr));
@@ -439,8 +446,21 @@ public class Geometry extends Block {
 						System.out.println("Compression level set : "+defaultCompressionLevel.getName());
 						break;
 					case "CarName":
-						carname = s2.split("=")[1].toUpperCase();
+						carname = s2.split("=")[1];
 						System.out.println("Car name set : "+carname);
+						break;
+						
+					case "FileName":
+						String fileName = s2.split("=")[1];
+						if (fileName.length() > 52) fileName = fileName.substring(0, 51);
+						System.out.println("File name set : "+fileName);
+						geomHeader.geomInfo.filename = fileName;
+						break;
+					case "BlockName":
+						String blockName = s2.split("=")[1];
+						if (blockName.length() > 36) blockName = blockName.substring(0, 35);
+						System.out.println("Block name set : "+blockName);
+						geomHeader.geomInfo.blockname = blockName;
 						break;
 						
 						//SAVING SETTINGS
@@ -509,29 +529,37 @@ public class Geometry extends Block {
 					}
 				}
 				break;}
-				
+
 			case "RENAME":
 				iterator = 0;
 				String toren = null;
-				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) {
+				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty()) {
 					switch(iterator) {
 					case 1:
-						toren = s2.toUpperCase();
+						toren = s2;
 						break;
 					case 2:
-						renameParts.add(new Pair<>(toren, s2.toUpperCase()));
+						renameParts.add(new Pair<>(toren, s2));
 						break;
 					}
 					iterator++;
 				}
 				break;
+
+			case "COPY":
+				ArrayList<String> toCopy = new ArrayList<>();
+				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty() && !s2.equals("COPY")) {
+					toCopy.add(s2);
+				}
+				if (toCopy.size()>1) copyParts.add(toCopy);
+				break;
 				
 			case "DELETE":
 				iterator = 0;
-				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) {
+				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty()) {
 					switch(iterator) {
 					case 1:
-						deleteParts.add(s2.toUpperCase());
+						deleteParts.add(s2);
 						break;
 					}
 					iterator++;
@@ -554,11 +582,11 @@ public class Geometry extends Block {
 							m.usageSpecific1 = Integer.parseInt(s2.split("=")[1]);
 						} else if (TextureUsage.get(s2.split("=")[1]) != TextureUsage.INVALID) {
 							// texture usage
-							m.TextureHashes.add(new Hash(s2.split("=")[0].replace("%", carname).toUpperCase()));
+							m.TextureHashes.add(new Hash(s2.split("=")[0].replace("%", carname)));
 							m.textureUsages.add(TextureUsage.get(s2.split("=")[1]));
 						} else if (ShaderUsage.get(s2.split("=")[1]) != ShaderUsage.INVALID) {
 							//shader usage
-							m.ShaderHash = new Hash(s2.split("=")[0].toUpperCase());
+							m.ShaderHash = new Hash(s2.split("=")[0]);
 							m.shaderUsage = ShaderUsage.get(s2.split("=")[1]);
 						}
 					}
@@ -573,13 +601,13 @@ public class Geometry extends Block {
 				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty() && !s2.equals("MARKER")) {
 					switch (iterator) {
 					case 0:
-						mp.uniqueName = s2.toUpperCase();
+						mp.uniqueName = s2;
 						break;
 					case 1:
-						mp.nameHash = new Hash(s2.toUpperCase());
+						mp.nameHash = new Hash(s2);
 						break;
 					case 2:
-						mp.tempPartName = s2.toUpperCase();
+						mp.tempPartName = s2;
 						break;
 					case 3:
 						u = Float.parseFloat(s2);
@@ -634,9 +662,9 @@ public class Geometry extends Block {
 				asLinking.add(asl);
 				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty() && !s2.equals("ASLINK")) {
 					if (!s2.contains(",")) { //part name
-						asl.tempPartName = s2.toUpperCase();
+						asl.tempPartName = s2;
 					} else {
-						asl.links.add(new AutosculptLink(new Hash(carname+"_"+s2.split(",")[0].toUpperCase()).binHash, 
+						asl.links.add(new AutosculptLink(new Hash(carname+"_"+s2.split(",")[0]).binHash, 
 								Short.parseShort(s2.split(",")[1]), 
 								Short.parseShort(s2.split(",")[2]), 
 								Short.parseShort(s2.split(",")[3]), 
@@ -651,7 +679,7 @@ public class Geometry extends Block {
 				priorities.add(prio);
 				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty() && !s2.equals("PRIORITY")) {
 					if (!s2.contains("=")) { //part name
-						prio.partName = s2.toUpperCase();
+						prio.partName = s2;
 					} else {
 						Material material = null;
 						for (var mat : materials) if (mat.uniqueName.equals(s2.split("=")[0])) {
@@ -719,7 +747,7 @@ public class Geometry extends Block {
 			
 			case "MATERIAL":
 				iterator = 0;
-				ShaderUsage usage = ShaderUsage.Diffuse;
+				ShaderUsage usage = ShaderUsage.get("Diffuse");
 				String mat = "MISSING";
 				String shader = "UC_PAINT";
 				String texture = null;
@@ -753,94 +781,94 @@ public class Geometry extends Block {
 					//hardcoded CTK fake shaders
 					switch(shader) {
 					case "UC_BADGING_UNIVERSAL":
-						usage = ShaderUsage.DiffuseAlpha;
+						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "DECAL";
 						texture = "BADGING_UNIVERSAL";
 						break;
 					case "UC_BRAKELIGHT":
-						usage = ShaderUsage.DiffuseGlow;
+						usage = ShaderUsage.get("DiffuseGlow");
 						shader = "BRAKELIGHT";
 						texture = "%_KIT00_BRAKELIGHT_OFF";
 						glow = "%_KIT00_BRAKELIGHT_ON";
 						break;
 					case "UC_BRAKELIGHTGLASS":
-						usage = ShaderUsage.DiffuseGlowAlpha;
+						usage = ShaderUsage.get("DiffuseGlowAlpha");
 						shader = "BRAKELIGHTGLASS";
 						texture = "%_KIT00_BRAKELIGHT_GLASS_OFF";
 						glow = "%_KIT00_BRAKELIGHT_GLASS_ON";
 						break;
 					case "UC_BRAKELIGHTGLASSRED":
-						usage = ShaderUsage.DiffuseGlowAlpha;
+						usage = ShaderUsage.get("DiffuseGlowAlpha");
 						shader = "BRAKELIGHTGLASSRED";
 						texture = "%_KIT00_BRAKELIGHT_GLASS_OFF";
 						glow = "%_KIT00_BRAKELIGHT_GLASS_ON";
 						break;
 					case "UC_DECAL":
-						usage = ShaderUsage.DiffuseNormalAlpha;
+						usage = ShaderUsage.get("DiffuseNormalAlpha");
 						shader = "DECAL";
 						texture = "%_BADGING";
 						normal = "%_BADGING_N";
 						break;
 					case "UC_DEFROSTER":
-						usage = ShaderUsage.DiffuseAlpha;
+						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "DEFROSTER";
 						texture = "REAR_DEFROSTER";
 						break;			
 					case "UC_HEADLIGHTGLASS":
-						usage = ShaderUsage.DiffuseAlpha;
+						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "HEADLIGHTGLASS";
 						texture = "%_KIT00_HEADLIGHT_GLASS_ON";
 						break;		
 					case "UC_PAINT":
-						usage = ShaderUsage.DiffuseNormalSwatch;
+						usage = ShaderUsage.get("DiffuseNormalSwatch");
 						shader = "CARSKIN";
 						if ("METAL_SWATCH".equals(texture)) swatch = "METAL_SWATCH"; else swatch = "%_SKIN1";
 						texture = "CARBONFIBRE_PLACEHOLDER";
 						normal = "DAMAGE_N";
 						break;
 					case "UC_WHEEL":
-						usage = ShaderUsage.Diffuse;
+						usage = ShaderUsage.get("Diffuse");
 						shader = "MAGSILVER";
 						texture = "%_WHEEL";
 						break;
 					case "UC_WHEEL_RUBBER":
-						usage = ShaderUsage.DiffuseNormalAlpha;
+						usage = ShaderUsage.get("DiffuseNormalAlpha");
 						shader = "RUBBER";
 						texture = "TIRE_STYLE01";
 						normal = "TIRE_STYLE01_N";
 						break;
 					case "UC_WINDOW_FRONT":
-						usage = ShaderUsage.DiffuseAlpha;
+						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
 						texture = "WINDOW_FRONT";
 						swatch = "%_SKIN1";
 						break;
 					case "UC_WINDOW_LEFT_FRONT":
-						usage = ShaderUsage.DiffuseAlpha;
+						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
 						texture = "WINDOW_LEFT_FRONT";
 						swatch = "%_SKIN1";
 						break;
 					case "UC_WINDOW_RIGHT_FRONT":
-						usage = ShaderUsage.DiffuseAlpha;
+						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
 						texture = "WINDOW_RIGHT_FRONT";
 						swatch = "%_SKIN1";
 						break;
 					case "UC_WINDOW_REAR":
-						usage = ShaderUsage.DiffuseAlpha;
+						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
 						texture = "WINDOW_REAR";
 						swatch = "%_SKIN1";
 						break;
 					case "UC_WINDOW_LEFT_REAR":
-						usage = ShaderUsage.DiffuseAlpha;
+						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
 						texture = "WINDOW_LEFT_REAR";
 						swatch = "%_SKIN1";
 						break;
 					case "UC_WINDOW_RIGHT_REAR":
-						usage = ShaderUsage.DiffuseAlpha;
+						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
 						texture = "WINDOW_RIGHT_REAR";
 						swatch = "%_SKIN1";
@@ -848,16 +876,16 @@ public class Geometry extends Block {
 					}
 				} else {
 					//real shader compiled with Diffuse
-					if (normal != null) usage = ShaderUsage.DiffuseNormal;
-					if (shader.equals("BRAKEDISC")) usage = ShaderUsage.DiffuseAlpha;
-					if (shader.equals("DOORLINE") && normal != null) usage = ShaderUsage.DiffuseNormalAlpha;
+					if (normal != null) usage = ShaderUsage.get("DiffuseNormal");
+					if (shader.equals("BRAKEDISC")) usage = ShaderUsage.get("DiffuseAlpha");
+					if (shader.equals("DOORLINE") && normal != null) usage = ShaderUsage.get("DiffuseNormalAlpha");
 					if (shader.equals("HEADLIGHTREFLECTOR")) {
-						usage = ShaderUsage.DiffuseGlow;
+						usage = ShaderUsage.get("DiffuseGlow");
 						glow = texture;
 					}
 //					if (texture.equals("TIRE_STYLE01")) usage = ShaderUsage.DiffuseNormalAlpha;
-					if ("%_BADGING".equals(texture) && normal != null) usage = ShaderUsage.DiffuseNormalAlpha;
-					if ("DAMAGE_N".equals(normal)) usage = ShaderUsage.DiffuseNormalSwatch;
+					if ("%_BADGING".equals(texture) && normal != null) usage = ShaderUsage.get("DiffuseNormalAlpha");
+					if ("DAMAGE_N".equals(normal)) usage = ShaderUsage.get("DiffuseNormalSwatch");
 					//vanilla plus
 //					if (texture.equals("GRILL_02")) usage = ShaderUsage.DiffuseAlpha; 
 //					if (texture.equals("%_ENGINE")) {
@@ -967,8 +995,8 @@ public class Geometry extends Block {
 	//---------------------------------------------------------------------------------------------------
 
 	public void processParts() {
+		
 		var toRemove = Collections.synchronizedList(new ArrayList<Part>()); // parts flagged to be removed to optimize the geometry (eg T0 autosculpt with no other actual morphtargets)
-		var toAdd = Collections.synchronizedList(new ArrayList<Part>()); // parts flagged to be added (eg missing LODs)
 		
 		if (!renameParts.isEmpty()) {
 //			System.out.println("parts to rename present :");
@@ -996,7 +1024,6 @@ public class Geometry extends Block {
 			}
 		}
 		
-		
 		for (var p : parts) {		
 			HashMap<Integer, Integer> FERenderData; //first int is either shader usage or shader hash
 			FERenderData = new HashMap<>();
@@ -1006,7 +1033,10 @@ public class Geometry extends Block {
 			computeMatsList(p); // IMPORTANT TO KEEP HERE
 			checkVertexBounds(p);
 //			globalizePartMarkers(p);
-			if (SAVE_optimizeMaterials && p.strings != null) p.subBlocks.remove(p.strings);
+			if (SAVE_optimizeMaterials && p.strings != null) {
+				p.subBlocks.remove(p.strings);
+				p.strings = null;
+			}
 			if (p.mesh != null) {				
 				for (var m : p.mesh.materials.materials) if (m.renderingOrder!=0) FERenderData.put(m.ShaderHash.binHash , m.renderingOrder*256);
 				for (var m : p.mesh.materials.materials) {
@@ -1033,11 +1063,25 @@ public class Geometry extends Block {
 			}
 			fixAutosculptMeshes(p);
 			
-			if (SAVE_copyMissingLODs) checkAndCopyMissingLODs(toAdd, p);
 		}
 
-		//remove/add parts
 		parts.removeAll(toRemove);
+		
+		var toAdd = Collections.synchronizedList(new ArrayList<Part>()); // parts flagged to be added (eg missing LODs)
+
+		if (SAVE_copyMissingLODs) for (var p : parts) checkAndCopyMissingLODs(toAdd, p);
+		// will fuck up LODs for some copied parts if not done here
+		parts.addAll(toAdd);
+		toAdd.clear();
+
+		if (!copyParts.isEmpty()) {
+			for (var p : parts) for (var c : copyParts) if (p.name.contains(c.get(0))) {
+				System.out.println("Copying part "+p.name);
+				for (int i=1; i< c.size(); i++) {
+					toAdd.add(new Part(p, carname, p.name.replace(c.get(0), c.get(i))));
+				}
+			}
+		}
 		parts.addAll(toAdd);
 	}
 
@@ -1294,7 +1338,7 @@ public class Geometry extends Block {
     				for (var v : m.verticesBlock.vertices) {
     					// -1 to 1 -> 20 to 255
         				int color;
-        				if (!p.part.contains("WHEEL") && !p.part.contains("BRAKE"))
+        				if (!p.header.partName.contains("WHEEL") && !p.header.partName.contains("BRAKE_") && !p.header.partName.contains("BRAKEROTOR"))
         					color = Math.max(0, Math.min(255, (int)((v.normZ+0.8)*150)));
         				else color = Math.max(20, Math.min(255, (int)((-v.normY+0.8)*150)));
         				v.colorR = (byte) color;

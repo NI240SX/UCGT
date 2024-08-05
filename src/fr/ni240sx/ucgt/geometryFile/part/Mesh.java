@@ -27,7 +27,11 @@ public class Mesh extends Block {
 		Block block;
 		
 		while(in.position() < blockStart+blockLength) {
-			if ((block = Block.read(in)) != null) subBlocks.add(block);
+			try {
+				if ((block = Block.read(in)) != null) subBlocks.add(block);
+			} catch (Exception e) {
+				System.out.println("Unable to read mesh sub-block : "+e.getMessage());
+			}
 		}
 		// SUB-BLOCKS PRE-TREATMENT TO REFERENCE THEM ALL
 		// if there's more than one block only the last one is taken into account

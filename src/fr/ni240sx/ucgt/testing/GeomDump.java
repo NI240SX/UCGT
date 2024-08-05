@@ -404,7 +404,7 @@ public class GeomDump extends Application {
 		for (var b : TextureUsage.values()) {
 			l.add(new Hash(b.getName(), b.getKey()));
 		}
-		for (var b : ShaderUsage.values()) {
+		for (var b : ShaderUsage.values) {
 			l.add(new Hash(b.getName(), b.getKey()));
 		}
 		

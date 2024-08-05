@@ -13,7 +13,6 @@ import java.util.HashMap;
 
 import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.dbmpPlus.DBMP;
-import fr.ni240sx.ucgt.dbmpPlus.DBMPPlus;
 
 public class PaddingFixer {
 

@@ -32,6 +32,8 @@ This part uses the keyword `SETTING` ; several settings can be written next to e
 
 _Base_
 - `CarName` - **mandatory** : sets the car name in the output Geometry.
+- `FileName` - sets the file name in the output Geometry (no effect).
+- `BlockName` - sets the block name in the output Geometry (no effect).
 
 _Compression_
 - `UseMultithreading` - optional, defaults to true : use single-threaded or multi-threaded compression for car parts, multi-threaded significantly decreases the time needed to compile, especially when using RefPack and high compression settings. Possible values : true or false.
@@ -142,16 +144,29 @@ Example Autosculpt links :
 
 `ASLINK	KIT09_BUMPER_REAR_A	KIT09_BODY_A,1,1,1,1	KIT09_BODY_A,3,3,3,3	KIT09_BODY_A,4,4,4,4`
 
-### Parts renaming/removal
-This part uses the keywords `RENAME` and `DELETE`. Rename can be used to manually rename a single part, like you can do in a CTK config, or bulk rename. First put the name you have in the model, then the name you want it to be changed to, partial matches will work. Delete can be used in the same way to delete one or multiple parts based on a full or partial match with the part name.
+### Part copy, renaming or removal
+This part uses the keywords `COPY`, `RENAME` or `DELETE`. 
 
-Example renamings : 
+Rename can be used to manually rename a single part, like you can do in a CTK config, or bulk rename. First put the name you have in the model, then the name you want it to be changed to, partial matches will work. 
+
+Copy can be used in the same way and will copy the given part to one or multiple ones
+
+Delete can be used in the same way to delete one or multiple parts based on a full or partial match with the part name.
+
+Copy samples :
+
+`COPY	WHEEL_TIRE_FRONT	WHEEL_TIRE_REAR` will copy all front wheels to rear ones, including Autosculpt zones
+
+`COPY	KIT00_MUFFLER	KIT11_MUFFLER	KITW04_MUFFLER` will copy all KIT00 mufflers to KIT11 and KITW04
+
+
+Rename samples : 
 
 `RENAME	KITW01_WIDEBODY_A	KITW01_BODY_A`
 
 `RENAME	STYLE04_HOOD	KIT06_HOOD` would rename all LODs and Autosculpt zones at the same time.
 
-Example deletings :
+Delete samples :
 
 `DELETE	DELETEME`
 

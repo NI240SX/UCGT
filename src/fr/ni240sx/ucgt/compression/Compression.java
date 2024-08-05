@@ -16,6 +16,8 @@ public class Compression {
 			return new RefPackDecompress().decompress(in);
 		case JDLZ:
 			return JDLZDecompress.decompress(in);
+//		case HUFF:
+//			return HUFFDecompress.decompress(in); 
 		case RawDecompressed:
 			// raw data
 			return Arrays.copyOfRange(arr, 16, arr.length);
@@ -35,8 +37,8 @@ public class Compression {
 		switch(compressionType) {
 		case RefPack:
 			return new RefPackCompress().compress(ByteBuffer.wrap(arr), compressionLevel);
-//		case JDLZ:
-//			return JDLZCompress.compress(arr);
+		case JDLZ:
+			return JDLZCompress.compress(arr);
 		case RawDecompressed:
 			var bb = ByteBuffer.allocate(arr.length+16);
 			bb.order(ByteOrder.LITTLE_ENDIAN);

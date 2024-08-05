@@ -94,7 +94,8 @@ public class Part extends Block {
 	
 	public void findName(String carname) {
 		if (header != null) {
-			name = header.partName.replace(carname+"_", "");
+			if (carname.isBlank() || carname.equals("UNDETERMINED")) name = header.partName;
+			else name = header.partName.replace(carname+"_", "");
 			findKitLodPart(carname);
 		}
 	}
@@ -128,7 +129,8 @@ public class Part extends Block {
 
 	public Part(String carname, String substring) {
 
-		this.header = new PartHeader(carname+"_"+substring);
+		if (carname.isBlank() || carname.equals("UNDETERMINED")) this.header = new PartHeader(substring);
+		else this.header = new PartHeader(carname+"_"+substring);
 		this.texusage = new TexUsage();
 		this.strings = new Strings();
 		this.shaderlist = new Shaders();

@@ -1,8 +1,11 @@
 package fr.ni240sx.ucgt.geometryFile;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -53,8 +56,11 @@ public class TestingFunctions {
 			for (Part p : geom.parts) {
 				try {
 					FileOutputStream fos;
-					if (Block.doNotRead.get(GeomBlock.Part_Mesh) == null) fos = new FileOutputStream(new File(partsDirectory + p.header.partName + "-recompiled"));
-					else fos = new FileOutputStream(new File(partsDirectory + p.header.partName));
+					String name;
+					if (p.header != null) name = p.header.partName;
+					else name = "BROKEN_"+geom.parts.indexOf(p);
+					if (Block.doNotRead.get(GeomBlock.Part_Mesh) == null) fos = new FileOutputStream(new File(partsDirectory + name + "-recompiled"));
+					else fos = new FileOutputStream(new File(partsDirectory + name));
 					fos.write(p.save(0));
 					fos.close();
 				} catch (Exception e) {
@@ -405,6 +411,35 @@ public class TestingFunctions {
 //				System.out.println();
 //			}
 //		}
-		dumpPartsRecompiled("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\GEOMETRY BMWM3E92 PS.BIN");
+//		dumpPartsRecompiled("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\GEOMETRY BMWM3E92 PS.BIN");
+		
+//		File f = new File("D:\\Jeux\\UCEtesting\\NIS\\Scene_ModelTest_AnimBundle");
+//		FileInputStream fis = new FileInputStream(f);
+//		byte [] arr = new byte[(int)f.length()];
+//		fis.read(arr);
+//		fis.close();
+//		var bb = ByteBuffer.wrap(arr);
+//		bb.order(ByteOrder.LITTLE_ENDIAN);
+//		int i=0;
+//		while (bb.hasRemaining()) {
+//			var blockheader = bb.position();
+//			try {
+//				var b = Block.read(bb);
+//				System.out.println(b.getBlockID().getName());
+//				if (b.getClass() == Geometry.class) {
+//					var geom = (Geometry) b;
+//					System.out.println("geom file name "+geom.geomHeader.geomInfo.filename+", geom block name "+geom.geomHeader.geomInfo.blockname);
+//					geom.writeConfig(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\NIS\\object-"+i+".ini"));
+//					ZModelerZ3D.save(geom, "C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\NIS\\object-"+i);
+//				}
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//				bb.position(blockheader+8 + bb.getInt(blockheader+4));
+//			}
+//			i++;
+//		}
+
+		dumpPartsAsIs("D:\\Program Files\\Electronic Arts\\Need for Speed ProStreet\\CARS\\350Z\\GEOMETRY.BIN","C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\PS 350Z DUMP\\");
+		dumpPartsRecompiled("D:\\Program Files\\Electronic Arts\\Need for Speed ProStreet\\CARS\\350Z\\GEOMETRY.BIN","C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\PS 350Z DUMP\\");
 	}
 }

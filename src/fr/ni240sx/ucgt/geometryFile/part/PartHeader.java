@@ -39,6 +39,10 @@ public class PartHeader extends Block {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
 		
+		while (in.getInt() == 0x11111111) { //skip possible padding ?
+		}
+		in.position(in.position()-4);
+		
 		in.getInt(); //0
 		in.getInt(); //0
 		in.getInt(); //0

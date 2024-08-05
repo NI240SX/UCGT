@@ -27,6 +27,7 @@ public enum GeomBlock {
 	Part_HashAssign(0x19401300, "Part_HashAssign?"),
 	Part_AutosculptLinking(0x1E401300, "Part_AutosculptLinking"),
 	Part_AutosculptZones(0x1D401300, "Part_AutosculptZones"),
+	NIS_Skeleton(0x0940a300, "NIS_Skeleton?"),
 	INVALID(0xFFFFFFFF, "INVALID");
 	
     private final int key;
