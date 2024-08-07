@@ -894,7 +894,7 @@ public class Geometry extends Block {
 //					}
 				}
 				
-				bw.write("MATERIAL	"+mat+"	"+shader+"="+usage.toString()+"	"+texture+"=DIFFUSE");
+				bw.write("MATERIAL	"+mat+"	"+shader+"="+usage.getName()+"	"+texture+"=DIFFUSE");
 				//normal, glow, swatch
 				if (normal != null) bw.write("	"+normal+"=NORMAL");
 				if (glow != null) bw.write("	"+glow+"=SELFILLUMINATION");
