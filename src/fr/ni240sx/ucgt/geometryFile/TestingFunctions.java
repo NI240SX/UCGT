@@ -2,17 +2,21 @@ package fr.ni240sx.ucgt.geometryFile;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
 import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
+import javafx.util.Pair;
 
 @SuppressWarnings("unused")
 public class TestingFunctions {
@@ -23,17 +27,17 @@ public class TestingFunctions {
 	public static void dumpPartsAsIs(String geomFile, String partsDirectory) {
 //		Block.doNotRead.put(GeomBlock.Part_Header, true);
 		
-		Block.doNotRead.put(GeomBlock.Part_AutosculptLinking, true);
-		Block.doNotRead.put(GeomBlock.Part_AutosculptZones, true);
-		Block.doNotRead.put(GeomBlock.Part_HashAssign, true);
-		Block.doNotRead.put(GeomBlock.Part_HashList, true);
-		Block.doNotRead.put(GeomBlock.Part_Mesh, true);
-		Block.doNotRead.put(GeomBlock.Part_MPoints, true);
-		Block.doNotRead.put(GeomBlock.Part_Padding, true);
-		Block.doNotRead.put(GeomBlock.Part_ShaderList, true);
-		Block.doNotRead.put(GeomBlock.Part_Strings, true);
-		Block.doNotRead.put(GeomBlock.Part_TexUsage, true);
-		Block.doNotRead.put(GeomBlock.Part_Mesh_Materials, true);
+		Block.doNotRead.put(BlockType.Part_AutosculptLinking, true);
+		Block.doNotRead.put(BlockType.Part_AutosculptZones, true);
+		Block.doNotRead.put(BlockType.Part_HashAssign, true);
+		Block.doNotRead.put(BlockType.Part_HashList, true);
+		Block.doNotRead.put(BlockType.Part_Mesh, true);
+		Block.doNotRead.put(BlockType.Part_MPoints, true);
+		Block.doNotRead.put(BlockType.Part_Padding, true);
+		Block.doNotRead.put(BlockType.Part_ShaderList, true);
+		Block.doNotRead.put(BlockType.Part_Strings, true);
+		Block.doNotRead.put(BlockType.Part_TexUsage, true);
+		Block.doNotRead.put(BlockType.Part_Mesh_Materials, true);
 		dumpPartsRecompiled(geomFile, partsDirectory);
 		Block.doNotRead.clear();
 	}
@@ -59,7 +63,7 @@ public class TestingFunctions {
 					String name;
 					if (p.header != null) name = p.header.partName;
 					else name = "BROKEN_"+geom.parts.indexOf(p);
-					if (Block.doNotRead.get(GeomBlock.Part_Mesh) == null) fos = new FileOutputStream(new File(partsDirectory + name + "-recompiled"));
+					if (Block.doNotRead.get(BlockType.Part_Mesh) == null) fos = new FileOutputStream(new File(partsDirectory + name + "-recompiled"));
 					else fos = new FileOutputStream(new File(partsDirectory + name));
 					fos.write(p.save(0));
 					fos.close();
@@ -331,7 +335,7 @@ public class TestingFunctions {
 //
 //		save(geom, "C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08\\compression tests\\GEOMETRY 8 64 10 8192.BIN");
 		
-		Geometry.SAVE_sortEverythingByName = false;
+//		Geometry.SAVE_sortEverythingByName = false;
 		
 
 //		dumpPartsAsIs("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\AUD_RS4_STK_08\\GEOMETRY.BIN");
@@ -413,6 +417,8 @@ public class TestingFunctions {
 //		}
 //		dumpPartsRecompiled("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\z bordel\\GEOMETRY BMWM3E92 PS.BIN");
 		
+		
+		
 //		File f = new File("D:\\Jeux\\UCEtesting\\NIS\\Scene_ModelTest_AnimBundle");
 //		FileInputStream fis = new FileInputStream(f);
 //		byte [] arr = new byte[(int)f.length()];
@@ -429,8 +435,8 @@ public class TestingFunctions {
 //				if (b.getClass() == Geometry.class) {
 //					var geom = (Geometry) b;
 //					System.out.println("geom file name "+geom.geomHeader.geomInfo.filename+", geom block name "+geom.geomHeader.geomInfo.blockname);
-//					geom.writeConfig(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\NIS\\object-"+i+".ini"));
-//					ZModelerZ3D.save(geom, "C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\NIS\\object-"+i);
+//					geom.writeConfig(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\NIS\\"+geom.geomHeader.geomInfo.filename+".ini"));
+//					ZModelerZ3D.save(geom, "C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\NIS\\"+geom.geomHeader.geomInfo.filename);
 //				}
 //			} catch (Exception e) {
 //				e.printStackTrace();
@@ -438,8 +444,19 @@ public class TestingFunctions {
 //			}
 //			i++;
 //		}
+		
+		
 
-		dumpPartsAsIs("D:\\Program Files\\Electronic Arts\\Need for Speed ProStreet\\CARS\\350Z\\GEOMETRY.BIN","C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\PS 350Z DUMP\\");
-		dumpPartsRecompiled("D:\\Program Files\\Electronic Arts\\Need for Speed ProStreet\\CARS\\350Z\\GEOMETRY.BIN","C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\PS 350Z DUMP\\");
+//		dumpPartsAsIs("D:\\Program Files\\Electronic Arts\\Need for Speed ProStreet\\CARS\\350Z\\GEOMETRY.BIN","C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\PS 350Z DUMP\\");
+//		dumpPartsRecompiled("D:\\Program Files\\Electronic Arts\\Need for Speed ProStreet\\CARS\\350Z\\GEOMETRY.BIN","C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\PS 350Z DUMP\\");
+		
+		
+		
+		
+//		Geometry.dumpStream("D:\\Jeux\\UCE 1.0.1.18\\TRACKS\\STREAML8R_MW2.BUN", "C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\STREAML8R_MW2\\", "ALL", "");
+
+			
+		
+		Geometry.replaceInStream("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\STREAML8R_MW2 recompiled", "D:\\Jeux\\UCE 1.0.1.18\\TRACKS\\STREAML8R_MW2.BUN", "D:\\Jeux\\UCE 1.0.1.18\\TRACKS\\L8R_MW2.BUN");
 	}
 }

@@ -12,9 +12,9 @@ import fr.ni240sx.ucgt.geometryFile.part.*;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.*;
 
 public abstract class Block {
-	public abstract GeomBlock getBlockID();
+	public abstract BlockType getBlockID();
 	
-	public static HashMap<GeomBlock, Boolean> doNotRead = new HashMap<>(); //allows speeding up file loading by blocking unnecessary blocks from being read
+	public static HashMap<BlockType, Boolean> doNotRead = new HashMap<>(); //allows speeding up file loading by blocking unnecessary blocks from being read
 	
 	public ArrayList<Block> subBlocks = new ArrayList<>();
 
@@ -24,7 +24,7 @@ public abstract class Block {
 	
 	public static Block read(ByteBuffer in) {
 		int chunkToInt;
-		GeomBlock block = GeomBlock.get(chunkToInt = in.getInt());
+		BlockType block = BlockType.get(chunkToInt = in.getInt());
 //		System.out.println("Block read : "+block.getName());
 		if (doNotRead.get(block) == null) //use the doNotRead with caution !
 		switch (block) {
@@ -88,12 +88,17 @@ public abstract class Block {
 			return new AutosculptLinking(in);
 		case Part_AutosculptZones:
 			return new AutosculptZones(in);
+
 		case NIS_Skeleton:
 			System.out.println("NIS Skeleton block");
 			return new UnknownBlock(in, chunkToInt);
+			
+		case StreamBlocksOffsets:
+			return new StreamBlocksOffsets(in);
+			
 		case INVALID:
 		default:
-			System.out.println("Unknown block, ID="+Integer.toHexString(Integer.reverseBytes(chunkToInt)));
+//			System.out.println("Unknown block, ID="+Integer.toHexString(Integer.reverseBytes(chunkToInt)));
 			return new UnknownBlock(in, chunkToInt);
 		}
 		return new UnknownBlock(in, chunkToInt);

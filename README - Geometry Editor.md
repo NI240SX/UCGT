@@ -5,8 +5,10 @@ The program runs in a loop, in which you can directly type commands. A reminder 
 The loop will continue indefinitely until you type `exit`, which closes the editor (and the command prompt window, if you ran it from a batch file).
 
 The supported commands are the following :
-- `compile <OBJ source> <BIN output>` - compile a Wavefront OBJ to a Geometry
-- `decompile <BIN source> <OBJ output>` - extract a Geometry to a Wavefront OBJ
+- `compile <OBJ/Z3D source> <BIN output>` - compile a 3D model and its corresponding config to a BIN file containing a single geometry
+- `decompile <BIN source> <OBJ/Z3D output>` - extract a BIN file containing a single geometry to a 3D model and a configuration file
+- `dump <source> <destination folder> [file type] [filter]` - extract all geometries contained into the source BIN/BUN file to the output folder. File type is whether to export OBJ or Z3D, if left blank both will be exported, and filter will allow to export only matching blocks and names (X0, Road, Chop, XBu, etc)
+- `replace <source folder> <destination> [blocks definitions]` - compile and replace all geometries in the destination with 3D models from the source folder. If needed, it can also update blocks definitions offsets (eg edit the map without unpacking), in that case, [blocks definitions] will be the path to the L8R_MW2.BUN file
 - `convert <TXT CTK config> [INI UCGT config]` - convert a CTK .txt config to an UCGT .ini config
 - `script <file>` - load a script containing multiple of these commands
 
@@ -15,6 +17,8 @@ To compile from an OBJ, you need a configuration file, just like NFS-CarToolkit.
 Decompiling a Geometry will generate a Wavefront OBJ, an associated MTL material library and an INI configuration file to compile it back.
 
 If you have existing projects which use CTK, you can convert their configuration file. Be sure to check them afterwards to indicate all missing information.
+
+Decompiling and compiling models from other files, such as map stream, is possible as of 1.2.0. Create a folder to dump editable 3d models to using `dump`, and put them back in the existing file using `replace` ! Note : for map models, you'll need to include the STREAML8R_MW2.BUN file as destination and the L8R_MW2.BUN file as blocks definition, or the game will crash looking for data that will be in a different place. Other note : you can't add NEW models since the replacement process checks for the file name, however you can add new meshes to existing models but these will probably not get loaded at all. Some compile settings planned for cars will not be usable or may cause unwanted behavior.
 
 ### Arguments
 If you run the program with arguments, it'll try to parse them as a valid command, execute it and close afterwards, without ever waiting for user input. Combined with a batch file, this allows you to setup one-click compiling, for instance, or take advantage of the batch syntax to e.g. recompile every Geometry in a folder.

@@ -14,7 +14,7 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.Mesh_VertsHeader;
 public class Part extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Part;}
+	public BlockType getBlockID() {return BlockType.Part;}
 	
 	public int decompressedLength;
 	public int compressedLength;
@@ -191,8 +191,10 @@ public class Part extends Block {
 
 		out.write(buf.array());
 		
+		if (shaderlist.shaders.size() == 0) subBlocks.remove(shaderlist);
+		
 		for (var b : subBlocks) {
-			if (b != null) out.write(b.save(out.size()));
+			if (b != null) out.write(b.save(currentPosition + out.size()));
 		}
 
 		buf = ByteBuffer.wrap(new byte[4]);

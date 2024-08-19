@@ -49,7 +49,7 @@ public class PartVisualizer extends Application{
 				for (var v : m.verticesBlock.vertices) {
 					matMesh.getPoints().addAll((float)v.posX, (float)v.posY, (float)v.posZ);
 					matMesh.getNormals().addAll((float)v.normX, (float)v.normY, (float)v.normZ);
-					matMesh.getTexCoords().addAll((float)v.texU, 1-(float)v.texV);
+					matMesh.getTexCoords().addAll((float)v.tex0U, 1-(float)v.tex0V);
 				}
 				
 				for (var tr : m.triangles) {

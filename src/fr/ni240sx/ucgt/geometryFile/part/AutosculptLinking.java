@@ -7,14 +7,14 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.binstuff.Hash;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.Part;
 
 public class AutosculptLinking extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Part_AutosculptLinking;}
+	public BlockType getBlockID() {return BlockType.Part_AutosculptLinking;}
 
 	// texture binhash, usage type
 	public ArrayList<AutosculptLink> links = new ArrayList<>();

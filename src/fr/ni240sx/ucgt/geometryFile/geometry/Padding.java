@@ -6,12 +6,12 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 
 public class Padding extends Block {
 	
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Padding;}
+	public BlockType getBlockID() {return BlockType.Padding;}
 	public static final int PaddingModulo = 128;
 	
 	public int length = 0;
@@ -36,13 +36,24 @@ public class Padding extends Block {
 	}
 
 	public static void makePadding(ByteArrayOutputStream out) throws IOException {
-		int paddingLength = 128 - ((out.size() + 8) % PaddingModulo);
+		int paddingLength = (PaddingModulo - ((out.size() + 8) % PaddingModulo))%PaddingModulo;
 		
 		var buf = ByteBuffer.wrap(new byte[paddingLength + 8]);
 		buf.order(ByteOrder.LITTLE_ENDIAN);
-		buf.putInt(GeomBlock.Padding.getKey());
+		buf.putInt(BlockType.Padding.getKey());
 		buf.putInt(paddingLength);
 
 		out.write(buf.array());
+	}
+	
+	public static byte[] makePadding(int pos, int modulo) throws IOException {
+		int paddingLength = (modulo - ((pos + 8) % modulo))%modulo;
+		
+		var buf = ByteBuffer.wrap(new byte[paddingLength + 8]);
+		buf.order(ByteOrder.LITTLE_ENDIAN);
+		buf.putInt(BlockType.Padding.getKey());
+		buf.putInt(paddingLength);
+
+		return buf.array();
 	}
 }

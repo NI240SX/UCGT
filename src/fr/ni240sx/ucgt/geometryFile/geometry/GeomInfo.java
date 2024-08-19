@@ -6,12 +6,12 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 
 public class GeomInfo extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Geom_Info;}
+	public BlockType getBlockID() {return BlockType.Geom_Info;}
 	public static final int usualLength = 144;
 	
 	public int const01=0, const02=3, const03=30, partsCount=0;

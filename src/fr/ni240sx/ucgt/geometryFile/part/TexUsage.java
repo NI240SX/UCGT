@@ -6,13 +6,13 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 import javafx.util.Pair;
 
 public class TexUsage extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Part_TexUsage;}
+	public BlockType getBlockID() {return BlockType.Part_TexUsage;}
 
 	// texture binhash, usage type
 	public ArrayList<Pair<Integer,Integer>> texusage = new ArrayList<>();

@@ -5,12 +5,12 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 
 public class CompressedData extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.CompressedData;}
+	public BlockType getBlockID() {return BlockType.CompressedData;}
 
 	public int decompressionOffset;
 	public int decompressedLength;

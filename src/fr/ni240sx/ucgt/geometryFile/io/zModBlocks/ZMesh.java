@@ -9,6 +9,7 @@ import java.util.List;
 
 import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.VertexFormat;
 
 
 public class ZMesh extends ZModBlock {
@@ -24,14 +25,39 @@ public class ZMesh extends ZModBlock {
 
 	public ZMesh(Part p, List<ZMaterial> mats) {
 		vertexFormat = 196631; //0x17000300
+		/*
+		 * needed				global vertex format	per vertex
+		 * pos, 1uv				11000000	17			19 (pos, norm, uv0)
+		 * pos, 1uv, norm		13000000	19			19
+		 * pos, 1uv, color		15000000	21			23 (pos, norm, col, uv0)
+		 * pos, 1uv, col, norm	17000000	23			23
+		 * 
+		 * pos, 2uv				31000000	49			51 (pos, norm, uv0, uv1)
+		 * pos, 2uv, norm		33000000	51			51
+		 * pos, 2uv, col		35000000	53			55 (pos, norm, col, uv0, uv1)
+		 * pos, 2uv, col, norm	37000000	55			55
+		 * 
+		 * pos, 3uv				71000000	113			83 (pos, norm, uv0 ????????????
+		 * pos, 3uv, norm		73000000	115			83 
+		 * pos, 3uv, col		75000000	117			87 (pos, norm, col, uv0 ??????????????????? zmod broke as usual
+		 * pos, 3uv, col, norm	77000000	119			87
+		 * 
+		 * pos, 4uv, col, norm	f7000000	247			183 (pos, norm, col, uv0, uv1 ????????? its still broken
+		 */
 		polyFormat = 3; //triangles
 		short off = 0;
 		//vrite material data one after the other
 		int matID = 0;
 		for (var m : p.mesh.materials.materials) {
 //			var m = p.mesh.materials.materials.get(0);
+
+			if (m.verticesBlock.vertexFormat.getNumTexChannels() == 2) {
+				vertexFormat = 55;
+			} else if (m.verticesBlock.vertexFormat.getNumTexChannels() > 2) {
+				vertexFormat = 119;
+			}
 			for (var v : m.verticesBlock.vertices) {
-				verts.add(new ZVertex(v));
+				verts.add(new ZVertex(v, m.verticesBlock.vertexFormat));
 			}
 			//material
 			for (var zmat : mats) if (zmat.name.equals(m.uniqueName)) {
@@ -149,7 +175,10 @@ public class ZMesh extends ZModBlock {
 		 * each poly : 30B
 		 */
 		//precompute length
-		final var length = 32 + 56*verts.size() + 30*polys.size();
+		var length = 32 + 30*polys.size();
+		if (vertexFormat == 196631) length += 56*verts.size();
+		else if (vertexFormat == 55) length += 64*verts.size();
+		else if (vertexFormat == 119) length += 72*verts.size();
 		
 		var block = ByteBuffer.wrap(new byte[length]);
 		block.order(ByteOrder.LITTLE_ENDIAN);
@@ -174,7 +203,9 @@ public class ZMesh extends ZModBlock {
 		
 		public int viewStatus=1, int2=0, int3=3, format=23;
 		
-		public float x=0, y=0, z=0, nx=0, ny=0, nz=0, u=0, v=0;
+		public float x=0, y=0, z=0, 
+				nx=1, ny=0, nz=0, 
+				u0=0, v0=0, u1=0, v1=0, u2=0, v2=0;
 		public byte r=(byte)255, g=(byte)255, b=(byte)255, a=(byte)255;
 
 		public ZVertex(ByteBuffer in) throws Exception {
@@ -204,8 +235,8 @@ public class ZMesh extends ZModBlock {
 				ny = in.getFloat();
 				nz = in.getFloat();
 
-				u = in.getFloat();
-				v = in.getFloat();
+				u0 = in.getFloat();
+				v0 = in.getFloat();
 				in.getInt(); //0
 				break;
 				
@@ -223,8 +254,52 @@ public class ZMesh extends ZModBlock {
 				b = in.get();
 				a = in.get();
 
-				u = in.getFloat();
-				v = in.getFloat();
+				u0 = in.getFloat();
+				v0 = in.getFloat();
+				in.getInt(); //0
+				break;
+				
+			case 55: //normal, diffuse color, 2 UV
+				x = in.getFloat();
+				y = in.getFloat();
+				z = in.getFloat();
+
+				nx = in.getFloat();
+				ny = in.getFloat();
+				nz = in.getFloat();
+
+				r = in.get();
+				g = in.get();
+				b = in.get();
+				a = in.get();
+
+				u0 = in.getFloat();
+				v0 = in.getFloat();
+				u1 = in.getFloat();
+				v1 = in.getFloat();
+				in.getInt(); //0
+				break;
+				
+			case 119: //normal, diffuse color, 2 UV
+				x = in.getFloat();
+				y = in.getFloat();
+				z = in.getFloat();
+
+				nx = in.getFloat();
+				ny = in.getFloat();
+				nz = in.getFloat();
+
+				r = in.get();
+				g = in.get();
+				b = in.get();
+				a = in.get();
+
+				u0 = in.getFloat();
+				v0 = in.getFloat();
+				u1 = in.getFloat();
+				v1 = in.getFloat();
+				u2 = in.getFloat();
+				v2 = in.getFloat();
 				in.getInt(); //0
 				break;
 				
@@ -237,8 +312,8 @@ public class ZMesh extends ZModBlock {
 				ny = in.getFloat();
 				nz = in.getFloat();
 
-				u = in.getFloat();
-				v = in.getFloat();
+				u0 = in.getFloat();
+				v0 = in.getFloat();
 				
 				in.getInt(); //second UV channel
 				in.getInt();
@@ -284,29 +359,110 @@ public class ZMesh extends ZModBlock {
 				block.put(b);
 				block.put(a);
 	
-				block.putFloat(u);
-				block.putFloat(v);
+				block.putFloat(u0);
+				block.putFloat(v0);
 				block.putInt(0);
 				return;
+				
+			case 55: //position, normal, vertex color, uv0, uv1
+				block.putFloat(x);
+				block.putFloat(y);
+				block.putFloat(z);
+				
+				block.putFloat(nx);
+				block.putFloat(ny);
+				block.putFloat(nz);
+	
+				block.put(r);
+				block.put(g);
+				block.put(b);
+				block.put(a);
+
+				block.putFloat(u0);
+				block.putFloat(v0);
+				block.putFloat(u1);
+				block.putFloat(v1);
+				block.putInt(0);
+				return;
+				
+			case 119: //position, normal, vertex color, uv0, uv1, uv2
+				block.putFloat(x);
+				block.putFloat(y);
+				block.putFloat(z);
+				
+				block.putFloat(nx);
+				block.putFloat(ny);
+				block.putFloat(nz);
+	
+				block.put(r);
+				block.put(g);
+				block.put(b);
+				block.put(a);
+
+				block.putFloat(u0);
+				block.putFloat(v0);
+				block.putFloat(u1);
+				block.putFloat(v1);
+				block.putFloat(u2);
+				block.putFloat(v2);
+				block.putInt(0);
+				return;
+				
 			default:
 				System.out.println("Wrong vertex format for export !");
 			}
 		}
 
-		public ZVertex(fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex v) {
-			format = 23;
+		public ZVertex(fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex v, VertexFormat vf) {
+			/*
+			 * needed				global vertex format	per vertex
+			 * pos, 1uv				11000000	17			19 (pos, norm, uv0)
+			 * pos, 1uv, norm		13000000	19			19
+			 * pos, 1uv, color		15000000	21			23 (pos, norm, col, uv0)
+			 * pos, 1uv, col, norm	17000000	23			23
+			 * 
+			 * pos, 2uv				31000000	49			51 (pos, norm, uv0, uv1)
+			 * pos, 2uv, norm		33000000	51			51
+			 * pos, 2uv, col		35000000	53			55 (pos, norm, col, uv0, uv1)
+			 * pos, 2uv, col, norm	37000000	55			55
+			 * 
+			 * pos, 3uv				71000000	113			83 (pos, norm, uv0 ????????????
+			 * pos, 3uv, norm		73000000	115			83 
+			 * pos, 3uv, col		75000000	117			87 (pos, norm, col, uv0 ??????????????????? zmod broke as usual
+			 * pos, 3uv, col, norm	77000000	119			87
+			 * 
+			 * pos, 4uv, col, norm	f7000000	247			183 (pos, norm, col, uv0, uv1 ????????? its still broken
+			 */
+			if (vf.getNumTexChannels()<2) format = 23; //TODO does this have a negative impact on performance
+			else if (vf.getNumTexChannels()==2) format = 55;
+			else if (vf.getNumTexChannels()>2) format = 119;
+			
 			x = (float) v.posX;
 			y = (float) v.posY;
 			z = (float) v.posZ;
-			nx = (float) v.normX;
-			ny = (float) v.normY;
-			nz = (float) v.normZ;
-			u = (float) v.texU;
-			this.v = (float) (1-v.texV);
-			r = v.colorR;
-			g = v.colorG;
-			b = v.colorB;
-			a = v.colorA;
+			if (vf.hasNormals()) {
+				nx = (float) v.normX;
+				ny = (float) v.normY;
+				nz = (float) v.normZ;
+			}
+			if (vf.getNumTexChannels()>0) {
+				u0 = (float) v.tex0U;
+				v0 = (float) (1-v.tex0V);
+			}
+			if (vf.getNumTexChannels()>1) {
+				u1 = (float) v.tex1U;
+				v1 = (float) (1-v.tex1V);
+			}
+			if (vf.getNumTexChannels()>2) {
+				u2 = (float) v.tex2U;
+				v2 = (float) (1-v.tex2V);
+			}
+			if (vf.hasColor()) {
+				r = v.colorR;
+				g = v.colorG;
+				b = v.colorB;
+				a = v.colorA;
+			}
 		}
 	
 		public ZVertex(float x, float y, float z, float nx, float ny, float nz) {

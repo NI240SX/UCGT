@@ -5,12 +5,12 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 
 public class UnknownBlock extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.INVALID;}
+	public BlockType getBlockID() {return BlockType.INVALID;}
 	
 	public int ID;
 	

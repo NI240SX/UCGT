@@ -9,14 +9,14 @@ import java.util.List;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.compression.CompressionType;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.Part;
 
 public class PartsOffsets extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Geom_PartsOffsets;}
+	public BlockType getBlockID() {return BlockType.Geom_PartsOffsets;}
 	
 	public ArrayList<PartOffset> partOffsets = new ArrayList<>();
 //	public HashMap<Integer, PartOffset> partOffsets = new HashMap<Integer, PartOffset>(); //this caused the part offsets to be mismatched

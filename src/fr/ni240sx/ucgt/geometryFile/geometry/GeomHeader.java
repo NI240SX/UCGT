@@ -7,13 +7,13 @@ import java.nio.ByteOrder;
 import java.util.List;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.Part;
 
 public class GeomHeader extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Geom_Header;}
+	public BlockType getBlockID() {return BlockType.Geom_Header;}
 	
 	public GeomInfo geomInfo = null;
 	public PartsList partsList = null;

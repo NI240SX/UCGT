@@ -5,12 +5,15 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,11 +41,11 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangle;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertices;
 import fr.ni240sx.ucgt.geometryFile.sorters.MPointPosSorterName;
 import fr.ni240sx.ucgt.geometryFile.sorters.MPointSorterName;
 import fr.ni240sx.ucgt.geometryFile.sorters.MaterialsSorterGlobalList;
 import fr.ni240sx.ucgt.geometryFile.sorters.MaterialsSorterName;
+import fr.ni240sx.ucgt.geometryFile.sorters.PartSorterBinKey;
 import fr.ni240sx.ucgt.geometryFile.sorters.PartSorterLodKitName;
 import javafx.util.Pair;
 import fr.ni240sx.ucgt.geometryFile.settings.*;
@@ -50,7 +53,7 @@ import fr.ni240sx.ucgt.geometryFile.settings.*;
 public class Geometry extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Geometry;}
+	public BlockType getBlockID() {return BlockType.Geometry;}
 	
 	public GeomHeader geomHeader;
 	public List<Part> parts = new ArrayList<>();//Collections.synchronizedList(new ArrayList<Part>());
@@ -75,7 +78,8 @@ public class Geometry extends Block {
 	public static CompressionLevel defaultCompressionLevel = CompressionLevel.Low;
 	
 	public static boolean LOAD_removeUselessAutosculptParts = false;
-	
+
+	public static boolean SAVE_useOffsetsTable = true;
 	public static boolean SAVE_removeUselessAutosculptParts = true;
 	public static boolean SAVE_optimizeMaterials = true;
 	public static boolean SAVE_sortEverythingByName = true;
@@ -98,19 +102,25 @@ public class Geometry extends Block {
 	public Geometry(ByteBuffer in) {
 		in.order(ByteOrder.LITTLE_ENDIAN);
 //		in.getInt(); //ID // with this it cannot be read as a normal block
-		/*var blockLength =*/ in.getInt();
-		in.getInt();
-		in.getInt(); // skip common stuff
-//		var blockStart = in.position();
+		var blockLength = in.getInt();
+		var blockStart = in.position();
+		Block.read(in); //skip padding block
 		
 		// read the header, if this goes wrong the file is probably corrupted or smth
 		geomHeader = (GeomHeader) Block.read(in);
 		
 		if (geomHeader.partsOffsets == null) {
-			//one single decompressed part in the Geometry, used in NIS
-			parts.add(new Part(in));
+			//decompressed parts in the Geometry without offsets
+			SAVE_useOffsetsTable = false;
+			SAVE_removeInvalid = false; //this is meant for car geometries
+			SAVE_copyMissingLODs = false;
+			SAVE_copyLOD_D = false;
+			while (in.position() < blockStart+blockLength) {
+				parts.add(new Part(in));				
+			}
 		} else {		
 			//load from offsets
+			SAVE_useOffsetsTable = true;
 	//		if (USE_MULTITHREADING) {
 	//			ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	//			for (final var o : geomHeader.partsOffsets.partOffsets){
@@ -173,17 +183,17 @@ public class Geometry extends Block {
 			// disabled for testing purposes
 			if (geomHeader.partsOffsets.partOffsets.get(0).isCompressed == 512) defaultCompressionType = CompressionType.RefPack;
 			else if (geomHeader.partsOffsets.partOffsets.get(0).isCompressed == 0) defaultCompressionType = CompressionType.RawDecompressed;
-		}
-		
-		for (var p : parts) {
-			try {
-				if (p.header.partName.contains("_KIT")) carname = p.header.partName.split("_KIT")[0];
-				break;
-			} catch (@SuppressWarnings("unused") Exception e) {
-				//header is null
+
+			for (var p : parts) {
+				try {
+					if (p.header.partName.contains("_KIT")) carname = p.header.partName.split("_KIT")[0];
+					break;
+				} catch (@SuppressWarnings("unused") Exception e) {
+					//header is null
+				}
 			}
+			if (carname.equals("UNDETERMINED")) System.out.println("Could not determine car name.");
 		}
-		if (carname.equals("UNDETERMINED")) System.out.println("Could not determine car name.");
 			
 		updateHashes();
 		
@@ -208,7 +218,7 @@ public class Geometry extends Block {
 
 		// sort lists
 		if (SAVE_sortEverythingByName) {
-			parts.sort(new PartSorterLodKitName()); //not necessary but makes the file look cleaner
+			if (geomHeader.partsOffsets != null) parts.sort(new PartSorterLodKitName()); //not necessary but makes the file look cleaner
 			materials.sort(new MaterialsSorterName());
 			for (var mpc : mpointsPositions) mpc.mpoints.sort(new MPointSorterName());
 			mpointsPositions.sort(new MPointPosSorterName());
@@ -253,20 +263,21 @@ public class Geometry extends Block {
 		
 		//sort things once again just in case
 		if (SAVE_sortEverythingByName) {
-			parts.sort(new PartSorterLodKitName());
+			if (SAVE_useOffsetsTable) parts.sort(new PartSorterLodKitName());
 			materials.sort(new MaterialsSorterName());
 			for (var mpc : mpointsPositions) mpc.mpoints.sort(new MPointSorterName());
 			mpointsPositions.sort(new MPointPosSorterName());
 		}
+		if (!SAVE_useOffsetsTable) parts.sort(new PartSorterBinKey());
 
 		System.out.println("Geometry checked and prepared in "+(System.currentTimeMillis()-t)+" ms.");
 		t = System.currentTimeMillis();
 		
 		// first compresses all parts to get their compressed and decompressed size
 		// using RFPK compression but no blocks
-		System.out.println("Compressing parts...");
 
-		if (defaultCompressionType != CompressionType.RawDecompressed) { //compress parts (eg traffic is not compressed)
+		if (SAVE_useOffsetsTable && defaultCompressionType != CompressionType.RawDecompressed) { //compress parts (eg traffic is not compressed)
+			System.out.println("Compressing parts...");
 			if (USE_MULTITHREADING) {
 				ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 				System.out.println("Using "+Runtime.getRuntime().availableProcessors()+" CPUs");
@@ -290,47 +301,56 @@ public class Geometry extends Block {
 					System.out.print("\rProgress " + Math.round(100*((float)(parts.indexOf(p))/parts.size()))+ " %" );
 				}
 			}
+			System.out.println("\nParts compressed in "+(System.currentTimeMillis()-t)+" ms.");
+			t = System.currentTimeMillis();
 		}
 			
-
-		System.out.println("\nParts compressed in "+(System.currentTimeMillis()-t)+" ms.");
-		t = System.currentTimeMillis();
-		
 		geomHeader.refresh(parts);
+		
+		if (!SAVE_useOffsetsTable) {
+			geomHeader.subBlocks.remove(geomHeader.partsOffsets);
+			geomHeader.geomInfo.const02 = 0;
+			geomHeader.geomInfo.const21 = 0;
+			geomHeader.geomInfo.const22 = 0;
+			geomHeader.geomInfo.const23 = 0;
+			geomHeader.geomInfo.const24 = 0;
+			geomHeader.subBlocks.add(new Geom_Unknown());
+		}
 		
 		var out = new ByteArrayOutputStream();
 
-		var buf = ByteBuffer.wrap(new byte[16]); //16
+		var buf = ByteBuffer.wrap(new byte[8]); //16
 		buf.order(ByteOrder.LITTLE_ENDIAN);
 		buf.putInt(getBlockID().getKey());
 		buf.putInt(-1); //length for later
-		buf.putInt(0);
-		buf.putInt(0);
-
 		out.write(buf.array());
 
+		out.write(Padding.makePadding(currentPosition+out.size(), 16));
+		
+		var headerPos = out.size();
+		
 		out.write(geomHeader.save(0)); //temporary without offsets
 
+		
 		for (var p : parts) {
-			Padding.makePadding(out);
-			geomHeader.partsOffsets.setOffset(p, out.size());
-			if (Geometry.defaultCompressionType != CompressionType.RawDecompressed)	{
+			if (SAVE_useOffsetsTable) Padding.makePadding(out);
+			if (SAVE_useOffsetsTable) geomHeader.partsOffsets.setOffset(p, out.size());
+			if (SAVE_useOffsetsTable && Geometry.defaultCompressionType != CompressionType.RawDecompressed)	{
 				out.write(new CompressedData(p.compressedData, p.decompressedLength, 0, 0).save(0)); //decompOffset and suppChunkOffset both set to 0 because no chunks
 			} else {
 				var length = out.size();
-				out.write(p.save(0));
-				length = out.size()-length;
-				geomHeader.partsOffsets.setLengths(p, length);
+				out.write(p.save(currentPosition+out.size()));
+				if (SAVE_useOffsetsTable) geomHeader.partsOffsets.setLengths(p, out.size()-length);
 			}
 		}
-		
+	
 		buf = ByteBuffer.wrap(out.toByteArray());
 		buf.order(ByteOrder.LITTLE_ENDIAN);
 		buf.position(4);
 		buf.putInt(out.size()-8); //size
 
-		buf.position(16);
-		buf.put(geomHeader.save(0)); //save the header again, this time with correct offsets
+		buf.position(headerPos);
+		if (SAVE_useOffsetsTable) buf.put(geomHeader.save(0)); //save the header again, this time with correct offsets
 
 //		System.out.println("File prepared in "+(System.currentTimeMillis()-t)+" ms.");
 		return buf.array();
@@ -360,41 +380,127 @@ public class Geometry extends Block {
 	public void writeConfig(File f) throws IOException {
 		var bw = new BufferedWriter(new FileWriter(f));
 		
-		bw.write("=== CONFIGURATION FILE FOR CAR "+carname+" ===\n"
-				+ "UCGT by NI240SX\n"
+		if (!carname.equals("UNDETERMINED")) bw.write("=== CONFIGURATION FILE FOR CAR "+carname+" ===\n");
+		else bw.write("=== CONFIGURATION FILE  ===\n");
+		bw.write("UCGT by NI240SX\n"
 				+ "\n--- Settings ---\n");
-		bw.write("SETTING	CarName="+this.carname+"\n"
-				+ "SETTING	UseMultithreading="+USE_MULTITHREADING+"\n"
+		if (!carname.equals("UNDETERMINED")) bw.write("SETTING	CarName="+this.carname+"\n");
+		if (SAVE_useOffsetsTable) bw.write("SETTING	UseMultithreading="+USE_MULTITHREADING+"\n"
 				+ "SETTING	CompressionType="+defaultCompressionType+"\n"
-				+ "SETTING	CompressionLevel="+defaultCompressionLevel.getName()+"\n"
-				+ "SETTING	VertexColors="
-				)	;
+				+ "SETTING	CompressionLevel="+defaultCompressionLevel.getName()+"\n");
+		else bw.write("SETTING	UseOffsetsTable=false\n");
+		bw.write("SETTING	VertexColors=");
 		if (IMPORT_importVertexColors) bw.write("Import\n");
 		else if (IMPORT_calculateVertexColors) bw.write("Calculate\n");
 		else bw.write("Off\n");
-		bw.write("SETTING	Tangents="+IMPORT_Tangents.getName()+"\n"
-				+ "SETTING	RemoveUselessAutosculpt="+SAVE_removeUselessAutosculptParts+"\n"
-				+ "SETTING	OptimizeMaterials="+SAVE_optimizeMaterials+"\n"
-				+ "SETTING	FixAutosculptNormals="+SAVE_fixAutosculptNormals+"\n"
-				+ "SETTING	RemoveInvalid="+SAVE_removeInvalid+"\n"
-				+ "SETTING	CopyMissingLODs="+SAVE_copyMissingLODs+"\n"
-				+ "SETTING	MakeLodD="+SAVE_copyLOD_D+"\n"
-				+ "");
-
+		bw.write("SETTING	Tangents="+IMPORT_Tangents.getName()+"\n");
+		if (SAVE_useOffsetsTable) bw.write("SETTING	RemoveUselessAutosculpt="+SAVE_removeUselessAutosculptParts+"\n");
+		bw.write("SETTING	OptimizeMaterials="+SAVE_optimizeMaterials+"\n");
+		if (SAVE_useOffsetsTable) bw.write("SETTING	FixAutosculptNormals="+SAVE_fixAutosculptNormals+"\n");
+		bw.write("SETTING	RemoveInvalid="+SAVE_removeInvalid+"\n");
+		if (SAVE_useOffsetsTable) bw.write("SETTING	CopyMissingLODs="+SAVE_copyMissingLODs+"\n");
+		if (SAVE_useOffsetsTable) bw.write("SETTING	MakeLodD="+SAVE_copyLOD_D+"\n");
+		if (!geomHeader.geomInfo.filename.equals("GEOMETRY.BIN") && !geomHeader.geomInfo.filename.contains("NFS-CarToolkit") && !geomHeader.geomInfo.filename.contains("Compiled with UCGT")) bw.write("SETTING	FileName="+geomHeader.geomInfo.filename+"\n");
+		if (!geomHeader.geomInfo.blockname.equals("DEFAULT") && !geomHeader.geomInfo.blockname.equals("TOOLKIT")) bw.write("SETTING	BlockName="+geomHeader.geomInfo.blockname+"\n");
+		
+		
 		bw.write("\n--- Materials ---\n");
 		//MATERIAL	MATNAME	MATSHADER=ShaderUsage[...]	defTex=DEFAULTTEXTURE	flags=0XFLAGS000	DIFFUSE=DIFFUSE_TEX	...
 		for (var m : materials) {
 			bw.write(m.toConfig(carname)+"\n");
 		}
 		
-		bw.write("\n--- Position markers ---\n");
-		for (var mpc : mpointsPositions) for (var mp : mpc.mpoints) bw.write(mp.toConfig());
-
-		bw.write("\n--- Autosculpt links ---\n"); //only links, autosculpt zones can be automated and renaming them really would be pointless
-		for (var p : parts) if (p.asLinking != null) bw.write(p.asLinking.toConfig(this, p)+"\n");
+		if (mpointsPositions.size() != 0) {
+			bw.write("\n--- Position markers ---\n");
+			for (var mpc : mpointsPositions) for (var mp : mpc.mpoints) bw.write(mp.toConfig());
+		}
+		
+		var hasAsLinking = false;
+		for (var p : parts) if (p.asLinking != null) {
+			hasAsLinking = true;
+			break;
+		}
+		if (hasAsLinking) {
+			bw.write("\n--- Autosculpt links ---\n"); //only links, autosculpt zones can be automated and renaming them really would be pointless
+			for (var p : parts) if (p.asLinking != null) bw.write(p.asLinking.toConfig(this, p)+"\n");
+		}
 		
 		bw.close();
 		System.out.println("Configuration file written");
+	}
+	
+	public static void dumpStream(String stream, String dumpfolder, String format, String filter) throws FileNotFoundException, IOException {
+		// DUMP STREAM FUNCTION \/
+		
+		Files.createDirectories(Paths.get(dumpfolder));
+		
+		File f = new File(stream);
+		FileInputStream fis = new FileInputStream(f);
+		int blockIndex=0;
+		long inPos=0;
+		
+		//work on large files, don't put everything in memory
+		while (fis.available() >= 8) {	//using blockIndex < 20 to read only a few, correct to read the whole file is fis.available() >= 8
+			//read next block ID and length
+			byte[] ID = new byte[4];
+			byte[] length = new byte[4];
+			fis.read(ID);
+			fis.read(length);
+			int blockID = Byte.toUnsignedInt(ID[0]) | 
+					(Byte.toUnsignedInt(ID[1]) << 8) |
+					(Byte.toUnsignedInt(ID[2]) << 16) |
+					(Byte.toUnsignedInt(ID[3]) << 24);
+			int blockLength = Byte.toUnsignedInt(length[0]) | 
+					(Byte.toUnsignedInt(length[1]) << 8) |
+					(Byte.toUnsignedInt(length[2]) << 16) |
+					(Byte.toUnsignedInt(length[3]) << 24);
+			byte[] block = new byte[blockLength+8];
+			block[0] = ID[0];
+			block[1] = ID[1];
+			block[2] = ID[2];
+			block[3] = ID[3];
+			block[4] = length[0];
+			block[5] = length[1];
+			block[6] = length[2];
+			block[7] = length[3];
+			fis.read(block, 8, blockLength);
+
+			if (blockID == BlockType.Geometry.getKey()) {
+				var bb = ByteBuffer.wrap(block);
+				bb.order(ByteOrder.LITTLE_ENDIAN);
+				try {
+					var geom = (Geometry) Block.read(bb);
+					System.out.print("\rBlock #"+blockIndex+" : Geometry, length="+blockLength+", position="+inPos+", name="+geom.geomHeader.geomInfo.filename+", block name="+geom.geomHeader.geomInfo.blockname);
+					if (filter == null || geom.geomHeader.geomInfo.filename.contains(filter) || geom.geomHeader.geomInfo.blockname.contains(filter)) {
+						geom.writeConfig(new File(dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename+".ini"));
+						switch (format.toUpperCase()) {
+						case "Z3D":
+						case "ZMODELER2":
+						case "ZM2":
+							ZModelerZ3D.save(geom, dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename);
+							break;
+						case "OBJ":
+						case "WAVEFRONT":
+							WavefrontOBJ.save(geom, dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename);
+							break;
+						default:
+							ZModelerZ3D.save(geom, dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename);
+							WavefrontOBJ.save(geom, dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename);
+						}
+					}
+					
+				} catch (Exception e) {
+					System.out.println("Error loading Geometry at "+inPos+" !");
+					e.printStackTrace();
+				}
+			} 
+			else System.out.print("\rBlock #"+blockIndex+" : "+BlockType.get(blockID)+", ID="+String.format("0x%08X", blockID)+", length="+blockLength+", position="+inPos);
+			
+			inPos += blockLength + 8;
+			blockIndex++;
+		}
+		
+		fis.close();
 	}
 	
 	//---------------------------------------------------------------------------------------------------
@@ -423,6 +529,162 @@ public class Geometry extends Block {
 		return geom;			
 	}
 	
+	public static void replaceInStream(String modelsDirectory, String streamFile, String l8rFile) throws Exception {
+		// REPLACE IN STREAM \/
+		
+//		if (!modelsDirectory.endsWith("\\")) modelsDirectory += "\\";
+		
+		new File(streamFile).renameTo(new File(streamFile.replace(".BUN", ".OLD").replace(".BIN", ".OLD"))); //i'll read this file and transfer the data to a new file as it is read, to lower RAM usage which already gets high just with cars
+		if (l8rFile != null) new File(l8rFile).renameTo(new File(l8rFile.replace(".BUN", ".OLD").replace(".BIN", ".OLD")));
+		
+		HashMap<Pair<String,String>,String> geometriesToReplace = new HashMap<>();
+		//eg X0 , eLabScenery_XOs_Sawhorse_1.bin -> "C:\Users\NI240SX\Documents\NFS\a MUCP\UCGT\STREAML8R_MW2 recompiled\X0-eLabScenery_XOs_Sawhorse_1.bin.z3d"
+
+		
+		if (new File (modelsDirectory).isDirectory()) {
+			var filesInDir = new File (modelsDirectory).list();
+			for (var s : filesInDir) {
+				if (s.endsWith(".ini")) {
+					if (new File(modelsDirectory + s.replace(".ini", ".z3d")).exists()) {
+						//check the INI for chunk and file name
+						System.out.println("INI and Z3D found : "+s);
+						geometriesToReplace.put(Geometry.findBlockAndNameInConfig(new File(modelsDirectory + s)), modelsDirectory + s.replace(".ini", ".z3d"));
+					} else if (new File(modelsDirectory + s.replace(".ini", ".obj")).exists()) {
+						System.out.println("INI and OBJ found : "+s);
+						geometriesToReplace.put(Geometry.findBlockAndNameInConfig(new File(modelsDirectory + s)), modelsDirectory + s.replace(".ini", ".obj"));
+					}
+				}
+			}
+			
+		} else {
+			throw new Exception("The given models location isn't a directory !");
+		}
+		
+
+		File inputFile = new File(streamFile.replace(".BUN", ".OLD").replace(".BIN", ".OLD"));
+		File outputFile = new File(streamFile);
+		
+		File outputL8rFile = null;
+		ArrayList<Block> l8rBlocks = null;
+		StreamBlocksOffsets offsets = null;
+		if (l8rFile != null) {
+			File inputL8rFile = new File(l8rFile.replace(".BUN", ".OLD").replace(".BIN", ".OLD"));
+			outputL8rFile = new File(l8rFile);
+			FileInputStream fisL8r = new FileInputStream(inputL8rFile);
+			byte[] L8rToBytes = new byte[(int) inputL8rFile.length()];
+			fisL8r.read(L8rToBytes);
+			fisL8r.close();
+			
+			l8rBlocks = new ArrayList<>();
+			offsets = null;
+			var l8rBB = ByteBuffer.wrap(L8rToBytes);
+			l8rBB.order(ByteOrder.LITTLE_ENDIAN);
+			while (l8rBB.remaining()>8) {
+				var b = Block.read(l8rBB);
+				l8rBlocks.add(b);
+				if (b.getBlockID() == BlockType.StreamBlocksOffsets) {
+					offsets = (StreamBlocksOffsets) b;
+				}
+			}
+			l8rBB = null;
+			L8rToBytes = null;
+			if (offsets == null) {
+				throw new Exception("Couldn't find block offsets in the provided L8R file !");
+			}
+		}
+		
+		
+		
+		//we have the names of the models to replace, now it's time to iterate over the stream blocks and find the ones to replace
+		
+		FileInputStream fisStream = new FileInputStream(inputFile);
+		FileOutputStream fosStream = new FileOutputStream(outputFile);
+		int blockIndex=0;
+		long inPos=0;
+		long outPos=0;
+		
+		//work on large files, don't put everything in memory
+		while (fisStream.available() >= 8) {
+			//read next block ID and length
+			byte[] ID = new byte[4];
+			byte[] length = new byte[4];
+			boolean replace = false;
+			Geometry geom = null;
+			fisStream.read(ID);
+			fisStream.read(length);
+			int blockID = Byte.toUnsignedInt(ID[0]) | 
+					(Byte.toUnsignedInt(ID[1]) << 8) |
+					(Byte.toUnsignedInt(ID[2]) << 16) |
+					(Byte.toUnsignedInt(ID[3]) << 24);
+			int blockLength = Byte.toUnsignedInt(length[0]) | 
+					(Byte.toUnsignedInt(length[1]) << 8) |
+					(Byte.toUnsignedInt(length[2]) << 16) |
+					(Byte.toUnsignedInt(length[3]) << 24);
+			byte[] block = new byte[blockLength+8];
+			block[0] = ID[0];
+			block[1] = ID[1];
+			block[2] = ID[2];
+			block[3] = ID[3];
+			block[4] = length[0];
+			block[5] = length[1];
+			block[6] = length[2];
+			block[7] = length[3];
+			fisStream.read(block, 8, blockLength);
+
+			System.out.print("\rBlock #"+blockIndex+" @"+inPos);
+			
+			if (blockID == BlockType.Geometry.getKey()) {
+//				System.out.println("Block #"+blockIndex+" : Geometry, length="+blockLength+", position="+inPos);
+				var bb = ByteBuffer.wrap(block);
+				bb.order(ByteOrder.LITTLE_ENDIAN);
+				try {
+					geom = (Geometry) Block.read(bb);
+//					System.out.println("geom file name "+geom.geomHeader.geomInfo.filename+", geom block name "+geom.geomHeader.geomInfo.blockname);
+					
+					
+					if (geometriesToReplace.get(new Pair<String,String>(geom.geomHeader.geomInfo.blockname,geom.geomHeader.geomInfo.filename)) != null) {
+						// replace the geom
+						replace = true;
+					}
+					
+					
+				} catch (Exception e) {
+					System.out.println("\nError loading geometry ! Block #"+blockIndex+" position @"+inPos+" in file (decimal)");
+					e.printStackTrace();
+				}
+			} 
+//			else System.out.println("Block #"+blockIndex+" : "+BlockType.get(blockID)+", ID="+String.format("0x%08X", blockID)+", length="+blockLength+", position="+inPos);
+			
+			if (replace) {
+				assert(geom != null);
+				System.out.println();
+				var newgeom = Geometry.importFromFile(new File(geometriesToReplace.get(new Pair<String,String>(geom.geomHeader.geomInfo.blockname,geom.geomHeader.geomInfo.filename))));
+				var arr = newgeom.save((int) outPos);
+				fosStream.write(arr);
+				outPos += arr.length;
+				if (l8rFile != null) offsets.update(geom.geomHeader.geomInfo.blockname, arr.length - block.length);
+			} else {
+				fosStream.write(block);
+				outPos += block.length;
+			}
+			
+			inPos += blockLength + 8;
+			blockIndex++;
+		}
+		
+		fisStream.close();
+		fosStream.close();
+		
+		if (l8rFile != null) {
+			FileOutputStream fosL8r = new FileOutputStream(outputL8rFile);
+			for (var b : l8rBlocks) {
+				fosL8r.write(b.save(0));
+			}
+			fosL8r.close();
+		}
+		System.out.println();
+	}
+	
 	public void readConfig(File f) throws IOException {
 		var br = new BufferedReader(new FileReader(f));
 		String l;
@@ -437,6 +699,13 @@ public class Geometry extends Block {
 						if (USE_MULTITHREADING) System.out.println("Now using multi-threading");
 						else System.out.println("Now using single-threading");
 						break;
+						
+					case "UseOffsetsTable":
+						SAVE_useOffsetsTable = Boolean.parseBoolean(s2.split("=")[1]);
+						if (SAVE_useOffsetsTable) System.out.println("Using an offsets table");
+						else System.out.println("Not using any offsets table");
+						break;
+						
 					case "CompressionType":
 						defaultCompressionType = CompressionType.get(s2.split("=")[1]);
 						System.out.println("Compression type set : "+defaultCompressionType.getName());
@@ -567,31 +836,8 @@ public class Geometry extends Block {
 				break;
 				
 			case "MATERIAL": // IF THE CAR NAME ISN'T SET BEFORE THIS, CAR-SPECIFIC TEXTURES WILL BREAK
-				var m = new Material();
+				var m = new Material(carname, l);
 				materials.add(m);
-				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty() && !s2.equals("MATERIAL")) {
-					if (!s2.contains("=")) { //material name
-						m.uniqueName = s2;
-					} else { //shader or texture usage
-						if (s2.split("=")[0].equals("UseTangents")) {
-							//material tangents setting
-							m.useTangents = Boolean.getBoolean(s2.split("=")[1]);
-						} else if (s2.split("=")[0].equals("FERenderingOrder")) {
-							m.renderingOrder = Integer.parseInt(s2.split("=")[1]);
-						} else if (s2.split("=")[0].equals("RenderingOrder")) { // i don't know
-							m.usageSpecific1 = Integer.parseInt(s2.split("=")[1]);
-						} else if (TextureUsage.get(s2.split("=")[1]) != TextureUsage.INVALID) {
-							// texture usage
-							m.TextureHashes.add(new Hash(s2.split("=")[0].replace("%", carname)));
-							m.textureUsages.add(TextureUsage.get(s2.split("=")[1]));
-						} else if (ShaderUsage.get(s2.split("=")[1]) != ShaderUsage.INVALID) {
-							//shader usage
-							m.ShaderHash = new Hash(s2.split("=")[0]);
-							m.shaderUsage = ShaderUsage.get(s2.split("=")[1]);
-						}
-					}
-				}
-//				System.out.println("Material : "+m.toConfig(carname));
 				break;
 				
 			case "MARKER":
@@ -988,6 +1234,38 @@ public class Geometry extends Block {
 		bw.close();
 	}
 
+	public static Pair<String,String> findBlockAndNameInConfig(File f) throws IOException {
+		var br = new BufferedReader(new FileReader(f));
+		String l;
+		String blockname = null;
+		String filename = null;
+		while ((l=br.readLine())!=null) {
+			switch (l.split("	")[0].split(" ")[0]) { // support for both space and tab separators
+			case "SETTING": {
+				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (s2.contains("=")) {
+					switch (s2.split("=")[0]) {
+					case "FileName":
+						String fileName = s2.split("=")[1];
+						if (fileName.length() > 52) fileName = fileName.substring(0, 51);
+						System.out.println("File name : "+fileName);
+						filename = fileName;
+						break;
+					case "BlockName":
+						String blockName = s2.split("=")[1];
+						if (blockName.length() > 36) blockName = blockName.substring(0, 35);
+						System.out.println("Block name : "+blockName);
+						blockname = blockName;
+						break;
+					}
+				}
+				break;}
+
+			}
+		}//loop on config file lines
+		br.close();
+		return new Pair<String, String>(blockname, filename);
+	}
+	
 	//---------------------------------------------------------------------------------------------------
 	//
 	//									 HELPER FUNCTIONS
@@ -1046,7 +1324,7 @@ public class Geometry extends Block {
 		    		} else {
 						m.tryGuessUsageSpecific();
 //						m.tryGuessFlags(this);
-//		    			m.tryGuessDefaultTex();
+		    			m.tryGuessDefaultTex();
 		    		}
 				}
 				for (var prio : priorities) if (p.name.contains(prio.partName)) {
@@ -1204,9 +1482,11 @@ public class Geometry extends Block {
 		boolean UVOOB = false;
 		for (var m : p.mesh.materials.materials) {
 			for (var v : m.verticesBlock.vertices) {
-				if (v.posX > Vertex.posMax || v.posY > Vertex.posMax || v.posZ > Vertex.posMax || 
-						v.posX < Vertex.posMin || v.posX < Vertex.posMin || v.posX < Vertex.posMin) posOOB = true;
-				if (v.texU > Vertex.UVMax || v.texV > Vertex.UVMax || v.texU < Vertex.UVMin || v.texV < Vertex.UVMin) UVOOB = true;
+				if (m.verticesBlock.vertexFormat.has_short4n_10x_position())
+					if (v.posX > Vertex.short4n_10x_max || v.posY > Vertex.short4n_10x_max || v.posZ > Vertex.short4n_10x_max || 
+						v.posX < Vertex.short4n_10x_min || v.posX < Vertex.short4n_10x_min || v.posX < Vertex.short4n_10x_min) posOOB = true;
+				if (m.verticesBlock.vertexFormat.has_short2n_32x_texcoord())
+					if (v.tex0U > Vertex.short2n_32x_max || v.tex0V > Vertex.short2n_32x_max || v.tex0U < Vertex.short2n_32x_min || v.tex0V < Vertex.short2n_32x_min) UVOOB = true;
 			}
 		}
 		if (posOOB) System.out.println("Warning : one or multiple vertices are too far away from the origin on part "+p.name+" ! Please keep X, Y and Z between -10 and +10.");
@@ -1262,26 +1542,31 @@ public class Geometry extends Block {
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(new File("data/textures")));
 			String tex;
-			while ((tex = br.readLine())!=null){
+			while ((tex = br.readLine())!=null) if (!tex.isBlank() && !tex.startsWith("#") && !tex.startsWith("//")){
 				hashlist.add(new Hash(carname + "_" + tex));
 			}
 			
 			br = new BufferedReader(new FileReader(new File("data/gentextures")));
-			while ((tex = br.readLine())!=null){
+			while ((tex = br.readLine())!=null) if (!tex.isBlank() && !tex.startsWith("#") && !tex.startsWith("//")){
 				hashlist.add(new Hash(tex));
 			}
 
 			br = new BufferedReader(new FileReader(new File("data/shaders")));
-			while ((tex = br.readLine())!=null){
+			while ((tex = br.readLine())!=null) if (!tex.isBlank() && !tex.startsWith("#") && !tex.startsWith("//")){
 				hashlist.add(new Hash(tex));
 			}
 
 			br = new BufferedReader(new FileReader(new File("data/mpoints")));
-			while ((tex = br.readLine())!=null){
+			while ((tex = br.readLine())!=null) if (!tex.isBlank() && !tex.startsWith("#") && !tex.startsWith("//")){
 				hashlist.add(new Hash(tex));
 				for (int as=0; as<11; as++) {
 					hashlist.add(new Hash(tex + "_T" + as));
 				}
+			}
+			
+			br = new BufferedReader(new FileReader(new File("data/worldtextures")));
+			while ((tex = br.readLine())!=null) if (!tex.isBlank() && !tex.startsWith("#") && !tex.startsWith("//")){
+				hashlist.add(new Hash(tex));
 			}
 			
 //			br = new BufferedReader(new FileReader(new File("data/stuff")));
@@ -1321,6 +1606,8 @@ public class Geometry extends Block {
         	int texi = 0;
         	int shai = 0;
         	for (var m : p.mesh.materials.materials) {
+        		m.verticesBlock.vertexFormat = m.shaderUsage.vertexFormat;
+        		
         		p.mesh.verticesBlocks.add(m.verticesBlock);
         		p.mesh.triangles.triangles.addAll(m.triangles);
         		
@@ -1350,7 +1637,7 @@ public class Geometry extends Block {
 //        		if (!shadersAndUsage.containsValue(new Pair<Integer,Integer>(m.ShaderHash.binHash, m.shaderUsage.getKey()))) {
 //       			shadersAndUsage.put(shadersAndUsage.size(), new Pair<Integer,Integer>(m.ShaderHash.binHash, m.shaderUsage.getKey()));
 //        		}
-        		if (!shadersOnly.containsValue(m.ShaderHash.binHash)) {
+        		if (m.ShaderHash != null) if (!shadersOnly.containsValue(m.ShaderHash.binHash)) {
         			shadersOnly.put(shai, m.ShaderHash.binHash);
         			shadersIDs.put(m.ShaderHash.binHash, shai);
         			shai++;
@@ -1414,13 +1701,15 @@ public class Geometry extends Block {
         		m.toTriVertID = m.fromTriVertID + m.triangles.size()*3;
         		m.numTriVertices = m.toTriVertID - m.fromTriVertID;
         		triVertI = m.toTriVertID;
-        		int shaderid = shadersIDs.get(m.ShaderHash.binHash);
+        		int shaderid;
+        		if (m.ShaderHash != null) shaderid = shadersIDs.get(m.ShaderHash.binHash);
+        		else shaderid = -1;
         		m.shaderID = (byte) shaderid;
         		for (int i=0; i<m.TextureHashes.size(); i++) {
         			int texid = texturesIDs.get(new Pair<>(m.TextureHashes.get(i).binHash, m.textureUsages.get(i).getKey()));
         			m.textureIDs.add((byte) texid);
         		}
-        		m.verticesDataLength = m.verticesBlock.vertices.size()*Vertices.vertexLength;
+        		m.verticesDataLength = m.verticesBlock.vertices.size()*m.shaderUsage.vertexFormat.getLength();
             }
         	
         	//--- shadersusage ---
@@ -1468,86 +1757,86 @@ public class Geometry extends Block {
 	private static void addToTangents(Material m) {
 		for (var t : m.triangles) {
 		    m.verticesBlock.vertices.get(t.vert0).tanX += 
-		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert1).posX-m.verticesBlock.vertices.get(t.vert0).posX) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert2).posX-m.verticesBlock.vertices.get(t.vert0).posX)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
 		    m.verticesBlock.vertices.get(t.vert0).tanY += 
-		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert1).posY-m.verticesBlock.vertices.get(t.vert0).posY) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert2).posY-m.verticesBlock.vertices.get(t.vert0).posY)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
 		    m.verticesBlock.vertices.get(t.vert0).tanZ += 
-		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert1).posZ-m.verticesBlock.vertices.get(t.vert0).posZ) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert2).posZ-m.verticesBlock.vertices.get(t.vert0).posZ)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
 		    m.verticesBlock.vertices.get(t.vert1).tanX += 
-		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert1).posX-m.verticesBlock.vertices.get(t.vert0).posX) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert2).posX-m.verticesBlock.vertices.get(t.vert0).posX)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
 		    m.verticesBlock.vertices.get(t.vert1).tanY += 
-		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert1).posY-m.verticesBlock.vertices.get(t.vert0).posY) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert2).posY-m.verticesBlock.vertices.get(t.vert0).posY)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
 		    m.verticesBlock.vertices.get(t.vert1).tanZ += 
-		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert1).posZ-m.verticesBlock.vertices.get(t.vert0).posZ) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert2).posZ-m.verticesBlock.vertices.get(t.vert0).posZ)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
 		    m.verticesBlock.vertices.get(t.vert2).tanX += 
-		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert1).posX-m.verticesBlock.vertices.get(t.vert0).posX) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert2).posX-m.verticesBlock.vertices.get(t.vert0).posX)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
 		    m.verticesBlock.vertices.get(t.vert2).tanY += 
-		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert1).posY-m.verticesBlock.vertices.get(t.vert0).posY) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert2).posY-m.verticesBlock.vertices.get(t.vert0).posY)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
 		    m.verticesBlock.vertices.get(t.vert2).tanZ += 
-		    		((m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert1).posZ-m.verticesBlock.vertices.get(t.vert0).posZ) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
 		    				(m.verticesBlock.vertices.get(t.vert2).posZ-m.verticesBlock.vertices.get(t.vert0).posZ)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).texV-m.verticesBlock.vertices.get(t.vert0).texV) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).texU-m.verticesBlock.vertices.get(t.vert0).texU) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).texV-m.verticesBlock.vertices.get(t.vert0).texV));
+		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
+		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
+		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
 		}
 	}
 	
@@ -1841,7 +2130,7 @@ public class Geometry extends Block {
 		        		m.toTriVertID = m.fromTriVertID + m.triangles.size()*3;
 		        		m.numTriVertices = m.toTriVertID - m.fromTriVertID;
 		        		triVertI = m.toTriVertID;
-		        		m.verticesDataLength = m.verticesBlock.vertices.size()*Vertices.vertexLength;
+		        		m.verticesDataLength = m.verticesBlock.vertices.size()*m.shaderUsage.vertexFormat.getLength();
 		            }
 		        	p2.rebuildSubBlocks();
 //    		        	System.out.println(p2.header.partName+" fixed : "+p2.mesh.info.numTriangles+" tris, "+p2.mesh.info.numVertices+" verts.");

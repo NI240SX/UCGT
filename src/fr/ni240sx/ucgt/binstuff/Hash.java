@@ -53,12 +53,14 @@ public class Hash {
 	 */
 	public Hash(String label) {
 		if (label.startsWith("0x") || label.startsWith("0X")) {
-			//already hashed input, we'll assume it is a BIN hash
+			//already hashed input, we'll assume it can be either BIN or VLT and will always be used correctly
 			this.label = label;
 			this.binHash = Integer.parseUnsignedInt(label.substring(2), 16);
-			System.out.println("Unknown hash : "+label+", "+binHash);
+//			System.out.println("Unknown hash : "+label+", "+binHash);
 			this.reversedBinHash = Integer.reverseBytes(this.binHash);
 			this.reversedBinHashBytes = intToBytes(reversedBinHash);
+			this.vltHash = this.binHash;
+			this.reversedVltHash = this.reversedBinHash;
 		} else {
 			this.label = label;
 			this.binHash = findBinHash(label);

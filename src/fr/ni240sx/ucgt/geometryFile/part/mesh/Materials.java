@@ -6,13 +6,13 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 
 public class Materials extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Part_Mesh_Materials;}
+	public BlockType getBlockID() {return BlockType.Part_Mesh_Materials;}
 	
 	public static final int materialLength = 256;
 
@@ -55,7 +55,7 @@ public class Materials extends Block {
 			in.getInt();
 			in.getInt();
 			m.verticesDataLength = in.getInt();
-			//0x00002080, it's always the same, prolly will never change
+			//vertex format ? 0x00002080 maybe more like amount of data in the vertex format or smth
 			
 			in.position(matStart+132);
 			m.shaderUsage = ShaderUsage.get(in.getInt());
@@ -120,7 +120,11 @@ public class Materials extends Block {
 			out.putInt(0);
 			out.putInt(0);
 			out.putInt(m.verticesDataLength);
-			out.putInt(-2145386496); //0x00002080
+			out.put((byte) 0x00);
+			out.put((byte) 0x00);
+			out.put((byte) m.shaderUsage.vertexFormat.getLength());
+			out.put((byte) 0x80);
+//			out.putInt(-2145386496); //0x00002080
 			
 			out.position(matStart+132);
 			out.putInt(m.shaderUsage.getKey());

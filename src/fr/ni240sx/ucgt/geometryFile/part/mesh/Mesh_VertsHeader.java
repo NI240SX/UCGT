@@ -5,13 +5,13 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 
 public class Mesh_VertsHeader extends Block {
 	//apparently always empty, still saves data in case it's not
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Part_Mesh_VertsHeader;}
+	public BlockType getBlockID() {return BlockType.Part_Mesh_VertsHeader;}
 	
 	public Mesh_VertsHeader(ByteBuffer in) {
 		var length = in.getInt();

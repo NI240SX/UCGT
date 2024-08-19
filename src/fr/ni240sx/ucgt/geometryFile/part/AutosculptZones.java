@@ -6,12 +6,12 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 
 public class AutosculptZones extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Part_AutosculptZones;}
+	public BlockType getBlockID() {return BlockType.Part_AutosculptZones;}
 
 	// texture binhash, usage type
 	public ArrayList<Integer> zones = new ArrayList<>();

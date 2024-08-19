@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Hash;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
 import javafx.application.Application;
@@ -398,7 +398,7 @@ public class GeomDump extends Application {
 
 	private static void addSpecificHashes(ArrayList<Hash> l) {
 		
-		for (var b : GeomBlock.values()) {
+		for (var b : BlockType.values()) {
 			l.add(new Hash(b.getName(), b.getKey()));
 		}
 		for (var b : TextureUsage.values()) {

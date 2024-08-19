@@ -120,9 +120,9 @@ public class WavefrontOBJ {
 	        				v.colorB = (byte)(int)(((VertexData6)(verts.get(Integer.parseInt(vertdata.split("/")[0])-1))).c*255);
 	        			}
 	
-	        			v.texU = tex.get(Integer.parseInt(vertdata.split("/")[1])-1).u;
-	        			if (Geometry.IMPORT_flipV) v.texV = 1-tex.get(Integer.parseInt(vertdata.split("/")[1])-1).v;
-	        			else v.texV = tex.get(Integer.parseInt(vertdata.split("/")[1])-1).v;
+	        			v.tex0U = tex.get(Integer.parseInt(vertdata.split("/")[1])-1).u;
+	        			if (Geometry.IMPORT_flipV) v.tex0V = 1-tex.get(Integer.parseInt(vertdata.split("/")[1])-1).v;
+	        			else v.tex0V = tex.get(Integer.parseInt(vertdata.split("/")[1])-1).v;
 	        			
 	        			v.normX = normals.get(Integer.parseInt(vertdata.split("/")[2])-1).x;
 	        			v.normY = normals.get(Integer.parseInt(vertdata.split("/")[2])-1).y;
@@ -204,7 +204,7 @@ public class WavefrontOBJ {
         			bw.write("v "+v.posX+" "+v.posY+" "+v.posZ+" "
         			+((double)Byte.toUnsignedInt(v.colorR)/255)+" "+((double)Byte.toUnsignedInt(v.colorG)/255)+" "+((double)Byte.toUnsignedInt(v.colorB)/255)+"\n");
         			//vertex texcoord
-        			bw.write("vt "+v.texU+" "+v.texV+"\n");
+        			bw.write("vt "+v.tex0U+" "+v.tex0V+"\n");
         			//vertex normal
         			bw.write("vn "+v.normX+" "+v.normY+" "+v.normZ+"\n");
         		}

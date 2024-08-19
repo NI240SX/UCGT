@@ -8,13 +8,13 @@ import java.util.Comparator;
 import java.util.List;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.Part;
 
 public class PartsList extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Geom_PartsList;}
+	public BlockType getBlockID() {return BlockType.Geom_PartsList;}
 	
 	public ArrayList<Integer> partKeys = new ArrayList<>();
 	

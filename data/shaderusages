@@ -1,100 +1,148 @@
 # <vault shader usage name> [friendly name] [recognized names...]
 
 # cars
-car	Diffuse
-car_a	DiffuseAlpha	Alpha
-car_a_nzw
-car_nm	DiffuseNormal	Normal
-car_nm_a	DiffuseNormalAlpha	DiffuseAlphaNormal	AlphaNormal	NormalAlpha
-car_nm_v_s	DiffuseNormalSwatch	DiffuseSwatchNormal	NormalSwatch	SwatchNormal
-car_nm_v_s_a	DiffuseNormalSwatchAlpha	DiffuseNormalAlphaSwatch	DiffuseAlphaNormalSwatch	DiffuseAlphaSwatchNormal	DiffuseSwatchNormalAlpha	DiffuseSwatchAlphaNormal	NormalSwatchAlpha	NormalAlphaSwatch	AlphaNormalSwatch	AlphaSwatchNormal	SwatchNormalAlpha	SwatchAlphaNormal
-car_v	DiffuseSwatch	Swatch
-car_si	DiffuseGlow	DiffuseSelfIllumination	Glow	SelfIllumination
-car_si_a	DiffuseGlowAlpha	DiffuseAlphaGlow	DiffuseSelfIlluminationAlpha	DiffuseAlphaSelfIllumination	GlowAlpha	AlphaGlow	SelfIlluminationAlpha	AlphaSelfIllumination
+car	Diffuse	VertexFormat=Pos0s10_Tex0s32_Col0_Norm0s_Tan0s
+car_a	DiffuseAlpha	Alpha	VertexFormat=Pos0s10_Tex0s32_Col0_Norm0s_Tan0s
+car_a_nzw	VertexFormat=Pos0s10_Tex0s32_Col0_Norm0s_Tan0s
+car_nm	DiffuseNormal	Normal	VertexFormat=Pos0s10_Tex0s32_Col0_Norm0s_Tan0s
+car_nm_a	DiffuseNormalAlpha	DiffuseAlphaNormal	AlphaNormal	NormalAlpha	VertexFormat=Pos0s10_Tex0s32_Col0_Norm0s_Tan0s
+car_nm_v_s	DiffuseNormalSwatch	DiffuseSwatchNormal	NormalSwatch	SwatchNormal	VertexFormat=Pos0s10_Tex0s32_Col0_Norm0s_Tan0s
+car_nm_v_s_a	DiffuseNormalSwatchAlpha	DiffuseNormalAlphaSwatch	DiffuseAlphaNormalSwatch	DiffuseAlphaSwatchNormal	DiffuseSwatchNormalAlpha	DiffuseSwatchAlphaNormal	NormalSwatchAlpha	NormalAlphaSwatch	AlphaNormalSwatch	AlphaSwatchNormal	SwatchNormalAlpha	SwatchAlphaNormal	VertexFormat=Pos0s10_Tex0s32_Col0_Norm0s_Tan0s
+car_v	DiffuseSwatch	Swatch	VertexFormat=Pos0s10_Tex0s32_Col0_Norm0s_Tan0s
+car_si	DiffuseGlow	DiffuseSelfIllumination	Glow	SelfIllumination	VertexFormat=Pos0s10_Tex0s32_Col0_Norm0s_Tan0s
+car_si_a	DiffuseGlowAlpha	DiffuseAlphaGlow	DiffuseSelfIlluminationAlpha	DiffuseAlphaSelfIllumination	GlowAlpha	AlphaGlow	SelfIlluminationAlpha	AlphaSelfIllumination	VertexFormat=Pos0s10_Tex0s32_Col0_Norm0s_Tan0s
 
 # traffic cars
-car_t	TrafficDiffuse	Traffic
-car_t_a	TrafficDiffuseAlpha	TrafficAlpha
-car_t_nm	TrafficDiffuseNormal	TrafficNormal
+car_t	TrafficDiffuse	Traffic	VertexFormat=Pos0s10_Tex0s32_Col0_Norm0s_Tan0s
+car_t_a	TrafficDiffuseAlpha	TrafficAlpha	VertexFormat=Pos0s10_Tex0s32_Col0_Norm0s_Tan0s
+car_t_nm	TrafficDiffuseNormal	TrafficNormal	VertexFormat=Pos0s10_Tex0s32_Col0_Norm0s_Tan0s
 
-# other
-debugpoly
-diffuse_spec_2sided
-motionblur
-mw2_branches
-mw2_cardebris
-mw2_carhvn_floor
-mw2_car_heaven
-mw2_car_heaven_default
-mw2_combo_refl
-mw2_constant
-mw2_constant_alpha
-mw2_constant_alpha_bias
-mw2_diffuse
-mw2_diffuse_alpha
-mw2_diffuse_spec
-mw2_diffuse_spec_alpha
-mw2_diffuse_spec_illum
-mw2_diffuse_spec_salpha
-mw2_dif_spec_a_bias
-mw2_dirt
-mw2_dirt_overlay
-mw2_dirt_rock
-mw2_foliage
-mw2_foliage_lod
-mw2_fol_alwaysfacing
-mw2_glass_no_n
-mw2_glass_refl
-mw2_grass
-mw2_grass_dirt
-mw2_grass_rock
-mw2_icon
-mw2_illuminated
-mw2_indicator
-mw2_matte
-mw2_matte_alpha
-mw2_normalmap
-mw2_normalmap_bias
-mw2_ocean
-mw2_pano
-mw2_parallax
-mw2_particles
-mw2_road
-mw2_road_lite
-mw2_road_overlay
-mw2_road_refl
-mw2_road_refl_lite
-mw2_road_refl_overlay
-mw2_road_refl_tile
-mw2_road_tile
-mw2_rock
-mw2_rock_overlay
-mw2_scrub
-mw2_scrub_lod
-mw2_sky
-mw2_smokegeo
-mw2_texture_scroll
-mw2_trunk
-mw2_tunnel_illum
-mw2_tunnel_road
-mw2_tunnel_wall
-mw2_worlddecal
-normalmap2sided
-rvm
-screeneffect
-shadowmesh
-simpledraw_p
-simpledraw_p_c
-simpledraw_p_c_uv
-simpledraw_p_c_uvmask
-simpledraw_p_uv
-simpledraw_p_uvmask
-simpleeffect
-standardeffect
-ubereffect
-visualtreatment
-watersplash
-worldbone
-worldboneNoCull
-worldbonenocull
-worldbonetransparency
+# world
+ar_concrete			VertexFormat=Pos0_Col0_Tex0s32_Norm0s_Tan0s
+ar_concrete_no_n	VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+ar_constant			VertexFormat=Pos0_Tex0s32
+ar_glass_concrete	VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+ar_glass_reflective	VertexFormat=Pos0_Col0_Tex0s32_Norm0s_Tan0s
+ar_glass_reflective_no_n	VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+ar_glass_steel		VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+ar_matte			VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+ar_matte_opacity	VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+ar_paint			VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+ar_paint_opacity	VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+ar_paper			VertexFormat=Pos0_Col0_Tex0s32_Norm0s_Tan0s
+ar_rock				VertexFormat=Pos0_Col0_Tex0s32_Norm0s_Tan0s
+ar_steel			VertexFormat=Pos0_Col0_Tex0s32_Norm0s_Tan0s
+ar_steel_no_n		VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+ar_steel_smackable	VertexFormat=Pos0_Col0_Tex0s32_Norm0s_Tan0s
+ar_tunnel_illuminated	VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+ar_tunnel_wall		VertexFormat=Pos0_Col0_Tex0s32_Tex1s32
+
+aud_moment_ranging	VertexFormat=Pos0_Tex0s32
+
+car_heaven			VertexFormat=Pos0_Col0f4_Tex0_Norm0s
+car_heaven_default	VertexFormat=Pos0_Col0f4_Tex0
+
+fx_car_debris		VertexFormat=Pos0f3_Norm0s
+fx_smokegeo			VertexFormat=Pos0f3_Tex0s32_Norm0s
+fx_watersplash		VertexFormat=Pos0_Tex0_Norm0_Tan0
+
+org_alwaysfacing	VertexFormat=Pos0_Tex0s32_Norm0s
+org_branches		VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+org_foliage			VertexFormat=Pos0_Col0_Tex0s32
+org_foliage_lod		VertexFormat=Pos0_Col0_Tex0s32
+org_scrub			VertexFormat=Pos0_Col0_Tex0s32
+org_scrub_lod		VertexFormat=Pos0_Col0_Tex0s32
+org_trunk			VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+
+rd_asphalt			VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s_Tan0s
+rd_asphalt_lite		VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s
+rd_asphalt_overlay	VertexFormat=Pos0_Col0_Tex0s32_Norm0s_Tan0s
+rd_asphalt_reflective			VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s_Tan0s
+rd_asphalt_refl_lite			VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s
+rd_asphalt_reflective_overlay	VertexFormat=Pos0_Col0_Tex0s32_Norm0s_Tan0s
+rd_asphalt_refl_tile			VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s_Tan0s
+rd_asphalt_tile		VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s_Tan0s
+rd_asphalt_tunnel	VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Tex2s32_Norm0s_Tan0s
+rd_concrete			VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s_Tan0s
+rd_concrete_car_heaven			VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s_Tan0s
+rd_concrete_lite	VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s
+rd_concrete_overlay				VertexFormat=Pos0_Col0_Tex0s32_Norm0s_Tan0s
+rd_concrete_reflective			VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s_Tan0s
+rd_concrete_refl_lite			VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s
+rd_concrete_reflective_overlay	VertexFormat=Pos0_Col0_Tex0s32_Norm0s_Tan0s
+rd_asphalt_refl_tile			VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s_Tan0s
+rd_concrete_tile	VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s_Tan0s
+rd_concrete_tunnel	VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Tex2s32_Norm0s_Tan0s
+
+scrolling_texture	VertexFormat=Pos0_Col0f4_Tex0
+scrolling_texture2	VertexFormat=Pos0_Col0f4_Tex0
+scrolling_texture3	VertexFormat=Pos0_Col0f4_Tex0
+
+sky					VertexFormat=Pos0_Tex0
+
+trn_dirt			VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+trn_dirt_overlay	VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+trn_dirt_rock		VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s_Tan0s
+trn_grass			VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+trn_grass_dirt		VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s
+trn_grass_rock		VertexFormat=Pos0_Col0_Tex0s32_Tex1s32_Norm0s_Tan0s
+trn_rock			VertexFormat=Pos0_Col0_Tex0s32_Norm0s_Tan0s
+trn_rock_overlay	VertexFormat=Pos0_Col0_Tex0s32_Norm0s_Tan0s
+
+wrld_icon			VertexFormat=Pos0_Tex0s32
+wrld_lod			VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+wrld_pano			VertexFormat=Pos0_Tex0s32
+wrld_plastic		VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+wrld_self_illum		VertexFormat=Pos0_Tex0s32
+wrld_signs			VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+wrld_signs_neon		VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+wrld_signs_opacity	VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+wrld_wire			VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+
+wtr_lake			VertexFormat=Pos0_Col0_Tex0s32
+wtr_ocean			VertexFormat=Pos0_Col0_Tex0s32
+wtr_river			VertexFormat=Pos0_Col0_Tex0s32
+wtr_waterfall		VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+
+#still vlted but unknown hashes
+#uses mw2_diffuse_spec
+0x01747d6f		0x01747d6f-s				VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+#uses diffuse_spec_2sided, render settings shader_parameters -> ar_steel
+0x275232ed		0x275232ed-steel-s_2s		VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+#uses mw2_illuminated
+0x5d5d135a		0x5d5d135a-i				VertexFormat=Pos0_Tex0s32
+#uses mw2_constant, render settings render_materials -> ar_constant
+0x67a95199		0x67a95199-const			VertexFormat=Pos0_Tex0s32
+#uses normalmap2sided, render settings shader_parameters -> ar_steel
+0x705c7fa1		0x705c7fa1-steel-n_2s		VertexFormat=Pos0_Col0_Tex0s32_Norm0s_Tan0s
+#uses mw2_matte_alpha, render settings shader_parameters -> ar_matte
+0x99f1e4f0		0x99f1e4f0-matte_a			VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+#uses mw2_diffuse_spec_salpha, render settings shader_parameters -> wrld_wire
+0xc146dcc6		0xc146dcc6-wrld_wire-s_sa	VertexFormat=Pos0_Col0_Tex0s32_Norm0s
+#uses mw2_indicator
+0xd9cd6dbb		0xd9cd6dbb-indicator		VertexFormat=Pos0_Col0_Tex0s32
+#uses mw2_parallax, render settings shader_parameters -> ar_parallax
+0xf54fe578		0xf54fe578-parallax			VertexFormat=Pos0_Tex0
+
+#chars
+#BlendWeight : ubyte4n, BlendIndices : ubyte4 -> currently blendindices is skipped and blendweight is read as colors
+basicm			VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+basicm1			VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+basicm2			VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+basicrefbotm	VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+basicrefgearm	VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+basicrefhatm	VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+basicreftopm	VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+eyem			VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+hairm			VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+skinm			VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+skinm1			VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+0x0f87f3b6		VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+0x13b4af33		VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+0x354f479d		VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+0xab7d3ce6		VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+0xb5fdc966		VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+0xc808bd33		VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+0xd3c214f5		VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+0xe9abeaa2		VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s
+0xff37175c		VertexFormat=Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s

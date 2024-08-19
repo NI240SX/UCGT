@@ -167,8 +167,8 @@ public class Scene extends ZModBlock {
 	        				triVerts[i].normY = -M[0][2]*nx +	-M[1][2]*ny +	-M[2][2]*nz;
 	        				triVerts[i].normZ = M[0][1]*nx +	M[1][1]*ny +	M[2][1]*nz;
 	        				
-	        				triVerts[i].texU = mesh.verts.get(poly.vertIDs[i]).u;
-	        				triVerts[i].texV = 1-mesh.verts.get(poly.vertIDs[i]).v;
+	        				triVerts[i].tex0U = mesh.verts.get(poly.vertIDs[i]).u0;
+	        				triVerts[i].tex0V = 1-mesh.verts.get(poly.vertIDs[i]).v0;
 
 	        				if (Geometry.IMPORT_importVertexColors) {
 		        				triVerts[i].colorR = mesh.verts.get(poly.vertIDs[i]).r;

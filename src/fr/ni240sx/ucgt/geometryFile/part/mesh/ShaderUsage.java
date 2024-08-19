@@ -55,14 +55,24 @@ public class ShaderUsage {
     private final String name;
     private final String[] possibleNames;
     
+    public final VertexFormat vertexFormat;
+    
     public static List<ShaderUsage> values = new ArrayList<ShaderUsage>();
     private static boolean isLoaded = false;
 
     ShaderUsage(String name, String[] possibleNames) {
-    	this(-2, name, possibleNames);
+    	this(-2, name, possibleNames, VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s);
+    }
+    
+    ShaderUsage(String name, String[] possibleNames, VertexFormat vf) {
+    	this(-2, name, possibleNames, vf);
     }
     
     ShaderUsage(int key, String name, String[] possibleNames) {
+    	this(key, name, possibleNames, VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s);
+    }
+    
+    ShaderUsage(int key, String name, String[] possibleNames, VertexFormat vf) {
     	if (key == -2) {
     		// compute vlt from name
     		this.key = new Hash(name).vltHash;
@@ -70,6 +80,7 @@ public class ShaderUsage {
         this.key = key; //Integer.reverseBytes(key);
         this.name = name;
 		this.possibleNames = possibleNames;
+		this.vertexFormat = vf;
 //		values.add(this);
     }
 
@@ -90,7 +101,9 @@ public class ShaderUsage {
             if (c.key == key) return c;
         }
         System.out.println("WARNING : unknown shader usage "+Integer.toHexString(Integer.reverseBytes(key)));
-        return INVALID; // Handle invalid value
+        ShaderUsage ret = new ShaderUsage(key, String.format("0x%08X", Integer.reverseBytes(key)), new String[] {String.format("0x%08X", Integer.reverseBytes(key))});
+        values.add(ret);
+        return ret; // Handle invalid value
     }
 
     public static ShaderUsage get(String name) {
@@ -102,7 +115,17 @@ public class ShaderUsage {
             if (n.equals(name)) return c;
         }
         System.out.println("WARNING : unknown shader usage "+name);
-        return INVALID; // Handle invalid value
+        
+        if (name.startsWith("0x") || name.startsWith("0X")) {
+			//already hashed input
+			ShaderUsage ret = new ShaderUsage(Integer.reverseBytes(Integer.parseUnsignedInt(name.substring(2), 16)), name, new String[] {name});
+			values.add(ret);
+			return ret;
+		}
+        
+        ShaderUsage ret = new ShaderUsage(name, new String[] {name});
+		values.add(ret);
+		return ret;
     }
     
     @Override
@@ -135,19 +158,23 @@ public class ShaderUsage {
 	    	String l;
 			while ((l = br.readLine())!=null){
 				ArrayList<String> names = new ArrayList<>();
+				VertexFormat vf = VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s;
 				if (!l.startsWith("#") && !l.startsWith("//")) {
 					for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isBlank()) {
-						names.add(s2);
+						if (s2.contains("VertexFormat=")) {
+							vf = VertexFormat.get(s2.split("=")[1]);
+						} else names.add(s2);
 					}
 				}
 				if (names.size() == 1) {
-					values.add(new ShaderUsage(names.get(0), names.toArray(String[]::new)));
+					values.add(new ShaderUsage(names.get(0), names.toArray(String[]::new), vf));
 				} else if (names.size() != 0) { //>1
-					values.add(new ShaderUsage(new Hash(names.get(0)).vltHash, names.get(1), names.toArray(String[]::new)));
+					values.add(new ShaderUsage(new Hash(names.get(0)).vltHash, names.get(1), names.toArray(String[]::new), vf));
 				}
 			}
     	} catch (Exception e) {
     		System.out.println("Warning : unable to fetch shader usages from data folder !");
+    		e.printStackTrace();
     		values.add(new ShaderUsage(new Hash("car").vltHash, "Diffuse", new String[]{"Diffuse","car"}));
     		values.add(new ShaderUsage(new Hash("car_a").vltHash, "DiffuseAlpha", new String[]{"DiffuseAlpha","Alpha","car_a"}));
     		values.add(new ShaderUsage("car_a_nzw", new String[]{"car_a_nzw"}));

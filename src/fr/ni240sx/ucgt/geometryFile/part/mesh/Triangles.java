@@ -5,12 +5,12 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 
 public class Triangles extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Part_Mesh_Triangles;}
+	public BlockType getBlockID() {return BlockType.Part_Mesh_Triangles;}
 	
 	public static final int triangleLength = 6;
 
@@ -20,7 +20,9 @@ public class Triangles extends Block {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
 
-		while(in.getInt() == 0x11111111) {} // skip alignment
+		while(in.getInt() == 0x11111111) {
+			if (in.remaining() == 0) break; //end of geometry reached, fix for some random geom in the map stream
+		} // skip alignment
 		in.position(in.position()-4);
 		
 		Triangle t;

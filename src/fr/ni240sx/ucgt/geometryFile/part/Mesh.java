@@ -7,13 +7,13 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.*;
 
 public class Mesh extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Part_Mesh;}
+	public BlockType getBlockID() {return BlockType.Part_Mesh;}
 	
 	public Mesh_Info info;
 	public Materials materials;
@@ -31,6 +31,7 @@ public class Mesh extends Block {
 				if ((block = Block.read(in)) != null) subBlocks.add(block);
 			} catch (Exception e) {
 				System.out.println("Unable to read mesh sub-block : "+e.getMessage());
+				e.printStackTrace();
 			}
 		}
 		// SUB-BLOCKS PRE-TREATMENT TO REFERENCE THEM ALL
@@ -62,6 +63,8 @@ public class Mesh extends Block {
 		
 		if (materials != null) for (int i=0; i<materials.materials.size(); i++) {
 			verticesBlocks.get(i).material = materials.materials.get(i);
+			verticesBlocks.get(i).vertexFormat = materials.materials.get(i).shaderUsage.vertexFormat;
+			verticesBlocks.get(i).readVertices();
 			materials.materials.get(i).verticesBlock = verticesBlocks.get(i);
 //			System.out.println("Requesting triangles from "+(materials.materials.get(i).fromVertID/3) + " to " + (materials.materials.get(i).toVertID/3));
 			materials.materials.get(i).triangles = triangles.triangles.subList(materials.materials.get(i).fromTriVertID/3, (materials.materials.get(i).toTriVertID/3));

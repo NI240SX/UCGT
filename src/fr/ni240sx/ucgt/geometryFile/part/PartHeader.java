@@ -6,12 +6,12 @@ import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.binstuff.Hash;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 
 public class PartHeader extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Part_Header;}
+	public BlockType getBlockID() {return BlockType.Part_Header;}
 	
 	public static final int usualLengthWithoutName = 200;
 	
@@ -46,7 +46,8 @@ public class PartHeader extends Block {
 		in.getInt(); //0
 		in.getInt(); //0
 		in.getInt(); //0
-		const01 = in.getInt(); //0x19004000
+		const01 = in.getInt(); //0x19004000, flags mask ? 0x19000000 for several map models
+//		if (const01 != 0x00400019) System.out.println("WARNING : const01="+String.format("0x%08X", Integer.reverseBytes(const01)));
 		
 		binKey = in.getInt();
 		trianglesCount = in.getInt();
@@ -112,7 +113,8 @@ public class PartHeader extends Block {
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 		
 		//process size
-		var blockLength = usualLengthWithoutName + partName.length() + 1;
+		var alignment = Block.findAlignment(currentPosition+8, 16);
+		var blockLength = usualLengthWithoutName + partName.length() + 1 + alignment;
 		if (const02 == 947640) blockLength -=16;
 		if ((partName.length()+1) % 4 != 0) blockLength += 4 - (partName.length()+1)%4;
 
@@ -122,10 +124,12 @@ public class PartHeader extends Block {
 		out.putInt(getBlockID().getKey());
 		out.putInt(blockLength);
 
+		Block.makeAlignment(out, alignment, (byte) 0x11);
+		
 		out.putInt(0);
 		out.putInt(0);
 		out.putInt(0);
-		out.putInt(const01);
+		out.putInt(const01); //flags mask, check it's fine with map models
 		
 		out.putInt(binKey);
 		out.putInt(trianglesCount);

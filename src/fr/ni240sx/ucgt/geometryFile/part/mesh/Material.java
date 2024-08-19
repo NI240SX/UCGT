@@ -75,10 +75,12 @@ public class Material {
 
 	public void tryGuessHashes(Geometry geometry, Part p) {
 		if (ShaderHash == null){
-			if (p.shaderlist != null) ShaderHash = Hash.guess(p.shaderlist.shaders.get(shaderID), geometry.hashlist, String.format("0x%08X", p.shaderlist.shaders.get(shaderID)), "BIN");
-			else {
-				System.out.println("Critical issue with part "+p.name+" : missing shaders ! defaulting to DULLPLASTIC");
-				ShaderHash = new Hash("DULLPLASTIC");
+			if (p.shaderlist != null && shaderID >= 0 && shaderID < p.shaderlist.shaders.size()) {
+				ShaderHash = Hash.guess(p.shaderlist.shaders.get(shaderID), geometry.hashlist, String.format("0x%08X", p.shaderlist.shaders.get(shaderID)), "BIN");
+			} else {
+//				System.out.println("Critical issue with part "+p.name+" : missing shaders ! defaulting to DULLPLASTIC");
+//				ShaderHash = new Hash("DULLPLASTIC");
+				//remain null, this might break some things
 			}
 		}
 //		DefaultTextureHash = Hash.guess(textureHash, geometry.hashlist, String.format("0x%08X",textureHash), "BIN"); //apparently unused
@@ -140,6 +142,9 @@ public class Material {
 	}
 	
 	public void tryGuessDefaultTex() {
+		for (var t : TextureHashes) {
+			textures.add(t.binHash);
+		}
 		textureHash = textures.get(0);
 		DefaultTextureHash = TextureHashes.get(0);
 		
@@ -184,16 +189,21 @@ public class Material {
 	}
 	
 	public String generateName() {
-		String s = ShaderHash.label;
-		for (var t : TextureHashes) s += "_"+t.label;
+		String s;
+		if (ShaderHash != null) s = ShaderHash.label + "_";
+		else s = shaderUsage.getName() + "_";
+		for (var t : TextureHashes) s += t.label + "_";
+		s = s.substring(0, s.length()-1);
 		return s;
 	}
+
 
 	public String toConfig(String carname) { //	MATERIAL	SHADER=ShaderUsage[1,2,3] 0xFLAGS000 DEFAULTTEX TEX1=TexUsage TEX2=TexUsage
 		String s = "";
 		s += "MATERIAL	"+uniqueName;
 //		s += " feRenderData=" + frontendRenderingData;
-		s += "	"+ShaderHash.label+"="+shaderUsage.getName();
+		if (ShaderHash != null) s += "	"+ShaderHash.label+"="+shaderUsage.getName();
+		else s += "	"+shaderUsage.getName();
 		//+"[";
 //		if (usageSpecific1 != -1) s+=usageSpecific1;
 //		if (usageSpecific2 != -1) s+=","+usageSpecific2;
@@ -203,6 +213,48 @@ public class Material {
 			s += "	" + TextureHashes.get(i).label.replace(carname, "%") + "=" + textureUsages.get(i).getName();
 		}
 		return s;
+	}
+	
+	/**
+	 * Create a material from a config line
+	 * @param carname the carname to use, controls car-specific textures using the placeholder %
+	 * @param l the config line to be interpreted
+	 */
+	public Material(String carname, String l) {
+		int i = 0;
+		for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty()) {
+			if (i==0) {} //continue; //"MATERIAL"
+			else if (i==1) { //material name
+				uniqueName = s2;
+			}
+			else if (i==2) { //material + shader or shader only
+				if (s2.contains("=")) {
+					//shader usage
+					ShaderHash = new Hash(s2.split("=")[0]);
+					shaderUsage = ShaderUsage.get(s2.split("=")[1]);
+				} else {
+					ShaderHash = null;
+					shaderUsage = ShaderUsage.get(s2);
+				}
+			}
+			else if (i>2) { // texture and usage or setting
+				if (s2.split("=")[0].equals("UseTangents")) {
+					//material tangents setting
+					useTangents = Boolean.getBoolean(s2.split("=")[1]);
+				} else if (s2.split("=")[0].equals("FERenderingOrder")) {
+					renderingOrder = Integer.parseInt(s2.split("=")[1]);
+				} else if (s2.split("=")[0].equals("RenderingOrder")) { // i don't know
+					usageSpecific1 = Integer.parseInt(s2.split("=")[1]);
+
+				} else if (TextureUsage.get(s2.split("=")[1]) != TextureUsage.INVALID) {
+					// texture usage
+					TextureHashes.add(new Hash(s2.split("=")[0].replace("%", carname)));
+					textureUsages.add(TextureUsage.get(s2.split("=")[1]));
+				}
+			}
+			i++;
+		}
+//		System.out.println("Material : "+toConfig(carname));
 	}
 	
 	@Override
@@ -223,6 +275,11 @@ public class Material {
 		for (int i=0; i< TextureHashes.size(); i++) if (TextureHashes.get(i).binHash != other.TextureHashes.get(i).binHash) return false;
 		if (other.textureUsages.size() != textureUsages.size()) return false;
 		for (int i=0; i< textureUsages.size(); i++) if (textureUsages.get(i) != other.textureUsages.get(i)) return false;
+		if (ShaderHash == null) {
+			if (other.ShaderHash == null) return shaderUsage == other.shaderUsage;
+			return false;
+		}
+		if (other.ShaderHash == null) return false;		
 		return ShaderHash.binHash == other.ShaderHash.binHash
 				&& shaderUsage == other.shaderUsage;
 	}

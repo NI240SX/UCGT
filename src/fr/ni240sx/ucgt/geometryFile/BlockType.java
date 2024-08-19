@@ -1,14 +1,17 @@
 package fr.ni240sx.ucgt.geometryFile;
 
-public enum GeomBlock {
+public enum BlockType {
 	Padding(0x00000000, "Padding"),
+	
 	Geometry(0x00401380, "Geometry"),
 	Geom_Header(0x01401380, "Geom_Header"),
 	Geom_Info(0x02401300, "Geom_Info"),
 	Geom_PartsList(0x03401300, "Geom_PartsList"),
 	Geom_PartsOffsets(0x04401300, "Geom_PartsOffsets"),
 	Geom_UNKNOWN(0x08401380, "Geom_???"),
+
 	CompressedData(0x22114455, "CompressedData"),
+	
 	Part(0x10401380, "Part"),
 	Part_Header(0x11401300, "Part_Header"),
 	Part_TexUsage(0x12401300, "Part_TexUsage"),
@@ -27,13 +30,27 @@ public enum GeomBlock {
 	Part_HashAssign(0x19401300, "Part_HashAssign?"),
 	Part_AutosculptLinking(0x1E401300, "Part_AutosculptLinking"),
 	Part_AutosculptZones(0x1D401300, "Part_AutosculptZones"),
+
+	Textures(0x000030b3, "Textures"),
+	Textures_Header(0x000031b3, "Textures_Header"),
+	Textures_Info(0x01003133, "Textures_Info"),
+	Textures_TexList(0x02003133, "Textures_TexList"),
+	Textures_TexOffsets(0x03003133, "Textures_TexOffsets"),
+	
+	TPK_Container(0x000032b3, "TPK_Container"),
+	TPK_Header(0x01003233, "Tex_Header"),
+	TPK_Data(0x02003233, "Tex_Data"),
+	
 	NIS_Skeleton(0x0940a300, "NIS_Skeleton?"),
+	
+	StreamBlocksOffsets(0x10410300, "StreamBlocksOffsets"),
+	
 	INVALID(0xFFFFFFFF, "INVALID");
 	
     private final int key;
     private final String name;
 
-    GeomBlock(int key, String name) {
+    BlockType(int key, String name) {
         this.key = Integer.reverseBytes(key);
         this.name = name;
     }
@@ -46,8 +63,8 @@ public enum GeomBlock {
         return name;
     }
 
-    public static GeomBlock get(int key) {
-        for (GeomBlock c : values()) {
+    public static BlockType get(int key) {
+        for (BlockType c : values()) {
             if (c.key == key) return c;
         }
         return INVALID; // Handle invalid value

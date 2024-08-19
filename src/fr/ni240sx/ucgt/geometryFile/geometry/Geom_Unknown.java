@@ -5,12 +5,12 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 
 public class Geom_Unknown extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Geom_UNKNOWN;}
+	public BlockType getBlockID() {return BlockType.Geom_UNKNOWN;}
 	
 	public Geom_Unknown(ByteBuffer in) {
 		var length = in.getInt();
@@ -19,6 +19,10 @@ public class Geom_Unknown extends Block {
 		in.get(data); //raw data if there's any
 
 		if (length > 0) System.out.println("Found Geom>Unknown block with length="+length);
+	}
+	
+	public Geom_Unknown() {
+		data = new byte[0];
 	}
 	
 	@Override

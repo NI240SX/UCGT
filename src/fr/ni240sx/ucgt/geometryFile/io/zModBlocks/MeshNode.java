@@ -39,6 +39,8 @@ public class MeshNode extends ZModBlock {
 			viewStatus = 1;
 		else if (p.kit.equals("KIT00") && p.lod.equals("A") && ((p.part.contains("EXHAUST") && p.part.contains("00")) || 
 				(p.part.contains("MUFFLER") && p.part.contains("00")))) viewStatus = 1;
+		else if (p.name.startsWith("X") && p.name.contains("1A")) viewStatus = 1; //map models
+		else if (p.name.contains("CHOP")) viewStatus = 1;
 		binPart = p;
 		embeddedNode.name = p.name;
 		embeddedNode.matrix = new float[][]{	//rotate the mesh in zmod with minimal effort

@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.GeomBlock;
+import fr.ni240sx.ucgt.geometryFile.BlockType;
 
 public class Mesh_Info extends Block {
 
 	@Override
-	public GeomBlock getBlockID() {return GeomBlock.Part_Mesh_Info;}
+	public BlockType getBlockID() {return BlockType.Part_Mesh_Info;}
 
 	public static final int usualLength = 72;
 	
