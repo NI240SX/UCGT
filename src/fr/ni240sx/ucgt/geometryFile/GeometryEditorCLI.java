@@ -10,8 +10,8 @@ import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
 
 public class GeometryEditorCLI {
 
-	public static final String programVersion = "1.2.0";
-	public static final String programBuild = "2024.08.19";
+	public static final String programVersion = "1.2.0.1";
+	public static final String programBuild = "2024.08.21";
 	
 	public static Geometry geom;
 //	public static ArrayList<String> commandsHistory = new ArrayList<>();
@@ -349,7 +349,7 @@ public class GeometryEditorCLI {
 					System.out.println("Operation successful !");
 					
 				} catch (Exception e) {
-					System.out.printf("Error saving OBJ : %s\n", e.getMessage());
+					System.out.printf("Error saving 3D model : %s\n", e.getMessage());
 					e.printStackTrace();
 				}
 			} catch (Exception e) {

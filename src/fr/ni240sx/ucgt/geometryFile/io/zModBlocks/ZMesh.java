@@ -175,10 +175,11 @@ public class ZMesh extends ZModBlock {
 		 * each poly : 30B
 		 */
 		//precompute length
-		var length = 32 + 30*polys.size();
+		var length = 32 + (24 + polyFormat*2)*polys.size();
 		if (vertexFormat == 196631) length += 56*verts.size();
 		else if (vertexFormat == 55) length += 64*verts.size();
 		else if (vertexFormat == 119) length += 72*verts.size();
+		else if (vertexFormat == 3) length += 44*verts.size();
 		
 		var block = ByteBuffer.wrap(new byte[length]);
 		block.order(ByteOrder.LITTLE_ENDIAN);
