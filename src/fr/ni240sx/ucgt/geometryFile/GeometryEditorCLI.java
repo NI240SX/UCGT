@@ -10,10 +10,10 @@ import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
 
 public class GeometryEditorCLI {
 
-	public static final String programVersion = "1.2.0.1";
-	public static final String programBuild = "2024.08.21";
+	public static final String programVersion = "1.2.0.3";
+	public static final String programBuild = "2024.09.08";
 	
-	public static Geometry geom;
+	public static Geometry geom = null;
 //	public static ArrayList<String> commandsHistory = new ArrayList<>();
 	
 	public static void main(String[] args) {
@@ -99,6 +99,64 @@ public class GeometryEditorCLI {
 			System.out.println("An unexpected error happened while parsing the command : "+e.getMessage());
 			e.printStackTrace();
 		}
+	}
+
+
+	private static void decompile(String l) {
+		String src;
+		String dst;
+		try {
+			l = l.substring(10);
+			
+			//read first path
+			if (l.startsWith("\"")) {
+				l = l.substring(1);
+				src = l.split("\"")[0];
+				l = l.substring(src.length()+2);
+			} else {
+				src = l.split(" ")[0];
+				l = l.substring(src.length()+1);
+			}
+			
+			//read second path
+			if (l.startsWith("\"")) {
+				l = l.substring(1);
+				dst = l.split("\"")[0];
+//					l = l.substring(dst.length()+2);
+			} else {
+				dst = l.split(" ")[0];
+//					l = l.substring(dst.length()+1);
+			}
+			
+			try {
+				long t = System.currentTimeMillis();
+				System.out.println("Loading geometry...");
+				geom = Geometry.load(new File(src));
+				System.out.println("Geometry read in "+(System.currentTimeMillis()-t)+" ms."
+						+ "\nSaving 3D model...");
+				t = System.currentTimeMillis();
+				try {
+					if (dst.endsWith(".z3d")) {
+						ZModelerZ3D.save(geom, dst);
+						System.out.println("ZModeler scene saved in "+(System.currentTimeMillis()-t)+" ms.");
+				        geom.writeConfig(new File(dst.replace(".z3d", "")+".ini"));
+					} else {
+						WavefrontOBJ.save(geom, dst);
+						System.out.println("Wavefront saved in "+(System.currentTimeMillis()-t)+" ms.");
+				        geom.writeConfig(new File(dst.replace(".obj", "")+".ini"));
+					}
+					System.out.println("Operation successful !");
+					
+				} catch (Exception e) {
+					System.out.printf("Error saving 3D model : %s\n", e.getMessage());
+					e.printStackTrace();
+				}
+			} catch (Exception e) {
+				System.out.printf("Error loading Geometry : %s\n", e.getMessage());
+				e.printStackTrace();
+			}
+			
+		}catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : decompile <BIN source> <OBJ/Z3D output>");}
 	}
 
 	private static void script(String l) {
@@ -301,63 +359,6 @@ public class GeometryEditorCLI {
 			}
 			
 		}catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : convert <TXT CTK config> [INI UCGT config]");}
-	}
-
-	private static void decompile(String l) {
-		String src;
-		String dst;
-		try {
-			l = l.substring(10);
-			
-			//read first path
-			if (l.startsWith("\"")) {
-				l = l.substring(1);
-				src = l.split("\"")[0];
-				l = l.substring(src.length()+2);
-			} else {
-				src = l.split(" ")[0];
-				l = l.substring(src.length()+1);
-			}
-			
-			//read second path
-			if (l.startsWith("\"")) {
-				l = l.substring(1);
-				dst = l.split("\"")[0];
-//					l = l.substring(dst.length()+2);
-			} else {
-				dst = l.split(" ")[0];
-//					l = l.substring(dst.length()+1);
-			}
-			
-			try {
-				long t = System.currentTimeMillis();
-				System.out.println("Loading geometry...");
-				geom = Geometry.load(new File(src));
-				System.out.println("Geometry read in "+(System.currentTimeMillis()-t)+" ms."
-						+ "\nSaving 3D model...");
-				t = System.currentTimeMillis();
-				try {
-					if (dst.endsWith(".z3d")) {
-						ZModelerZ3D.save(geom, dst);
-						System.out.println("ZModeler scene saved in "+(System.currentTimeMillis()-t)+" ms.");
-				        geom.writeConfig(new File(dst.replace(".z3d", "")+".ini"));
-					} else {
-						WavefrontOBJ.save(geom, dst);
-						System.out.println("Wavefront saved in "+(System.currentTimeMillis()-t)+" ms.");
-				        geom.writeConfig(new File(dst.replace(".obj", "")+".ini"));
-					}
-					System.out.println("Operation successful !");
-					
-				} catch (Exception e) {
-					System.out.printf("Error saving 3D model : %s\n", e.getMessage());
-					e.printStackTrace();
-				}
-			} catch (Exception e) {
-				System.out.printf("Error loading Geometry : %s\n", e.getMessage());
-				e.printStackTrace();
-			}
-			
-		}catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : decompile <BIN source> <OBJ/Z3D output>");}
 	}
 
 	private static void compile(String l) {

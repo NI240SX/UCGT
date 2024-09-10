@@ -35,7 +35,7 @@ public class PartHeader extends Block {
 	
 	public String partName = "CAR_PART";
 	
-	public PartHeader(ByteBuffer in) {
+	public PartHeader(ByteBuffer in) throws Exception {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
 		
@@ -83,6 +83,7 @@ public class PartHeader extends Block {
 		if (const02 == 947640) in.position(in.position()+24); //PS model
 		else in.position(in.position()+40); //UC model
 		partName = Block.readString(in);
+		if (partName.isEmpty()) throw new Exception("Part name cannot be empty !");
 		
 //		System.out.println(partName);
 //		if (in.position()%4 != 0) in.position(in.position()+4-in.position()%4); //unnecessary complication

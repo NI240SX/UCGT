@@ -58,7 +58,7 @@ public class ShaderUsage {
     public final VertexFormat vertexFormat;
     
     public static List<ShaderUsage> values = new ArrayList<ShaderUsage>();
-    private static boolean isLoaded = false;
+    public static boolean isLoaded = false;
 
     ShaderUsage(String name, String[] possibleNames) {
     	this(-2, name, possibleNames, VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s);
@@ -95,7 +95,6 @@ public class ShaderUsage {
     public static ShaderUsage get(int key) {
     	if (!isLoaded) {
     		updateUsages();
-    		isLoaded = true;
     	}
         for (ShaderUsage c : values) {
             if (c.key == key) return c;
@@ -109,7 +108,6 @@ public class ShaderUsage {
     public static ShaderUsage get(String name) {
     	if (!isLoaded) {
     		updateUsages();
-    		isLoaded = true;
     	}
         for (ShaderUsage c : values) for (String n : c.possibleNames) {
             if (n.equals(name)) return c;
@@ -157,20 +155,7 @@ public class ShaderUsage {
 	    	var br = new BufferedReader(new FileReader(new File("data/shaderusages")));
 	    	String l;
 			while ((l = br.readLine())!=null){
-				ArrayList<String> names = new ArrayList<>();
-				VertexFormat vf = VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s;
-				if (!l.startsWith("#") && !l.startsWith("//")) {
-					for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isBlank()) {
-						if (s2.contains("VertexFormat=")) {
-							vf = VertexFormat.get(s2.split("=")[1]);
-						} else names.add(s2);
-					}
-				}
-				if (names.size() == 1) {
-					values.add(new ShaderUsage(names.get(0), names.toArray(String[]::new), vf));
-				} else if (names.size() != 0) { //>1
-					values.add(new ShaderUsage(new Hash(names.get(0)).vltHash, names.get(1), names.toArray(String[]::new), vf));
-				}
+				parseUsage(l);
 			}
     	} catch (Exception e) {
     		System.out.println("Warning : unable to fetch shader usages from data folder !");
@@ -196,5 +181,23 @@ public class ShaderUsage {
     		values.add(new ShaderUsage(new Hash("car_t_nm").vltHash, "TrafficDiffuseNormal", new String[]{"TrafficDiffuseNormal","TrafficNormal","car_t_nm"}));
     		values.add(new ShaderUsage(new Hash("car_v").vltHash, "DiffuseSwatch", new String[]{"DiffuseSwatch","Swatch","car_v"}));
     	}
+    	isLoaded = true;
     }
+
+	public static void parseUsage(String l) {
+		ArrayList<String> names = new ArrayList<>();
+		VertexFormat vf = VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s;
+		if (!l.startsWith("#") && !l.startsWith("//")) {
+			for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isBlank()) {
+				if (s2.contains("VertexFormat=")) {
+					vf = VertexFormat.get(s2.split("=")[1]);
+				} else names.add(s2);
+			}
+		}
+		if (names.size() == 1) {
+			values.add(new ShaderUsage(names.get(0), names.toArray(String[]::new), vf));
+		} else if (names.size() != 0) { //>1
+			values.add(new ShaderUsage(new Hash(names.get(0)).vltHash, names.get(1), names.toArray(String[]::new), vf));
+		}
+	}
 }

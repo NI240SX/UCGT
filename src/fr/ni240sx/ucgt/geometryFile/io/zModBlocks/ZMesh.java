@@ -134,7 +134,7 @@ public class ZMesh extends ZModBlock {
 		var numPolys = in.getInt();
 		
 		for (int i=0;i<numVerts;i++) verts.add(new ZVertex(in));
-		for (int i=0;i<numPolys;i++) polys.add(new Polygon(in));
+		for (int i=0;i<numPolys;i++) polys.add(new Polygon(in, polyFormat ==  1));
 		
 	}
 
@@ -484,7 +484,9 @@ public class ZMesh extends ZModBlock {
 		public int materialUID;
 		public int[] vertIDs;
 		
-		public Polygon(ByteBuffer in) {
+		public Polygon(ByteBuffer in, boolean mixedFormat) {
+			
+			if (mixedFormat) in.getInt();
 			
 			viewStatus = in.getInt();
 			int2 = in.getInt();

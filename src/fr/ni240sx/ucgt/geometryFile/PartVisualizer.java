@@ -18,20 +18,19 @@ import javafx.scene.shape.TriangleMesh;
 import javafx.scene.shape.VertexFormat;
 import javafx.stage.Stage;
 
-public class PartVisualizer extends Application{
+public class PartVisualizer extends Stage{
 
-	public static Group viewportGroup = new Group();
-	public static OrbitCameraViewport viewport;
+	public Group viewportGroup = new Group();
+	public OrbitCameraViewport viewport;
 	
 //	public static ArrayList<MeshView> partMeshView = new ArrayList<MeshView>();
 	
-	public static List<Part> partsList = new ArrayList<>();
-	public static ArrayList<Material> materials = new ArrayList<>();
-	public static ArrayList<Color> materialColors = new ArrayList<>();
+	public List<Part> partsList = new ArrayList<>();
+	public ArrayList<Material> materials = new ArrayList<>();
+	public ArrayList<Color> materialColors = new ArrayList<>();
 		
-	@Override
-	public void start(Stage primaryStage) throws Exception {
-
+	public PartVisualizer() {
+		super();
 		viewport = new OrbitCameraViewport(viewportGroup, 1024, 600);
 
 		viewport.rotationX.setAngle(90);
@@ -154,9 +153,8 @@ public class PartVisualizer extends Application{
 		
         
         Scene scene = new Scene(root, 1024, 600);
-        primaryStage.setScene(scene);
-        primaryStage.show();
-        
+        this.setScene(scene);
+        this.show();
         
 	}
 	
@@ -167,14 +165,14 @@ public class PartVisualizer extends Application{
 //    	viewport.viewportGroup.getChildren().addAll(partMeshView);
 //    }
 
-    public static void setPartsFromFile(String geomFile, String parts) {
+    public void setPartsFromFile(String geomFile, String parts) {
     	partsList.clear();
     	materials.clear();
 		materialColors.clear();
     	addPartsFromFile(geomFile, parts);
     }
     
-    public static void addPartsFromFile(String geomFile, String parts) {
+    public void addPartsFromFile(String geomFile, String parts) {
 		try {
 			long t = System.currentTimeMillis();
 			
@@ -189,7 +187,7 @@ public class PartVisualizer extends Application{
 		}
 	}
     
-    public static void addParts(Geometry geom, String parts) {
+    public void addParts(Geometry geom, String parts) {
     	for (Part p : geom.parts) {
 			if (parts.contains(p.header.partName.replace(geom.carname+"_", ""))) partsList.add(p);
 		}
@@ -202,13 +200,13 @@ public class PartVisualizer extends Application{
 		}
     }
     
-    public static void run() {
-    	launch();
-    }
-    public static void run(String[] args) {
-    	launch(args);
-    }
-	
+//    public void run() {
+//    	launch();
+//    }
+//    public void run(String[] args) {
+//    	launch(args);
+//    }
+//	
 //	public static void main(String[] args) {
 //		try {
 //			launch(args);

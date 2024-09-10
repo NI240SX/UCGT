@@ -31,15 +31,15 @@ public enum BlockType {
 	Part_AutosculptLinking(0x1E401300, "Part_AutosculptLinking"),
 	Part_AutosculptZones(0x1D401300, "Part_AutosculptZones"),
 
-	Textures(0x000030b3, "Textures"),
-	Textures_Header(0x000031b3, "Textures_Header"),
-	Textures_Info(0x01003133, "Textures_Info"),
-	Textures_TexList(0x02003133, "Textures_TexList"),
-	Textures_TexOffsets(0x03003133, "Textures_TexOffsets"),
+	TPK(0x000030b3, "TPK"),
+	TPK_Header(0x000031b3, "TPK_Header"),
+	TPK_Info(0x01003133, "TPK_Info"),
+	TPK_TexList(0x02003133, "TPK_TexList"),
+	TPK_TexOffsets(0x03003133, "TPK_TexOffsets"),
 	
-	TPK_Container(0x000032b3, "TPK_Container"),
-	TPK_Header(0x01003233, "Tex_Header"),
-	TPK_Data(0x02003233, "Tex_Data"),
+	Tex_Container(0x000032b3, "Tex_Container"),
+	Tex_Header(0x01003233, "Tex_Header"),
+	Tex_Data(0x02003233, "Tex_Data"),
 	
 	NIS_Skeleton(0x0940a300, "NIS_Skeleton?"),
 	

@@ -87,6 +87,7 @@ public class Geometry extends Block {
 	public static boolean SAVE_removeInvalid = true;
 	public static boolean SAVE_copyMissingLODs = false;
 	public static boolean SAVE_copyLOD_D = false;
+	public static boolean SAVE_protectModel = false;
 
 	public static boolean IMPORT_importVertexColors = true;
 	public static boolean IMPORT_calculateVertexColors = false;
@@ -321,7 +322,8 @@ public class Geometry extends Block {
 
 		var buf = ByteBuffer.wrap(new byte[8]); //16
 		buf.order(ByteOrder.LITTLE_ENDIAN);
-		buf.putInt(getBlockID().getKey());
+		if (SAVE_protectModel) buf.putInt(BlockType.Geom_Header.getKey());
+		else buf.putInt(getBlockID().getKey());
 		buf.putInt(-1); //length for later
 		out.write(buf.array());
 
@@ -534,25 +536,68 @@ public class Geometry extends Block {
 		
 //		if (!modelsDirectory.endsWith("\\")) modelsDirectory += "\\";
 		
-		new File(streamFile).renameTo(new File(streamFile.replace(".BUN", ".OLD").replace(".BIN", ".OLD"))); //i'll read this file and transfer the data to a new file as it is read, to lower RAM usage which already gets high just with cars
-		if (l8rFile != null) new File(l8rFile).renameTo(new File(l8rFile.replace(".BUN", ".OLD").replace(".BIN", ".OLD")));
+		new File(streamFile).renameTo(new File(streamFile.replace(".BUN", "").replace(".BIN", "")+".OLD")); //i'll read this file and transfer the data to a new file as it is read, to lower RAM usage which already gets high just with cars
+		if (l8rFile != null) new File(l8rFile).renameTo(new File(l8rFile.replace(".BUN", "").replace(".BIN", "")+".OLD"));
 		
-		HashMap<Pair<String,String>,String> geometriesToReplace = new HashMap<>();
+		HashMap<Pair<String,String>,ReplaceInStream> geometriesToReplace = new HashMap<>();
 		//eg X0 , eLabScenery_XOs_Sawhorse_1.bin -> "C:\Users\NI240SX\Documents\NFS\a MUCP\UCGT\STREAML8R_MW2 recompiled\X0-eLabScenery_XOs_Sawhorse_1.bin.z3d"
 
 		
 		if (new File (modelsDirectory).isDirectory()) {
 			var filesInDir = new File (modelsDirectory).list();
 			for (var s : filesInDir) {
-				if (s.endsWith(".ini")) {
-					if (new File(modelsDirectory + s.replace(".ini", ".z3d")).exists()) {
-						//check the INI for chunk and file name
-						System.out.println("INI and Z3D found : "+s);
-						geometriesToReplace.put(Geometry.findBlockAndNameInConfig(new File(modelsDirectory + s)), modelsDirectory + s.replace(".ini", ".z3d"));
-					} else if (new File(modelsDirectory + s.replace(".ini", ".obj")).exists()) {
-						System.out.println("INI and OBJ found : "+s);
-						geometriesToReplace.put(Geometry.findBlockAndNameInConfig(new File(modelsDirectory + s)), modelsDirectory + s.replace(".ini", ".obj"));
+				s = s.toLowerCase();
+				try {
+					// decompiled 3D models
+					if (s.endsWith(".ini")) {
+						if (new File(modelsDirectory + s.replace(".ini", ".z3d")).exists()) {
+							//check the INI for chunk and file name
+							System.out.println("INI and Z3D found : "+s);
+							geometriesToReplace.put(
+									Geometry.findBlockAndNameInConfig(new File(modelsDirectory + s)), 
+									new ReplaceInStream(modelsDirectory + s.replace(".ini", ".z3d"))
+									);
+						} else if (new File(modelsDirectory + s.replace(".ini", ".obj")).exists()) {
+							System.out.println("INI and OBJ found : "+s);
+							geometriesToReplace.put(
+									Geometry.findBlockAndNameInConfig(new File(modelsDirectory + s)), 
+									new ReplaceInStream(modelsDirectory + s.replace(".ini", ".obj"))
+									);
+						}
 					}
+					
+					// compiled Geometries and TPKs
+					if (s.endsWith(".bin") || s.toLowerCase().endsWith(".tpk")) {
+						//TODO loop on binblocks in case there's multiple, seek for chunk and file name for each, and put a corresponding entry in the hashmap
+						//ReplaceInStream is to precise which type of operation has to be done if a matching binblock is found : either compile from file or copy from file with a binblock offset
+						var binFile = new File(modelsDirectory + s);
+						var fis = new FileInputStream(binFile);
+						var binFileToBytes = new byte[(int)binFile.length()];
+						fis.read(binFileToBytes);
+						fis.close();
+						var bb = ByteBuffer.wrap(binFileToBytes);
+						bb.order(ByteOrder.LITTLE_ENDIAN);
+						while (bb.hasRemaining()) {
+							var id = bb.getInt();
+							var length = bb.getInt();
+							var start = bb.position();
+							// SEEK FOR CHUNK AND FILE NAME
+							var blockAndFile = findBlockAndNameInGeomOrTPK(bb, id);
+							if (blockAndFile != null) {
+								var arr = new byte[length+8];
+								bb.position(start-8);
+								bb.get(arr);
+								geometriesToReplace.put(
+										blockAndFile,
+										new ReplaceInStream(arr)
+										);
+							}
+							bb.position(start + length);
+						}						
+					}
+				} catch (Exception e) {
+					System.out.println("Error finding block name and file name for file "+s+" : "+e.getMessage());
+					e.printStackTrace();
 				}
 			}
 			
@@ -561,14 +606,14 @@ public class Geometry extends Block {
 		}
 		
 
-		File inputFile = new File(streamFile.replace(".BUN", ".OLD").replace(".BIN", ".OLD"));
+		File inputFile = new File(streamFile.replace(".BUN", "").replace(".BIN", "")+".OLD");
 		File outputFile = new File(streamFile);
 		
 		File outputL8rFile = null;
 		ArrayList<Block> l8rBlocks = null;
 		StreamBlocksOffsets offsets = null;
 		if (l8rFile != null) {
-			File inputL8rFile = new File(l8rFile.replace(".BUN", ".OLD").replace(".BIN", ".OLD"));
+			File inputL8rFile = new File(l8rFile.replace(".BUN", "").replace(".BIN", "")+".OLD");
 			outputL8rFile = new File(l8rFile);
 			FileInputStream fisL8r = new FileInputStream(inputL8rFile);
 			byte[] L8rToBytes = new byte[(int) inputL8rFile.length()];
@@ -609,7 +654,7 @@ public class Geometry extends Block {
 			byte[] ID = new byte[4];
 			byte[] length = new byte[4];
 			boolean replace = false;
-			Geometry geom = null;
+			Pair<String,String> blockAndFile = null;
 			fisStream.read(ID);
 			fisStream.read(length);
 			int blockID = Byte.toUnsignedInt(ID[0]) | 
@@ -631,18 +676,17 @@ public class Geometry extends Block {
 			block[7] = length[3];
 			fisStream.read(block, 8, blockLength);
 
-			System.out.print("\rBlock #"+blockIndex+" @"+inPos);
+//			System.out.print("\rBlock #"+blockIndex+" @"+inPos);
 			
 			if (blockID == BlockType.Geometry.getKey()) {
 //				System.out.println("Block #"+blockIndex+" : Geometry, length="+blockLength+", position="+inPos);
 				var bb = ByteBuffer.wrap(block);
 				bb.order(ByteOrder.LITTLE_ENDIAN);
 				try {
-					geom = (Geometry) Block.read(bb);
-//					System.out.println("geom file name "+geom.geomHeader.geomInfo.filename+", geom block name "+geom.geomHeader.geomInfo.blockname);
+					bb.position(8); //after header
+					blockAndFile = findBlockAndNameInGeomOrTPK(bb, blockID);
 					
-					
-					if (geometriesToReplace.get(new Pair<String,String>(geom.geomHeader.geomInfo.blockname,geom.geomHeader.geomInfo.filename)) != null) {
+					if (geometriesToReplace.get(blockAndFile) != null) {
 						// replace the geom
 						replace = true;
 					}
@@ -656,13 +700,21 @@ public class Geometry extends Block {
 //			else System.out.println("Block #"+blockIndex+" : "+BlockType.get(blockID)+", ID="+String.format("0x%08X", blockID)+", length="+blockLength+", position="+inPos);
 			
 			if (replace) {
-				assert(geom != null);
+				assert(blockAndFile != null);
 				System.out.println();
-				var newgeom = Geometry.importFromFile(new File(geometriesToReplace.get(new Pair<String,String>(geom.geomHeader.geomInfo.blockname,geom.geomHeader.geomInfo.filename))));
-				var arr = newgeom.save((int) outPos);
+				// switch between import geom (obj/z3d) and replace a block (bin/tpk), which may be geometry or tpk
+				var replacement = geometriesToReplace.get(blockAndFile);
+				byte[] arr;
+				System.out.println("Replacing "+blockAndFile.getValue()+" in block "+blockAndFile.getKey());
+				if (replacement.needsCompiling) {
+					var newgeom = Geometry.importFromFile(new File(replacement.file));
+					arr = newgeom.save((int) outPos);
+				} else {
+					arr = replacement.blockData;
+				}
 				fosStream.write(arr);
 				outPos += arr.length;
-				if (l8rFile != null) offsets.update(geom.geomHeader.geomInfo.blockname, arr.length - block.length);
+				if (l8rFile != null) offsets.update(blockAndFile.getKey(), arr.length - block.length);
 			} else {
 				fosStream.write(block);
 				outPos += block.length;
@@ -682,7 +734,7 @@ public class Geometry extends Block {
 			}
 			fosL8r.close();
 		}
-		System.out.println();
+//		System.out.println();
 	}
 	
 	public void readConfig(File f) throws IOException {
@@ -791,6 +843,10 @@ public class Geometry extends Block {
 					case "RemoveInvalid":
 						SAVE_removeInvalid = Boolean.parseBoolean(s2.split("=")[1]);
 						if (SAVE_removeInvalid) System.out.println("Removing invalid parts.");
+						break;
+					case "ProtectModel":
+						SAVE_protectModel = Boolean.parseBoolean(s2.split("=")[1]);
+						if (SAVE_protectModel) System.out.println("Protecting model to prevent easy editing.");
 						break;
 
 					default:
@@ -936,9 +992,20 @@ public class Geometry extends Block {
 					}
 				}
 				break;
+				
+			case "SHADERUSAGE": //define a custom shader usage in the config
+				if (!ShaderUsage.isLoaded) ShaderUsage.updateUsages();
+				ShaderUsage.parseUsage(l.substring(12));
+				break;
 			}
 		}//loop on config file lines
 		br.close();
+
+		if (renameParts.size() != 0) for (var mp : mpointsAll) for (var r : renameParts){
+			for (int i=0; i<mp.tempPartNames.size(); i++) {
+				mp.tempPartNames.set(i, mp.tempPartNames.get(i).replace(r.getValue(), r.getKey()));
+			}
+		}
 	}
 
 	public static void ctkConfigToUCGTConfig(File ctkConfig, File config) throws IOException {
@@ -1361,6 +1428,11 @@ public class Geometry extends Block {
 			}
 		}
 		parts.addAll(toAdd);
+		
+		for (var p : parts) 
+			if (SAVE_protectModel) {
+				if (p.header != null) p.header.partName = "";
+			}
 	}
 
 	@SuppressWarnings("unlikely-arg-type")
@@ -2139,9 +2211,78 @@ public class Geometry extends Block {
 		}
 	}
 	
+	public static Pair<String,String> findBlockAndNameInGeomOrTPK(ByteBuffer bb, int id) {
+//		var beginning = bb.position()-8; //beginning of the parent bin block, header included
+		if (id == BlockType.Geometry.getKey()) {
+			int length;
+			while (bb.getInt() != BlockType.Geom_Header.getKey()) {
+				length = bb.getInt();
+				bb.position(length + bb.position());
+			} //skip to the header
+			bb.getInt();
+			while (bb.getInt() != BlockType.Geom_Info.getKey()) {
+				length = bb.getInt();
+				bb.position(length + bb.position());
+			} //then to the info block
+			
+			var infoStart = bb.position() - 4; //before header
+			bb.position(infoStart+24); //skip block size and data
+			var filename = Block.readString(bb);
+			bb.position(infoStart+80);
+			var blockname = Block.readString(bb);
+//			bb.position(beginning);
+//			System.out.println(blockname + " " +filename);
+			return new Pair<>(blockname, filename);
+			
+		} else if (id == BlockType.TPK.getKey()) {
+			int length;
+			while (bb.getInt() != BlockType.TPK_Header.getKey()) {
+				length = bb.getInt();
+				bb.position(length + bb.position());
+			} //skip to the header
+			bb.getInt();
+			while (bb.getInt() != BlockType.TPK_Info.getKey()) {
+				length = bb.getInt();
+				bb.position(length + bb.position());
+			} //then to the info block
+
+			var infoStart = bb.position() - 4; //before header
+			bb.position(infoStart+12); //skip block size and data
+			var blockname = Block.readString(bb);
+			bb.position(infoStart+40);
+			var filename = Block.readString(bb);
+//			bb.position(beginning);
+//			System.out.println(blockname + " " +filename);
+			return new Pair<>(blockname, filename);
+		}
+		return null;
+	}
 }
 
 class RenderPriority{
 	String partName = "";
 	ArrayList<Pair<Material,Integer>> values = new ArrayList<>();
+}
+
+class ReplaceInStream{
+	String file;
+	boolean needsCompiling;
+	int binBlockIndex;
+	byte[] blockData;
+	
+	/**
+	 * @param file
+	 * @param needsCompiling
+	 * @param binBlockIndex
+	 */
+	public ReplaceInStream(String file) {
+		super();
+		this.file = file;
+		this.needsCompiling = true;
+	}
+	public ReplaceInStream(byte[] arr) {
+		super();
+		this.blockData = arr;
+		this.needsCompiling = false;
+	}
 }

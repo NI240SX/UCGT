@@ -117,12 +117,13 @@ public class Scene extends ZModBlock {
 				var M = mn.embeddedNode.matrix;
 				
 				if (!mn.embeddedNode.name.startsWith("_")) { //check whether it's a part or a marker
-					var curPart = new Part(geom, mn.embeddedNode.name.toUpperCase());
+					var curPart = new Part(geom, mn.embeddedNode.name);
 					
 					HashMap<Integer, Material> ZMMatsToBINMats = new HashMap<>();
 
 					//materials are already per triangle i just need to separate the vertices into multiple blocks and rebuild the indices
-					if (mesh.polyFormat == 3) for (var poly : mesh.polys) { //only process triangle meshes for now
+					//if (mesh.polyFormat == 3) 
+					for (var poly : mesh.polys) { //only process triangle meshes for now
 						
 						//detect the material something something
 						//create a hashmap for the part (materialUID, BIN material) we don't wanna do this for each poly
@@ -147,8 +148,8 @@ public class Scene extends ZModBlock {
 						
 
 						//process the triangle's vertices, add them to the right vertices block and process their new ids
-	        			Vertex[] triVerts = new Vertex[3];
-	        			for (int i=0; i<3; i++) {
+	        			Vertex[] triVerts = new Vertex[poly.vertIDs.length];
+	        			for (int i=0; i<poly.vertIDs.length; i++) {
 	        				triVerts[i] = new Vertex();
 	        				
 	        				var x = mesh.verts.get(poly.vertIDs[i]).x;
@@ -186,10 +187,18 @@ public class Scene extends ZModBlock {
 								(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[1])),
 								(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[0])) 
 								) );
-	        			//TODO add tangents calculation
 						
-						
-					} else System.out.println("Please triangulate the mesh for "+mn.embeddedNode.name);
+	        			if (poly.vertIDs.length == 4) { //
+	        				ZMMatsToBINMats.get(poly.materialUID).triangles.add( new Triangle(
+		        					(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[3])), 
+									(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[2])),
+									(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[0])) 
+									) );
+	        			} if (poly.vertIDs.length > 4) { //
+	        				System.out.println("Please triangulate the mesh for "+mn.embeddedNode.name);
+	        			}
+	        			
+					} //else System.out.println("Please triangulate the mesh for "+mn.embeddedNode.name);
 					
 					
 				} else {//marker

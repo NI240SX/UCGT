@@ -468,6 +468,7 @@ public class ZModelerZ3D {
 			in.position(blockStart+blockLength); //security in case a block is not read/misread
 		} catch (Exception e) {
 			System.out.println("An error occured reading "+blockType+" block version "+blockVersion+", UID "+String.format("0x%08X",Integer.reverseBytes(blockUID))+" : "+e.getMessage());
+			e.printStackTrace();
 			try {
 				if (blockStart != 0 && blockLength != 0) in.position(blockStart+blockLength);
 				//try to proceed to the next block anyways

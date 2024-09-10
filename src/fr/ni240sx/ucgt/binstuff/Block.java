@@ -25,8 +25,10 @@ public abstract class Block {
 	public static Block read(ByteBuffer in) {
 		int chunkToInt;
 		BlockType block = BlockType.get(chunkToInt = in.getInt());
+		var pos = in.position();
 //		System.out.println("Block read : "+block.getName());
 		if (doNotRead.get(block) == null) //use the doNotRead with caution !
+		try {
 		switch (block) {
 		case Padding:
 			return new Padding(in);
@@ -100,6 +102,10 @@ public abstract class Block {
 		default:
 //			System.out.println("Unknown block, ID="+Integer.toHexString(Integer.reverseBytes(chunkToInt)));
 			return new UnknownBlock(in, chunkToInt);
+		}
+		} catch (Exception e) {
+			System.out.println("Unable to read block "+block+" : "+e.getMessage());
+			in.position(pos);
 		}
 		return new UnknownBlock(in, chunkToInt);
 	}
