@@ -53,11 +53,11 @@ public class PartsOffsets extends Block {
 		return buf.array();
 	}
 
-	public void refresh(List<Part> parts) {
+	public void refresh(Geometry geom) {
 		partOffsets.clear();
-		for (var p : parts) {
+		for (var p : geom.parts) {
 			partOffsets.add(new PartOffset(p.header.binKey, 0, p.compressedLength, p.decompressedLength, 
-					Geometry.defaultCompressionType == CompressionType.RawDecompressed ? PartOffset.rawData : PartOffset.compressed));
+					geom.defaultCompressionType == CompressionType.RawDecompressed ? PartOffset.rawData : PartOffset.compressed));
 //			partOffsets.put(po.partKey, po);
 		}
 		partOffsets.sort(new PartOffsetsSorter());

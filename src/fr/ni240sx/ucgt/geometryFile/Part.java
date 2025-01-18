@@ -36,7 +36,7 @@ public class Part extends Block {
 	public String lod;
 	public String name = "";
 	
-	public Part(ByteBuffer in) {
+	public Part(ByteBuffer in) throws Exception {
 		
 		in.order(ByteOrder.LITTLE_ENDIAN);
 		in.getInt(); //ID
@@ -191,7 +191,7 @@ public class Part extends Block {
 
 		out.write(buf.array());
 		
-		if (shaderlist.shaders.size() == 0) subBlocks.remove(shaderlist);
+		if (shaderlist != null && shaderlist.shaders.size() == 0) subBlocks.remove(shaderlist);
 		
 		for (var b : subBlocks) {
 			if (b != null) out.write(b.save(currentPosition + out.size()));
@@ -210,12 +210,12 @@ public class Part extends Block {
 		return arr;
 	}
 	
-	public void precompress() throws IOException, InterruptedException {
+	public void precompress(Geometry geom) throws IOException, InterruptedException {
 		
 		var partBytes = this.save(0);
 		decompressedLength = partBytes.length;
 		
-		compressedData  = Compression.compress(partBytes, Geometry.defaultCompressionType, Geometry.defaultCompressionLevel);
+		compressedData  = Compression.compress(partBytes, geom.defaultCompressionType, geom.defaultCompressionLevel);
 		compressedLength = compressedData.length + 24;
 	}
 	
@@ -267,7 +267,7 @@ public class Part extends Block {
 	public ArrayList<Integer> generateASZones() {
 		ArrayList<Integer> zones = new ArrayList<>();
 		for (int i=0;i<11;i++) {
-			zones.add(new Hash(header.partName.substring(0,header.partName.length()-1) +"T"+i+"_"+lod).binHash);
+			zones.add(Hash.findBIN(header.partName.substring(0,header.partName.length()-1) +"T"+i+"_"+lod));
 		}
 		return zones;
 	}

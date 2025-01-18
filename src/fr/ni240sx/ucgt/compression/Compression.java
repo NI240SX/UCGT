@@ -36,7 +36,7 @@ public class Compression {
 		
 		switch(compressionType) {
 		case RefPack:
-			return new RefPackCompress().compress(ByteBuffer.wrap(arr), compressionLevel);
+			return new RefPackCompress().compress(arr, compressionLevel);
 		case JDLZ:
 			return JDLZCompress.compress(arr);
 		case RawDecompressed:

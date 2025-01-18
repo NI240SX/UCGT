@@ -6,7 +6,6 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.BlockType;
 
 public class MPoints extends Block {
@@ -28,7 +27,7 @@ public class MPoints extends Block {
 			var mp = new MPoint();
 			mpoints.add(mp);
 			int key = in.getInt();
-			mp.nameHash = new Hash(String.format("0x%08X", key), key);
+			mp.nameHash = key;
 			in.getInt(); //0
 			in.getInt(); //0
 			in.getInt(); //0
@@ -94,7 +93,7 @@ public class MPoints extends Block {
 		Block.makeAlignment(out, alignment, (byte) 0x11);
 
 		for (var mp : mpoints) {
-			out.putInt(mp.nameHash.binHash);
+			out.putInt(mp.nameHash);
 			out.putInt(0);
 			out.putInt(0);
 			out.putInt(0);

@@ -46,8 +46,8 @@ public class Padding extends Block {
 		out.write(buf.array());
 	}
 	
-	public static byte[] makePadding(int pos, int modulo) throws IOException {
-		int paddingLength = (modulo - ((pos + 8) % modulo))%modulo;
+	public static byte[] makePadding(long pos, int modulo) {
+		int paddingLength = (int) ((modulo - ((pos + 8) % modulo))%modulo);
 		
 		var buf = ByteBuffer.wrap(new byte[paddingLength + 8]);
 		buf.order(ByteOrder.LITTLE_ENDIAN);

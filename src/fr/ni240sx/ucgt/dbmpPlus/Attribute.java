@@ -12,19 +12,19 @@ import javafx.scene.layout.HBox;
 abstract class Attribute {
 	
 //	public String AttributeIdentifier;
-	public Hash Key = null;
+	public int Key = 0;
 	public String displayName = "MISSING";
 	public HBox dataHBox = new HBox(10);
 
 	public Attribute(String key) {
-		Key = new Hash(key);
-		displayName = Key.label;
+		Key = Hash.findBIN(key);
+		displayName = Hash.getBIN(Key);
 		dataHBox.getChildren().addAll(new Label(displayName));
 	}
 	
-	public Attribute(Hash key, boolean useGUI) {
+	public Attribute(int key, boolean useGUI) {
 		Key = key;
-		displayName = Key.label;
+		displayName = Hash.getBIN(key);
 		if (useGUI) dataHBox.getChildren().addAll(new Label(displayName));
 	}
 
@@ -35,7 +35,7 @@ abstract class Attribute {
 	}
 	
 	public void writeToFile(ByteBuffer bb) {
-		bb.putInt(Key.binHash);
+		bb.putInt(Key);
 	}
 	
 	public abstract void revertFrom(Attribute a);
@@ -76,7 +76,7 @@ class AttributeTwoString extends Attribute{
 		value2gui = new TextField();
 		initGUI();
 	}
-	public AttributeTwoString(Hash key, ByteBuffer bb, boolean useGUI) {
+	public AttributeTwoString(int key, ByteBuffer bb, boolean useGUI) {
 		super(key, useGUI);
 		value1Exists = bb.get();
 		value2Exists = bb.get();
@@ -173,7 +173,7 @@ class AttributeInteger extends Attribute{
 		valuegui = new TextField();
 		initGUI();
 	}
-	public AttributeInteger(Hash key, ByteBuffer bb, boolean useGUI) {
+	public AttributeInteger(int key, ByteBuffer bb, boolean useGUI) {
 		super(key, useGUI);
 		value = bb.getInt();
 		if (useGUI) {
@@ -231,7 +231,7 @@ class AttributeInteger extends Attribute{
 
 class AttributeKey extends Attribute{
 //	public static String AttributeIdentifier = "Key";
-	public Hash value = new Hash("");
+	public String value = "";
 	TextField valuegui;
 	public AttributeKey(String key) {
 		super(key);
@@ -240,13 +240,13 @@ class AttributeKey extends Attribute{
 	}
 	public AttributeKey(String key, String value) {
 		super(key);
-		this.value = new Hash(value);
+		this.value = value;
 		valuegui = new TextField();
 		initGUI();
 	}
-	public AttributeKey(Hash key, ByteBuffer bb, boolean useGUI) {
+	public AttributeKey(int key, ByteBuffer bb, boolean useGUI) {
 		super(key, useGUI);
-		value = new Hash(DBMP.readString(bb));
+		value = DBMP.readString(bb);
 		if (useGUI) {
 			valuegui = new TextField();
 			initGUI();
@@ -260,31 +260,31 @@ class AttributeKey extends Attribute{
 	}
 	@SuppressWarnings("unused")
 	public void initGUI() {
-		valuegui.setText(this.value.label);
+		valuegui.setText(this.value);
 		dataHBox.getChildren().addAll(valuegui);
 
 		valuegui.setOnKeyTyped(e -> {
 			int caretB4Save = valuegui.getCaretPosition();
 			new UndoAttributeChange(this);
-			value = new Hash(valuegui.getText().strip());
-			valuegui.setText(value.label);
+			value = valuegui.getText().strip();
+			valuegui.setText(value);
 			valuegui.positionCaret(caretB4Save);
 			e.consume();
 		});
 	}
 	@Override
 	public void update() {
-		valuegui.setText(this.value.label);
+		valuegui.setText(this.value);
 	}
 	@Override
 	public void revertFrom(Attribute a) {
 		this.value = ((AttributeKey)a).value;
-		valuegui.setText(value.label);
+		valuegui.setText(value);
 	}
 	@Override
 	public void writeToFile(ByteBuffer bb) {
 		super.writeToFile(bb);
-		DBMP.writeString(value.label, bb);
+		DBMP.writeString(value, bb);
 	}
 	@Override
 	public String getAttribType() {
@@ -316,7 +316,7 @@ class AttributeBoolean extends Attribute{
 		valuegui = new TextField();
 		initGUI();
 	}
-	public AttributeBoolean(Hash key, ByteBuffer bb, boolean useGUI) {
+	public AttributeBoolean(int key, ByteBuffer bb, boolean useGUI) {
 		super(key, useGUI);
 		value = bb.get()==1;
 		if (useGUI) {
@@ -406,7 +406,7 @@ class AttributeColor extends Attribute{
 		alphagui = new TextField();
 		initGUI();
 	}
-	public AttributeColor(Hash key, ByteBuffer bb, boolean useGUI) {
+	public AttributeColor(int key, ByteBuffer bb, boolean useGUI) {
 		super(key, useGUI);
 		red = bb.get();
 		green = bb.get();

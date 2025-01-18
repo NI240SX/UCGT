@@ -1,5 +1,6 @@
 package fr.ni240sx.ucgt.binstuff;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import fr.ni240sx.ucgt.geometryFile.*;
 import fr.ni240sx.ucgt.geometryFile.geometry.*;
 import fr.ni240sx.ucgt.geometryFile.part.*;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.*;
+import fr.ni240sx.ucgt.geometryFile.textures.TPK;
 
 public abstract class Block {
 	public abstract BlockType getBlockID();
@@ -22,19 +24,21 @@ public abstract class Block {
 	
 	public abstract byte[] save(int currentPosition) throws IOException, InterruptedException; //TODO check whether these throws are still useful
 	
-	public static Block read(ByteBuffer in) {
+	public static Block read(ByteBuffer in) throws Exception {
 		int chunkToInt;
 		BlockType block = BlockType.get(chunkToInt = in.getInt());
 		var pos = in.position();
 //		System.out.println("Block read : "+block.getName());
 		if (doNotRead.get(block) == null) //use the doNotRead with caution !
-		try {
+		//try {
 		switch (block) {
 		case Padding:
 			return new Padding(in);
 		case Geometry:
 //			System.out.println("initializing a geometry block - this shouldn't happen");
 			return new Geometry(in);
+		case UCGT_Data:
+			return new UCGTData(in);
 		case Geom_Header:
 			return new GeomHeader(in);
 		case Geom_Info:
@@ -91,6 +95,9 @@ public abstract class Block {
 		case Part_AutosculptZones:
 			return new AutosculptZones(in);
 
+		case TPK:
+			return new TPK(in);
+			
 		case NIS_Skeleton:
 			System.out.println("NIS Skeleton block");
 			return new UnknownBlock(in, chunkToInt);
@@ -103,11 +110,19 @@ public abstract class Block {
 //			System.out.println("Unknown block, ID="+Integer.toHexString(Integer.reverseBytes(chunkToInt)));
 			return new UnknownBlock(in, chunkToInt);
 		}
-		} catch (Exception e) {
-			System.out.println("Unable to read block "+block+" : "+e.getMessage());
-			in.position(pos);
-		}
+		//} catch (Exception e) {
+		//	System.out.println("Unable to read block "+block+" : "+e.getMessage());
+		//	e.printStackTrace();
+		//	in.position(pos);
+		//}
 		return new UnknownBlock(in, chunkToInt);
+	}
+	
+
+	public static String readStringAligned(ByteBuffer bb) {
+		var s = readString(bb);
+		while (bb.position()%4 != 0) bb.get();
+		return s;
 	}
 	
 	public static String readString(ByteBuffer bb) {
@@ -122,6 +137,9 @@ public abstract class Block {
 	}
 
 	public static void putString(ByteBuffer bb, String s) {
+		putString(bb, s, Integer.MAX_VALUE);
+	}
+	public static void putString(ByteArrayOutputStream bb, String s) throws IOException {
 		putString(bb, s, Integer.MAX_VALUE);
 	}
 	/**
@@ -140,7 +158,21 @@ public abstract class Block {
 		}
 		bb.put((byte)0);
 		//4-byte alignment
-		if (bb.position()%4 != 0) bb.put(new byte[4 - bb.position()%4]); //TODO changed since the last working version
+		if (bb.position()%4 != 0) bb.put(new byte[4 - bb.position()%4]);
+	}
+	
+	public static void putString(ByteArrayOutputStream bb, String s, int maxSize) throws IOException {
+		
+		for (int i=0; i<s.length(); i++) {
+			if (i>maxSize-1) {
+				System.out.println("[WARN] String too long !");
+				break;
+			}
+			bb.write((byte)s.charAt(i));
+		}
+		bb.write((byte)0);
+		//4-byte alignment
+		if (bb.size()%4 != 0) bb.write(new byte[4 - bb.size()%4]);
 	}
 	
 	public static int stringLengthAligned(String s) {

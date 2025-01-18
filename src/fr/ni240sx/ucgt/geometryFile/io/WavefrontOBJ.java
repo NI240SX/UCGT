@@ -7,6 +7,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+
+import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.geometryFile.part.MPoint;
@@ -27,7 +29,7 @@ public class WavefrontOBJ {
         boolean nextIsMarker = false;
         Part curPart = null;
         MPoint curMarker = null;
-        Material curMat = Material.getFallbackMaterial();
+        Material curMat = Material.getFallbackMaterial(geom);
         ArrayList<VertexData3> verts = new ArrayList<>(); //WARNING obj index = list index + 1
         ArrayList<VertexData3> normals = new ArrayList<>(); //WARNING obj index = list index + 1
         ArrayList<TexcoordData2> tex = new ArrayList<>(); //WARNING obj index = list index + 1
@@ -63,7 +65,7 @@ public class WavefrontOBJ {
         		// vertex
         		if (line.split(" ").length < 4) System.out.println("[OBJLoader] Wrong vertex data");
         		
-        		if (Geometry.IMPORT_importVertexColors && line.split(" ").length >= 7) {
+        		if (geom.IMPORT_importVertexColors && line.split(" ").length >= 7) {
         			// vertex with vertex colors
         			verts.add(new VertexData6(line.split(" ")[1], line.split(" ")[2], line.split(" ")[3], line.split(" ")[4], line.split(" ")[5], line.split(" ")[6]));
         		} else {
@@ -95,7 +97,7 @@ public class WavefrontOBJ {
         			}
         			// if no material data is found give a warning and create a fallback material
         			System.out.println("[OBJLoader] Warning : material "+line.substring(7)+" not found in config !");
-        			curMat = Material.getFallbackMaterial();
+        			curMat = Material.getFallbackMaterial(geom);
     				curMat.verticesBlock = new Vertices();
     				curPart.mesh.materials.materials.add(curMat);
         			
@@ -121,7 +123,7 @@ public class WavefrontOBJ {
 	        			}
 	
 	        			v.tex0U = tex.get(Integer.parseInt(vertdata.split("/")[1])-1).u;
-	        			if (Geometry.IMPORT_flipV) v.tex0V = 1-tex.get(Integer.parseInt(vertdata.split("/")[1])-1).v;
+	        			if (geom.IMPORT_flipV) v.tex0V = 1-tex.get(Integer.parseInt(vertdata.split("/")[1])-1).v;
 	        			else v.tex0V = tex.get(Integer.parseInt(vertdata.split("/")[1])-1).v;
 	        			
 	        			v.normX = normals.get(Integer.parseInt(vertdata.split("/")[2])-1).x;
@@ -189,7 +191,7 @@ public class WavefrontOBJ {
 
 	public static void save(Geometry geom, String f) throws IOException {
 		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(f.replace(".obj", "")+".obj")));
-		bw.write("#OBJ file exported with UCGT - NI240SX 2024\n"
+		bw.write("#OBJ file exported with UCGT - needeka 2025\n"
 				+ "mtllib "+f.split("\\\\")[f.split("\\\\").length-1].replace(".obj", "")+".mtl\n");
 //		long iterator = 1;
 		long vl = 1;
@@ -304,18 +306,18 @@ public class WavefrontOBJ {
         			+ "Ni 1.5 \r\n"
         			+ "d 1.0 \r\n"
         			+ "illum 2\r\n");
-        	if (m.textureUsages.contains(TextureUsage.DIFFUSE)) bw.write("map_Kd "+m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.DIFFUSE)).label+".dds\r\n");
+        	if (m.textureUsages.contains(TextureUsage.DIFFUSE)) bw.write("map_Kd "+Hash.getBIN(m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.DIFFUSE)))+".dds\r\n");
         	if (m.textureUsages.contains(TextureUsage.NORMAL)) {
-        		bw.write("map_Kn "+m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.NORMAL)).label+".dds\r\n");
-        		bw.write("map_norm "+m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.NORMAL)).label+".dds\r\n");
+        		bw.write("map_Kn "+Hash.getBIN(m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.NORMAL)))+".dds\r\n");
+        		bw.write("map_norm "+Hash.getBIN(m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.NORMAL)))+".dds\r\n");
         	}
         	if (m.shaderUsage.equals(ShaderUsage.get("DiffuseAlpha")) || 
     				m.shaderUsage.equals(ShaderUsage.get("DiffuseGlowAlpha")) || 
     				m.shaderUsage.equals(ShaderUsage.get("DiffuseNormalAlpha")) || 
     				m.shaderUsage.equals(ShaderUsage.get("DiffuseNormalSwatchAlpha")) || 
     				m.shaderUsage.equals(ShaderUsage.get("TrafficDiffuseAlpha")))
-        		bw.write("map_d "+m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.DIFFUSE)).label+".dds\r\n");
-        	if (m.textureUsages.contains(TextureUsage.SELFILLUMINATION)) bw.write("map_Ke "+m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.SELFILLUMINATION)).label+".dds\r\n");
+        		bw.write("map_d "+Hash.getBIN(m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.DIFFUSE)))+".dds\r\n");
+        	if (m.textureUsages.contains(TextureUsage.SELFILLUMINATION)) bw.write("map_Ke "+Hash.getBIN(m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.SELFILLUMINATION)))+".dds\r\n");
         	
         }
         bw.close();

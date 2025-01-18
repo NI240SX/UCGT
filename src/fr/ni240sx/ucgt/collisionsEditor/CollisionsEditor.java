@@ -96,7 +96,7 @@ public class CollisionsEditor extends Application {
 	
     @Override
 	public void start(Stage primaryStage) {
-        primaryStage.setTitle(programName + " - " + mainCollisions.carname.label);
+        primaryStage.setTitle(programName + " - " + mainCollisions.carname);
 
         VBox windowTop = new VBox();
         
@@ -135,7 +135,7 @@ public class CollisionsEditor extends Application {
 						lastDirectoryLoaded = selected.getAbsolutePath().replace(lastFileLoaded, "");
 //						  System.out.println(mainDBMP);
 						updateAllPartsDisplay();
-						primaryStage.setTitle(programName + " - " + mainCollisions.carname.label);
+						primaryStage.setTitle(programName + " - " + mainCollisions.carname);
 //						menuDBMP.setText(mainCollisions.carname.label);
 						updateRender();	
 						if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Collisions loaded successfully.", ButtonType.OK).show();
@@ -150,7 +150,7 @@ public class CollisionsEditor extends Application {
 			if (ButtonType.YES.equals(sure) || disableWarnings) {
 				mainCollisions = new Collisions();
 				updateAllPartsDisplay();
-				primaryStage.setTitle("fire - "+mainCollisions.carname.label);
+				primaryStage.setTitle("fire - "+mainCollisions.carname);
 				updateRender();	
 //				menuDBMP.setText(mainCollisions.carname.label);
 			}
@@ -167,11 +167,11 @@ public class CollisionsEditor extends Application {
         fileSave.setOnAction(e -> {
     		FileChooser fc = new FileChooser();
 			fc.setInitialDirectory(new File(lastDirectoryLoaded));
-			fc.setInitialFileName(mainCollisions.carname.label);
+			fc.setInitialFileName(mainCollisions.carname);
 			fc.getExtensionFilters().addAll(
 			        new FileChooser.ExtensionFilter("BIN files", "*.bin"),
 			        new FileChooser.ExtensionFilter("All files", "*.*"));
-			fc.setTitle("Save " + mainCollisions.carname.label + "");
+			fc.setTitle("Save " + mainCollisions.carname+ "");
 			
 
 			try {

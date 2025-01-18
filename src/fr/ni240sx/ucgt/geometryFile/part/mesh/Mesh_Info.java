@@ -32,7 +32,7 @@ public class Mesh_Info extends Block {
 
 	public int numTriangles = 0;
 	public int const32 = 0;
-	public int const33 = 0;
+	public int numTrianglesExtra = 0;
 	public int const34 = 0;
 	
 	public int numVertices = 0;
@@ -64,7 +64,7 @@ public class Mesh_Info extends Block {
 
 		numTriangles = in.getInt();
 		const32 = in.getInt();
-		if (version > 47) const33 = in.getInt();
+		if (version > 47) numTrianglesExtra = in.getInt(); //triangles2
 		if (version > 47) const34 = in.getInt();
 
 		numVertices = in.getInt();
@@ -105,7 +105,7 @@ public class Mesh_Info extends Block {
 
 		out.putInt(numTriangles);
 		out.putInt(const32);
-		if (version > 47) out.putInt(const33);
+		if (version > 47) out.putInt(numTrianglesExtra);
 		if (version > 47) out.putInt(const34);
 
 		out.putInt(numVertices);

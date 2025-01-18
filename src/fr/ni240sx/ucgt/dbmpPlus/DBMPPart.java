@@ -2,6 +2,8 @@ package fr.ni240sx.ucgt.dbmpPlus;
 
 import java.util.ArrayList;
 
+import fr.ni240sx.ucgt.binstuff.Hash;
+
 public class DBMPPart {
 	public ArrayList<Attribute> attributes = new ArrayList<>();
 	public String displayName = "MISSING ATTRIBUTES";
@@ -28,7 +30,7 @@ public class DBMPPart {
 		addAttribute(id = new AttributeCarPartID("PARTID_UPGRADE_GROUP", PartUndercover.get(name.replace("WIDEBODY_", "")), 0));
 		addAttribute(partName = new AttributeTwoString("PART_NAME_OFFSETS", kit, name));
 		addAttribute(new AttributeTwoString("LOD_BASE_NAME", kit, name));
-		if (name.equals("BODY") || name.equals("WIDEBODY")) addAttribute(new AttributeKey("CV", DBMPPlus.mainDBMP.carname.label + "_CV"));
+		if (name.equals("BODY") || name.equals("WIDEBODY")) addAttribute(new AttributeKey("CV", DBMPPlus.mainDBMP.carname + "_CV"));
 
 		//PartID autodetect (problematic : exhausts, driver_female, brake and brakerotor, rollcage, seat, spoiler drag/lip/evo, widebody)
 		if (name.equals("WIDEBODY")) id.ID = PartUndercover.BODY;
@@ -102,7 +104,7 @@ public class DBMPPart {
 			String name2 = "MISSING ATTRIBUTES";
 			for (Attribute attribute : attributes) {
 				attribute.update();
-				if (attribute.Key.label.equals("PART_NAME_OFFSETS")) {
+				if (Hash.getBIN(attribute.Key).equals("PART_NAME_OFFSETS")) {
 					AttributeTwoString att2S = (AttributeTwoString)attribute;
 					name1 = att2S.value1 + "_" + att2S.value2;
 					try {
@@ -112,7 +114,7 @@ public class DBMPPart {
 						
 					}
 				}
-				if (attribute.Key.label.equals("LOD_BASE_NAME")) {
+				if (Hash.getBIN(attribute.Key).equals("LOD_BASE_NAME")) {
 					AttributeTwoString att2S = (AttributeTwoString)attribute;
 					name2 = att2S.value1 + "_" + att2S.value2;
 				}
@@ -136,7 +138,7 @@ public class DBMPPart {
 	public Attribute getAttribute(String a) {
 		Attribute att = null;
 		for (Attribute attribute : attributes) {
-			if (attribute.Key.label.equals(a)) {
+			if (Hash.getBIN(attribute.Key).equals(a)) {
 				att = attribute;
 			}
 		}
@@ -145,7 +147,7 @@ public class DBMPPart {
 	public AttributeInteger getAttributeInteger(String a) {
 		AttributeInteger att = null;
 		for (Attribute attribute : attributes) {
-			if (attribute.Key.label.equals(a)) {
+			if (Hash.getBIN(attribute.Key).equals(a)) {
 				att = (AttributeInteger)attribute;
 			}
 		}
@@ -154,7 +156,7 @@ public class DBMPPart {
 	public AttributeKey getAttributeKey(String a) {
 		AttributeKey att = null;
 		for (Attribute attribute : attributes) {
-			if (attribute.Key.label.equals(a)) {
+			if (Hash.getBIN(attribute.Key).equals(a)) {
 				att = (AttributeKey)attribute;
 			}
 		}
@@ -163,7 +165,7 @@ public class DBMPPart {
 	public AttributeCarPartID getAttributeCarPartID(String a) {
 		AttributeCarPartID att = null;
 		for (Attribute attribute : attributes) {
-			if (attribute.Key.label.equals(a)) {
+			if (Hash.getBIN(attribute.Key).equals(a)) {
 				att = (AttributeCarPartID)attribute;
 			}
 		}
@@ -172,7 +174,7 @@ public class DBMPPart {
 	public AttributeString getAttributeString(String a) {
 		AttributeString att = null;
 		for (Attribute attribute : attributes) {
-			if (attribute.Key.label.equals(a)) {
+			if (Hash.getBIN(attribute.Key).equals(a)) {
 				att = (AttributeString)attribute;
 			}
 		}
@@ -180,7 +182,7 @@ public class DBMPPart {
 	}
 	public void removeAttribute(String a) {
 		for (Attribute attribute : attributes) {
-			if (attribute.Key.label.equals(a)) {
+			if (Hash.getBIN(attribute.Key).equals(a)) {
 				attributes.remove(attribute);
 			}
 		}

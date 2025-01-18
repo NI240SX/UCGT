@@ -10,7 +10,7 @@ import fr.ni240sx.ucgt.binstuff.Block;
 public class StreamBlocksOffsets extends Block {
 
 	public static final int infoLength = 92;
-	ArrayList<ChunkInfo> chunkInfos = new ArrayList<>();
+	public ArrayList<ChunkInfo> chunkInfos = new ArrayList<>();
 	
 	@Override
 	public BlockType getBlockID() {
@@ -74,6 +74,7 @@ public class StreamBlocksOffsets extends Block {
 		int const01; //0
 		int const02; //1
 		int offset; //whatever
+		int oldOffset;
 		int length1;
 		int length2;
 		byte[] otherData = new byte[60];
@@ -86,6 +87,7 @@ public class StreamBlocksOffsets extends Block {
 			const01 = in.getInt();
 			const02 = in.getInt();
 			offset = in.getInt();
+			oldOffset = offset;
 			length1 = in.getInt();
 			length2 = in.getInt();
 			in.get(otherData);

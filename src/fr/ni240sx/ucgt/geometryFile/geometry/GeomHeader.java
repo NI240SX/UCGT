@@ -8,7 +8,9 @@ import java.util.List;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.BlockType;
+import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.Part;
+import fr.ni240sx.ucgt.geometryFile.UCGTData;
 
 public class GeomHeader extends Block {
 
@@ -18,8 +20,9 @@ public class GeomHeader extends Block {
 	public GeomInfo geomInfo = null;
 	public PartsList partsList = null;
 	public PartsOffsets partsOffsets = null;
+	public UCGTData geomData = null;
 	
-	public GeomHeader(ByteBuffer in) {
+	public GeomHeader(ByteBuffer in) throws Exception {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
 		Block block;
@@ -42,6 +45,9 @@ public class GeomHeader extends Block {
 				partsOffsets = (PartsOffsets) b;
 				break;
 			case Geom_UNKNOWN:
+				break;
+			case UCGT_Data:
+				geomData = (UCGTData) b;
 				break;
 			default:
 				break;
@@ -87,9 +93,9 @@ public class GeomHeader extends Block {
 		return arr;	
 	}
 
-	public void refresh(List<Part> parts) {
-		partsOffsets.refresh(parts);
-		partsList.refresh(parts);
-		geomInfo.partsCount = parts.size();
+	public void refresh(Geometry g) {
+		if (g.SAVE_useOffsetsTable) partsOffsets.refresh(g);
+		partsList.refresh(g.parts);
+		geomInfo.partsCount = g.parts.size();
 	}
 }

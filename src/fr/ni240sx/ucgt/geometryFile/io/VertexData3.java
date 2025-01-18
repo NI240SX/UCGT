@@ -1,11 +1,11 @@
 package fr.ni240sx.ucgt.geometryFile.io;
 
 public class VertexData3{
-	public double x;
-	public double y;
-	public double z;
+	public float x;
+	public float y;
+	public float z;
 
-	public VertexData3(double x, double y, double z) {
+	public VertexData3(float x, float y, float z) {
 		super();
 		this.x = x;
 		this.y = y;
@@ -13,8 +13,8 @@ public class VertexData3{
 	}
 
 	public VertexData3(String string, String string2, String string3) {
-		x = Double.parseDouble(string);
-		y = Double.parseDouble(string2);
-		z = Double.parseDouble(string3);
+		x = Float.parseFloat(string);
+		y = Float.parseFloat(string2);
+		z = Float.parseFloat(string3);
 	}
 }

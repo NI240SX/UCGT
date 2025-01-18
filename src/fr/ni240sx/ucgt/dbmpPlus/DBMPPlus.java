@@ -120,7 +120,7 @@ public class DBMPPlus extends Application {
 	
     @Override
 	public void start(Stage primaryStage) {
-        primaryStage.setTitle(programName + " - " + mainDBMP.carname.label);
+        primaryStage.setTitle(programName + " - " + mainDBMP.carname);
 
         VBox windowTop = new VBox();
         
@@ -168,7 +168,7 @@ public class DBMPPlus extends Application {
         menuEdit.getItems().addAll(editUndo, editRedo);
         
         
-        menuDBMP = new Menu(mainDBMP.carname.label);
+        menuDBMP = new Menu(mainDBMP.carname);
 
         MenuItem dbSortPartsByName = new MenuItem("Sort parts by kit + name");
         MenuItem dbSortPartsByName2 = new MenuItem("Sort parts by name");
@@ -517,7 +517,7 @@ public class DBMPPlus extends Application {
 		    		bb.getInt();
 		    		
 			    	for (var p : mainDBMP.dBMPParts) {
-			    		var nameHash = new Hash( mainDBMP.carname.label + "_" + ((AttributeTwoString)p.getAttribute("LOD_BASE_NAME")).value1 + "_" + ((AttributeTwoString)p.getAttribute("LOD_BASE_NAME")).value2 + "_A").binHash;
+			    		var nameHash = Hash.findBIN( mainDBMP.carname + "_" + ((AttributeTwoString)p.getAttribute("LOD_BASE_NAME")).value1 + "_" + ((AttributeTwoString)p.getAttribute("LOD_BASE_NAME")).value2 + "_A");
 			    		if (partHash == nameHash) foundParts.add(p);
 //			    		System.out.println("Found "+p.displayName);
 		    		}
@@ -568,8 +568,8 @@ public class DBMPPlus extends Application {
 	public static void dbFixCVs() {
 		for (DBMPPart p : mainDBMP.dBMPParts) {
 			if (((AttributeCarPartID)p.getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.BODY) {
-				if (((AttributeKey)p.getAttribute("CV")) == null) p.addAttribute(new AttributeKey("CV", DBMPPlus.mainDBMP.carname.label + "_CV"));
-				else ((AttributeKey)p.getAttribute("CV")).value = new Hash(DBMPPlus.mainDBMP.carname.label + "_CV");
+				if (((AttributeKey)p.getAttribute("CV")) == null) p.addAttribute(new AttributeKey("CV", DBMPPlus.mainDBMP.carname + "_CV"));
+				else ((AttributeKey)p.getAttribute("CV")).value = DBMPPlus.mainDBMP.carname + "_CV";
 			}
 		}
 		if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All CVs fixed.").show();
@@ -591,10 +591,10 @@ public class DBMPPlus extends Application {
 		try {
 			String s = td.showAndWait().get().strip();
 			if (!s.isBlank()) {
-				mainDBMP.carname = new Hash(s);
+				mainDBMP.carname = s;
 				if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Car name changed.").show();
-				primaryStage.setTitle("fire - "+mainDBMP.carname.label);
-				menuDBMP.setText(mainDBMP.carname.label);
+				primaryStage.setTitle("fire - "+mainDBMP.carname);
+				menuDBMP.setText(mainDBMP.carname);
 				e.consume();
 			}
 		}catch (NoSuchElementException ex) {
@@ -646,7 +646,7 @@ public class DBMPPlus extends Application {
 
 			// all CVs set to a custom value
 			if (p.getAttribute("CV")!=null) {
-				p.getAttributeKey("CV").value = new Hash(optimizedCVName);
+				p.getAttributeKey("CV").value = optimizedCVName;
 			}
 
 			// uniformized characters offsets 
@@ -1608,7 +1608,7 @@ public class DBMPPlus extends Application {
 	public static void attributeAddCV() {
 		for(DBMPPart p: partsDisplay.getSelectionModel().getSelectedItems()) {
 			if (p.getAttribute("CV") == null) {
-				p.addAttribute(new AttributeKey("CV", mainDBMP.carname.label + "_CV"));
+				p.addAttribute(new AttributeKey("CV", mainDBMP.carname + "_CV"));
 				p.update();
 			}
 		}
@@ -1656,11 +1656,11 @@ public class DBMPPlus extends Application {
 	public static void fileSave(ActionEvent e) {
 		FileChooser fc = new FileChooser();
 		fc.setInitialDirectory(new File(lastDirectoryLoaded));
-		fc.setInitialFileName(mainDBMP.carname.label);
+		fc.setInitialFileName(mainDBMP.carname);
 		fc.getExtensionFilters().addAll(
 		        new FileChooser.ExtensionFilter("BIN files", "*.bin"),
 		        new FileChooser.ExtensionFilter("All files", "*.*"));
-		fc.setTitle("Save " + mainDBMP.carname.label + "");
+		fc.setTitle("Save " + mainDBMP.carname + "");
 		
 
 		try {
@@ -1695,8 +1695,8 @@ public class DBMPPlus extends Application {
 				lastDirectoryLoaded = selected.getAbsolutePath().replace(lastFileLoaded, "");
 //						  System.out.println(mainDBMP);
 				updateAllPartsDisplay();
-				primaryStage.setTitle(programName + " - " + mainDBMP.carname.label);
-				menuDBMP.setText(mainDBMP.carname.label);
+				primaryStage.setTitle(programName + " - " + mainDBMP.carname);
+				menuDBMP.setText(mainDBMP.carname);
 				if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Database loaded successfully.", ButtonType.OK).show();
 			} else {
 //						new Alert(Alert.AlertType.INFORMATION, "Nothing to load", ButtonType.OK).show();
@@ -1710,8 +1710,8 @@ public class DBMPPlus extends Application {
 		if (ButtonType.YES.equals(sure) || disableWarnings) {
 			mainDBMP = new DBMP();
 			updateAllPartsDisplay();
-			primaryStage.setTitle("fire - "+mainDBMP.carname.label);
-			menuDBMP.setText(mainDBMP.carname.label);
+			primaryStage.setTitle("fire - "+mainDBMP.carname);
+			menuDBMP.setText(mainDBMP.carname);
 		}
 	}
 

@@ -21,7 +21,7 @@ public class Collisions {
 	
 	public static double floatingPointError = 0.001;
 
-	public Hash carname = new Hash("UNKNOWN");
+	public String carname = "UNKNOWN";
 
 	public boolean isResolved = false;
 	
@@ -54,13 +54,17 @@ public class Collisions {
 	public ArrayList<LocalFixUp> LocalFixUps = new ArrayList<>();
 	public ArrayList<VirtualFixUp> VirtualFixUps = new ArrayList<>();
 	
-	public static ArrayList<Hash> commonCollisionHashes = Hash.loadHashes(new File("data/collisionshashes"));
+//	public static ArrayList<Hash> commonCollisionHashes = Hash.loadHashes(new File("data/collisionshashes"));
 	
 	public Collisions() {
-		// TODO Auto-generated constructor stub
+		Hash.addBinHashes(new File("data/collisionshashes"));
+		Hash.addVltHashes(new File("data/collisionshashes"));
 	}
 
 	public Collisions(File file) {
+		Hash.addBinHashes(new File("data/collisionshashes"));
+		Hash.addVltHashes(new File("data/collisionshashes"));
+		
 		//Binary's shit structure
 		int NumberOfBounds = 0;
 		int NumberOfBoxShapes = 0;
@@ -88,7 +92,7 @@ public class Collisions {
 			ByteBuffer bb = ByteBuffer.wrap(fileToBytes);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
 			bb.position(36);
-			this.carname = new Hash(readString(bb));
+			this.carname = Hash.addVltHash(Hash.addBinHash(readString(bb)));
 			NumberOfBounds = bb.getInt();
 			NumberOfBoxShapes = bb.getInt();
 			NumberOfConvexTransformShapes = bb.getInt();

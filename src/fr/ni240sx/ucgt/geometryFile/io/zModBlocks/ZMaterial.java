@@ -6,6 +6,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 
+import fr.ni240sx.ucgt.binstuff.Hash;
+import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
+import fr.ni240sx.ucgt.geometryFile.io.zModBlocks.ZMaterial.TexLayer;
+import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
 
@@ -36,7 +40,7 @@ public class ZMaterial extends ZModBlock {
 		this.name = name;
 	}
 
-	public ZMaterial(Material m) {
+	public ZMaterial(Material m, MaterialsList CMaterialsService) {
 		super();
 		this.binMat = m;
 		this.name = m.uniqueName;
@@ -49,7 +53,9 @@ public class ZMaterial extends ZModBlock {
 			this.useAlpha = true;
 		}
 //		if (m.textureUsages.contains(TextureUsage.ALPHA)) this.useAlpha = true;
-		
+
+		CMaterialsService.materials.add(this);
+		CMaterialsService.materialUIDs.add(this.UID);
 	}
 
 	@Override
@@ -221,8 +227,8 @@ public class ZMaterial extends ZModBlock {
 		public boolean enabled=true;
 		public int int01=2, int02=0;
 		public int texUID;
-		public int int11=1, int12=2, int13=1, int14=4;
-		public int int21=1, int22=2, int23=1, int24=4;
+		public int ColorArg0=1, ColorArg1=2, ColorArg2=1, ColorBlend=4;
+		public int AlphaArg0=1, AlphaArg1=2, AlphaArg2=1, AlphaBlend=4;
 		public boolean bool30=false;
 		public int int31=1, int32=1, int33=1;
 		public int int41=2, int42=2, int43=2;
@@ -232,8 +238,8 @@ public class ZMaterial extends ZModBlock {
 			enabled = in.get() == 1;
 			int01 = in.getInt();			int02 = in.getInt();
 			texUID = in.getInt();
-			int11 = in.getInt();			int12 = in.getInt();			int13 = in.getInt();			int14 = in.getInt();
-			int21 = in.getInt();			int22 = in.getInt();			int23 = in.getInt();			int24 = in.getInt();
+			ColorArg0 = in.getInt();			ColorArg1 = in.getInt();			ColorArg2 = in.getInt();			ColorBlend = in.getInt();
+			AlphaArg0 = in.getInt();			AlphaArg1 = in.getInt();			AlphaArg2 = in.getInt();			AlphaBlend = in.getInt();
 			bool30 = in.get()==1;
 			int31 = in.getInt();			int32 = in.getInt();			int33 = in.getInt();
 			int41 = in.getInt();			int42 = in.getInt();			int43 = in.getInt();
@@ -244,8 +250,8 @@ public class ZMaterial extends ZModBlock {
 			block.put((byte) (enabled ? 1 : 0));
 			block.putInt(int01);			block.putInt(int02);
 			block.putInt(texUID);
-			block.putInt(int11);			block.putInt(int12);			block.putInt(int13);			block.putInt(int14);
-			block.putInt(int21);			block.putInt(int22);			block.putInt(int23);			block.putInt(int24);
+			block.putInt(ColorArg0);			block.putInt(ColorArg1);			block.putInt(ColorArg2);			block.putInt(ColorBlend);
+			block.putInt(AlphaArg0);			block.putInt(AlphaArg1);			block.putInt(AlphaArg2);			block.putInt(AlphaBlend);
 			block.put((byte) (bool30 ? 1 : 0));
 			block.putInt(int31);			block.putInt(int32);			block.putInt(int33);
 			block.putInt(int41);			block.putInt(int42);			block.putInt(int43);
@@ -254,6 +260,26 @@ public class ZMaterial extends ZModBlock {
 
 		public TexLayer(int UID) {
 			texUID = UID;
+		}
+		public TexLayer makeSelfIllum() {
+			ColorBlend = 13; // BlendTextureAlpha
+			AlphaBlend = 1; // Disable
+			return this;
+		}
+		public TexLayer makeNormalmap() {
+			enabled = false;
+			ColorBlend = 22; // BumpEnvMap
+			AlphaBlend = 22; // BumpEnvMap
+			return this;
+		}
+		public TexLayer makeRoadElements() {
+			ColorBlend = 8; // AddSigned, not the best but works
+			return this;
+		}
+		public TexLayer makeRoadBase() {
+			int01 = 3;
+			int02 = 1; //used UV channel ?
+			return this;
 		}
 	}
 
@@ -276,6 +302,36 @@ public class ZMaterial extends ZModBlock {
 			}
 		}
 
+	}
+
+	public void addTextures(TexturePaths CTexturesService) {
+		for (var t=0; t<binMat.TextureHashes.size(); t++) {
+			var ztex = new ZTexture(Hash.getBIN(binMat.TextureHashes.get(t))+".dds",".");
+			if (!CTexturesService.textures.contains(ztex)) {
+				CTexturesService.textures.add(ztex);
+				ztex.UID = ZModelerZ3D.createUID();
+			}
+			if (binMat.textureUsages.get(t) == TextureUsage.DIFFUSE ||
+					binMat.textureUsages.get(t) == TextureUsage.ALPHA ||
+					binMat.textureUsages.get(t) == TextureUsage.OPACITY ||
+					binMat.textureUsages.get(t) == TextureUsage.DIFFUSE2 ||
+					binMat.textureUsages.get(t) == TextureUsage.MISCMAP1 ||
+					binMat.textureUsages.get(t) == TextureUsage.MISCMAP1D) 
+				textures.add(new TexLayer(CTexturesService.textures.get(CTexturesService.textures.indexOf(ztex)).UID));
+			if (binMat.textureUsages.get(t) == TextureUsage.ROADBASE)
+				textures.add(new TexLayer(CTexturesService.textures.get(CTexturesService.textures.indexOf(ztex)).UID).makeRoadBase());
+			if (binMat.textureUsages.get(t) == TextureUsage.ROADELEMENTS)
+				textures.add(new TexLayer(CTexturesService.textures.get(CTexturesService.textures.indexOf(ztex)).UID).makeRoadElements());
+			if (binMat.textureUsages.get(t) == TextureUsage.NORMAL ||
+					binMat.textureUsages.get(t) == TextureUsage.NORMAL_SAMPLER ||
+					binMat.textureUsages.get(t) == TextureUsage.NORMALMAP ||
+					binMat.textureUsages.get(t) == TextureUsage.BASENORMAL ||
+					binMat.textureUsages.get(t) == TextureUsage.ELEMENTSNORMAL)
+				textures.add(new TexLayer(CTexturesService.textures.get(CTexturesService.textures.indexOf(ztex)).UID).makeNormalmap());
+			if (binMat.textureUsages.get(t) == TextureUsage.SELFILLUMINATION)
+				textures.add(new TexLayer(CTexturesService.textures.get(CTexturesService.textures.indexOf(ztex)).UID).makeSelfIllum());
+
+		}
 	}
 
 }

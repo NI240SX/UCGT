@@ -38,6 +38,7 @@ _Base_
 - `CarName` - **mandatory** : sets the car name in the output Geometry.
 - `FileName` - sets the file name in the output Geometry (no effect).
 - `BlockName` - sets the block name in the output Geometry (no effect).
+- `MakeDataBlock` - adds metadata to the file including all the settings after this one and shader usages. Useful if you want to pack up models with specific settings as a BIN file and replace them in the world map later on.
 
 _Compression_
 - `UseMultithreading` - optional, defaults to true : use single-threaded or multi-threaded compression for car parts, multi-threaded significantly decreases the time needed to compile, especially when using RefPack and high compression settings. Possible values : true or false.
@@ -60,6 +61,7 @@ _Mesh_
 _Experimental fixes_
 - `ForceAsFix` - optional : force-fixes autosculpt on the specified part if it doesn't get compiled correctly (this happens when there's the same amount of vertices on every morph zone but the welding is different). You can put this setting multiple times. Possible values : any part name.
 - `FixAutosculptNormals` - optional, defaults to true : attempts to fix normals on zero area triangles, greatly improving the look of some Autosculpt parts, including vanilla. Possible values : true or false.
+- `CheckModel` - optional, defaults to true : performs various quality checks on the model and reports possible issues.
 
 Example settings :
 
@@ -183,50 +185,65 @@ The way render priority works in UC is still unknown, however UCGT includes some
 
 First, please note that the order in which you declare materials in the configuration file matters. A transparent material that's declared AFTER another one will render correctly on top. In general, something with a higher priority should render properly in front of something with a lower one.
 
-Then, if the material order doesn't fix your issue, there's the keyword `PRIORITY` which sets a render priority to certain materials of certain parts. First put the partial or full part name, then for each material add a pair `<material>=<priority>`.
+Then, if the material order doesn't fix your issue, each texture in a material can get a render priority. Use the following syntax : `<texture name>=<texture usage>,<priority>` with `priority` being an integer.
 
-Finally, you can use two material-specific settings, `FERenderingOrder=<integer>` and `RenderingOrder=<integer>` that can help you get around rendering issues ACROSS parts, especially in frontend.
+Finally, you can use a material-specific settings, `FERenderingOrder=<integer>` that can help you get around rendering issues in frontend, including ACROSS parts.
 
-As an example, here's an extract of the configuration file I used for Undercover Exposed's Diablo SV. This car has decals inside the cabin behind the windows, as well as badges over multiple light glasses on bumpers, and a badge over a grill on the body.
+Samples :
 
 `MATERIAL	HEADLIGHTGLASS_KIT00	HEADLIGHTGLASS=DiffuseAlpha		%_KIT00_HEADLIGHT_GLASS_OFF=DIFFUSE	%_KIT00_HEADLIGHT_GLASS_ON=SELFILLUMINATION	FERenderingOrder=0`
 
-...
-
-`MATERIAL	InteriorDecal	INTERIOR=DiffuseAlphaNormal	%_INTERIOR=DIFFUSE	%_INTERIOR_N=NORMAL`
-
-`MATERIAL	EngineDecal	ENGINE=DiffuseAlphaNormal	%_ENGINE=DIFFUSE	%_ENGINE_N=NORMAL`
-
-...
+`MATERIAL	InteriorDecal	INTERIOR=DiffuseAlphaNormal	%_INTERIOR=DIFFUSE	%_INTERIOR=OPACITY,5	%_INTERIOR_N=NORMAL,4`
 
 `MATERIAL	WINDSHIELD_WINDOW_FRONT	WINDSHIELD=DiffuseAlpha	WINDOW_FRONT=DIFFUSE	%_SKIN1=SWATCH	FERenderingOrder=4`
-
-`MATERIAL	WINDSHIELD_WINDOW_LEFT_FRONT	WINDSHIELD=DiffuseAlpha	WINDOW_LEFT_FRONT=DIFFUSE	%_SKIN1=SWATCH`
-
-`MATERIAL	WINDSHIELD_WINDOW_RIGHT_FRONT	WINDSHIELD=DiffuseAlpha	WINDOW_RIGHT_FRONT=DIFFUSE	%_SKIN1=SWATCH	FERenderingOrder=6`
-
-`MATERIAL	WINDSHIELD_WINDOW_REAR	WINDSHIELD=DiffuseAlpha	WINDOW_REAR=DIFFUSE	%_SKIN1=SWATCH	FERenderingOrder=4`
-
-`MATERIAL	WINDSHIELD_WINDOW_LEFT_REAR	WINDSHIELD=DiffuseAlpha	WINDOW_LEFT_REAR=DIFFUSE	%_SKIN1=SWATCH	FERenderingOrder=4`
-
-`MATERIAL	WINDSHIELD_WINDOW_RIGHT_REAR	WINDSHIELD=DiffuseAlpha	WINDOW_RIGHT_REAR=DIFFUSE	%_SKIN1=SWATCH	FERenderingOrder=4`
-
-...
-
-`MATERIAL	GrilleA	GRILL=DiffuseAlpha	GRILL_02=DIFFUSE`
-
-...
 
 `//at the bottom to be see through`
 
 `MATERIAL	Badge	DECAL=DiffuseNormalAlpha	%_BADGING=DIFFUSE	%_BADGING_N=NORMAL`
 
-...
 
-`PRIORITY	BRAKELIGHT	Badge=1`
+## Common settings combinations
+### Cars and general car meshes
+To compile a racer car, cop car or general car meshes such as SPOILER, the following options have to be used:
 
-`PRIORITY	BODY	Badge=2	GrilleA=3`
+`CarName=<your car's XNAME here>` (unless you already entered every full part and texture name in both the model and the configuration file)
 
-`PRIORITY	BUMPER	Badge=5	HEADLIGHTGLASS_KIT00=6`
+`UseOffsetsTable=true`
 
-`PRIORITY	BASE	EngineDecal=0	InteriorDecal=0`
+`CompressionType=RefPack`, `CompressionLevel=Maximum` or `CompressionType=RawDecompressed` (other compression types such as JDLZ and HUFF may work but are currently unsupported by UCGT)
+
+`SortAllByName=true`
+
+Materials to be used must have one of the following shader usages: `car`, `car_a`, etc.
+
+For the sake of convenience, UCGT also accepts alternative names detailed in Materials below.
+
+To compile wheels, use the same as above without the CarName.
+
+### Traffic cars
+To compile traffic cars, these settings have to be used:
+
+`CarName=<your car's XNAME here>` (unless you already entered every full part and texture name in both the model and the configuration file)
+
+`UseOffsetsTable=true`
+
+`CompressionType=RawDecompressed`
+
+`SortAllByName=true`
+
+Materials to be used must have one of the following shader usages: `car_t`, `car_t_a` and `car_t_nm`.
+
+For the sake of convenience, UCGT also accepts alternative names detailed in Materials below.
+
+### Stream and NIS models
+To compile other meshes such as NIS models (partial support) and stream models, use these settings:
+
+`UseOffsetsTable=false`
+
+`RemoveInvalid=false`
+
+`FileName=<file to replace>` (eg `eLabScenery_XOs_Sawhorse_1.bin`)
+
+`BlockName=<block name>` (eg `Y0`)
+
+Materials in world and NIS models are slightly different from cars, most of them are governed by a shader usage and not so much by material shaders like cars.

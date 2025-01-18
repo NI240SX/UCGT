@@ -2,7 +2,6 @@ package fr.ni240sx.ucgt.dbmpPlus;
 
 import java.nio.ByteBuffer;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextField;
@@ -27,7 +26,7 @@ public class AttributeCarPartID extends Attribute{
 		levelgui = new TextField();
 		initGUI();
 	}
-	public AttributeCarPartID(Hash key, ByteBuffer bb, boolean useGUI) {
+	public AttributeCarPartID(int key, ByteBuffer bb, boolean useGUI) {
 		super(key, useGUI);
 		level = bb.get();
 		ID = PartUndercover.get(bb.get());

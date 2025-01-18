@@ -92,12 +92,12 @@ public class PartHeader extends Block {
 
 	public PartHeader(String name) {
 		this.partName = name;
-		this.binKey = new Hash(name).binHash;
+		this.binKey = Hash.findBIN(name);
 	}
 
 	public PartHeader(PartHeader header, String name) {
 		this.partName = name;
-		this.binKey = new Hash(name).binHash;
+		this.binKey = Hash.findBIN(name);
 		this.boundsXmax = header.boundsXmax;
 		this.boundsXmin = header.boundsXmin;
 		this.boundsYmax = header.boundsYmax;
@@ -161,8 +161,8 @@ public class PartHeader extends Block {
 		
 		out.putInt(0);
 		out.putInt(0);
-		out.putInt(const11);
-		out.putInt(const12);
+		out.putInt(0); //const11
+		out.putInt(0); //const12
 		
 		if (const02 == 947640) out.position(out.position()+24);
 		else out.position(out.position()+40);

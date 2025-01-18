@@ -3,6 +3,8 @@ package fr.ni240sx.ucgt.geometryFile;
 public enum BlockType {
 	Padding(0x00000000, "Padding"),
 	
+	UCGT_Data(0x55434754, "UCGT Data"),
+	
 	Geometry(0x00401380, "Geometry"),
 	Geom_Header(0x01401380, "Geom_Header"),
 	Geom_Info(0x02401300, "Geom_Info"),
@@ -20,11 +22,15 @@ public enum BlockType {
 	Part_MPoints(0x1A401300, "Part_MPoints"),
 	Part_Mesh(0x00411380, "Part_Mesh"),
 	Part_Mesh_Info(0x00491300, "Part_Mesh_Info"),
+	Part_Mesh_Info_X360(0x004D1300, "Part_Mesh_Info_X360"),
 	Part_Mesh_ShadersUsage(0x014F1300, "Part_Mesh_Shaders"),
 	Part_Mesh_Materials(0x02491300, "Part_Mesh_Materials"),
+	Part_Mesh_Materials_X360(0x024D1300, "Part_Mesh_Materials_X360"),
 	Part_Mesh_VertsHeader(0x024C1300, "Part_Mesh_VertsHeader"),
 	Part_Mesh_Vertices(0x01491300, "Part_Mesh_Vertices"),
+	Part_Mesh_Vertices_X360(0x014D1300, "Part_Mesh_Vertices_X360"),
 	Part_Mesh_Triangles(0x03491300, "Part_Mesh_Triangles"),
+	Part_Mesh_Triangles_X360(0x034D1300, "Part_Mesh_Triangles_X360"),
 	Part_Padding(0x17401300, "Part_Padding?"),
 	Part_HashList(0x18401300, "Part_HashList?"),
 	Part_HashAssign(0x19401300, "Part_HashAssign?"),

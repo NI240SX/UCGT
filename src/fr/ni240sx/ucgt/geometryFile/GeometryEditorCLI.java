@@ -2,16 +2,23 @@ package fr.ni240sx.ucgt.geometryFile;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
+import fr.ni240sx.ucgt.binstuff.Block;
+import fr.ni240sx.ucgt.compression.CompressionLevel;
+import fr.ni240sx.ucgt.compression.CompressionType;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
 import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
+import javafx.util.Pair;
 
 public class GeometryEditorCLI {
 
-	public static final String programVersion = "1.2.0.3";
-	public static final String programBuild = "2024.09.08";
+	public static final String programVersion = "1.2.1-WIP";
+	public static final String programBuild = "2025.01.18";
 	
 	public static Geometry geom = null;
 //	public static ArrayList<String> commandsHistory = new ArrayList<>();
@@ -85,6 +92,14 @@ public class GeometryEditorCLI {
 			case "replace":
 				replace(l);
 				break;
+
+			case "compress":
+				changeComp(l,CompressionType.RefPack);
+				break;
+
+			case "decompress":
+				changeComp(l,CompressionType.RawDecompressed);
+				break;
 				
 			case "trol":
 				System.out.println("The Grand Syndicate of Trolling agrees with your decision. Therefore I shall NOT nuke your coputer !");
@@ -102,6 +117,73 @@ public class GeometryEditorCLI {
 	}
 
 
+	private static void changeComp(String l, CompressionType ct) {
+		String src;
+		try {
+			l = l.substring(11);
+			
+			//read first path
+			if (l.startsWith("\"")) {
+				l = l.substring(1);
+				src = l.split("\"")[0];
+				l = l.substring(src.length()+1);
+			} else {
+				src = l.split(" ")[0];
+				l = l.substring(src.length());
+			}
+
+			boolean useBackup = false;
+			if (!new File(src.replace(".BIN", "-BACKUP.BIN")).isFile() && new File(src).isFile()) {
+				//create vanilla backup if not existing
+				new File(src).renameTo(new File(src.replace(".BIN", "-BACKUP.BIN")));
+				useBackup = true;
+			}
+			try {
+				Block.doNotRead.put(BlockType.Part_MPoints, true);
+				Block.doNotRead.put(BlockType.Part_Mesh, true);
+				Block.doNotRead.put(BlockType.Part_HashList, true);
+				Block.doNotRead.put(BlockType.Part_HashAssign, true);
+				Block.doNotRead.put(BlockType.Part_Padding, true);
+				
+				long t = System.currentTimeMillis();
+				System.out.println("Loading geometry...");
+				if (useBackup) geom = Geometry.load(new File(src.replace(".BIN", "-BACKUP.BIN")));
+				else geom = Geometry.load(new File(src));
+				System.out.println("Geometry read in "+(System.currentTimeMillis()-t)+" ms.");
+				
+				geom.defaultCompressionType = ct;
+				geom.defaultCompressionLevel = CompressionLevel.Maximum;
+				geom.SAVE_useOffsetsTable = true;
+				geom.SAVE_removeUselessAutosculptParts = false;
+				geom.SAVE_optimizeMaterials = false;
+				geom.SAVE_sortEverythingByName = true;
+				geom.SAVE_fixAutosculptNormals = false;
+				geom.SAVE_removeInvalid = false;
+				geom.SAVE_copyMissingLODs = false;
+				geom.SAVE_copyLOD_D = false;
+				geom.SAVE_protectModel = false;
+				geom.SAVE_processParts = false;
+				
+				t = System.currentTimeMillis();
+				try {
+					geom.save(new File(src));
+					System.out.println("Operation successful !");
+					
+				} catch (Exception e) {
+					System.out.printf("Error saving Geometry : %s\n", e.getMessage());
+					e.printStackTrace();
+				}
+				
+				Block.doNotRead.clear();
+				
+			} catch (Exception e) {
+				System.out.printf("Error loading Geometry : %s\n", e.getMessage());
+				e.printStackTrace();
+			}
+			
+		}catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : decompress <BIN source>");}
+	}
+
 	private static void decompile(String l) {
 		String src;
 		String dst;
@@ -112,20 +194,26 @@ public class GeometryEditorCLI {
 			if (l.startsWith("\"")) {
 				l = l.substring(1);
 				src = l.split("\"")[0];
-				l = l.substring(src.length()+2);
+				l = l.substring(src.length()+1);
 			} else {
 				src = l.split(" ")[0];
-				l = l.substring(src.length()+1);
+				l = l.substring(src.length());
 			}
 			
-			//read second path
-			if (l.startsWith("\"")) {
+			if (l.length()>1) {
 				l = l.substring(1);
-				dst = l.split("\"")[0];
-//					l = l.substring(dst.length()+2);
+				
+				//read second path
+				if (l.startsWith("\"")) {
+					l = l.substring(1);
+					dst = l.split("\"")[0];
+	//					l = l.substring(dst.length()+2);
+				} else {
+					dst = l.split(" ")[0];
+	//					l = l.substring(dst.length()+1);
+				}
 			} else {
-				dst = l.split(" ")[0];
-//					l = l.substring(dst.length()+1);
+				dst = src.replace(".BIN", ".both").replace(".bin", ".both");
 			}
 			
 			try {
@@ -136,14 +224,21 @@ public class GeometryEditorCLI {
 						+ "\nSaving 3D model...");
 				t = System.currentTimeMillis();
 				try {
-					if (dst.endsWith(".z3d")) {
+					if (dst.toLowerCase().endsWith(".z3d")) {
 						ZModelerZ3D.save(geom, dst);
 						System.out.println("ZModeler scene saved in "+(System.currentTimeMillis()-t)+" ms.");
 				        geom.writeConfig(new File(dst.replace(".z3d", "")+".ini"));
-					} else {
+					} else if (dst.toLowerCase().endsWith(".obj")){
 						WavefrontOBJ.save(geom, dst);
 						System.out.println("Wavefront saved in "+(System.currentTimeMillis()-t)+" ms.");
 				        geom.writeConfig(new File(dst.replace(".obj", "")+".ini"));
+					} else {
+						dst = dst.replace("."+dst.split("\\.")[dst.split("\\.").length-1], "");
+						WavefrontOBJ.save(geom, dst+".obj");
+						System.out.println("Wavefront saved after "+(System.currentTimeMillis()-t)+" ms.");
+						ZModelerZ3D.save(geom, dst+".z3d");
+						System.out.println("ZModeler scene saved after "+(System.currentTimeMillis()-t)+" ms.");
+				        geom.writeConfig(new File(dst+".ini"));
 					}
 					System.out.println("Operation successful !");
 					
@@ -156,7 +251,7 @@ public class GeometryEditorCLI {
 				e.printStackTrace();
 			}
 			
-		}catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : decompile <BIN source> <OBJ/Z3D output>");}
+		}catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : decompile <BIN source> [OBJ/Z3D output]");}
 	}
 
 	private static void script(String l) {
@@ -253,7 +348,7 @@ public class GeometryEditorCLI {
 		String src;
 		String dst;
 		String type = "ALL";
-		String filter = null;
+		List<String> filters = new ArrayList<>();
 		try {
 			l = l.substring(5);
 			
@@ -292,7 +387,8 @@ public class GeometryEditorCLI {
 			}
 			
 			//read filter if existing
-			if (l.length() > 1) {
+			while (l.length() > 1) {
+				String filter;
 				l = l.substring(1);
 				if (l.startsWith("\"")) {
 					l = l.substring(1);
@@ -302,12 +398,13 @@ public class GeometryEditorCLI {
 					filter = l.split(" ")[0];
 					l = l.substring(filter.length());
 				}
+				filters.add(filter);
 			}
 			
 			try {
 				long t = System.currentTimeMillis();
 				System.out.println("Starting to dump data...");
-				Geometry.dumpStream(src, dst, type, filter);
+				Geometry.dumpStream(src, dst, type, filters);
 				System.out.println("\nDumping successful ! Took "+(System.currentTimeMillis()-t)+" ms.");
 			} catch (Exception e) {
 				System.out.printf("Error dumping geometries from file : %s\n", e.getMessage());
@@ -393,14 +490,46 @@ public class GeometryEditorCLI {
 			}
 
 			try {
-				geom = Geometry.importFromFile(new File(src));
-				try {
-					geom.save(new File(dst));
-					System.out.println("Operation successful !");
-					
-				} catch (Exception e) {
-					System.out.printf("Error saving Geometry : %s\n", e.getMessage());
-					e.printStackTrace();
+				if ( !new File(src).isDirectory()) {
+					//regular geometry
+					geom = Geometry.importFromFile(new File(src));
+					try {
+						geom.save(new File(dst));
+						System.out.println("Operation successful !");
+						
+					} catch (Exception e) {
+						System.out.printf("Error saving Geometry : %s\n", e.getMessage());
+						e.printStackTrace();
+					}
+				} else {
+					try {
+						if (!src.endsWith("\\")) src += "\\";
+						
+						//create a geometry bundle
+						var filesInDir = new File (src).list();
+						var fos = new FileOutputStream(dst);
+						
+						for (var s : filesInDir) {
+							s = s.toLowerCase();
+							// decompiled 3D models
+							if (s.endsWith(".ini")) {
+								Geometry g;
+								if (new File(src + s.replace(".ini", ".z3d")).exists()) {
+									g = Geometry.importFromFile(new File(src + s.replace(".ini", ".z3d")));
+									fos.write(g.save(0));
+								} else if (new File(src + s.replace(".ini", ".obj")).exists()) {
+									g = Geometry.importFromFile(new File(src + s.replace(".ini", ".obj")));
+									fos.write(g.save(0));
+								}
+							}
+						}
+						fos.close();
+	
+						System.out.println("Operation successful !");
+					} catch (Exception e) {
+						System.out.printf("Error loading the provided files and converting them into a Geometry bundle : %s\n", e.getMessage());
+						e.printStackTrace();
+					}
 				}
 			} catch (Exception e) {
 				System.out.printf("Error loading the provided file and converting it into a Geometry : %s\n", e.getMessage());
@@ -427,8 +556,14 @@ public class GeometryEditorCLI {
 					compile <OBJ/Z3D source> <BIN output>
 					    - compile a 3D model and its corresponding config to a BIN file containing a single geometry
 					    
-					decompile <BIN source> <OBJ/Z3D output>
+					decompile <BIN source> [OBJ/Z3D output]
 					    - extract a BIN file containing a single geometry to a 3D model and a configuration file
+					    
+					compress <BIN source>
+					    - compress an existing geometry using RefPack Maximum
+					
+					decompress <BIN source>
+					    - decompress an existing geometry
 					    
 					dump <source> <destination folder> [file type] [filter]
 					    - extract all geometries contained into the source BIN/BUN file to the output folder

@@ -621,3 +621,105 @@ f 484/5/3 485/6/4 486/7/5
 ...
 o KIT00_BASE_B
 ...
+
+
+
+world map alignment
+
+Editing chunk X0 at 0 in, length 362032
+reading block at 0, ID=Geometry, end at 45304, length 45304
+reading block at 45304, ID=Padding, end at 45312, length 8				// %128 = 0
+reading block at 45312, ID=Geometry, end at 58476, length 13164
+reading block at 58476, ID=Padding, end at 58496, length 20				// %128 = 0
+reading block at 58496, ID=Geometry, end at 63176, length 4680
+reading block at 63176, ID=Padding, end at 63232, length 56				// %128 = 0
+reading block at 63232, ID=TPK, end at 362032, length 298800
+
+Editing chunk Z0 at 362496 in, length 2999856
+reading block at 0, ID=Padding, end at 8, length 8    					//WAS ALREADY OK ... +8/0	
+reading block at 8, ID=Geometry, end at 5972, length 5964
+reading block at 5972, ID=Padding, end at 6016, length 44				//WAS ALREADY OK ... +44/36			8 + 5964 + 44 % 128 = 0
+reading block at 6016, ID=Geometry, end at 1053996, length 1047980
+reading block at 1053996, ID=Padding, end at 1054080, length 84			//WAS ALREADY OK ... +84/76			1047980 + 84 % 128 = 0
+reading block at 1054080, ID=Geometry, end at 1814652, length 760572
+reading block at 1814652, ID=Padding, end at 1814784, length 132		// %128 = 0, %256 = 0 +132/124		760572 + 132 % 128 = 0
+reading block at 1814784, ID=Geometry, end at 1841612, length 26828
+reading block at 1841612, ID=Padding, end at 1841664, length 52			// %128 = 0, %256 = 0 +52/44		26828 + 52 % 128 = 0
+reading block at 1841664, ID=Geometry, end at 1956084, length 114420
+reading block at 1956084, ID=Padding, end at 1956096, length 12			// %128 = 0, %256 = 0 +12/4			114420 + 12 % 128 = 0
+reading block at 1956096, ID=Geometry, end at 1988076, length 31980
+reading block at 1988076, ID=Padding, end at 1988096, length 20			// %128 = 0, %256 = 0 +20/12		31980 + 20 % 128 = 0
+reading block at 1988096, ID=0x80034100, end at 1990472, length 2376
+reading block at 1990472, ID=Padding, end at 1990560, length 88			// %32 = 0, gone further ! +88/80	2376 + 88 - 32 % 128 = 0
+reading block at 1990560, ID=0x0003B802, end at 2208960, length 218400
+reading block at 2208960, ID=Padding, end at 2209024, length 64			// %128 = 0, %256 = 0 +64/56		218400 + 32 + 64 % 128 = 0
+reading block at 2209024, ID=TPK, end at 2999856, length 790832												apparently we don't give a fuck
+
+Editing chunk Y0 at 3362816 in, length 1244592
+reading block at 0, ID=Padding, end at 120, length 120					//WAS ALREADY OK ... +120/112
+reading block at 120, ID=Geometry, end at 45432, length 45312
+reading block at 45432, ID=Padding, end at 45548, length 116			// missed the %128 and gone further +116/108
+reading block at 45548, ID=Geometry, end at 58732, length 13184
+reading block at 58732, ID=Padding, end at 58824, length 92				// missed the %128 and gone further +92/84
+reading block at 58824, ID=Geometry, end at 63560, length 4736
+reading block at 63560, ID=Padding, end at 63616, length 56				// %128 = 0 +56/48
+reading block at 63616, ID=TPK, end at 1244592, length 1180976
+
+Editing chunk Y1 at 4608000 in, length 142000
+reading block at 0, ID=Padding, end at 36, length 36
+reading block at 36, ID=Geometry, end at 97572, length 97536
+reading block at 97572, ID=Padding, end at 97664, length 92
+reading block at 97664, ID=TPK, end at 142000, length 44336
+
+
+
+
+
+===============================
+X360 GEOMETRIES
+
+Mesh_Info becomes (sample)
+X360
+00000000 00000000 13000000 8041A302 
+07000000 00000000 00000000 00000000 
+00000000 00000000 00000000 00000000 
+00000000 00000000 00000000 00000000 
+00000000 00000000 DA070000 00000000 
+00000000 7C090000 00000000
+
+PC
+00000000 00000000 30000000 8041A302 
+07000000 00000000 00000000 00000000 
+00000000 00000000 00000000 00000000 
+DA070000 00000000 00000000 00000000 
+7C090000 00000000
+
+Materials become
+X360
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 
+00000000 B0280000 00001880 00000000 94020000 35E70209 8051A302 94020000 
+00000000 02030000 00000000 02000000 03000000 FFFFFFFF FFFFFFFF FFFFFFFF 
+FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF AE76334E 958A9502 0C8C5ED6 00000000 
+00000000 00000000 00000000 00000000 00000000 00000000 1E17FF65 EB19E790 
+9B8830BF 00000000 00000000 00000000 00000000 00000000 00000000 00000000 
+030405FF FFFFFFFF FFFF0000 00000000 00000000 00000000 00000000 00000000 
+00000000 00000000 C52DA6A8 00000000 00000000 00000000 00000000 00000000
+
+PC
+00000000 94020000 00000000 02000000 03000000 FFFFFFFF FFFFFFFF FFFFFFFF 
+FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF 030405FF FFFFFFFF FFFF0302 35E70209 
+8051A302 94020000 00000000 00000000 00000000 00000000 00000000 00000000 
+00000000 00000000 00000000 40360000 00002080 00000000 00000000 00000000 
+00000000 C52DA6A8 00000000 AE76334E 958A9502 0C8C5ED6 00000000 00000000 
+00000000 00000000 00000000 00000000 00000000 1E17FF65 EB19E790 9B8830BF 
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+
+car vertex format
+data length 10416 on xbob
+data length 13888 on pc length 32
+=> vertex format length 24 bytes
+
+triangles : most likely same as pc
+
+my beloved 18401300 is still there with different data, same with 19401300

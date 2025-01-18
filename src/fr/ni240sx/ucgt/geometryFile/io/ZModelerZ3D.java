@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.io.zModBlocks.*;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
@@ -90,7 +91,7 @@ public class ZModelerZ3D {
 		// then write it to a file
 		info.clear();
 
-		info.add(new ZModInfo("Created with", "UCGT by ni240sx", false));
+		info.add(new ZModInfo("Created with", "UCGT by needeka", false));
 		info.add(new ZModInfo("Important note", "Z3D support in beta, please report issues !", false));
 		
 		blocks.clear();
@@ -111,24 +112,11 @@ public class ZModelerZ3D {
 		var CNodesBindService2 = new NodeBinds();
 		var CMaterialsService = new MaterialsList();
 		for (var m : geom.materials) {
-			ZMaterial zmat = new ZMaterial(m);
-			CMaterialsService.materials.add(zmat);
-			CMaterialsService.materialUIDs.add(zmat.UID);
+			new ZMaterial(m, CMaterialsService);
 		}
 		var CTexturesService = new TexturePaths(); 
 		for (var zmat : CMaterialsService.materials) {
-			for (var t=0; t<zmat.binMat.TextureHashes.size(); t++) {
-				var ztex = new ZTexture(zmat.binMat.TextureHashes.get(t).label+".dds",".");
-				if (!CTexturesService.textures.contains(ztex)) {
-					CTexturesService.textures.add(ztex);
-					ztex.UID = ZModelerZ3D.createUID();
-				}
-				if (zmat.binMat.textureUsages.get(t) == TextureUsage.DIFFUSE ||
-						zmat.binMat.textureUsages.get(t) == TextureUsage.ALPHA ||
-						zmat.binMat.textureUsages.get(t) == TextureUsage.OPACITY) 
-					//TODO add normalmaps and emissive textures ?
-					zmat.textures.add(zmat.new TexLayer(CTexturesService.textures.get(CTexturesService.textures.indexOf(ztex)).UID));
-			}
+			zmat.addTextures(CTexturesService);
 		}
 		CMaterialsService.materials.add(0, new ZMaterial("UCGT_DEFAULT"));
 		
@@ -152,7 +140,7 @@ public class ZModelerZ3D {
 				if (mn.binPart != null) { //binPart is null if it's being created for a marker
 					mn.renderTechnique = new MeshRenderTechnique();
 					mn.renderTechniqueUID = mn.renderTechnique.UID;
-					mn.mesh = new ZMesh(mn.binPart, CMaterialsService.materials);
+					mn.mesh = new ZMesh(mn.binPart, CMaterialsService, CTexturesService);
 					mn.meshUID = mn.mesh.UID;
 				} else { //marker
 					mn.renderTechnique = new MeshRenderTechnique();

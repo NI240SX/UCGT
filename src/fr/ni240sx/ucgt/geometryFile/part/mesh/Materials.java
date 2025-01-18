@@ -29,16 +29,21 @@ public class Materials extends Block {
 			Material m = new Material();
 			materials.add(m);
 			var matStart = in.position();
+
+			var numtextures = in.get(matStart+58);
 			
 			m.fromTriVertID = in.getInt();
 			m.toTriVertID = in.getInt();
-			in.getInt(); //0 ?
-			m.usageSpecific1 = in.getInt(); 
+//			in.getInt(); //0 ?				// TEXTURE ORDER OR SOMETHING
+//			m.usageSpecific1 = in.getInt(); // TEXTURE ORDER OR SOMETHING - there's room for 10 textures in total
+//
+//			m.usageSpecific2 = in.getInt();
+//			m.usageSpecific3 = in.getInt(); //probably never used
 
-			m.usageSpecific2 = in.getInt();
-			m.usageSpecific3 = in.getInt(); //probably never used
-
-			var numtextures = in.get(matStart+58);
+			for (int i=0; i< numtextures; i++) {
+				m.texturePriorities.add(in.getInt());
+			}
+			
 			in.position(matStart+48);
 			for (int i=0; i< numtextures; i++) {
 				m.textureIDs.add(in.get());
@@ -49,6 +54,7 @@ public class Materials extends Block {
 			
 			in.get(m.flags);
 			m.numTriVertices = in.getInt();
+			m.numTriVerticesExtra = in.getInt();
 			
 			in.position(matStart+96);
 			m.frontendRenderingData = in.getInt();
@@ -93,13 +99,15 @@ public class Materials extends Block {
 			int matStart = out.position();
 			out.putInt(m.fromTriVertID);
 			out.putInt(m.toTriVertID);
-			out.putInt(0);
-			out.putInt(m.usageSpecific1);
-			
-			out.putInt(m.usageSpecific2);
-			out.putInt(m.usageSpecific3);
-			
-			Block.makeAlignment(out, 24, (byte)-1);
+//			out.putInt(0);
+//			out.putInt(m.usageSpecific1);		
+//			out.putInt(m.usageSpecific2);
+//			out.putInt(m.usageSpecific3);
+
+			for (int i=0; i<m.texturePriorities.size(); i++) {
+				out.putInt(m.texturePriorities.get(i));
+			}
+			Block.makeAlignment(out, 40 - 4*m.texturePriorities.size(), (byte)-1);
 			//normally at 48
 			
 			for (int i=0; i<m.textureIDs.size(); i++) {
@@ -114,6 +122,7 @@ public class Materials extends Block {
 			
 			out.put(m.flags);
 			out.putInt(m.numTriVertices);
+			out.putInt(m.numTriVerticesExtra);
 			
 			out.position(matStart+96);
 			out.putInt(m.frontendRenderingData);
@@ -124,7 +133,6 @@ public class Materials extends Block {
 			out.put((byte) 0x00);
 			out.put((byte) m.shaderUsage.vertexFormat.getLength());
 			out.put((byte) 0x80);
-//			out.putInt(-2145386496); //0x00002080
 			
 			out.position(matStart+132);
 			out.putInt(m.shaderUsage.getKey());

@@ -19,9 +19,9 @@ import javafx.scene.shape.Sphere;
 
 public class CollisionBound {
 
-	Hash AttributeName = new Hash("");
-	Hash NameHash = new Hash("");
-	Hash SurfaceName;
+	int AttributeName = 0; //hashes
+	int NameHash = 0;
+	int SurfaceName;
 	
 	BoundFlags ChildrenFlags;
 	BoundConstraintType ConstraintType;
@@ -72,7 +72,7 @@ public class CollisionBound {
 		// TODO Auto-generated constructor stub
 	}
 
-	public CollisionBound(Hash attributeName, Hash nameHash, Hash surfaceName, BoundFlags childrenFlags,
+	public CollisionBound(int attributeName, int nameHash, int surfaceName, BoundFlags childrenFlags,
 			BoundConstraintType constraintType, BoundFlags flags, BoundJointType jointType, BoundNodeType nodeType, BoundShape shape, BoundType type,
 			float boneIndex, float boneOffsetX, float boneOffsetY, float boneOffsetZ, float halfDimensionX,
 			float halfDimensionY, float halfDimensionZ, int numberOfChildren, int renderHierarchyIndex,
@@ -194,7 +194,7 @@ public class CollisionBound {
 		this.displayPivot.setViewOrder(0);
 		
 		this.displayShape.setOnMouseEntered(e -> {
-			System.out.println("CollisionBound | Index : "+ (CollisionsEditor.mainCollisions.childBounds.indexOf(this)+1) +",Name : "+this.NameHash.label+", SurfaceName : "+this.SurfaceName.label+", AttributeName : "+this.AttributeName.label
+			System.out.println("CollisionBound | Index : "+ (CollisionsEditor.mainCollisions.childBounds.indexOf(this)+1) +",Name : "+Hash.getVLT(this.NameHash)+", SurfaceName : "+Hash.getVLT(this.SurfaceName)+", AttributeName : "+Hash.getVLT(this.AttributeName)
 					+"\nType : "+this.Type+", Shape : "+Shape+", Node : "+NodeType+", Constraint : "+ConstraintType+", Joint : "+JointType);			
 		});
 		this.displayShape.setOnMouseClicked(e->{
@@ -233,9 +233,12 @@ public class CollisionBound {
 		bb.get(); //BoundSubType
 		ret.Shape = BoundShape.get(bb.get()); //BoundShape
 		ret.Flags = BoundFlags.get(bb.get()); //BoundFlags
-		ret.AttributeName = Hash.guess(bb.getInt(), Collisions.commonCollisionHashes, "[unknown AttributeName]", "VLT"); //AttributeName VLT HASH
-		ret.SurfaceName = Hash.guess(bb.getInt(), Collisions.commonCollisionHashes, "[unknown SurfaceName]", "VLT"); //SurfaceName VLT HASH
-		ret.NameHash = Hash.guess(bb.getInt(), Collisions.commonCollisionHashes, "[unknown NameHash]", "VLT"); //NameHash VLT HASH
+		ret.AttributeName = bb.getInt(); //AttributeName VLT HASH
+		ret.SurfaceName = bb.getInt(); //SurfaceName VLT HASH
+		ret.NameHash = bb.getInt(); //NameHash VLT HASH
+		Hash.getVLT(ret.AttributeName, "[unknown AttributeName]");
+		Hash.getVLT(ret.SurfaceName, "[unknown SurfaceName]");
+		Hash.getVLT(ret.NameHash, "[unknown NameHash]");
 		ret.BoneIndex = bb.getShort();
 		ret.RenderHierarchyIndex = bb.getShort();
 		bb.position(bb.position()+24);

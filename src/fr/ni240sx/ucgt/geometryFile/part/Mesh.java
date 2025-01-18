@@ -68,9 +68,8 @@ public class Mesh extends Block {
 			materials.materials.get(i).verticesBlock = verticesBlocks.get(i);
 //			System.out.println("Requesting triangles from "+(materials.materials.get(i).fromVertID/3) + " to " + (materials.materials.get(i).toVertID/3));
 			materials.materials.get(i).triangles = triangles.triangles.subList(materials.materials.get(i).fromTriVertID/3, (materials.materials.get(i).toTriVertID/3));
+			materials.materials.get(i).trianglesExtra = triangles.triangles.subList(materials.materials.get(i).toTriVertID/3, (materials.materials.get(i).toTriVertID/3+materials.materials.get(i).numTriVerticesExtra/3));
 		}
-		
-		
 	}
 
 	public Mesh() {

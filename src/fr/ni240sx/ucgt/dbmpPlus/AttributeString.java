@@ -2,7 +2,6 @@ package fr.ni240sx.ucgt.dbmpPlus;
 
 import java.nio.ByteBuffer;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
 import javafx.scene.control.TextField;
 
 public class AttributeString extends Attribute{
@@ -22,7 +21,7 @@ public class AttributeString extends Attribute{
 		if(!value1.isBlank()) value1Exists = 1;
 		initGUI();
 	}
-	public AttributeString(Hash key, ByteBuffer bb, boolean useGUI) {
+	public AttributeString(int key, ByteBuffer bb, boolean useGUI) {
 		super(key, useGUI);
 		value1Exists = bb.get();
 		if (value1Exists == 1) value1 = DBMP.readString(bb);

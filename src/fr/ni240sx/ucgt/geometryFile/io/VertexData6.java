@@ -3,7 +3,7 @@ package fr.ni240sx.ucgt.geometryFile.io;
 public class VertexData6 extends VertexData3{
 	double a, b, c;
 
-	public VertexData6(double x, double y, double z, double a, double b, double c) {
+	public VertexData6(float x, float y, float z, float a, float b, float c) {
 		super(x, y, z);
 		this.a = a;
 		this.b = b;
@@ -13,8 +13,8 @@ public class VertexData6 extends VertexData3{
 
 	public VertexData6(String x, String y, String z, String a, String b, String c) {
 		super(x, y, z);
-		this.a = Double.parseDouble(a);
-		this.b = Double.parseDouble(b);
-		this.c = Double.parseDouble(c);
+		this.a = Float.parseFloat(a);
+		this.b = Float.parseFloat(b);
+		this.c = Float.parseFloat(c);
 	}
 }

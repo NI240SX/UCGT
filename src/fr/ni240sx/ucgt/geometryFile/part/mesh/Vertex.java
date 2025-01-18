@@ -4,42 +4,42 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 
 public class Vertex {
-	public double posX=0x0CCD/posFactor; //position
-	public double posY=0x0CCD/posFactor;
-	public double posZ=0x0CCD/posFactor;
-	public double posW=0x0CCD/posFactor;
+	public float posX=0x0CCD/posFactor; //position
+	public float posY=0x0CCD/posFactor;
+	public float posZ=0x0CCD/posFactor;
+//	public float posW=0x0CCD/posFactor;
 	
-	public double tex0U=0.0; //texcoord
-	public double tex0V=0.0;
+	public float tex0U=0.0f; //texcoord
+	public float tex0V=0.0f;
 
-	public double tex1U=0.0;
-	public double tex1V=0.0;
-	public double tex2U=0.0;
-	public double tex2V=0.0;
+	public float tex1U=0.0f;
+	public float tex1V=0.0f;
+	public float tex2U=0.0f;
+	public float tex2V=0.0f;
 	
 	public byte colorR=(byte) 255; //color
 	public byte colorG=(byte) 255;
 	public byte colorB=(byte) 255;
 	public byte colorA=(byte) 255;
 
-	public double normX=0x7FFF/vecFactor; //normals
-	public double normY=0.0;
-	public double normZ=0.0;
-	public double normW=0x7FFF/vecFactor;
+	public float normX=0x7FFF/vecFactor; //normals
+	public float normY=0.0f;
+	public float normZ=0.0f;
+//	public float normW=0x7FFF/vecFactor;
 
-	public double tanX=0.0; //tangents, usually no data included
-	public double tanY=0.0;
-	public double tanZ=0.0;
-	public double tanW=0.0;
+	public float tanX=0.0f; //tangents, usually no data included
+	public float tanY=0.0f;
+	public float tanZ=0.0f;
+	public float tanW=0.0f;
 
-	public static final double posFactor = 32767.0/10;
-	public static final double UVFactor = 32767.0/32;
-	public static final double vecFactor = 32767.0;
+	public static final float posFactor = 32767.0f/10f;
+	public static final float UVFactor = 32767.0f/32f;
+	public static final float vecFactor = 32767.0f;
 
-	public static final double short4n_10x_min = Short.MIN_VALUE/posFactor;
-	public static final double short4n_10x_max = Short.MAX_VALUE/posFactor;
-	public static final double short2n_32x_min = Short.MIN_VALUE/UVFactor;
-	public static final double short2n_32x_max = Short.MAX_VALUE/UVFactor;
+	public static final float short4n_10x_min = Short.MIN_VALUE/posFactor;
+	public static final float short4n_10x_max = Short.MAX_VALUE/posFactor;
+	public static final float short2n_32x_min = Short.MIN_VALUE/UVFactor;
+	public static final float short2n_32x_max = Short.MAX_VALUE/UVFactor;
 	
 	public Vertex(ByteBuffer in, VertexFormat vf) {
 		switch(vf) {
@@ -157,19 +157,18 @@ public class Vertex {
 		posX = in.getFloat();
 		posY = in.getFloat();
 		posZ = in.getFloat();
-		posW = in.getFloat();
+		in.getFloat();
 	}
 	private void pos0f3_in(ByteBuffer in) {
 		posX = in.getFloat();
 		posY = in.getFloat();
 		posZ = in.getFloat();
-		posW = 1.0;
 	}
 	private void pos0s10_in(ByteBuffer in) {
 		posX = (in.getShort())/posFactor; //short4n_10x
 		posY = (in.getShort())/posFactor;
 		posZ = (in.getShort())/posFactor;
-		posW = (in.getShort())/posFactor;
+		in.getShort();
 	}
 
 	private void col0_in(ByteBuffer in) {
@@ -210,20 +209,20 @@ public class Vertex {
 		normX = in.getFloat();
 		normY = in.getFloat();
 		normZ = in.getFloat();
-		normW = in.getFloat();
+		in.getFloat();
 	}
 	private void norm0s_in(ByteBuffer in) {
 		normX = (in.getShort())/vecFactor; //short4n
 		normY = (in.getShort())/vecFactor;
 		normZ = (in.getShort())/vecFactor;
-		normW = (in.getShort())/vecFactor;
+		in.getShort();
 	}
 
 	private void tan0_in(ByteBuffer in) {
 		tanX = in.getFloat();
 		tanY = in.getFloat();
 		tanZ = in.getFloat();
-		tanW = in.getFloat();
+		in.getFloat();
 	}
 	private void tan0s_in(ByteBuffer in) {
 		tanX = (in.getShort())/vecFactor; //short4n
@@ -239,7 +238,7 @@ public class Vertex {
 		posX = v.posX;
 		posY = v.posY;
 		posZ = v.posZ;
-		posW = v.posW;
+//		posW = v.posW;
 		tex0U = v.tex0U;
 		tex0V = v.tex0V;
 		colorR = v.colorR;
@@ -249,7 +248,7 @@ public class Vertex {
 		normX = v.normX;
 		normY = v.normY;
 		normZ = v.normZ;
-		normW = v.normW;
+//		normW = v.normW;
 		tanX = v.tanX;
 		tanY = v.tanY;
 		tanZ = v.tanZ;
@@ -373,7 +372,7 @@ public class Vertex {
 		out.putFloat((float) posX);
 		out.putFloat((float) posY);
 		out.putFloat((float) posZ);
-		out.putFloat((float) posW);
+		out.putFloat(1.0f);
 	}
 	private void pos0f3_out(ByteBuffer out) {
 		out.putFloat((float) posX);
@@ -384,7 +383,7 @@ public class Vertex {
 		out.putShort((short) (posX*posFactor)); //short4n_10x
 		out.putShort((short) (posY*posFactor));
 		out.putShort((short) (posZ*posFactor));
-		out.putShort((short) (posW*posFactor));
+		out.putShort((short) (0x0CCD));
 	}
 
 	private void col0_out(ByteBuffer out) {
@@ -425,20 +424,20 @@ public class Vertex {
 		out.putFloat((float) normX);
 		out.putFloat((float) normY);
 		out.putFloat((float) normZ);
-		out.putFloat((float) normW);
+		out.putFloat(1.0f);
 	}
 	private void norm0s_out(ByteBuffer out) {
 		out.putShort((short) (normX*vecFactor)); //short4n
 		out.putShort((short) (normY*vecFactor));
 		out.putShort((short) (normZ*vecFactor));
-		out.putShort((short) (normW*vecFactor));
+		out.putShort((short) 0x7FFF);
 	}
 
 	private void tan0_out(ByteBuffer out) {
 		out.putFloat((float) tanX);
 		out.putFloat((float) tanY);
 		out.putFloat((float) tanZ);
-		out.putFloat((float) tanW);
+		out.putFloat(1.0f);
 	}
 	private void tan0s_out(ByteBuffer out) {
 		out.putShort((short) (tanX*vecFactor)); //short4n
@@ -497,9 +496,11 @@ public class Vertex {
 	
 	@Override
 	public String toString() {
-		return "Vertex [posX=" + posX + ", posY=" + posY + ", posZ=" + posZ + ", posW=" + posW + ", texU=" + tex0U
+		return "Vertex [posX=" + posX + ", posY=" + posY + ", posZ=" + posZ + //", posW=" + posW + 
+				", texU=" + tex0U
 				+ ", texV=" + tex0V + ", colorR=" + colorR + ", colorG=" + colorG + ", colorB=" + colorB + ", colorA="
-				+ colorA + ", normX=" + normX + ", normY=" + normY + ", normZ=" + normZ + ", normW=" + normW + ", tanX="
+				+ colorA + ", normX=" + normX + ", normY=" + normY + ", normZ=" + normZ + //", normW=" + normW + 
+				", tanX="
 				+ tanX + ", tanY=" + tanY + ", tanZ=" + tanZ + ", tanW=" + tanW + "]";
 	}
 }

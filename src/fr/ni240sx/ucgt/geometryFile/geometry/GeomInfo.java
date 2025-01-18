@@ -7,6 +7,7 @@ import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.BlockType;
+import fr.ni240sx.ucgt.geometryFile.GeometryEditorCLI;
 
 public class GeomInfo extends Block {
 
@@ -15,7 +16,7 @@ public class GeomInfo extends Block {
 	public static final int usualLength = 144;
 	
 	public int const01=0, const02=3, const03=30, partsCount=0;
-	public String filename="Compiled with UCGT | NI240SX 2024", blockname="DEFAULT";
+	public String filename="Compiled with UCGT v"+GeometryEditorCLI.programVersion+" | needeka", blockname="DEFAULT";
 	public int const1=128, const21=4403336, const22=4403336, const23=4403344, const24=4403344;
 	
 	

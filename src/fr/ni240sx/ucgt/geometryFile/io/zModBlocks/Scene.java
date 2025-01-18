@@ -108,7 +108,7 @@ public class Scene extends ZModBlock {
 		
 		public void addToGeomRecursively(Geometry geom) {
 			var b = ZModelerZ3D.blocks.get(this.UID);
-			if (b.getClass() == MeshNode.class) {
+			if (b != null && b.getClass() == MeshNode.class) {
 				//add the part to the geometry
 				var mn = (MeshNode)b;
 				var mesh = (ZMesh)ZModelerZ3D.blocks.get(mn.meshUID);
@@ -118,12 +118,13 @@ public class Scene extends ZModBlock {
 				
 				if (!mn.embeddedNode.name.startsWith("_")) { //check whether it's a part or a marker
 					var curPart = new Part(geom, mn.embeddedNode.name);
-					
+
 					HashMap<Integer, Material> ZMMatsToBINMats = new HashMap<>();
+					HashMap<Integer, Material> ZMMatsToBINMatsEXTRA = new HashMap<>();
 
 					//materials are already per triangle i just need to separate the vertices into multiple blocks and rebuild the indices
 					//if (mesh.polyFormat == 3) 
-					for (var poly : mesh.polys) { //only process triangle meshes for now
+					poly: for (var poly : mesh.polys) { //only process triangle meshes for now
 						
 						//detect the material something something
 						//create a hashmap for the part (materialUID, BIN material) we don't wanna do this for each poly
@@ -131,72 +132,145 @@ public class Scene extends ZModBlock {
 						// if the material isn't mapped already find it
 						findMaterial: if (!ZMMatsToBINMats.containsKey(poly.materialUID)) {
 							Material curMat;
-							for (var m : geom.materials) if (m.uniqueName.equals(((ZMaterial)ZModelerZ3D.blocks.get(poly.materialUID)).name.replace(" ", "_"))) {
-		        				curMat = new Material(m); //copies the material the mesh uses to make it part specific
-		        				curMat.verticesBlock = new Vertices();
-		        				curPart.mesh.materials.materials.add(curMat);
-		        				ZMMatsToBINMats.put(poly.materialUID, curMat);
-		        				break findMaterial;
+							for (var m : geom.materials) {
+								if (m.uniqueName.equals(((ZMaterial)ZModelerZ3D.blocks.get(poly.materialUID)).name.replace(" ", "_"))) {
+			        				curMat = new Material(m); //copies the material the mesh uses to make it part specific
+			        				curMat.verticesBlock = new Vertices();
+			        				curPart.mesh.materials.materials.add(curMat);
+			        				ZMMatsToBINMats.put(poly.materialUID, curMat);
+			        				break findMaterial;
+								}								
 		        			}
+							
+
+							// to be compiled as TrianglesExtra
+							// this will only work if the regular mesh data was previously added
+							for (var e : ZMMatsToBINMats.entrySet()) {
+								if ((e.getValue().uniqueName + Material.trianglesExtraExportSuffix).equals(
+										((ZMaterial)ZModelerZ3D.blocks.get(poly.materialUID)) .name.replace(" ", "_") )){
+			        				ZMMatsToBINMatsEXTRA.put(poly.materialUID, e.getValue());
+//			        				System.out.println("EXTRA triangles found");
+									break findMaterial;
+								}
+							}
+							
+							
 		        			// if no material data is found give a warning and create a fallback material
 		        			System.out.println("[Z3DLoader] Warning : material "+((ZMaterial)ZModelerZ3D.blocks.get(poly.materialUID)).name.replace(" ", "_")+" not found in config !");
-		        			curMat = Material.getFallbackMaterial();
+		        			curMat = Material.getFallbackMaterial(geom);
 		    				curMat.verticesBlock = new Vertices();
 		    				curPart.mesh.materials.materials.add(curMat);
 	        				ZMMatsToBINMats.put(poly.materialUID, curMat);
 						}
 						
 
-						//process the triangle's vertices, add them to the right vertices block and process their new ids
-	        			Vertex[] triVerts = new Vertex[poly.vertIDs.length];
-	        			for (int i=0; i<poly.vertIDs.length; i++) {
-	        				triVerts[i] = new Vertex();
-	        				
-	        				var x = mesh.verts.get(poly.vertIDs[i]).x;
-	        				var y = mesh.verts.get(poly.vertIDs[i]).y;
-	        				var z = mesh.verts.get(poly.vertIDs[i]).z;
-
-	        				var nx = mesh.verts.get(poly.vertIDs[i]).nx;
-	        				var ny = mesh.verts.get(poly.vertIDs[i]).ny;
-	        				var nz = mesh.verts.get(poly.vertIDs[i]).nz;
-	        				
-	        				//apply transforms
-	        				triVerts[i].posX = -M[0][0]*x+		-M[1][0]*y+		-M[2][0]*z+		-M[3][0];
-	        				triVerts[i].posY = -M[0][2]*x+		-M[1][2]*y+		-M[2][2]*z+		-M[3][2];
-	        				triVerts[i].posZ = M[0][1]*x+		M[1][1]*y+		M[2][1]*z+		M[3][1];
-	        				triVerts[i].normX = -M[0][0]*nx +	-M[1][0]*ny +	-M[2][0]*nz;
-	        				triVerts[i].normY = -M[0][2]*nx +	-M[1][2]*ny +	-M[2][2]*nz;
-	        				triVerts[i].normZ = M[0][1]*nx +	M[1][1]*ny +	M[2][1]*nz;
-	        				
-	        				triVerts[i].tex0U = mesh.verts.get(poly.vertIDs[i]).u0;
-	        				triVerts[i].tex0V = 1-mesh.verts.get(poly.vertIDs[i]).v0;
-
-	        				if (Geometry.IMPORT_importVertexColors) {
-		        				triVerts[i].colorR = mesh.verts.get(poly.vertIDs[i]).r;
-		        				triVerts[i].colorG = mesh.verts.get(poly.vertIDs[i]).g;
-		        				triVerts[i].colorB = mesh.verts.get(poly.vertIDs[i]).b;
-		        				triVerts[i].colorA = mesh.verts.get(poly.vertIDs[i]).a;
-	        				}
-
-	        				if (!ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.contains(triVerts[i])) 
-	        					ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.add(triVerts[i]);
-	        			}
-	        			
-	        			ZMMatsToBINMats.get(poly.materialUID).triangles.add( new Triangle(	//TRIANGLES ARE FLIPPED WITH THIS AXIS CONVENTION
-	        					(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[2])), 
-								(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[1])),
-								(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[0])) 
-								) );
 						
-	        			if (poly.vertIDs.length == 4) { //
-	        				ZMMatsToBINMats.get(poly.materialUID).triangles.add( new Triangle(
-		        					(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[3])), 
-									(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[2])),
+						if (ZMMatsToBINMats.containsKey(poly.materialUID)) {
+							// REGULAR POLY
+							
+							//process the triangle's vertices, add them to the right vertices block and process their new ids
+		        			Vertex[] triVerts = new Vertex[poly.vertIDs.length];
+		        			for (int i=0; i<poly.vertIDs.length; i++) {
+		        				triVerts[i] = new Vertex();
+		        				
+		        				var x = mesh.verts.get(poly.vertIDs[i]).x;
+		        				var y = mesh.verts.get(poly.vertIDs[i]).y;
+		        				var z = mesh.verts.get(poly.vertIDs[i]).z;
+	
+		        				var nx = mesh.verts.get(poly.vertIDs[i]).nx;
+		        				var ny = mesh.verts.get(poly.vertIDs[i]).ny;
+		        				var nz = mesh.verts.get(poly.vertIDs[i]).nz;
+		        				
+		        				//apply transforms
+		        				triVerts[i].posX = -M[0][0]*x+		-M[1][0]*y+		-M[2][0]*z+		-M[3][0];
+		        				triVerts[i].posY = -M[0][2]*x+		-M[1][2]*y+		-M[2][2]*z+		-M[3][2];
+		        				triVerts[i].posZ = M[0][1]*x+		M[1][1]*y+		M[2][1]*z+		M[3][1];
+		        				triVerts[i].normX = -M[0][0]*nx +	-M[1][0]*ny +	-M[2][0]*nz;
+		        				triVerts[i].normY = -M[0][2]*nx +	-M[1][2]*ny +	-M[2][2]*nz;
+		        				triVerts[i].normZ = M[0][1]*nx +	M[1][1]*ny +	M[2][1]*nz;
+
+		        				triVerts[i].tex0U = mesh.verts.get(poly.vertIDs[i]).u0;
+		        				triVerts[i].tex0V = 1-mesh.verts.get(poly.vertIDs[i]).v0;
+
+		        				triVerts[i].tex1U = mesh.verts.get(poly.vertIDs[i]).u1;
+		        				triVerts[i].tex1V = 1-mesh.verts.get(poly.vertIDs[i]).v1;
+
+		        				triVerts[i].tex2U = mesh.verts.get(poly.vertIDs[i]).u2;
+		        				triVerts[i].tex2V = 1-mesh.verts.get(poly.vertIDs[i]).v2;
+		        				
+		        				if (geom.IMPORT_importVertexColors) {
+			        				triVerts[i].colorR = mesh.verts.get(poly.vertIDs[i]).r;
+			        				triVerts[i].colorG = mesh.verts.get(poly.vertIDs[i]).g;
+			        				triVerts[i].colorB = mesh.verts.get(poly.vertIDs[i]).b;
+			        				triVerts[i].colorA = mesh.verts.get(poly.vertIDs[i]).a;
+		        				}
+	
+		        				if (!ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.contains(triVerts[i])) 
+		        					ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.add(triVerts[i]);
+		        			}
+		        			
+		        			ZMMatsToBINMats.get(poly.materialUID).triangles.add( new Triangle(	//TRIANGLES ARE FLIPPED WITH THIS AXIS CONVENTION
+		        					(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[2])), 
+									(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[1])),
 									(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[0])) 
 									) );
-	        			} if (poly.vertIDs.length > 4) { //
-	        				System.out.println("Please triangulate the mesh for "+mn.embeddedNode.name);
-	        			}
+							
+		        			if (poly.vertIDs.length == 4) { //
+		        				ZMMatsToBINMats.get(poly.materialUID).triangles.add( new Triangle(
+			        					(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[3])), 
+										(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[2])),
+										(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[0])) 
+										) );
+		        			} if (poly.vertIDs.length > 4) { //
+		        				System.out.println("Please triangulate the mesh for "+mn.embeddedNode.name);
+		        			}
+		        			
+						} else {
+							// EXTRA POLY
+							
+							//process the triangle's vertices and find corresponding ones
+							
+		        			short[] triVerts = new short[poly.vertIDs.length];
+		        			for (int i=0; i<poly.vertIDs.length; i++) {
+		        				
+		        				Vertex v = new Vertex();
+		        				
+		        				var x = mesh.verts.get(poly.vertIDs[i]).x;
+		        				var y = mesh.verts.get(poly.vertIDs[i]).y;
+		        				var z = mesh.verts.get(poly.vertIDs[i]).z;
+		        				
+		        				//apply transforms
+		        				v.posX = -M[0][0]*x+		-M[1][0]*y+		-M[2][0]*z+		-M[3][0];
+		        				v.posY = -M[0][2]*x+		-M[1][2]*y+		-M[2][2]*z+		-M[3][2];
+		        				v.posZ = M[0][1]*x+		M[1][1]*y+		M[2][1]*z+		M[3][1];
+		        				
+		        				v.tex0U = mesh.verts.get(poly.vertIDs[i]).u0;
+		        				v.tex0V = 1-mesh.verts.get(poly.vertIDs[i]).v0;
+	
+		        				triVerts[i] = -1;
+		        				for (int j=0; j<ZMMatsToBINMatsEXTRA.get(poly.materialUID).verticesBlock.vertices.size(); j++) {
+		        					if (v.positionEquals((ZMMatsToBINMatsEXTRA.get(poly.materialUID).verticesBlock.vertices.get(j)))){
+		        						triVerts[i] = (short) j;
+		        					}
+		        				}
+		        				
+		        				if (triVerts[i] == -1) {
+		        					System.out.println("[Z3DLoader] Pre-existing vertex not found for EXTRA triangle; skipping triangle !");
+		        					continue poly;
+		        				}
+		        			}
+		        			
+		        			ZMMatsToBINMatsEXTRA.get(poly.materialUID).trianglesExtra.add( new Triangle(	//TRIANGLES ARE FLIPPED WITH THIS AXIS CONVENTION
+		        					triVerts[2], triVerts[1], triVerts[0] ) );
+							
+		        			if (poly.vertIDs.length == 4) { //
+		        				ZMMatsToBINMatsEXTRA.get(poly.materialUID).trianglesExtra.add( new Triangle( triVerts[3], triVerts[2], triVerts[0] ) );
+		        			} if (poly.vertIDs.length > 4) { //
+		        				System.out.println("Please triangulate the mesh for "+mn.embeddedNode.name);
+		        			}
+		        			
+							
+						}
 	        			
 					} //else System.out.println("Please triangulate the mesh for "+mn.embeddedNode.name);
 					

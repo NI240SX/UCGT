@@ -16,14 +16,14 @@ public class RefPackCompress {
     public int sequenceLength = 0;
     public int sequenceIndex = 0;
     
-	public byte[] compress(ByteBuffer in) {
+	public byte[] compress(byte[] in) {
 		return compress(in, CompressionLevel.Maximum);
 	}
 
-	public byte[] compress(ByteBuffer input, CompressionLevel level) {
+	public byte[] compress(byte[] in, CompressionLevel level) {
     	byte[] output;
 
-    	if (input.capacity() >= Integer.toUnsignedLong(0xFFFFFFFF)) { //workaround because the latter is -1, could use compareUsigned
+    	if (in.length >= Integer.toUnsignedLong(0xFFFFFFFF)) { //workaround because the latter is -1, could use compareUsigned
         	System.out.println("[RFPKComp] Error : Input data is too large.");
         	return null;
 //            throw new InvalidOperationException("input data is too large");
@@ -35,7 +35,7 @@ public class RefPackCompress {
         var compressedLength = 0;
         output = null;
 
-        if (input.capacity() < 16) {
+        if (in.length < 16) {
         	System.out.println("[RFPKComp] Error : Input data is too small to be compressed.");
             return null;
         }
@@ -50,12 +50,12 @@ public class RefPackCompress {
         var lastBlockStored = 0;
         //TODO check whether this is necessary in Java or is a C# thing that degrades performance
 
-        while (compressedIndex < input.capacity()) { // loop on input data
+        while (compressedIndex < in.length) { // loop on input data
         	
         	//TODO what's compressedIndex for ? can it be replaced with like a ByteBuffer
         	
         	
-            while (compressedIndex > lastBlockStored + level.BlockInterval && input.capacity() - compressedIndex > 16) {
+            while (compressedIndex > lastBlockStored + level.BlockInterval && in.length - compressedIndex > 16) {
         		
                 if (blockPretrackingQueue.size() >= level.PrequeueLength) {
                     var tmppair = blockPretrackingQueue.poll();
@@ -102,18 +102,20 @@ public class RefPackCompress {
                     	}
                     }
                 }
-
-                var newBlock = new Pair<>(input.getInt(lastBlockStored), lastBlockStored);
+                
+                var newBlock = new Pair<>(getInt(in, lastBlockStored), lastBlockStored);
                 lastBlockStored += level.BlockInterval;
                 blockPretrackingQueue.add(newBlock);
             }
 
-            if (input.capacity() - compressedIndex < 4) {
+            if (in.length - compressedIndex < 4) {
                 // Just copy the rest
-                var chunk = new byte[input.capacity() - compressedIndex + 1];
-                chunk[0] = (byte)(0xFC | (input.capacity() - compressedIndex));
+                var chunk = new byte[in.length - compressedIndex + 1];
+                chunk[0] = (byte)(0xFC | (in.length - compressedIndex));
                 
-                input.get(compressedIndex, chunk, 1, input.capacity() - compressedIndex);         
+                // src index, dst, dst offset, length
+                System.arraycopy(in, compressedIndex, chunk, 1, in.length - compressedIndex);       
+
 //                Array.Copy(input, compressedIndex, chunk, 1, input.capacity() - compressedIndex);
 
                 compressedChunks.add(chunk);
@@ -130,20 +132,20 @@ public class RefPackCompress {
             sequenceIndex = 0;
             var isSequence = false;
 
-            if (FindSequence(input, compressedIndex, latestBlocks, level)) { //also depends on sequenceStart, sequenceLength and sequenceIndex
+            if (FindSequence(in, compressedIndex, latestBlocks, level)) { //also depends on sequenceStart, sequenceLength and sequenceIndex
                 isSequence = true;
             } else {
                 // Find the next sequence
                 for (int loop = compressedIndex + 4;
-                     isSequence == false && loop + 3 < input.capacity();
+                     isSequence == false && loop + 3 < in.length;
                      loop += 4) {
-                    if (FindSequence(input, loop, latestBlocks, level)) { //also depends on sequenceStart, sequenceLength and sequenceIndex
+                    if (FindSequence(in, loop, latestBlocks, level)) { //also depends on sequenceStart, sequenceLength and sequenceIndex
                         sequenceIndex += loop - compressedIndex;
                         isSequence = true;
                     }
                 }
 
-                if (sequenceIndex == Integer.MAX_VALUE) sequenceIndex = input.capacity() - compressedIndex;
+                if (sequenceIndex == Integer.MAX_VALUE) sequenceIndex = in.length - compressedIndex;
 
                 // Copy all the data skipped over
                 while (sequenceIndex >= 4) {
@@ -152,7 +154,7 @@ public class RefPackCompress {
 
                     var chunk = new byte[toCopy + 1];
                     chunk[0] = (byte)(0xE0 | ((toCopy >>> 2) - 1));
-                    input.get(compressedIndex, chunk, 1, toCopy);
+                    System.arraycopy(in, compressedIndex, chunk, 1, toCopy);
 //                    Array.Copy(input, compressedIndex, chunk, 1, toCopy);
                     compressedChunks.add(chunk);
                     compressedIndex += toCopy;
@@ -188,7 +190,7 @@ public class RefPackCompress {
                  * FD-FF  111111pp
                  *   Read 0-3
                  */
-                if (FindRunLength(input, sequenceStart, compressedIndex + sequenceIndex) < sequenceLength) break;
+                if (FindRunLength(in, sequenceStart, compressedIndex + sequenceIndex) < sequenceLength) break;
 
                 while (sequenceLength > 0) {
                     int thisLength = sequenceLength;
@@ -221,7 +223,7 @@ public class RefPackCompress {
                     }
 
                     if (sequenceIndex > 0) {
-                        input.get(compressedIndex, chunk, chunk.length - sequenceIndex, sequenceIndex);
+                    	System.arraycopy(in, compressedIndex, chunk, chunk.length - sequenceIndex, sequenceIndex);
 //                        Array.Copy(input, compressedIndex, chunk, chunk.length - sequenceIndex, sequenceIndex);
                     }
 
@@ -240,7 +242,7 @@ public class RefPackCompress {
         } // loop on input data
 
         //END
-        if (compressedLength + 6 < input.capacity()) {
+        if (compressedLength + 6 < in.length) {
 //            int chunkPosition;
             
           //adding the header used in UC : RFPK flags decompSize compSize
@@ -249,23 +251,23 @@ public class RefPackCompress {
             bb.order(ByteOrder.LITTLE_ENDIAN);
             bb.put("RFPK".getBytes());
             bb.putInt(4097);
-            bb.putInt(input.capacity());
+            bb.putInt(in.length);
             bb.putInt(compressedLength + 5 + (endIsValid ? 0 : 1));
 
-            if (input.capacity() > Integer.toUnsignedLong(0xFFFFFF)) {
+            if (in.length > Integer.toUnsignedLong(0xFFFFFF)) {
                 bb.put((byte) (0x10 | 0x80)); // 0x80 = length is 4 bytes
                 bb.put((byte) 0xFB);
-                bb.put((byte)(input.capacity() >>> 24));
-                bb.put((byte)(input.capacity() >>> 16));
-                bb.put((byte)(input.capacity() >>> 8));
-                bb.put((byte)(input.capacity()));
+                bb.put((byte)(in.length >>> 24));
+                bb.put((byte)(in.length >>> 16));
+                bb.put((byte)(in.length >>> 8));
+                bb.put((byte)(in.length));
 //                chunkPosition = 22;
             } else {
             	bb.put((byte) 0x10);
             	bb.put((byte) 0xFB);
-            	bb.put((byte)(input.capacity() >>> 16));
-            	bb.put((byte)(input.capacity() >>> 8));
-            	bb.put((byte)(input.capacity()));
+            	bb.put((byte)(in.length >>> 16));
+            	bb.put((byte)(in.length >>> 8));
+            	bb.put((byte)(in.length));
 //                chunkPosition = 21;
             }
 
@@ -280,7 +282,7 @@ public class RefPackCompress {
         return null;
     }
 
-    private boolean FindSequence(ByteBuffer input,
+    private boolean FindSequence(byte[] in,
                                      int offset,
 //                                     int bestStart, //ref
 //                                     int bestLength, //ref
@@ -297,17 +299,17 @@ public class RefPackCompress {
             sequenceIndex = Integer.MAX_VALUE;
         }
 
-        var search = new byte[(input.capacity()-offset > 4) ? 4 : input.capacity() - offset];
+        var search = new byte[(in.length-offset > 4) ? 4 : in.length - offset];
 
-        input.get(offset, search, 0, search.length);
+        System.arraycopy(in, offset, search, 0, search.length);
 
         while (start >= end && sequenceLength < 1028) {
-            byte currentByte = input.get(start + offset);
+            byte currentByte = in[start + offset];
 
             for (int loop = 0; loop < search.length; loop++) {
                 if (currentByte != search[loop] || start >= loop || start - loop < -131072) continue;
 
-                int len = FindRunLength(input, offset + start, offset + loop);
+                int len = FindRunLength(in, offset + start, offset + loop);
 
                 if ((len > sequenceLength || len == sequenceLength && loop < sequenceIndex) &&
                     (len >= 5 ||
@@ -323,11 +325,11 @@ public class RefPackCompress {
             start--;
         }
 
-        if (latestBlocks.size() > 0 && input.capacity() - offset > 16 && sequenceLength < 1028) {
+        if (latestBlocks.size() > 0 && in.length - offset > 16 && sequenceLength < 1028) {
             for (int loop = 0; loop < 4; loop++) {
                 var thisPosition = offset + 3 - loop;
                 var adjust = loop > 3 ? loop - 3 : 0;
-                var value = input.getInt(thisPosition); // BitConverter.ToInt32(data, thisPosition);
+                var value = getInt(in, thisPosition); // BitConverter.ToInt32(data, thisPosition);
                 ArrayList<Integer> positions = new ArrayList<>();
 
                 if (!latestBlocks.getOrDefault(value, positions).equals(positions)) //  latestBlocks.TryGetValue(value, positions)
@@ -337,7 +339,7 @@ public class RefPackCompress {
 
                         if (trypos + 131072 < offset + 8) continue;
 
-                        int length = FindRunLength(input, trypos + localadjust, thisPosition + localadjust);
+                        int length = FindRunLength(in, trypos + localadjust, thisPosition + localadjust);
 
                         if (length >= 5 && length > sequenceLength){
                             foundRun = true;
@@ -355,17 +357,29 @@ public class RefPackCompress {
         return foundRun;
     }
 
-    private static int FindRunLength(ByteBuffer input, int source, int destination) {
+    private static int FindRunLength(byte[] in, int source, int destination) {
         int endSource = source + 1;
         int endDestination = destination + 1;
 
-        while (endDestination < input.capacity() && input.get(endSource) == input.get(endDestination) &&
+        while (endDestination < in.length && in[endSource] == in[endDestination] &&
                endDestination - destination < 1028) {
             endSource++;
             endDestination++;
         }
 
         return endDestination - destination;
+    }
+    
+    private static int getInt(byte[] arr, int i) {
+        if (i < 0 || i + 3 >= arr.length) {
+            throw new IndexOutOfBoundsException("Invalid index for getInt operation.");
+        }
+
+        // Combine bytes into an integer using bitwise operations
+        return ((arr[i] & 0xFF) << 24) |   // Most significant byte
+               ((arr[i+1] & 0xFF) << 16) |
+               ((arr[i+2] & 0xFF) << 8) |
+               (arr[i+3] & 0xFF);       // Least significant byte
     }
 	
 }

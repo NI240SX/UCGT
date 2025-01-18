@@ -9,6 +9,7 @@ import java.util.List;
 
 import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.VertexFormat;
 
 
@@ -23,7 +24,7 @@ public class ZMesh extends ZModBlock {
 		super(ID);
 	}
 
-	public ZMesh(Part p, List<ZMaterial> mats) {
+	public ZMesh(Part p, MaterialsList CMaterialsService, TexturePaths CTexturesService) {
 		vertexFormat = 196631; //0x17000300
 		/*
 		 * needed				global vertex format	per vertex
@@ -48,8 +49,8 @@ public class ZMesh extends ZModBlock {
 		short off = 0;
 		//vrite material data one after the other
 		int matID = 0;
+		
 		for (var m : p.mesh.materials.materials) {
-//			var m = p.mesh.materials.materials.get(0);
 
 			if (m.verticesBlock.vertexFormat.getNumTexChannels() == 2) {
 				vertexFormat = 55;
@@ -60,18 +61,32 @@ public class ZMesh extends ZModBlock {
 				verts.add(new ZVertex(v, m.verticesBlock.vertexFormat));
 			}
 			//material
-			for (var zmat : mats) if (zmat.name.equals(m.uniqueName)) {
+			for (var zmat : CMaterialsService.materials) if (zmat.name.equals(m.uniqueName)) {
 				matID = zmat.UID;
-//				System.out.println("Using zmaterial "+zmat.name+" for binmat "+m.uniqueName);
 				break;
 			}
 			if (matID == 0) System.out.println("Z3D export error : cannot identify material "+m.uniqueName);
 			for (var t : m.triangles) {
 				polys.add(new Polygon(matID, off+t.vert2, off+t.vert1, off+t.vert0));
 			}
+			
+			if (p.mesh.info.numTrianglesExtra != 0) {
+				matID = 0;
+				for (var zmat : CMaterialsService.materials) if (zmat.name.equals(m.uniqueName + Material.trianglesExtraExportSuffix)) {
+					matID = zmat.UID;
+					break;
+				}
+				if (matID == 0) {
+					ZMaterial mat = new ZMaterial(m, CMaterialsService); //doesnt assign the texture TODO recompiling
+					mat.addTextures(CTexturesService);
+					mat.name += Material.trianglesExtraExportSuffix;
+					matID = mat.UID;
+				}
+				for (var t : m.trianglesExtra) {
+					polys.add(new Polygon(matID, off+t.vert2, off+t.vert1, off+t.vert0));
+				}
+			}
 			off += m.verticesBlock.vertices.size();
-//			var t = m.triangles.get(0);
-//			off += 3; //this is wrong but whatever
 		}
 	}
 

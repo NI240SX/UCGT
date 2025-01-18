@@ -20,24 +20,19 @@ public class DBMP{
 	
 	public static final int maxPartLength = 500; //200 bytes for each part should be more than enough when exporting
 	
-	public Hash carname;
+	public String carname;
 	public ArrayList<DBMPPart> dBMPParts;
 	public DBMP() {
 		super();
-		this.carname = new Hash("UNKNOWN");
+		this.carname = "UNKNOWN";
 		this.dBMPParts = new ArrayList<>();
 	}
 	public DBMP(String carname) {
 		super();
-		this.carname = new Hash(carname);
+		this.carname = carname;
 		this.dBMPParts = new ArrayList<>();
 	}
 	public DBMP(String carname, ArrayList<DBMPPart> dBMPParts) {
-		super();
-		this.carname = new Hash(carname);
-		this.dBMPParts = dBMPParts;
-	}
-	public DBMP(Hash carname, ArrayList<DBMPPart> dBMPParts) {
 		super();
 		this.carname = carname;
 		this.dBMPParts = dBMPParts;
@@ -45,7 +40,7 @@ public class DBMP{
 	
 	@Override
 	public String toString() {
-		String s = "== DBModelParts ==\nCar=" + carname.label;
+		String s = "== DBModelParts ==\nCar=" + carname;
 		for (DBMPPart p : dBMPParts) {
 			s += "\n" + p;
 		}
@@ -54,7 +49,7 @@ public class DBMP{
 	}
 	
 	public String displayName() {
-		String s = "== DBModelParts ==\nCar=" + carname.label;
+		String s = "== DBModelParts ==\nCar=" + carname;
 		for (DBMPPart p : dBMPParts) {
 			s += "\n" + p.displayName;
 		}
@@ -77,7 +72,7 @@ public class DBMP{
 		
 		bb.order(ByteOrder.LITTLE_ENDIAN);
 		bb.position(36);
-		writeString(carname.label, bb);
+		writeString(carname, bb);
 		bb.putInt(dBMPParts.size());
 		for (DBMPPart p : dBMPParts) { //loop on parts
 			bb.putInt(p.attributes.size());
@@ -122,13 +117,13 @@ public class DBMP{
 			fis.read(fileToBytes);
 			fis.close();
 
-			ArrayList<Hash> attributesTwoString = new ArrayList<>();
-			ArrayList<Hash> attributesString = new ArrayList<>();
-			ArrayList<Hash> attributesInteger = new ArrayList<>();
-			ArrayList<Hash> attributesCarPartID = new ArrayList<>();
-			ArrayList<Hash> attributesKey = new ArrayList<>();
-			ArrayList<Hash> attributesBoolean = new ArrayList<>();
-			ArrayList<Hash> attributesColor = new ArrayList<>();
+			ArrayList<Integer> attributesTwoString = new ArrayList<>();
+			ArrayList<Integer> attributesString = new ArrayList<>();
+			ArrayList<Integer> attributesInteger = new ArrayList<>();
+			ArrayList<Integer> attributesCarPartID = new ArrayList<>();
+			ArrayList<Integer> attributesKey = new ArrayList<>();
+			ArrayList<Integer> attributesBoolean = new ArrayList<>();
+			ArrayList<Integer> attributesColor = new ArrayList<>();
 			
 			
 			
@@ -139,25 +134,25 @@ public class DBMP{
 				if (!line.isBlank()) {
 					switch (line.split("=")[1]) {
 					case "TwoString":
-						attributesTwoString.add(new Hash(line.split("=")[0]));
+						attributesTwoString.add(Hash.findBIN(line.split("=")[0]));
 						break;
 					case "String":
-						attributesString.add(new Hash(line.split("=")[0]));
+						attributesString.add(Hash.findBIN(line.split("=")[0]));
 						break;
 					case "Integer":
-						attributesInteger.add(new Hash(line.split("=")[0]));
+						attributesInteger.add(Hash.findBIN(line.split("=")[0]));
 						break;
 					case "CarPartID":
-						attributesCarPartID.add(new Hash(line.split("=")[0]));
+						attributesCarPartID.add(Hash.findBIN(line.split("=")[0]));
 						break;
 					case "Key":
-						attributesKey.add(new Hash(line.split("=")[0]));
+						attributesKey.add(Hash.findBIN(line.split("=")[0]));
 						break;
 					case "Boolean":
-						attributesBoolean.add(new Hash(line.split("=")[0]));
+						attributesBoolean.add(Hash.findBIN(line.split("=")[0]));
 						break;
 					case "Color":
-						attributesColor.add(new Hash(line.split("=")[0]));
+						attributesColor.add(Hash.findBIN(line.split("=")[0]));
 					}
 				}
 			}
@@ -175,13 +170,13 @@ public class DBMP{
 				for (int j=0; j<partAttribCount; j++) { //loop on attributes
 					int attributeHash = bb.getInt();
 					Attribute a = null;
-					for (Hash h : attributesTwoString) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeTwoString(h, bb, useGUI));
-					for (Hash h : attributesString) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeString(h, bb, useGUI));
-					for (Hash h : attributesInteger) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeInteger(h, bb, useGUI));
-					for (Hash h : attributesCarPartID) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeCarPartID(h, bb, useGUI));
-					for (Hash h : attributesKey) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeKey(h, bb, useGUI));
-					for (Hash h : attributesBoolean) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeBoolean(h, bb, useGUI));
-					for (Hash h : attributesColor) if (h.binHash == attributeHash) p.attributes.add(a = new AttributeColor(h, bb, useGUI));
+					for (var h : attributesTwoString) if (h == attributeHash) p.attributes.add(a = new AttributeTwoString(h, bb, useGUI));
+					for (var h : attributesString) if (h == attributeHash) p.attributes.add(a = new AttributeString(h, bb, useGUI));
+					for (var h : attributesInteger) if (h == attributeHash) p.attributes.add(a = new AttributeInteger(h, bb, useGUI));
+					for (var h : attributesCarPartID) if (h == attributeHash) p.attributes.add(a = new AttributeCarPartID(h, bb, useGUI));
+					for (var h : attributesKey) if (h == attributeHash) p.attributes.add(a = new AttributeKey(h, bb, useGUI));
+					for (var h : attributesBoolean) if (h == attributeHash) p.attributes.add(a = new AttributeBoolean(h, bb, useGUI));
+					for (var h : attributesColor) if (h == attributeHash) p.attributes.add(a = new AttributeColor(h, bb, useGUI));
 					assert (a != null);
 					if (DBMPPlus.debug)System.out.println("Attribute " + (j+1) + "/" + partAttribCount + " : " + a.toString());
 				}

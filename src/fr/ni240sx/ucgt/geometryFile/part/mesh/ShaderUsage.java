@@ -57,7 +57,7 @@ public class ShaderUsage {
     
     public final VertexFormat vertexFormat;
     
-    public static List<ShaderUsage> values = new ArrayList<ShaderUsage>();
+    public static List<ShaderUsage> values = new ArrayList<>();
     public static boolean isLoaded = false;
 
     ShaderUsage(String name, String[] possibleNames) {
@@ -75,7 +75,7 @@ public class ShaderUsage {
     ShaderUsage(int key, String name, String[] possibleNames, VertexFormat vf) {
     	if (key == -2) {
     		// compute vlt from name
-    		this.key = new Hash(name).vltHash;
+    		this.key = Hash.findVLT(name);
     	} else
         this.key = key; //Integer.reverseBytes(key);
         this.name = name;
@@ -160,26 +160,26 @@ public class ShaderUsage {
     	} catch (Exception e) {
     		System.out.println("Warning : unable to fetch shader usages from data folder !");
     		e.printStackTrace();
-    		values.add(new ShaderUsage(new Hash("car").vltHash, "Diffuse", new String[]{"Diffuse","car"}));
-    		values.add(new ShaderUsage(new Hash("car_a").vltHash, "DiffuseAlpha", new String[]{"DiffuseAlpha","Alpha","car_a"}));
+    		values.add(new ShaderUsage(Hash.findVLT("car"), "Diffuse", new String[]{"Diffuse","car"}));
+    		values.add(new ShaderUsage(Hash.findVLT("car_a"), "DiffuseAlpha", new String[]{"DiffuseAlpha","Alpha","car_a"}));
     		values.add(new ShaderUsage("car_a_nzw", new String[]{"car_a_nzw"}));
-    		values.add(new ShaderUsage(new Hash("car_nm").vltHash, "DiffuseNormal", new String[]{"DiffuseNormal","Normal","car_nm"}));
-    		values.add(new ShaderUsage(new Hash("car_nm_a").vltHash, "DiffuseNormalAlpha", new String[]{"DiffuseNormalAlpha","DiffuseAlphaNormal","AlphaNormal","NormalAlpha","car_nm_a"}));
-    		values.add(new ShaderUsage(new Hash("car_nm_v_s").vltHash, "DiffuseNormalSwatch", new String[]{"DiffuseNormalSwatch","DiffuseSwatchNormal","NormalSwatch","SwatchNormal","car_nm_v_s"}));
-    		values.add(new ShaderUsage(new Hash("car_nm_v_s_a").vltHash, "DiffuseNormalSwatchAlpha", 
+    		values.add(new ShaderUsage(Hash.findVLT("car_nm"), "DiffuseNormal", new String[]{"DiffuseNormal","Normal","car_nm"}));
+    		values.add(new ShaderUsage(Hash.findVLT("car_nm_a"), "DiffuseNormalAlpha", new String[]{"DiffuseNormalAlpha","DiffuseAlphaNormal","AlphaNormal","NormalAlpha","car_nm_a"}));
+    		values.add(new ShaderUsage(Hash.findVLT("car_nm_v_s"), "DiffuseNormalSwatch", new String[]{"DiffuseNormalSwatch","DiffuseSwatchNormal","NormalSwatch","SwatchNormal","car_nm_v_s"}));
+    		values.add(new ShaderUsage(Hash.findVLT("car_nm_v_s_a"), "DiffuseNormalSwatchAlpha", 
 			new String[]{"DiffuseNormalSwatchAlpha","DiffuseNormalAlphaSwatch",
 					"DiffuseAlphaNormalSwatch","DiffuseAlphaSwatchNormal",
 					"DiffuseSwatchNormalAlpha","DiffuseSwatchAlphaNormal",
 					"NormalSwatchAlpha","NormalAlphaSwatch",
 					"AlphaNormalSwatch","AlphaSwatchNormal",
 					"SwatchNormalAlpha","SwatchAlphaNormal", "car_nm_v_s_a"}));
-    		values.add(new ShaderUsage(new Hash("car_si").vltHash, "DiffuseGlow", new String[]{"DiffuseGlow","DiffuseSelfIllumination","Glow","SelfIllumination","car_si"}));
-    		values.add(new ShaderUsage(new Hash("car_si_a").vltHash, "DiffuseGlowAlpha", new String[]{"DiffuseGlowAlpha","DiffuseAlphaGlow","DiffuseSelfIlluminationAlpha","DiffuseAlphaSelfIllumination",
+    		values.add(new ShaderUsage(Hash.findVLT("car_si"), "DiffuseGlow", new String[]{"DiffuseGlow","DiffuseSelfIllumination","Glow","SelfIllumination","car_si"}));
+    		values.add(new ShaderUsage(Hash.findVLT("car_si_a"), "DiffuseGlowAlpha", new String[]{"DiffuseGlowAlpha","DiffuseAlphaGlow","DiffuseSelfIlluminationAlpha","DiffuseAlphaSelfIllumination",
     				"GlowAlpha","AlphaGlow","SelfIlluminationAlpha","AlphaSelfIllumination","car_si_a"}));
-    		values.add(new ShaderUsage(new Hash("car_t").vltHash, "TrafficDiffuse", new String[]{"TrafficDiffuse","Traffic","car_t"}));
-    		values.add(new ShaderUsage(new Hash("car_t_a").vltHash, "TrafficDiffuseAlpha", new String[]{"TrafficDiffuseAlpha","TrafficAlpha","car_t_a"}));
-    		values.add(new ShaderUsage(new Hash("car_t_nm").vltHash, "TrafficDiffuseNormal", new String[]{"TrafficDiffuseNormal","TrafficNormal","car_t_nm"}));
-    		values.add(new ShaderUsage(new Hash("car_v").vltHash, "DiffuseSwatch", new String[]{"DiffuseSwatch","Swatch","car_v"}));
+    		values.add(new ShaderUsage(Hash.findVLT("car_t"), "TrafficDiffuse", new String[]{"TrafficDiffuse","Traffic","car_t"}));
+    		values.add(new ShaderUsage(Hash.findVLT("car_t_a"), "TrafficDiffuseAlpha", new String[]{"TrafficDiffuseAlpha","TrafficAlpha","car_t_a"}));
+    		values.add(new ShaderUsage(Hash.findVLT("car_t_nm"), "TrafficDiffuseNormal", new String[]{"TrafficDiffuseNormal","TrafficNormal","car_t_nm"}));
+    		values.add(new ShaderUsage(Hash.findVLT("car_v"), "DiffuseSwatch", new String[]{"DiffuseSwatch","Swatch","car_v"}));
     	}
     	isLoaded = true;
     }
@@ -197,7 +197,7 @@ public class ShaderUsage {
 		if (names.size() == 1) {
 			values.add(new ShaderUsage(names.get(0), names.toArray(String[]::new), vf));
 		} else if (names.size() != 0) { //>1
-			values.add(new ShaderUsage(new Hash(names.get(0)).vltHash, names.get(1), names.toArray(String[]::new), vf));
+			values.add(new ShaderUsage(Hash.findVLT(names.get(0)), names.get(1), names.toArray(String[]::new), vf));
 		}
 	}
 }

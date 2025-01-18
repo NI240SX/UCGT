@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import fr.ni240sx.ucgt.binstuff.Hash;
-import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.geometryFile.io.VertexData3;
 
@@ -24,7 +23,7 @@ public class MPoint {
 	public float scaleY = 1;
 	public float scaleZ = 1;
 	
-	public Hash nameHash;
+	public int nameHash;
 	public Part part;
 //	public ArrayList<Part> parts = new ArrayList<Part>();
 	
@@ -52,9 +51,9 @@ public class MPoint {
 		this.scaleZ = mp.scaleZ;
 	}
 
-	public void tryGuessName(Geometry geometry) {
-		nameHash = Hash.guess(nameHash.binHash, geometry.hashlist, String.format("0x%08X", nameHash.binHash), "BIN");
-	}
+//	public void tryGuessName(Geometry geometry) {
+//		nameHash = Hash.guess(nameHash.binHash, geometry.hashlist, String.format("0x%08X", nameHash.binHash), "BIN");
+//	}
 	
 	public static float[] rotationMatrixToEulerAngles(float[][] R) {
 	    double sy = -Math.asin(R[0][2]);
@@ -84,7 +83,17 @@ public class MPoint {
 	
 	public float[][] eulerAnglesToMatrix(double w, double v, double u) {
 	    float[] inversion = rotationMatrixToEulerAngles(eulerAnglesToMatrixCalculation(u, v, w)); //doing it twice fixes issues with rotations
-	    return eulerAnglesToMatrixCalculation(inversion[0], inversion[1], inversion[2]);
+	    var result = eulerAnglesToMatrixCalculation(inversion[0], inversion[1], inversion[2]);
+	    result[0][0] *= scaleX;
+	    result[0][1] *= scaleX;
+	    result[0][2] *= scaleX;
+	    result[1][0] *= scaleY;
+	    result[1][1] *= scaleY;
+	    result[1][2] *= scaleY;
+	    result[2][0] *= scaleZ;
+	    result[2][1] *= scaleZ;
+	    result[2][2] *= scaleZ;
+	    return result;
 	}
 	
 	public float[][] eulerAnglesToMatrixCalculation(double u, double v, double w) {
@@ -100,15 +109,15 @@ public class MPoint {
 	    double sw = Math.sin(w);
 
 	    float[][] R = new float[3][3];
-	    R[0][0] = (float) (cv * cw)*scaleX;
-	    R[0][1] = (float) (cv * sw)*scaleX;
-	    R[0][2] = (float) -sv*scaleX;
-	    R[1][0] = (float) (su * sv * cw - cu * sw)*scaleY;
-	    R[1][1] = (float) (su * sv * sw + cu * cw)*scaleY;
-	    R[1][2] = (float) (su * cv)*scaleY;
-	    R[2][0] = (float) (cu * sv * cw + su * sw)*scaleZ;
-	    R[2][1] = (float) (cu * sv * sw - su * cw)*scaleZ;
-	    R[2][2] = (float) (cu * cv)*scaleZ;
+	    R[0][0] = (float) (cv * cw);
+	    R[0][1] = (float) (cv * sw);
+	    R[0][2] = (float) -sv;
+	    R[1][0] = (float) (su * sv * cw - cu * sw);
+	    R[1][1] = (float) (su * sv * sw + cu * cw);
+	    R[1][2] = (float) (su * cv);
+	    R[2][0] = (float) (cu * sv * cw + su * sw);
+	    R[2][1] = (float) (cu * sv * sw - su * cw);
+	    R[2][2] = (float) (cu * cv);
 	    return R;
 	}
 	
@@ -135,7 +144,7 @@ public class MPoint {
 		
 		s += "MARKER	"
 		+uniqueName+"	"
-		+nameHash.label +"	"
+		+Hash.getBIN(nameHash) +"	"
 		+part.name+"	";
 //			+positionX+"	"+positionY+"	"+positionZ+"	"
 //			s += m[0] + "	" + m[1] + "	" + m[2] + "\n";
@@ -186,7 +195,7 @@ public class MPoint {
 		return floatEquals(matrix[0][0], other.matrix[0][0]) && floatEquals(matrix[0][1], other.matrix[0][1]) && floatEquals(matrix[0][2], other.matrix[0][2]) &&
 				floatEquals(matrix[1][0], other.matrix[1][0]) && floatEquals(matrix[1][1], other.matrix[1][1]) && floatEquals(matrix[1][2], other.matrix[1][2]) &&
 				floatEquals(matrix[2][0], other.matrix[2][0]) && floatEquals(matrix[2][1], other.matrix[2][1]) && floatEquals(matrix[2][2], other.matrix[2][2]) &&
-				nameHash.binHash == other.nameHash.binHash &&
+				nameHash == other.nameHash &&
 				floatEquals(positionX, other.positionX) && floatEquals(positionY, other.positionY) && floatEquals(positionZ, other.positionZ) && 
 				floatEquals(positionW, other.positionW) && uniqueName.equals(other.uniqueName);
 	}
@@ -198,10 +207,23 @@ public class MPoint {
 	
 	public static double round(double d) {
 		return (double)(Math.round(d*roundFactor))/roundFactor;
+//		return d;
 	}
 	public static float round(float d) {
 		return (float)(Math.round(d*roundFactor))/roundFactor;
+//		return d;
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 //	public static void printMat(float[][] mat) {
 //		for (var arr : mat) printArr(arr);
@@ -220,28 +242,88 @@ public class MPoint {
 //		var mp = new MPoint();
 //
 //		//rotations test
-//		float[][] matrix0 = {{-0.34202015f,	0, 0.9396926f},
-//							{0.9396926f, -1.763115E-16f, 0.34202015f},
-//							{1.8000426E-16f, 1.0f, 0}};
-//		printMat(matrix0);
+//		float[][] matrix0 = {{0.230875834822655f, 9.92545499592769E-15f, 1.1051412820816f},
+//							{-3.33743429337119E-7f, 1.12899994850159f, 6.97225672752211E-8f},
+//							{-1.1051412820816f, -3.40948531629692E-7f, 0.230875834822655f}};
+////			{{-0.34202015f,	0, 0.9396926f},
+////							{0.9396926f, -1.763115E-16f, 0.34202015f},
+////							{1.8000426E-16f, 1.0f, 0}};
+//		mp.matrix = matrix0;
+//		
+//		printMat(mp.matrix);
+//		for (int i=0; i<3; i++) for (int j=0; j<3; j++) mp.matrix[i][j] = MPoint.round(mp.matrix[i][j]);
+//		System.out.println();
+//		printMat(mp.matrix);
+//		
+//		
+//		
+//		
 //
+//		
+//		mp.scaleX = MPoint.round((float) Math.sqrt(mp.matrix[0][0] * mp.matrix[0][0] + mp.matrix[0][1] * mp.matrix[0][1] + mp.matrix[0][2] * mp.matrix[0][2]));
+//		mp.scaleY = MPoint.round((float) Math.sqrt(mp.matrix[1][0] * mp.matrix[1][0] + mp.matrix[1][1] * mp.matrix[1][1] + mp.matrix[1][2] * mp.matrix[1][2]));
+//		mp.scaleZ = MPoint.round((float) Math.sqrt(mp.matrix[2][0] * mp.matrix[2][0] + mp.matrix[2][1] * mp.matrix[2][1] + mp.matrix[2][2] * mp.matrix[2][2]));
+//       
+//
+//		mp.matrix[0][0] = mp.matrix[0][0]/mp.scaleX;
+//		mp.matrix[0][1] = mp.matrix[0][1]/mp.scaleX;
+//		mp.matrix[0][2] = mp.matrix[0][2]/mp.scaleX;
+//
+//		mp.matrix[1][0] = mp.matrix[1][0]/mp.scaleY;
+//		mp.matrix[1][1] = mp.matrix[1][1]/mp.scaleY;
+//		mp.matrix[1][2] = mp.matrix[1][2]/mp.scaleY;
+//
+//		mp.matrix[2][0] = mp.matrix[2][0]/mp.scaleZ;
+//		mp.matrix[2][1] = mp.matrix[2][1]/mp.scaleZ;
+//		mp.matrix[2][2] = mp.matrix[2][2]/mp.scaleZ;
+//		
+//
+//		System.out.println();
+//		printMat(mp.matrix);
+//
+//		System.out.println();
 //		System.out.println(); //simulates first extraction
 ////		float[] euler0 = {180, -70, 90};
-//		var euler0 = mp.rotationMatrixToEulerAngles(matrix0);
+//		var euler0 = mp.rotationMatrixToEulerAngles(mp.matrix);
 //		printArr(euler0);
 //		
 //		System.out.println(); //simulates first compiling
-//		var matrix1 = mp.eulerAnglesToMatrix(euler0[0], euler0[1], euler0[2]);
+//		var matrix1 = mp.eulerAnglesToMatrixCalculation(euler0[0], euler0[1], euler0[2]);
 //		printMat(matrix1);
 //
+//
+//		matrix1[0][0] = matrix1[0][0]/mp.scaleX;
+//		matrix1[0][1] = matrix1[0][1]/mp.scaleX;
+//		matrix1[0][2] = matrix1[0][2]/mp.scaleX;
+//
+//		matrix1[1][0] = matrix1[1][0]/mp.scaleY;
+//		matrix1[1][1] = matrix1[1][1]/mp.scaleY;
+//		matrix1[1][2] = matrix1[1][2]/mp.scaleY;
+//
+//		matrix1[2][0] = matrix1[2][0]/mp.scaleZ;
+//		matrix1[2][1] = matrix1[2][1]/mp.scaleZ;
+//		matrix1[2][2] = matrix1[2][2]/mp.scaleZ;
+//		
 //		System.out.println(); //simulates second extraction
 //		var euler1 = mp.rotationMatrixToEulerAngles(matrix1);
 //		printArr(euler1);
 //		
 //		System.out.println(); //simulates second compiling
-//		var matrix2 = mp.eulerAnglesToMatrix(euler1[0], euler1[1], euler1[2]);
+//		var matrix2 = mp.eulerAnglesToMatrixCalculation(euler1[0], euler1[1], euler1[2]);
 //		printMat(matrix2);
 //
+//		matrix2[0][0] = matrix2[0][0]/mp.scaleX;
+//		matrix2[0][1] = matrix2[0][1]/mp.scaleX;
+//		matrix2[0][2] = matrix2[0][2]/mp.scaleX;
+//
+//		matrix2[1][0] = matrix2[1][0]/mp.scaleY;
+//		matrix2[1][1] = matrix2[1][1]/mp.scaleY;
+//		matrix2[1][2] = matrix2[1][2]/mp.scaleY;
+//
+//		matrix2[2][0] = matrix2[2][0]/mp.scaleZ;
+//		matrix2[2][1] = matrix2[2][1]/mp.scaleZ;
+//		matrix2[2][2] = matrix2[2][2]/mp.scaleZ;
+//		
 //		System.out.println(); //simulates third extraction
 //		var euler2 = mp.rotationMatrixToEulerAngles(matrix2);
 //		printArr(euler2);
