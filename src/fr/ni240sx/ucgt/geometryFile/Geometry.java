@@ -97,6 +97,8 @@ public class Geometry extends Block {
 	public SettingsImport_Tangents IMPORT_Tangents = SettingsImport_Tangents.HIGH;
 	public boolean IMPORT_flipV = false;
 	
+	public Platform platform = Platform.PC;
+	
 	//---------------------------------------------------------------------------------------------------
 	//
 	//										CONSTRUCTORS
@@ -209,7 +211,6 @@ public class Geometry extends Block {
 						}
 						
 					}
-					
 				} catch (@SuppressWarnings("unused") Exception e) {
 					//header is null
 				}
@@ -223,7 +224,7 @@ public class Geometry extends Block {
 		updateHashes();
 		
 		
-		
+		if (parts.size()>0) if (parts.get(0).mesh != null) platform = parts.get(0).mesh.platform;
 		materials.clear();
 		mpointsAll.clear();
 		mpointsPositions.clear();
@@ -283,7 +284,7 @@ public class Geometry extends Block {
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 
 		long t = System.currentTimeMillis();
-		//process stuff on parts (TODO make a part invalidation list for that and compressing)
+		//process stuff on parts
 		if (SAVE_processParts) processParts();
 		if(SAVE_checkModel) checkModel();
 		if (!SAVE_makeDataBlock) {
@@ -415,6 +416,15 @@ public class Geometry extends Block {
 		bw.write("UCGT v"+GeometryEditorCLI.programVersion+" by needeka\n"
 				+ "\n--- Settings ---\n");
 		if (!carname.equals("UNDETERMINED")) bw.write("SETTING	CarName="+this.carname+"\n");
+		switch (platform) {
+		case PC:
+			break;
+		case X360:
+			bw.write("SETTING	Platform=X360\n");
+			break;
+		default:
+			break;
+		}
 		if (SAVE_useOffsetsTable) bw.write("SETTING	UseMultithreading="+USE_MULTITHREADING+"\n"
 				+ "SETTING	CompressionType="+defaultCompressionType+"\n"
 				+ "SETTING	CompressionLevel="+defaultCompressionLevel.getName()+"\n");
@@ -908,12 +918,6 @@ public class Geometry extends Block {
 			readConfigLine(l, lineNbr);
 		}//loop on config file lines
 		br.close();
-
-		if (renameParts.size() != 0) for (var mp : mpointsAll) for (var r : renameParts){
-			for (int i=0; i<mp.tempPartNames.size(); i++) {
-				mp.tempPartNames.set(i, mp.tempPartNames.get(i).replace(r.getValue(), r.getKey()));
-			}
-		}
 	}
 
 	public void readConfigLine(String l, int lineNbr) {
@@ -1045,6 +1049,20 @@ public class Geometry extends Block {
 						}
 						break;
 						
+					case "Platform":
+						if (s2.split("=")[1].equals("PC")) {
+							platform = Platform.PC;
+							System.out.println("Using PC platform");
+						}
+						else if (s2.split("=")[1].equals("X360") || s2.split("=")[1].equals("XBOX360") || s2.split("=")[1].equals("XBOX") || s2.split("=")[1].equals("XENON")) {
+							platform = Platform.X360;
+							System.out.println("Using X360 platform");
+						} else {
+							platform = Platform.PC;
+							System.out.println("Invalid platform, defaulting to PC. Valid platforms: PC, X360");
+						}
+						break;
+						
 					default:
 						System.out.println("Setting not supported : "+s2);
 					}
@@ -1088,7 +1106,7 @@ public class Geometry extends Block {
 				break;
 				
 			case "MATERIAL": // IF THE CAR NAME ISN'T SET BEFORE THIS, CAR-SPECIFIC TEXTURES WILL BREAK
-				var m = new Material(carname, l);
+				var m = new Material(this, l);
 				materials.add(m);
 				break;
 				
@@ -1458,7 +1476,7 @@ public class Geometry extends Block {
 					}
 					iterator++;
 				}
-				//	TODO try to fix rotations
+				//	rotations fix
 				//	CTK				UCGT
 				//	0 0 0			0	0	0			-> ok
 				
@@ -1549,20 +1567,7 @@ public class Geometry extends Block {
 		
 		var toRemove = Collections.synchronizedList(new ArrayList<Part>()); // parts flagged to be removed to optimize the geometry (eg T0 autosculpt with no other actual morphtargets)
 		
-		if (!renameParts.isEmpty()) {
-//			System.out.println("parts to rename present :");
-//			for (var k : renameParts.keySet()) {
-//				System.out.println(k+" : "+renameParts.get(k));
-//			}
-			for (var p : parts) for (var r : renameParts) if (p.name.contains(r.getKey())) {
-				System.out.print("Renaming part "+p.name);
-				p.header.partName = p.header.partName.replace(r.getKey(), r.getValue());
-				p.header.binKey = Hash.findBIN(p.header.partName);
-				p.name = p.name.replace(r.getKey(), r.getValue());
-				p.findKitLodPart(carname);
-				System.out.println(" to "+p.name);
-			}
-		}
+		// RENAME moved to part constructor
 		
 		if (!deleteParts.isEmpty()) {
 //			System.out.println("parts to rename present :");
@@ -1576,8 +1581,8 @@ public class Geometry extends Block {
 		}
 		
 		for (var p : parts) {		
-			HashMap<Integer, Integer> FERenderData; //first int is either shader usage or shader hash
-			FERenderData = new HashMap<>();
+			HashMap<Integer, Byte> shaderUsageIDs; //first int is either shader usage or shader hash
+			shaderUsageIDs = new HashMap<>();
 			
 			if (SAVE_removeInvalid) {if (!checkValid(toRemove, p)) continue;}
 			optimizeAutosculpt(toRemove, p); 
@@ -1588,13 +1593,13 @@ public class Geometry extends Block {
 				p.strings = null;
 			}
 			if (p.mesh != null) {				
-				for (var m : p.mesh.materials.materials) if (m.renderingOrder!=0) FERenderData.put(m.ShaderHash , m.renderingOrder*256);
+				for (var m : p.mesh.materials.materials) if (m.renderingOrder!=0) shaderUsageIDs.put(m.ShaderHash , m.renderingOrder);
 				for (var m : p.mesh.materials.materials) {
-					m.tryGuessFEData(FERenderData);
+					m.tryGuessFEData(shaderUsageIDs);
 					if (SAVE_optimizeMaterials) {	
 		    			m.removeUnneeded();
 		    		} else {
-						m.tryGuessTexturePriority();
+//						m.tryGuessTexturePriority();
 //						m.tryGuessFlags(this);
 		    			m.tryGuessDefaultTex();
 		    		}
@@ -1605,6 +1610,7 @@ public class Geometry extends Block {
 						for (var pair : prio.values) {
 							if (m.equals(pair.getKey())) { //for some reason materials are NOT equal (materials are fucked up for some reason and have texture hashes repeated twice)
 								//HOW IS IT NOT FINDING THE FUCKING MATERIALS
+								m.texturePriorities.clear();
 								m.texturePriorities.add(0);
 								m.texturePriorities.add(pair.getValue());
 //								m.usageSpecific1 = pair.getValue();
@@ -1874,7 +1880,14 @@ public class Geometry extends Block {
         	int numTriangles = 0;
         	int numTrianglesEXTRA = 0;
         	for (var m : p.mesh.materials.materials) {
-        		m.verticesBlock.vertexFormat = m.shaderUsage.vertexFormat;
+        		switch (p.mesh.platform) {
+        		case PC:
+            		m.verticesBlock.vertexFormat = m.shaderUsage.vertexFormat_PC;
+        			break;
+        		case X360:
+            		m.verticesBlock.vertexFormat = m.shaderUsage.vertexFormat_X360;
+        			break;
+        		}
         		
         		p.mesh.verticesBlocks.add(m.verticesBlock);
         		p.mesh.triangles.triangles.addAll(m.triangles);
@@ -1985,7 +1998,7 @@ public class Geometry extends Block {
         			int texid = texturesIDs.get(new Pair<>(m.TextureHashes.get(i), m.textureUsages.get(i).getKey()));
         			m.textureIDs.add((byte) texid);
         		}
-        		m.verticesDataLength = m.verticesBlock.vertices.size()*m.shaderUsage.vertexFormat.getLength();
+        		m.verticesDataLength = m.verticesBlock.vertices.size()*m.shaderUsage.vertexFormat_PC.getLength();
             }
         	
         	//--- shadersusage ---
@@ -2406,7 +2419,7 @@ public class Geometry extends Block {
 		        		m.toTriVertID = m.fromTriVertID + m.triangles.size()*3;
 		        		m.numTriVertices = m.toTriVertID - m.fromTriVertID;
 		        		triVertI = m.toTriVertID;
-		        		m.verticesDataLength = m.verticesBlock.vertices.size()*m.shaderUsage.vertexFormat.getLength();
+		        		m.verticesDataLength = m.verticesBlock.vertices.size()*m.shaderUsage.vertexFormat_PC.getLength();
 		            }
 		        	p2.rebuildSubBlocks();
 //    		        	System.out.println(p2.header.partName+" fixed : "+p2.mesh.info.numTriangles+" tris, "+p2.mesh.info.numVertices+" verts.");
@@ -2618,7 +2631,7 @@ public class Geometry extends Block {
 	public static Pair<String,String> findBlockAndNameInGeomOrTPK(ByteBuffer bb) {
 //		var beginning = bb.position()-8; //beginning of the parent bin block, header included
 		var id = bb.getInt();
-		var blockEnd = bb.getInt() + bb.position();
+//		var blockEnd = bb.getInt() + bb.position();
 		if (id == BlockType.Geometry.getKey()) {
 			int length;
 			while (bb.getInt() != BlockType.Geom_Header.getKey()) {

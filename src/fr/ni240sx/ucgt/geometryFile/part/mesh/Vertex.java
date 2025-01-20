@@ -1,7 +1,10 @@
 package fr.ni240sx.ucgt.geometryFile.part.mesh;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Objects;
+
+import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.HalfPrecisionFloat;
 
 public class Vertex {
 	public float posX=0x0CCD/posFactor; //position
@@ -150,9 +153,17 @@ public class Vertex {
 			norm0s_in(in);
 			tan0s_in(in);
 			break;
+			
+		case Pos0h4_Norm0d4n_Tan0d4n_Col0_Tex0h2: //X360 car
+			pos0h4_in(in);
+			norm0d4n_in(in);
+			tan0d4n_in(in);
+			col0ARGB_in(in);
+			tex0h2_in(in);
+			break;
 		}	
 	}
-
+	
 	private void pos0_in(ByteBuffer in) {
 		posX = in.getFloat();
 		posY = in.getFloat();
@@ -170,12 +181,26 @@ public class Vertex {
 		posZ = (in.getShort())/posFactor;
 		in.getShort();
 	}
+	private void pos0h4_in(ByteBuffer in) {
+		in.order(ByteOrder.BIG_ENDIAN);
+		posX = new HalfPrecisionFloat(in.getShort()).getFullFloat();
+		posY = new HalfPrecisionFloat(in.getShort()).getFullFloat();
+		posZ = new HalfPrecisionFloat(in.getShort()).getFullFloat();
+		in.getShort();
+		in.order(ByteOrder.LITTLE_ENDIAN);
+	}
 
 	private void col0_in(ByteBuffer in) {
 		colorR = in.get();	//color
 		colorG = in.get();
 		colorB = in.get();
 		colorA = in.get();
+	}
+	private void col0ARGB_in(ByteBuffer in) {
+		colorA = in.get();
+		colorR = in.get();	//color
+		colorG = in.get();
+		colorB = in.get();
 	}
 	private void col0f4_in(ByteBuffer in) {
 		colorR = (byte) (in.getFloat()*255);
@@ -204,7 +229,13 @@ public class Vertex {
 		tex2U = (in.getShort())/UVFactor;	//short2n_32x
 		tex2V = 1-(in.getShort())/UVFactor;
 	}
-
+	private void tex0h2_in(ByteBuffer in) {
+		in.order(ByteOrder.BIG_ENDIAN);
+		tex0U = new HalfPrecisionFloat(in.getShort()).getFullFloat();
+		tex0V = 1 - new HalfPrecisionFloat(in.getShort()).getFullFloat();
+		in.order(ByteOrder.LITTLE_ENDIAN);
+	}
+	
 	private void norm0_in(ByteBuffer in) {
 		normX = in.getFloat();
 		normY = in.getFloat();
@@ -216,6 +247,32 @@ public class Vertex {
 		normY = (in.getShort())/vecFactor;
 		normZ = (in.getShort())/vecFactor;
 		in.getShort();
+	}
+	private void norm0d4n_in(ByteBuffer in) {
+		var bits = Integer.reverseBytes(in.getInt());
+		
+//		int w = (bits >> 30) & 0b11;
+		int z = (bits >> 20) & 0b1111111111; // Bits 30-21
+        int y = (bits >> 10) & 0b1111111111; // Bits 20-11
+        int x = bits & 0b1111111111;         // Bits 10-1
+
+        normX = x < 512 ? x/511.0f : (x-1024)/511.0f;
+        normY = y < 512 ? y/511.0f : (y-1024)/511.0f;
+        normZ = z < 512 ? z/511.0f : (z-1024)/511.0f;
+        
+		/*
+		 * SAMPLE VALUES FOR IDENTIFICATION
+		 * 
+		 * 0.0 -1.0 0.0		40080400	64 8 4 0		01000000 00001000 00000100 00000000
+		 * 0.0 1.0 0.0		4007fc00	64 7 -4 0		01000000 00000111 11111100 00000000
+		 * ~-0.01 0.0 0.99	5fe003f9	95 -32 3 -7		01011111 11100000 00000011 11111001
+		 * 												W	Z	Y	X
+		 * -1.0 = 513
+		 * -0.01 = 1017
+		 * 0.99 = 510
+		 * 1.0 = 511
+		 * 
+		 */
 	}
 
 	private void tan0_in(ByteBuffer in) {
@@ -230,7 +287,20 @@ public class Vertex {
 		tanZ = (in.getShort())/vecFactor;
 		tanW = (in.getShort())/vecFactor;
 	}
+	private void tan0d4n_in(ByteBuffer in) {
+		var bits = Integer.reverseBytes(in.getInt());
+		
+		int w = (bits >> 30) & 0b11;
+		int z = (bits >> 20) & 0b1111111111; // Bits 30-21
+        int y = (bits >> 10) & 0b1111111111; // Bits 20-11
+        int x = bits & 0b1111111111;         // Bits 10-1
 
+        tanX = x < 512 ? x/511.0f : (x-1024)/511.0f;
+        tanY = y < 512 ? y/511.0f : (y-1024)/511.0f;
+        tanZ = z < 512 ? z/511.0f : (z-1024)/511.0f;
+        tanW = w;
+	}
+	
 	public Vertex() {
 	}
 
@@ -365,6 +435,14 @@ public class Vertex {
 			norm0s_out(out);
 			tan0s_out(out);
 			break;
+
+		case Pos0h4_Norm0d4n_Tan0d4n_Col0_Tex0h2: //X360 car
+			pos0h4_out(out);
+			norm0d4n_out(out);
+			tan0d4n_out(out);
+			col0ARGB_out(out);
+			tex0h2_out(out);
+			break;
 		}	
 	}
 
@@ -385,12 +463,26 @@ public class Vertex {
 		out.putShort((short) (posZ*posFactor));
 		out.putShort((short) (0x0CCD));
 	}
+	private void pos0h4_out(ByteBuffer out) {
+		out.order(ByteOrder.BIG_ENDIAN);
+		out.putShort(new HalfPrecisionFloat(posX).getHalfPrecisionAsShort());
+		out.putShort(new HalfPrecisionFloat(posY).getHalfPrecisionAsShort());
+		out.putShort(new HalfPrecisionFloat(posZ).getHalfPrecisionAsShort());
+		out.putShort(new HalfPrecisionFloat(1.0f).getHalfPrecisionAsShort());
+		out.order(ByteOrder.LITTLE_ENDIAN);
+	}
 
 	private void col0_out(ByteBuffer out) {
 		out.put(colorR);
 		out.put(colorG);
 		out.put(colorB);
 		out.put(colorA);
+	}
+	private void col0ARGB_out(ByteBuffer out) {
+		out.put(colorA);
+		out.put(colorR);
+		out.put(colorG);
+		out.put(colorB);
 	}
 	private void col0f4_out(ByteBuffer out) {
 		out.putFloat((float) colorR/255);
@@ -419,6 +511,12 @@ public class Vertex {
 		out.putShort((short) (tex2U*UVFactor));	//short2n_32x
 		out.putShort((short) ((1-tex2V)*UVFactor));
 	}
+	private void tex0h2_out(ByteBuffer out) {
+		out.order(ByteOrder.BIG_ENDIAN);
+		out.putShort(new HalfPrecisionFloat(tex0U).getHalfPrecisionAsShort());
+		out.putShort(new HalfPrecisionFloat(1-tex0V).getHalfPrecisionAsShort());
+		out.order(ByteOrder.LITTLE_ENDIAN);
+	}
 
 	private void norm0_out(ByteBuffer out) {
 		out.putFloat((float) normX);
@@ -432,7 +530,18 @@ public class Vertex {
 		out.putShort((short) (normZ*vecFactor));
 		out.putShort((short) 0x7FFF);
 	}
-
+	private void norm0d4n_out(ByteBuffer out) {
+		int x = Math.round(normX * 511);
+        x = (x > 0) ? x : (x + 1024);
+		int y = Math.round(normY * 511);
+        y = (y > 0) ? y : (y + 1024);
+		int z = Math.round(normZ * 511);
+        z = (z > 0) ? z : (z + 1024);
+		
+        int bits = (1 << 30) | (z << 20) | (y << 10) | x;
+		out.putInt(Integer.reverseBytes(bits));
+	}
+	
 	private void tan0_out(ByteBuffer out) {
 		out.putFloat((float) tanX);
 		out.putFloat((float) tanY);
@@ -444,6 +553,17 @@ public class Vertex {
 		out.putShort((short) (tanY*vecFactor));
 		out.putShort((short) (tanZ*vecFactor));
 		out.putShort((short) (tanW*vecFactor));
+	}
+	private void tan0d4n_out(ByteBuffer out) {
+		int x = Math.round(tanX * 511);
+        x = (x > 0) ? x : (x + 1024);
+		int y = Math.round(tanY * 511);
+        y = (y > 0) ? y : (y + 1024);
+		int z = Math.round(tanZ * 511);
+        z = (z > 0) ? z : (z + 1024);
+        
+        int bits = (1 << 30) | (z << 20) | (y << 10) | x;
+		out.putInt(Integer.reverseBytes(bits));
 	}
 	
 	@Override

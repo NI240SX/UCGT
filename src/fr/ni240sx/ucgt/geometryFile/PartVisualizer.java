@@ -6,7 +6,7 @@ import java.util.List;
 
 import fr.ni240sx.ucgt.collisionsEditor.OrbitCameraViewport;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
-import javafx.application.Application;
+//import javafx.application.Application;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.Scene;

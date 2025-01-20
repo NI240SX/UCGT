@@ -29,7 +29,7 @@ public class Material {
 	
 	public int textureHash = 0; //apparently unused
 	
-	public int frontendRenderingData = 0; //controls FE rendering somehow
+	public byte shaderUsageID = 0; //controls FE rendering somehow
 	public int verticesDataLength = 0;
 	
 	public ShaderUsage shaderUsage = ShaderUsage.get("Diffuse");
@@ -49,7 +49,7 @@ public class Material {
 	public boolean useTangents = false;
 
 	// used to fix frontend rendering order in some cases (eg make transparent stuff visible through windows)
-	public int renderingOrder = 0;
+	public byte renderingOrder = 0;
 	
 	public static final String trianglesExtraExportSuffix = "-EXTRA";
 	
@@ -60,7 +60,7 @@ public class Material {
 		for (var u : m.textureUsages) this.textureUsages.add(u);
 		this.uniqueName = m.uniqueName;
 		
-		this.frontendRenderingData = m.frontendRenderingData;
+		this.shaderUsageID = m.shaderUsageID;
 		for (var d : m.texturePriorities) this.texturePriorities.add(d);
 		this.renderingOrder = m.renderingOrder;
 	}
@@ -103,11 +103,11 @@ public class Material {
 		}
 	}
 	
-	public void tryGuessTexturePriority() { // TODO find what ACTUALLY controls this value
-		this.texturePriorities.clear();
-		for (int i=0; i<this.textureIDs.size(); i++) {
-			texturePriorities.add(i); //not accurate but better than nothing
-		}
+//	public void tryGuessTexturePriority() { // TODO find what ACTUALLY controls this value
+//		this.texturePriorities.clear();
+//		for (int i=0; i<this.textureIDs.size(); i++) {
+//			texturePriorities.add(i); //not accurate but better than nothing
+//		}
 		
 //		usageSpecific1 = -1;
 //		usageSpecific2 = -1;
@@ -130,7 +130,7 @@ public class Material {
 //			usageSpecific2 = 2;
 //			usageSpecific3 = 3;			
 //		}
-	}
+//	}
 
 	public void tryGuessFlags(Geometry geometry) {
 		flags[0] = (byte) 0x80;
@@ -167,18 +167,18 @@ public class Material {
 		
 	}
 	
-	public void tryGuessFEData(HashMap<Integer, Integer> FERenderData) {
-		if (FERenderData.containsKey(this.shaderUsage.getKey())) {
-			this.frontendRenderingData = FERenderData.get(shaderUsage.getKey());
+	public void tryGuessFEData(HashMap<Integer, Byte> shaderUsageIDs) {
+		if (shaderUsageIDs.containsKey(this.shaderUsage.getKey())) {
+			this.shaderUsageID = shaderUsageIDs.get(shaderUsage.getKey());
 		} else {
 			// find the lowest usage possible
-			int lowest = 0;
+			byte lowest = 0;
 			while (true) {
-				if (!FERenderData.containsValue(lowest)) break;
-				lowest += 256;
+				if (!shaderUsageIDs.containsValue(lowest)) break;
+				lowest ++;
 			}
-			this.frontendRenderingData = lowest;
-			FERenderData.put(shaderUsage.getKey(), this.frontendRenderingData);
+			this.shaderUsageID = lowest;
+			shaderUsageIDs.put(shaderUsage.getKey(), this.shaderUsageID);
 		}
 	}
 
@@ -187,7 +187,7 @@ public class Material {
 //		usageSpecific2 = -1;
 //		usageSpecific3 = -1;
 //		texturePriorities.clear();
-		tryGuessTexturePriority(); //better like that
+//		tryGuessTexturePriority(); //better like that
 		flags[0] = (byte) 0x00;
 		flags[1] = (byte) 0x00;
 		flags[2] = (byte) 0x00;
@@ -240,7 +240,7 @@ public class Material {
 	 * @param carname the carname to use, controls car-specific textures using the placeholder %
 	 * @param l the config line to be interpreted
 	 */
-	public Material(String carname, String l) {
+	public Material(Geometry g, String l) {
 		int i = 0;
 		for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty()) {
 			if (i==0) {} //continue; //"MATERIAL"
@@ -258,7 +258,7 @@ public class Material {
 				}
 			}
 			else if (i>2) { // texture and usage or setting
-				int prio = -1;
+				int prio = Integer.MAX_VALUE;
 				if (s2.contains(",")) prio = Integer.parseInt(s2.split(",")[1]);
 				
 				s2 = s2.split(",")[0];
@@ -266,15 +266,16 @@ public class Material {
 					//material tangents setting
 					useTangents = Boolean.getBoolean(s2.split("=")[1]);
 				} else if (s2.split("=")[0].equals("FERenderingOrder")) {
-					renderingOrder = Integer.parseInt(s2.split("=")[1]);
+					renderingOrder = Byte.parseByte(s2.split("=")[1]);
 				} else if (s2.split("=")[0].equals("RenderingOrder")) { // i don't know
 //					usageSpecific1 = Integer.parseInt(s2.split("=")[1]);
 					System.out.println("Material-specific RenderingOrder settings are now disabled because they were fundamentally wrong.");
 				} else if (TextureUsage.get(s2.split("=")[1]) != TextureUsage.INVALID) {
 					// texture usage
-					TextureHashes.add(Hash.findBIN(s2.split("=")[0].replace("%", carname)));
+					TextureHashes.add(Hash.findBIN(s2.split("=")[0].replace("%", g.carname)));
 					textureUsages.add(TextureUsage.get(s2.split("=")[1]));
-					if (prio != -1) texturePriorities.add(prio);
+					if (prio != Integer.MAX_VALUE) texturePriorities.add(prio);
+					else if (g.SAVE_optimizeMaterials) texturePriorities.add(texturePriorities.size()>0 ? -1 : 0);
 					else texturePriorities.add(texturePriorities.size());
 				}
 			}

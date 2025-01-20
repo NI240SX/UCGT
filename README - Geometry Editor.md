@@ -1,13 +1,22 @@
 # UCGT Geometry Editor
+## Introduction
+UCGT Geometry Editor is a model compiling and decompiling tool. It supports the following:
+
+- Car models, including racers, traffic, cops, wheels, generic parts: UC PC/X360 from/to Z3D and OBJ
+- World models, including props, buildings, streamed chops: UC PC from/to Z3D (full support) and OBJ (partial support due to OBJ file format limits)
+- NIS models, including perps, cars: UC PC from/to Z3D and OBJ (partial support)
+
 ## Command-line version usage
 ### Basics
 The program runs in a loop, in which you can directly type commands. A reminder of the possible commands is displayed when opening the tool and can be brought back with the `help` or `?` command. The tool tries to parse what you type as a command, and displays an error if it isn't recognized or written properly.
 The loop will continue indefinitely until you type `exit`, which closes the editor (and the command prompt window, if you ran it from a batch file).
 
 The supported commands are the following :
-- `compile <OBJ/Z3D source> <BIN output>` - compile a 3D model and its corresponding config to a BIN file containing a single geometry
-- `decompile <BIN source> <OBJ/Z3D output>` - extract a BIN file containing a single geometry to a 3D model and a configuration file
-- `dump <source> <destination folder> [file type] [filter]` - extract all geometries contained into the source BIN/BUN file to the output folder. File type is whether to export OBJ or Z3D, if left blank both will be exported, and filter will allow to export only matching blocks and names (X0, Road, Chop, XBu, etc)
+- `compile <OBJ/Z3D/folder> <BIN output>` - compile a single 3D model or a folder and its/their corresponding config(s) to a BIN file containing one geometry per 3D model.
+- `decompile <BIN source> [OBJ/Z3D output]` - extract a BIN file containing a single geometry to a 3D model and a configuration file.
+- `compress <BIN file>` - compress an existing geometry file by parts using RefPack Maximum.
+- `decompress <BIN file>` - decompress an existing geometry file. Useful for advanced hex editing and debugging.
+- `dump <source> <destination folder> [file type] [filter]` - extract all geometries contained into the source BIN/BUN file to the output folder. File type is whether to export OBJ or Z3D, if left blank both will be exported, and filter will allow to export only matching blocks and names (X0, Road, Chop, XBu, etc).
 - `replace <source folder> <destination> [blocks definitions]` - compile and replace all geometries in the destination with 3D models from the source folder. If needed, it can also update blocks definitions offsets (eg edit the map without unpacking), in that case, [blocks definitions] will be the path to the L8R_MW2.BUN file
 - `convert <TXT CTK config> [INI UCGT config]` - convert a CTK .txt config to an UCGT .ini config
 - `script <file>` - load a script containing multiple of these commands
@@ -18,7 +27,7 @@ Decompiling a Geometry will generate a Wavefront OBJ, an associated MTL material
 
 If you have existing projects which use CTK, you can convert their configuration file. Be sure to check them afterwards to indicate all missing information.
 
-Decompiling and compiling models from other files, such as map stream, is possible as of 1.2.0. Create a folder to dump editable 3d models to using `dump`, and put them back in the existing file using `replace` ! Note : for map models, you'll need to include the STREAML8R_MW2.BUN file as destination and the L8R_MW2.BUN file as blocks definition, or the game will crash looking for data that will be in a different place. Other note : you can't add NEW models since the replacement process checks for the file name, however you can add new meshes to existing models but these will probably not get loaded at all. Some compile settings planned for cars will not be usable or may cause unwanted behavior.
+Decompiling and compiling models from other files, such as map stream, is possible as of 1.2.0. Create a folder to dump editable 3d models to using `dump`, and put them back in the existing file using `replace` ! Note : for map models, you'll need to include the STREAML8R_MW2.BUN file as destination and the L8R_MW2.BUN file as blocks definition, or the game will crash looking for data that will be in a different place. Other note : you can't add NEW models since the replacement process checks for the file name, however you can add new meshes to existing models but these will probably not get loaded at all. Some compiling settings planned for cars will not be usable or may cause unwanted behavior.
 
 ### Arguments
 If you run the program with arguments, it'll try to parse them as a valid command, execute it and close afterwards, without ever waiting for user input. Combined with a batch file, this allows you to setup one-click compiling, for instance, or take advantage of the batch syntax to e.g. recompile every Geometry in a folder.
@@ -38,17 +47,20 @@ _Base_
 - `CarName` - **mandatory** : sets the car name in the output Geometry.
 - `FileName` - sets the file name in the output Geometry (no effect).
 - `BlockName` - sets the block name in the output Geometry (no effect).
-- `MakeDataBlock` - adds metadata to the file including all the settings after this one and shader usages. Useful if you want to pack up models with specific settings as a BIN file and replace them in the world map later on.
+- `UseOffsetsTable` - whether to use a part offsets table (like in car models) or not (like in world models). Setting this to false will disable compression.
+- `Platform` - sets the platform to use for mesh encoding. Default: PC. Possible values: PC, X360.
+- `MakeDataBlock` - adds metadata to the file including all the settings after this one and shader usages. Useful if you want to pack up models with specific settings as a BIN file and replace them in the world map later on. Possible values : true or false. Note: unless you add the setting twice, this will not spread.
+- `AutoReplaceWorldLODs` - whether to replace other world objects with a different LOD. Possible values: true or false. With this set to true, replacing an object in Yxxx will also replace its LODs in Xxxx, Wxxx and Uxxx.
 
 _Compression_
-- `UseMultithreading` - optional, defaults to true : use single-threaded or multi-threaded compression for car parts, multi-threaded significantly decreases the time needed to compile, especially when using RefPack and high compression settings. Possible values : true or false.
-- `CompressionType` - optional, defaults to RefPack : set the compression type used for parts. Possible values : RefPack/RFPK, RawDecompressed/RAWW.
-- `CompressionLevel` - optional, defaults to Low : set the compression level used. Has no effect if the compression type isn't RefPack. High or better recommended when your model is finalized. Possible values : Minimum, Low, Medium, High, VeryHigh, Ultra, Maximum.
+- `UseMultithreading` - optional, defaults to true: use single-threaded or multi-threaded compression for car parts, multi-threaded significantly decreases the time needed to compile, especially when using RefPack and high compression settings. Possible values: true or false.
+- `CompressionType` - optional, defaults to RefPack: set the compression type used for parts. Possible values : RefPack/RFPK, RawDecompressed/RAWW.
+- `CompressionLevel` - optional, defaults to Low: set the compression level used. Has no effect if the compression type isn't RefPack. High or better recommended when your model is finalized. Possible values : Minimum, Low, Medium, High, VeryHigh, Ultra, Maximum.
 
 _Optimization_
-- `RemoveInvalid` - optional, defaults to true : removes invalid parts that don't fit with the game's naming scheme. Possible values : true or false.
+- `RemoveInvalid` - optional, defaults to true : removes invalid parts that don't fit with the game's naming scheme. Possible values : true or false. Due to UCGT's flexible approach, this is very basic and will only remove parts without a KIT and valid LOD.
 - `RemoveUselessAutosculpt` - optional, defaults to true : removes useless _T0 parts when there's no actual morph zones to reduce file size. Possible values : true or false.
-- `OptimizeMaterials` - optional, defaults to true : removes some unnecessary data in material declarations to help reduce file size. Possible values : true or false.
+- `OptimizeMaterials` - optional, defaults to true : removes some unnecessary data in material declarations to help reduce file size. Possible values : true or false. Setting this to false may allow CTK to read the model, sometimes.
 - `SortAllByName` - optional, defaults to true : sorts parts, markers, materials etc. by name. If set to false, materials will be sorted using the configuration file's order. Possible values : true or false.
 - `CopyMissingLODs` - optional, defaults to false : if one or multiple LODs are missing, copies the mesh from a higher LOD. Possible values : true or false.
 - `MakeLodD` - optional, defaults to false : if the KIT00 lod D is missing, copies it from lod C. It is highly advised to make a lod D manually ; setting this option to true will allow multiple lod C parts to be copied as lod D, making it unnecessarily heavy and potentially causing issues. Possible values : true or false.
@@ -59,9 +71,10 @@ _Mesh_
 - `FlipV` - optional, defaults to false : whether to flip the vertical axis on UV maps. Use in case your textures end up upside down. Possible values : true or false.
 
 _Experimental fixes_
-- `ForceAsFix` - optional : force-fixes autosculpt on the specified part if it doesn't get compiled correctly (this happens when there's the same amount of vertices on every morph zone but the welding is different). You can put this setting multiple times. Possible values : any part name.
-- `FixAutosculptNormals` - optional, defaults to true : attempts to fix normals on zero area triangles, greatly improving the look of some Autosculpt parts, including vanilla. Possible values : true or false.
-- `CheckModel` - optional, defaults to true : performs various quality checks on the model and reports possible issues.
+- `ForceAsFix` - optional: force-fixes autosculpt on the specified part if it doesn't get compiled correctly (this happens when there's the same amount of vertices on every morph zone but the welding is different). You can put this setting multiple times. Possible values: any part name.
+- `FixAutosculptNormals` - optional, defaults to true: attempts to fix normals on zero area triangles, greatly improving the look of some Autosculpt parts, including vanilla. Possible values: true or false.
+- `ProtectModel` - optional, defaults to false: removes plain text part names, effectively making it hard/tedious to steal your model. Possible values: true or false.
+- `CheckModel` - optional, defaults to true: performs various quality checks on the model and reports possible issues. Possible values: true or false.
 
 Example settings :
 

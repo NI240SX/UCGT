@@ -13,12 +13,11 @@ import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.compression.CompressionType;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
 import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
-import javafx.util.Pair;
 
 public class GeometryEditorCLI {
 
-	public static final String programVersion = "1.2.1-WIP";
-	public static final String programBuild = "2025.01.18";
+	public static final String programVersion = "1.2.1";
+	public static final String programBuild = "2025.01.20";
 	
 	public static Geometry geom = null;
 //	public static ArrayList<String> commandsHistory = new ArrayList<>();

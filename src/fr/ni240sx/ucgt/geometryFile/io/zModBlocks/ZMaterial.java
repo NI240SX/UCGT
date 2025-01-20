@@ -8,7 +8,6 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
-import fr.ni240sx.ucgt.geometryFile.io.zModBlocks.ZMaterial.TexLayer;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;

@@ -17,7 +17,7 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangle;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertices;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.Vertices_PC;
 
 public class WavefrontOBJ {
 	
@@ -91,14 +91,14 @@ public class WavefrontOBJ {
         			assert (curPart != null);
         			for (var m : geom.materials) if (m.uniqueName.equals(line.substring(7))) {
         				curMat = new Material(m); //copies the material the mesh uses to make it part specific
-        				curMat.verticesBlock = new Vertices();
+        				curMat.verticesBlock = new Vertices_PC();
         				curPart.mesh.materials.materials.add(curMat);
         				break lineheader;
         			}
         			// if no material data is found give a warning and create a fallback material
         			System.out.println("[OBJLoader] Warning : material "+line.substring(7)+" not found in config !");
         			curMat = Material.getFallbackMaterial(geom);
-    				curMat.verticesBlock = new Vertices();
+    				curMat.verticesBlock = new Vertices_PC();
     				curPart.mesh.materials.materials.add(curMat);
         			
         		} //no material data to process for markers

@@ -127,14 +127,14 @@ public class Part extends Block {
 	}
 	
 
-	public Part(String carname, String substring) {
+	public Part(String carname, String substring, Platform plat) {
 
 		if (carname.isBlank() || carname.equals("UNDETERMINED")) this.header = new PartHeader(substring);
 		else this.header = new PartHeader(carname+"_"+substring);
 		this.texusage = new TexUsage();
 		this.strings = new Strings();
 		this.shaderlist = new Shaders();
-		this.mesh = new Mesh();
+		this.mesh = new Mesh(plat);
 		
 		findKitLodPart(carname);
 		this.name = substring;
@@ -164,11 +164,30 @@ public class Part extends Block {
 	 * @param geom
 	 * @param name
 	 */
-	public Part(Geometry geom, String name) {
-		this(geom.carname, name);
+	public Part(Geometry geom, String partname) {
+		this(geom.carname, partname, geom.platform);
 		geom.parts.add(this);
 
+		if (!geom.renameParts.isEmpty()) {
+//			System.out.println("parts to rename present :");
+//			for (var k : renameParts.keySet()) {
+//				System.out.println(k+" : "+renameParts.get(k));
+//			}
+			for (var r : geom.renameParts) if (name.contains(r.getKey())) {
+				System.out.print("Renaming part "+name);
+				header.partName = header.partName.replace(r.getKey(), r.getValue());
+				header.binKey = Hash.findBIN(header.partName);
+				name = name.replace(r.getKey(), r.getValue());
+				findKitLodPart(geom.carname);
+				System.out.println(" to "+name);
+			}
+		}
+		
+		
+		
+//		if (name.contains("LIGHT") || name.contains("BUMPER")) System.out.println("Creating part "+name);
 		for (var mp : geom.mpointsAll) for (var n : mp.tempPartNames) if (name.contains(n)) { // binding mpoints read from config, if existing
+//			if (name.contains("LIGHT") || name.contains("BUMPER")) System.out.println("Binding marker "+mp.uniqueName);
 			if (this.mpoints == null) this.mpoints = new MPoints();
 			this.mpoints.mpoints.add(mp);
 //			mp.part = curPart;

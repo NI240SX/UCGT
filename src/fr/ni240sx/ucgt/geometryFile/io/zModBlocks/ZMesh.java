@@ -5,8 +5,6 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.List;
-
 import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
@@ -77,7 +75,7 @@ public class ZMesh extends ZModBlock {
 					break;
 				}
 				if (matID == 0) {
-					ZMaterial mat = new ZMaterial(m, CMaterialsService); //doesnt assign the texture TODO recompiling
+					ZMaterial mat = new ZMaterial(m, CMaterialsService);
 					mat.addTextures(CTexturesService);
 					mat.name += Material.trianglesExtraExportSuffix;
 					matID = mat.UID;

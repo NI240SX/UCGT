@@ -8,20 +8,24 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.BlockType;
+import fr.ni240sx.ucgt.geometryFile.Platform;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.*;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.*;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.*;
 
 public class Mesh extends Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Part_Mesh;}
 	
+	public Platform platform;
 	public Mesh_Info info;
 	public Materials materials;
 	public ShadersUsage shadersUsage;
 	public ArrayList<Vertices> verticesBlocks = new ArrayList<>();
 	public Triangles triangles;
 	
-	public Mesh(ByteBuffer in) {
+	public Mesh(ByteBuffer in) throws Exception {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
 		Block block;
@@ -38,22 +42,36 @@ public class Mesh extends Block {
 		// if there's more than one block only the last one is taken into account
 		for (var b : subBlocks) {
 			switch (b.getBlockID()) {
-			case Part_Mesh_Info:
-				info = (Mesh_Info) b;
-				break;
-			case Part_Mesh_Materials:
-				materials = (Materials) b;
-				break;
 			case Part_Mesh_ShadersUsage:
 				shadersUsage = (ShadersUsage) b;
 				break;
 			case Part_Mesh_VertsHeader:
 				break;
-			case Part_Mesh_Vertices:
-				verticesBlocks.add((Vertices) b);
+			case Part_Mesh_Info_PC:
+				platform = Platform.PC;
+				info = (Mesh_Info_PC) b;
 				break;
-			case Part_Mesh_Triangles:
-				triangles = (Triangles) b;
+			case Part_Mesh_Materials_PC:
+				materials = (Materials_PC) b;
+				break;
+			case Part_Mesh_Vertices_PC:
+				verticesBlocks.add((Vertices_PC) b);
+				break;
+			case Part_Mesh_Triangles_PC:
+				triangles = (Triangles_PC) b;
+				break;
+			case Part_Mesh_Info_X360:
+				platform = Platform.X360;
+				info = (Mesh_Info_X360) b;
+				break;
+			case Part_Mesh_Materials_X360:
+				materials = (Materials_X360) b;
+				break;
+			case Part_Mesh_Vertices_X360:
+				verticesBlocks.add((Vertices_X360) b);
+				break;
+			case Part_Mesh_Triangles_X360:
+				triangles = (Triangles_X360) b;
 				break;
 			default:
 				break;}
@@ -61,22 +79,47 @@ public class Mesh extends Block {
 		
 //		System.out.println(info.numMaterials+" materials, "+info.numTriangles+"/"+triangles.triangles.size()+" triangles, "+info.numVertices+" vertices");
 		
-		if (materials != null) for (int i=0; i<materials.materials.size(); i++) {
+		if (materials != null && verticesBlocks.size() == materials.materials.size() && triangles != null) for (int i=0; i<materials.materials.size(); i++) {
 			verticesBlocks.get(i).material = materials.materials.get(i);
-			verticesBlocks.get(i).vertexFormat = materials.materials.get(i).shaderUsage.vertexFormat;
+			switch (platform) {
+			case PC:
+				verticesBlocks.get(i).vertexFormat = materials.materials.get(i).shaderUsage.vertexFormat_PC;
+				break;
+			case X360:
+				verticesBlocks.get(i).vertexFormat = materials.materials.get(i).shaderUsage.vertexFormat_X360;
+				break;
+			default:
+				break;
+			
+			}
 			verticesBlocks.get(i).readVertices();
 			materials.materials.get(i).verticesBlock = verticesBlocks.get(i);
 //			System.out.println("Requesting triangles from "+(materials.materials.get(i).fromVertID/3) + " to " + (materials.materials.get(i).toVertID/3));
 			materials.materials.get(i).triangles = triangles.triangles.subList(materials.materials.get(i).fromTriVertID/3, (materials.materials.get(i).toTriVertID/3));
 			materials.materials.get(i).trianglesExtra = triangles.triangles.subList(materials.materials.get(i).toTriVertID/3, (materials.materials.get(i).toTriVertID/3+materials.materials.get(i).numTriVerticesExtra/3));
+		} else {
+			throw new Exception ("Invalid/unsupported/corrupted mesh data!");
 		}
 	}
 
-	public Mesh() {
-		this.info = new Mesh_Info();
-		this.materials = new Materials();
-		this.shadersUsage = new ShadersUsage();
-		this.triangles = new Triangles();
+	public Mesh(Platform platform) {
+		this.platform = platform;
+		switch (platform) {
+		case PC:
+			this.info = new Mesh_Info_PC();
+			this.materials = new Materials_PC();
+			this.shadersUsage = new ShadersUsage();
+			this.triangles = new Triangles_PC();
+			break;
+		case X360:
+			this.info = new Mesh_Info_X360();
+			this.materials = new Materials_X360();
+			this.shadersUsage = new ShadersUsage();
+			this.triangles = new Triangles_X360();
+			break;
+		default:
+			break;
+		}
 	}
 
 	@Override

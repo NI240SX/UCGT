@@ -11,6 +11,14 @@ import fr.ni240sx.ucgt.geometryFile.*;
 import fr.ni240sx.ucgt.geometryFile.geometry.*;
 import fr.ni240sx.ucgt.geometryFile.part.*;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.*;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.Materials_PC;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.Mesh_Info_PC;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.Triangles_PC;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.Vertices_PC;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.Materials_X360;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.Mesh_Info_X360;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.Triangles_X360;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.Vertices_X360;
 import fr.ni240sx.ucgt.geometryFile.textures.TPK;
 
 public abstract class Block {
@@ -22,12 +30,12 @@ public abstract class Block {
 
 	public byte[] data;
 	
-	public abstract byte[] save(int currentPosition) throws IOException, InterruptedException; //TODO check whether these throws are still useful
+	public abstract byte[] save(int currentPosition) throws IOException, InterruptedException;
 	
 	public static Block read(ByteBuffer in) throws Exception {
 		int chunkToInt;
 		BlockType block = BlockType.get(chunkToInt = in.getInt());
-		var pos = in.position();
+//		var pos = in.position();
 //		System.out.println("Block read : "+block.getName());
 		if (doNotRead.get(block) == null) //use the doNotRead with caution !
 		//try {
@@ -68,18 +76,18 @@ public abstract class Block {
 			return new MPoints(in);
 		case Part_Mesh:
 			return new Mesh(in);
-		case Part_Mesh_Info:
-			return new Mesh_Info(in);
+		case Part_Mesh_Info_PC:
+			return new Mesh_Info_PC(in);
 		case Part_Mesh_ShadersUsage:
 			return new ShadersUsage(in);
-		case Part_Mesh_Materials:
-			return new Materials(in);
+		case Part_Mesh_Materials_PC:
+			return new Materials_PC(in);
 		case Part_Mesh_VertsHeader:
 			return new Mesh_VertsHeader(in);
-		case Part_Mesh_Vertices:
-			return new Vertices(in);
-		case Part_Mesh_Triangles:
-			return new Triangles(in);
+		case Part_Mesh_Vertices_PC:
+			return new Vertices_PC(in);
+		case Part_Mesh_Triangles_PC:
+			return new Triangles_PC(in);
 		case Part_Padding:
 			in.position(in.getInt()+in.position()); //skips the block
 			return null;
@@ -95,6 +103,15 @@ public abstract class Block {
 		case Part_AutosculptZones:
 			return new AutosculptZones(in);
 
+		case Part_Mesh_Info_X360:
+			return new Mesh_Info_X360(in);
+		case Part_Mesh_Materials_X360:
+			return new Materials_X360(in);
+		case Part_Mesh_Vertices_X360:
+			return new Vertices_X360(in);
+		case Part_Mesh_Triangles_X360:
+			return new Triangles_X360(in);
+			
 		case TPK:
 			return new TPK(in);
 			

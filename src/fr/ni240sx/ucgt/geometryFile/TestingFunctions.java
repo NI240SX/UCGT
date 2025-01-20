@@ -37,7 +37,7 @@ public class TestingFunctions {
 		Block.doNotRead.put(BlockType.Part_ShaderList, true);
 		Block.doNotRead.put(BlockType.Part_Strings, true);
 		Block.doNotRead.put(BlockType.Part_TexUsage, true);
-		Block.doNotRead.put(BlockType.Part_Mesh_Materials, true);
+		Block.doNotRead.put(BlockType.Part_Mesh_Materials_PC, true);
 		dumpPartsRecompiled(geomFile, partsDirectory);
 		Block.doNotRead.clear();
 	}

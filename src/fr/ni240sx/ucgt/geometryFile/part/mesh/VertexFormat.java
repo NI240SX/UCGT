@@ -19,7 +19,10 @@ public enum VertexFormat {
 	Pos0f3_Norm0s("Pos0f3_Norm0s", 20),
 	Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s("Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s", 44),
 	//cars
-	Pos0s10_Tex0s32_Col0_Norm0s_Tan0s("Pos0s10_Tex0s32_Col0_Norm0s_Tan0s", 32);
+	Pos0s10_Tex0s32_Col0_Norm0s_Tan0s("Pos0s10_Tex0s32_Col0_Norm0s_Tan0s", 32),
+	
+	//X360 cars
+	Pos0h4_Norm0d4n_Tan0d4n_Col0_Tex0h2("Pos0h4_Norm0d4n_Tan0d4n_Col0_Tex0h2", 24);
 
 	private final String name;
 	private final int length;

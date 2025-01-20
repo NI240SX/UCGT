@@ -54,8 +54,9 @@ public class ShaderUsage {
     private final int key;
     private final String name;
     private final String[] possibleNames;
-    
-    public final VertexFormat vertexFormat;
+
+    public final VertexFormat vertexFormat_PC;
+    public final VertexFormat vertexFormat_X360;
     
     public static List<ShaderUsage> values = new ArrayList<>();
     public static boolean isLoaded = false;
@@ -64,15 +65,20 @@ public class ShaderUsage {
     	this(-2, name, possibleNames, VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s);
     }
     
-    ShaderUsage(String name, String[] possibleNames, VertexFormat vf) {
-    	this(-2, name, possibleNames, vf);
+    ShaderUsage(String name, String[] possibleNames, VertexFormat vf_PC, VertexFormat vf_X360) {
+    	this(-2, name, possibleNames, vf_PC, vf_X360);
     }
     
     ShaderUsage(int key, String name, String[] possibleNames) {
     	this(key, name, possibleNames, VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s);
     }
     
-    ShaderUsage(int key, String name, String[] possibleNames, VertexFormat vf) {
+
+    ShaderUsage(int key, String name, String[] possibleNames, VertexFormat vf_PC) {
+    	this(key, name, possibleNames, vf_PC, null);
+    }
+    
+    ShaderUsage(int key, String name, String[] possibleNames, VertexFormat vf_PC, VertexFormat vf_X360) {
     	if (key == -2) {
     		// compute vlt from name
     		this.key = Hash.findVLT(name);
@@ -80,7 +86,8 @@ public class ShaderUsage {
         this.key = key; //Integer.reverseBytes(key);
         this.name = name;
 		this.possibleNames = possibleNames;
-		this.vertexFormat = vf;
+		this.vertexFormat_PC = vf_PC;
+		this.vertexFormat_X360 = vf_X360;
 //		values.add(this);
     }
 
@@ -186,18 +193,21 @@ public class ShaderUsage {
 
 	public static void parseUsage(String l) {
 		ArrayList<String> names = new ArrayList<>();
-		VertexFormat vf = VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s;
+		VertexFormat vf_PC = VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s;
+		VertexFormat vf_X360 = null;
 		if (!l.startsWith("#") && !l.startsWith("//")) {
 			for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isBlank()) {
-				if (s2.contains("VertexFormat=")) {
-					vf = VertexFormat.get(s2.split("=")[1]);
+				if (s2.contains("VertexFormatPC=")) {
+					vf_PC = VertexFormat.get(s2.split("=")[1]);
+				} else if (s2.contains("VertexFormatX360=")) {
+					vf_X360 = VertexFormat.get(s2.split("=")[1]);
 				} else names.add(s2);
 			}
 		}
 		if (names.size() == 1) {
-			values.add(new ShaderUsage(names.get(0), names.toArray(String[]::new), vf));
+			values.add(new ShaderUsage(names.get(0), names.toArray(String[]::new), vf_PC, vf_X360));
 		} else if (names.size() != 0) { //>1
-			values.add(new ShaderUsage(Hash.findVLT(names.get(0)), names.get(1), names.toArray(String[]::new), vf));
+			values.add(new ShaderUsage(Hash.findVLT(names.get(0)), names.get(1), names.toArray(String[]::new), vf_PC, vf_X360));
 		}
 	}
 }
