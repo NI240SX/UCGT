@@ -16,8 +16,8 @@ import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
 
 public class GeometryEditorCLI {
 
-	public static final String programVersion = "1.2.1";
-	public static final String programBuild = "2025.01.20";
+	public static final String programVersion = "1.2.1.1";
+	public static final String programBuild = "2025.01.29";
 	
 	public static Geometry geom = null;
 //	public static ArrayList<String> commandsHistory = new ArrayList<>();
@@ -93,10 +93,12 @@ public class GeometryEditorCLI {
 				break;
 
 			case "compress":
+				l = l.substring(9);
 				changeComp(l,CompressionType.RefPack);
 				break;
 
 			case "decompress":
+				l = l.substring(11);
 				changeComp(l,CompressionType.RawDecompressed);
 				break;
 				
@@ -119,8 +121,6 @@ public class GeometryEditorCLI {
 	private static void changeComp(String l, CompressionType ct) {
 		String src;
 		try {
-			l = l.substring(11);
-			
 			//read first path
 			if (l.startsWith("\"")) {
 				l = l.substring(1);
@@ -131,6 +131,13 @@ public class GeometryEditorCLI {
 				l = l.substring(src.length());
 			}
 
+			if (l.length()>1) {
+				l = l.substring(1);
+				//read comp type			
+				ct = CompressionType.get(l.split(" ")[0]);
+			}
+			
+			
 			boolean useBackup = false;
 			if (!new File(src.replace(".BIN", "-BACKUP.BIN")).isFile() && new File(src).isFile()) {
 				//create vanilla backup if not existing
@@ -180,7 +187,7 @@ public class GeometryEditorCLI {
 				e.printStackTrace();
 			}
 			
-		}catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : decompress <BIN source>");}
+		}catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : compress/decompress <BIN source> [Compression type]");}
 	}
 
 	private static void decompile(String l) {
