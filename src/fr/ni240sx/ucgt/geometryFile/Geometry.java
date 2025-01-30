@@ -695,7 +695,18 @@ public class Geometry extends Block {
 		merge = null;
 		ArrayList<String> blocksToEdit = new ArrayList<>();
 		for (var p : binBlocksToReplace.keySet()) {
-			blocksToEdit.add(p.getKey());
+			String n = p.getKey();
+			if (!blocksToEdit.contains(n)) blocksToEdit.add(n);
+
+			//geom block sometimes does not correspond to the chunk name, this fix will be hardcoded for now
+			if (n.startsWith("A") || n.startsWith("B") || n.startsWith("C") || n.startsWith("D") || n.startsWith("E") || n.startsWith("F")) {
+				var prefix = n.substring(0, 1);
+				var requested = Integer.parseInt(n.substring(1)) + 400;
+				if (requested < 1000) {
+					n = prefix + requested;
+					if (!blocksToEdit.contains(n)) blocksToEdit.add(n);
+				}
+			}
 		}
 		
 		
@@ -793,7 +804,7 @@ public class Geometry extends Block {
 							//use 1B_00 (fallback to 1A_00 if it doesn't exist) and 1Z_00 (no fallback), except XOs (keep everything)
 							Part lodA = null, lodB = null;
 							
-							newGeom.geomHeader.geomInfo.blockname = chunk.name;
+							newGeom.geomHeader.geomInfo.blockname = g.geomHeader.geomInfo.blockname;
 							if (newGeom.SAVE_autoReplaceWorldLODs && (chunk.name.startsWith("X") || chunk.name.startsWith("W") || chunk.name.startsWith("U")) && !newGeom.geomHeader.geomInfo.filename.contains("XOs")) {
 								for (var p : newGeom.parts) {
 									if (p.name.endsWith("1A_00")) lodA = p;
