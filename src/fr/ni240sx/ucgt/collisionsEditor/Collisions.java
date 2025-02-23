@@ -1,8 +1,11 @@
 package fr.ni240sx.ucgt.collisionsEditor;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -19,37 +22,21 @@ import javafx.scene.control.ButtonType;
 
 public class Collisions {
 	
-	public static double floatingPointError = 0.001;
+	public static double floatingPointError = 0.1;
 
 	public String carname = "UNKNOWN";
 
 	public boolean isResolved = false;
 	
-//	public int NumberOfBounds = 0;
-//	public int NumberOfBoxShapes = 0;
-//	public int NumberOfConvexTransformShapes = 0;
-//	public int NumberOfConvexTranslateShapes = 0;
-//	public int NumberOfConvexVerticesShapes = 0;
-//	public int NumberOfSphereShapes = 0;
-	
-//	public ArrayList<CollisionBound> bounds = new ArrayList<CollisionBound>();
-//	public ArrayList<CollisionBoxShape> boxShapes = new ArrayList<CollisionBoxShape>();
-//	public ArrayList<CollisionConvexTransform> convexTransformShapes = new ArrayList<CollisionConvexTransform>();
-//	public ArrayList<CollisionConvexTranslate> convexTranslateShapes = new ArrayList<CollisionConvexTranslate>();
-//	public ArrayList<CollisionConvexVertice> convexVerticesShapes = new ArrayList<CollisionConvexVertice>();
-//	public ArrayList<CollisionSphereShape> sphereShapes = new ArrayList<CollisionSphereShape>();
+	// bin block ID for collisions 01b90300
 
 	//proper bounds sorting
-	public CollisionBound mainBound = new CollisionBound();
-	public ArrayList<CollisionBound> childBounds = new ArrayList<>();
+	public CollisionBound mainBound = null;
 	
 	public float X = 0;
 	public float Y = 0;
 	public float Z = 0;
 	public float W = 0;
-
-	public int NumberOfLocalFixUps = 0;
-	public int NumberOfVirtualFixUps = 0;
 
 	public ArrayList<LocalFixUp> LocalFixUps = new ArrayList<>();
 	public ArrayList<VirtualFixUp> VirtualFixUps = new ArrayList<>();
@@ -72,8 +59,10 @@ public class Collisions {
 		int NumberOfConvexTranslateShapes = 0;
 		int NumberOfConvexVerticesShapes = 0;
 		int NumberOfSphereShapes = 0;
+		int NumberOfLocalFixUps = 0;
+		int NumberOfVirtualFixUps = 0;
 		
-		ArrayList<CollisionBound> bounds = new ArrayList<>();
+//		ArrayList<CollisionBound> bounds = new ArrayList<>();
 		ArrayList<CollisionBoxShape> boxShapes = new ArrayList<>();
 		ArrayList<CollisionConvexTransform> convexTransformShapes = new ArrayList<>();
 		ArrayList<CollisionConvexTranslate> convexTranslateShapes = new ArrayList<>();
@@ -99,15 +88,15 @@ public class Collisions {
 			NumberOfConvexTranslateShapes = bb.getInt();
 			NumberOfConvexVerticesShapes = bb.getInt();
 			NumberOfSphereShapes = bb.getInt();
-			this.NumberOfLocalFixUps = bb.getInt();
-			this.NumberOfVirtualFixUps = bb.getInt();
+			NumberOfLocalFixUps = bb.getInt();
+			NumberOfVirtualFixUps = bb.getInt();
 
 			
 			
 			
-			for(int i =0; i<NumberOfBounds; i++) {
-				bounds.add(CollisionBound.load(bb));
-			}
+			mainBound = new CollisionBound(bb);
+			while (mainBound.getChildrenRecursively().size() < NumberOfBounds) mainBound.childBounds.add(new CollisionBound(bb));
+			
 			for(int i =0; i<NumberOfBoxShapes; i++) {
 				boxShapes.add(CollisionBoxShape.load(bb));
 			}
@@ -123,10 +112,10 @@ public class Collisions {
 			for(int i =0; i<NumberOfSphereShapes; i++) {
 				sphereShapes.add(CollisionSphereShape.load(bb));
 			}
-			for(int i =0; i<this.NumberOfLocalFixUps; i++) {
+			for(int i =0; i<NumberOfLocalFixUps; i++) {
 				this.LocalFixUps.add(new LocalFixUp(bb));
 			}
-			for(int i =0; i<this.NumberOfVirtualFixUps; i++) {
+			for(int i =0; i<NumberOfVirtualFixUps; i++) {
 				this.VirtualFixUps.add(new VirtualFixUp(bb));
 			}
 			
@@ -141,79 +130,58 @@ public class Collisions {
 			this.Y = bb.getFloat();
 			this.Z = bb.getFloat();
 			this.W = bb.getFloat();
-			
-			
-			
-			//hierarchy detection
-			for (CollisionBound b : bounds) {
-				if (b.NumberOfChildren!=0 && b.RenderHierarchyIndex==0) {
-					this.mainBound = b;
-					System.out.println("Main bound detected : \n" + b+"\n");
-				} else {
-					this.childBounds.add(b);
-				}
-			}
-			
-			//TODO rule out sub-hierarchy (expl joints on trailers that have a main joint and two child ones)
+
+//			System.out.println("Number of local fix ups: "+LocalFixUps.size());
+//			System.out.println("Number of virtual fix ups: "+VirtualFixUps.size());
 
 			//boxshapes + convexverticeshapes + sphereshapes = childbounds
 			//a child bound is either convex vertice or box (or sphere/no geometry but rare)
 			//now gotta associate shit with each other
-			for (CollisionBound b : this.childBounds) {
-				switch(b.Shape) {
+			
+			int ibox=0,imesh=0, isphere=0;
+			for (CollisionBound b : mainBound.getChildrenRecursively()) {
+				switch (b.Shape) {
 				case KSHAPE_BOX:
-					for(CollisionBoxShape s : boxShapes) {
-						if (similarEnough(b.HalfDimensionX/2, s.HalfExtentsX)
-								&& similarEnough(b.HalfDimensionY/2,s.HalfExtentsY)
-								&& similarEnough(b.HalfDimensionZ/2,s.HalfExtentsZ)) {
-							b.collisionShape = s;
-						}
-					}
-					if (b.collisionShape==null) System.out.println("Warning : boxShape not found for " + b);
+					b.collisionShape = boxShapes.get(ibox);
+					boxShapes.get(ibox).bound = b;
+					ibox++;
 					break;
 				case KSHAPE_CYLINDER:
 					break;
 				case KSHAPE_INVALID:
 					break;
 				case KSHAPE_MESH:
-					for(CollisionConvexVertice s : convexVerticesShapes) {
-						if (similarEnough(b.PositionX, s.CenterX)
-								&& similarEnough(b.PositionY, s.CenterY)
-								&& similarEnough(b.PositionZ, s.CenterZ)) {
-							b.collisionShape = s;
-						}
-					}
-					if (b.collisionShape==null) System.out.println("Warning : convexVerticesShape not found for " + b);
+					b.collisionShape = convexVerticesShapes.get(imesh);
+					convexVerticesShapes.get(imesh).bound = b;
+					convexVerticesShapes.get(imesh).PlaneEquations.forEach(p -> {
+						p.colorR = randomizeColor(b.colorR, 0.4);
+						p.colorG = randomizeColor(b.colorG, 0.4);
+						p.colorB = randomizeColor(b.colorB, 0.4);
+					});
+					imesh++;
 					break;
 				case KSHAPE_SPHERE:
-					for(CollisionSphereShape s : sphereShapes) {
-						if (similarEnough(b.HalfDimensionX, s.unknownFloat)
-								&& similarEnough(b.HalfDimensionY, s.unknownFloat)
-								&& similarEnough(b.HalfDimensionZ, s.unknownFloat)) {
-							b.collisionShape = s;
-						}
-					}
-					if (b.collisionShape==null) System.out.println("Warning : sphereShape not found for " + b);
+					b.collisionShape = sphereShapes.get(isphere);
+					sphereShapes.get(isphere).bound = b;
+					isphere++;
 					break;
 				case KSHAPE_TYPE_COUNT:
 					break;
-				default:
-					break;				
 				}
-				
+			
 				//transforms
 				//transforms + translates = boxshapes
 				for(CollisionConvexTranslate t : convexTranslateShapes) {
-					if (similarEnough(b.PositionX, t.TranslationX)
-							&& similarEnough(b.PositionY, t.TranslationY)
-							&& similarEnough(b.PositionZ, t.TranslationZ)) {
+					if (boundCenterCloseEnough(b.PositionX, t.TranslationX)
+							&& boundCenterCloseEnough(b.PositionY, t.TranslationY)
+							&& boundCenterCloseEnough(b.PositionZ, t.TranslationZ)) {
 						b.shapeTranslate = t;
 					}
 				}
 				for(CollisionConvexTransform t : convexTransformShapes) {
-					if (similarEnough(b.PositionX, t.TranslationX)
-							&& similarEnough(b.PositionY, t.TranslationY)
-							&& similarEnough(b.PositionZ, t.TranslationZ)
+					if (boundCenterCloseEnough(b.PositionX, t.TranslationX)
+							&& boundCenterCloseEnough(b.PositionY, t.TranslationY)
+							&& boundCenterCloseEnough(b.PositionZ, t.TranslationZ)
 							&& b.OrientationX != 0) {
 						b.shapeTransform = t;
 					}
@@ -227,26 +195,123 @@ public class Collisions {
 			
 		} catch (FileNotFoundException e) {
 			//dbmp to load not found
-			// TODO Auto-generated catch block
-			new Alert(Alert.AlertType.ERROR, "File not found", ButtonType.OK).show();
-			e.printStackTrace();
+			try {
+				new Alert(Alert.AlertType.ERROR, "File not found", ButtonType.OK).show();
+			} catch (Exception e2) {
+				System.out.println("File not found.");
+			}
+//			e.printStackTrace();
 		} catch (@SuppressWarnings("unused") NullPointerException e) {
 //			e.printStackTrace();
 			//no file selected by the user
 		} catch (Exception e) {
 			e.printStackTrace();
-			new Alert(Alert.AlertType.ERROR, "Error while loading file", ButtonType.OK).show();
+			try {
+				new Alert(Alert.AlertType.ERROR, "Error while loading file", ButtonType.OK).show();
+			} catch (Exception e2) {
+				System.out.println("Error while loading file.");
+			}
 		}
 	}
 
-	@SuppressWarnings("unused")
-	public void saveToFile(File f) {
-		// TODO Auto-generated method stub
+	public void saveToFile(File f) throws IOException {
+
+		ArrayList<CollisionBoxShape> boxShapes = new ArrayList<>();
+		ArrayList<CollisionConvexVertice> convexVerticesShapes = new ArrayList<>();
+		ArrayList<CollisionSphereShape> sphereShapes = new ArrayList<>();
 		
-	}
+		ArrayList<CollisionConvexTransform> convexTransformShapes = new ArrayList<>();
+		ArrayList<CollisionConvexTranslate> convexTranslateShapes = new ArrayList<>();
+		
+		for (var b : mainBound.getChildrenRecursively()) {
+			// assuming the enum is kept updated in case the shape changes
+			switch (b.Shape) {
+			case KSHAPE_BOX:
+				boxShapes.add((CollisionBoxShape) b.collisionShape);
+				break;
+			case KSHAPE_CYLINDER:
+				break;
+			case KSHAPE_INVALID:
+				break;
+			case KSHAPE_MESH:
+				convexVerticesShapes.add((CollisionConvexVertice) b.collisionShape);
+				break;
+			case KSHAPE_SPHERE:
+				sphereShapes.add((CollisionSphereShape) b.collisionShape);
+				break;
+			case KSHAPE_TYPE_COUNT:
+				break;
+			}
+			if (b.shapeTransform != null) convexTransformShapes.add(b.shapeTransform);
+			if (b.shapeTranslate != null) convexTranslateShapes.add(b.shapeTranslate);
+		}
+		
+		ByteBuffer header = ByteBuffer.wrap(new byte[36 + carname.length()+1 + 32]);
+		header.order(ByteOrder.LITTLE_ENDIAN);
+
+		header.putInt(1114656103); //blockID - binary serialized
+		header.putInt(-1); 
+		header.putInt(6);
+		header.putInt(771611838); // sub block (probably collisions)
+		header.putInt(-1);
+		header.putInt(1465336146);
+		header.putInt(4097);
+		header.putInt(-1);
+		header.putInt(-1);
+		//byte 36
+		writeString(carname, header);
+		header.putInt(mainBound.getChildrenRecursively().size()); //NumberOfBounds
+		header.putInt(boxShapes.size());
+		header.putInt(convexTransformShapes.size());
+		header.putInt(convexTranslateShapes.size());
+		header.putInt(convexVerticesShapes.size());
+		header.putInt(sphereShapes.size());
+		header.putInt(LocalFixUps.size());
+		header.putInt(VirtualFixUps.size());
+
+		var data = new ByteArrayOutputStream();
+		data.write(mainBound.saveHierarchy());
+		for (var b : boxShapes) data.write(b.save());
+		for (var b : convexTransformShapes) data.write(b.save());
+		for (var b : convexTranslateShapes) data.write(b.save());
+		for (var b : convexVerticesShapes) data.write(b.save());
+		for (var b : sphereShapes) data.write(b.save());
+		for (var d : LocalFixUps) data.write(d.save());
+		for (var d : VirtualFixUps) data.write(d.save());
+			
+		data.write(this.isResolved ? 1 : 0);
+		
+		var bb = ByteBuffer.wrap(new byte[16]);
+		bb.order(ByteOrder.LITTLE_ENDIAN);
+		bb.putFloat(X);
+		bb.putFloat(Y);
+		bb.putFloat(Z);
+		bb.putFloat(W);
+		
+		data.write(bb.array());
+		bb = null;
+		
+		var dataArray = data.toByteArray();
+		data = null;
+		var totalFileSize = header.capacity() + dataArray.length;
+
+		header.putInt(4, totalFileSize-8);
+		header.putInt(16, totalFileSize-20);
+		header.putInt(28, totalFileSize-36);
+		header.putInt(32, totalFileSize-20);
+		
+		var fos = new FileOutputStream(f);
+		fos.write(header.array());
+		fos.write(dataArray);
+		fos.close();
 	
-	public static boolean similarEnough(float a, float b) {
+	}
+
+	public static boolean boundCenterCloseEnough(float a, float b) {
 		return (Math.abs(a-b) < floatingPointError);
+	}
+	public static boolean similarEnough(float a, float b) {
+		return (Math.abs(a-b) < 0.05);
 	}
 	
 	public static String readString(ByteBuffer bb) {
@@ -264,12 +329,30 @@ public class Collisions {
 		bb.put(s.getBytes());
 		bb.put((byte)0);
 	}
+	
+	public static double randomizeColor(double color, double factor) {
+		color +=  (Math.random() - 0.5)*factor;
+		if (color < 0) return 0;
+		if (color > 1) return 1;
+		return color;
+	}
 
 	@Override
 	public String toString() {
 		return "Collisions [carname=" + carname + ", isResolved=" + isResolved + ", mainBound=" + mainBound
-				+ ", \nchildBounds=" + childBounds + ", \nX=" + X + ", Y=" + Y + ", Z=" + Z + ", W=" + W
-				+ ", \nNumberOfLocalFixUps=" + NumberOfLocalFixUps + ", NumberOfVirtualFixUps=" + NumberOfVirtualFixUps
+				+ ", \nX=" + X + ", Y=" + Y + ", Z=" + Z + ", W=" + W
 				+ ", LocalFixUps=" + LocalFixUps + ", VirtualFixUps=" + VirtualFixUps + "]";
 	}
+	
+	public void printInfo() {
+		System.out.println(" === COLLISIONS === ");
+		System.out.println("Car name: " + carname + ", isResolved: " + isResolved+ " | (" + X + ", " + Y + ", " + Z + ", " + W+")");
+		System.out.println(" --- BOUNDS --- ");
+		mainBound.getChildrenRecursively().forEach(b -> System.out.println(b));
+		System.out.println(" --- LOCAL FIXUPS --- ");
+		LocalFixUps.forEach(f -> System.out.println(f));
+		System.out.println(" --- VIRTUAL FIXUPS --- ");
+		VirtualFixUps.forEach(f -> System.out.println(f));
+	}
+
 }

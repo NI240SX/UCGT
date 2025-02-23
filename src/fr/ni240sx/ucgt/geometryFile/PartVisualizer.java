@@ -32,12 +32,12 @@ public class PartVisualizer extends Stage{
 	public PartVisualizer() {
 		super();
 		viewport = new OrbitCameraViewport(viewportGroup, 1024, 600);
-
-		viewport.rotationX.setAngle(90);
-		viewport.rotationY.setAngle(60);
-		viewport.rotationZ.setAngle(180);
-		viewport.translation.setY(-0.8);
-		
+//
+//		viewport.rotationX.setAngle(90);
+//		viewport.rotationY.setAngle(60);
+//		viewport.rotationZ.setAngle(180);
+//		viewport.translation.setY(-0.8);
+//		
         viewportGroup.getChildren().clear();
 		for (Part part : partsList) {
 			for (var m : part.mesh.materials.materials) {

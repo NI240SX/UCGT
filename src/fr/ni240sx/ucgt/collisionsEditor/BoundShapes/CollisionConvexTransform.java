@@ -1,6 +1,7 @@
 package fr.ni240sx.ucgt.collisionsEditor.BoundShapes;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class CollisionConvexTransform {
 
@@ -27,7 +28,7 @@ public class CollisionConvexTransform {
 	public float ZRotationZ = 0;
 	public float ZRotationW = 0;
 
-	public float unknownFloat = (float) 0.05;
+	public float boundDistance = (float) 0.05;
 	
 	public CollisionConvexTransform() {
 		// TODO Auto-generated constructor stub
@@ -54,7 +55,7 @@ public class CollisionConvexTransform {
 		ZRotationY = zRotationY;
 		ZRotationZ = zRotationZ;
 		ZRotationW = zRotationW;
-		this.unknownFloat = unknownFloat;
+		this.boundDistance = unknownFloat;
 	}
 
 	@Override
@@ -65,13 +66,13 @@ public class CollisionConvexTransform {
 				+ ", XRotationW=" + XRotationW + ", YRotationX=" + YRotationX + ", YRotationY=" + YRotationY
 				+ ", YRotationZ=" + YRotationZ + ", YRotationW=" + YRotationW + ", ZRotationX=" + ZRotationX
 				+ ", ZRotationY=" + ZRotationY + ", ZRotationZ=" + ZRotationZ + ", ZRotationW=" + ZRotationW
-				+ ", unknownFloat=" + unknownFloat + "]";
+				+ ", unknownFloat=" + boundDistance + "]";
 	}
 
 	public static CollisionConvexTransform load(ByteBuffer bb) {
 		CollisionConvexTransform load = new CollisionConvexTransform();
 		bb.position(bb.position() + 0x10);
-		load.unknownFloat = bb.getFloat();
+		load.boundDistance = bb.getFloat();
 		bb.position(bb.position() + 0x0C);
 		load.XRotationX = bb.getFloat();
 		load.XRotationY = bb.getFloat();
@@ -90,6 +91,58 @@ public class CollisionConvexTransform {
 		load.TranslationZ = bb.getFloat();
 		load.TranslationW = bb.getFloat();
 		return load;
+	}
+
+	
+	public byte[] save() {
+		var bb = ByteBuffer.wrap(new byte[68+0x10+0x0C]);
+		bb.order(ByteOrder.LITTLE_ENDIAN);
+		bb.order(ByteOrder.LITTLE_ENDIAN);
+		bb.put(new byte[0x10]);
+		bb.putFloat(boundDistance);
+		bb.put(new byte[0x0C]);
+		bb.putFloat(XRotationX);
+		bb.putFloat(XRotationY);
+		bb.putFloat(XRotationZ);
+		bb.putFloat(XRotationW);
+		bb.putFloat(YRotationX);
+		bb.putFloat(YRotationY);
+		bb.putFloat(YRotationZ);
+		bb.putFloat(YRotationW);
+		bb.putFloat(ZRotationX);
+		bb.putFloat(ZRotationY);
+		bb.putFloat(ZRotationZ);
+		bb.putFloat(ZRotationW);
+		bb.putFloat(TranslationX);
+		bb.putFloat(TranslationY);
+		bb.putFloat(TranslationZ);
+		bb.putFloat(TranslationW);
+		return bb.array();
+	}
+
+	
+	public CollisionConvexTransform deepCopy() {
+		CollisionConvexTransform copy = new CollisionConvexTransform();
+		copy.boundDistance = this.boundDistance;
+		copy.NumVertices = this.NumVertices;
+		copy.TranslationX = this.TranslationX;
+		copy.TranslationY = this.TranslationY;
+		copy.TranslationZ = this.TranslationZ;
+		copy.TranslationW = this.TranslationW;
+		copy.XRotationX = this.XRotationX;
+		copy.XRotationY = this.XRotationY;
+		copy.XRotationZ = this.XRotationZ;
+		copy.XRotationW = this.XRotationW;
+		copy.YRotationX = this.YRotationX;
+		copy.YRotationY = this.YRotationY;
+		copy.YRotationZ = this.YRotationZ;
+		copy.YRotationW = this.YRotationW;
+		copy.ZRotationX = this.ZRotationX;
+		copy.ZRotationY = this.ZRotationY;
+		copy.ZRotationZ = this.ZRotationZ;
+		copy.ZRotationW = this.ZRotationW;
+		
+		return copy;
 	}
 
 }

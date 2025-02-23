@@ -16,7 +16,7 @@ public class JDLZCompress {
 
 	    final int HeaderSize = 16;
 	    final int MinMatchLength = 3;
-	    final int MaxSearchDepth = 16;
+	    final int MaxSearchDepth = 512;
 
 	    int inputBytes = input.length;
 	    byte[] output = new byte[inputBytes + ((inputBytes + 7) / 8 ) + HeaderSize + 1];
@@ -39,9 +39,9 @@ public class JDLZCompress {
 	    output[outPos++] = 0x00;
 	    output[outPos++] = 0x00;
 	    output[outPos++] = (byte)inputBytes;
-	    output[outPos++] = (byte)(inputBytes >> 8 );
-	    output[outPos++] = (byte)(inputBytes >> 16);
-	    output[outPos++] = (byte)(inputBytes >> 24);
+	    output[outPos++] = (byte)(inputBytes >>> 8 );
+	    output[outPos++] = (byte)(inputBytes >>> 16);
+	    output[outPos++] = (byte)(inputBytes >>> 24);
 	    outPos += 4;
 
 	    int flags1Pos = outPos++;
@@ -58,7 +58,7 @@ public class JDLZCompress {
 
 	        if (inputBytes >= MinMatchLength)
 	        {
-	            int hash = (-0x1A1 * (input[inPos] ^ ((input[inPos + 1] ^ (input[inPos + 2] << 4)) << 4))) & 0x1FFF;
+	            int hash = (-0x1A1 * ((input[inPos]&0xff) ^ (((input[inPos + 1]&0xff) ^ ((input[inPos + 2] << 4)&0xff)) << 4))) & 0x1FFF;
 	            int matchPos = hashPos[hash];
 	            hashPos[hash] = inPos;
 	            hashChain[inPos] = matchPos;
@@ -99,7 +99,7 @@ public class JDLZCompress {
 	            if (bestMatchDist < 17)
 	            {
 	                flags2 |= flags2bit;
-	                output[outPos++] = (byte)((bestMatchDist - 1) | ((bestMachLength >> 4) & 0xf0));
+	                output[outPos++] = (byte)(((bestMatchDist - 1) &0xff) | ((bestMachLength >> 4) & 0xf0));
 	                output[outPos++] = (byte)bestMachLength;
 	            }
 	            else
@@ -136,20 +136,20 @@ public class JDLZCompress {
 	        }
 	    }
 
-	    if (flags2bit > 1)
+	    if (flags2bit > 1 || flags2bit < 0)
 	        output[flags2Pos] = flags2;
 	    else if (flags2Pos == outPos - 1)
 	        outPos = flags2Pos;
 
-	    if (flags1bit > 1)
+	    if (flags1bit > 1 || flags1bit < 0)
 	        output[flags1Pos] = flags1;
 	    else if (flags1Pos == outPos - 1)
 	        outPos = flags1Pos;
 
 	    output[12] = (byte)outPos;
-	    output[13] = (byte)(outPos >> 8 );
-	    output[14] = (byte)(outPos >> 16);
-	    output[15] = (byte)(outPos >> 24);
+	    output[13] = (byte)(outPos >>> 8 );
+	    output[14] = (byte)(outPos >>> 16);
+	    output[15] = (byte)(outPos >>> 24);
 
 	    return Arrays.copyOf(output, outPos);
 	}

@@ -9,6 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -53,7 +54,7 @@ public class DBMPPlus extends Application {
 	public static boolean useDarkMode = false;
 	public static boolean disableWarnings = false;
 	public static boolean widebodyAutoCorrect = true;
-	public static String optimizedCVName = "FIRE_CV";
+	public static String optimizedCVName = "UCGT";
 
 	static String currentKitTemplate = "UC-KIT00";
 	static String currentKitASZones = "11";
@@ -67,8 +68,10 @@ public class DBMPPlus extends Application {
 	static boolean currentExhCenterTipEnabled = true;
 	static String currentExhASZones = "11";
 	
-	public static final String programName = "fire";
+	public static final String programName = "UCGT DBModelParts Editor";
 	public static final String programVersion = "1.1.3";
+	public static final String settingsFolder = "settings";
+	public static final String settingsFile = "settings/dbmpeditor.dat";
 
 	//---------------------------------------------------------------------------------------------------
 	//
@@ -79,7 +82,7 @@ public class DBMPPlus extends Application {
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 		try {
-			BufferedReader br = new BufferedReader(new FileReader(new File("fire.dat")));
+			BufferedReader br = new BufferedReader(new FileReader(new File(settingsFile)));
 			br.readLine(); //="DO NOT MANUALLY EDIT THIS FILE"
 			lastDirectoryLoaded = br.readLine();
 			lastFileLoaded = br.readLine();
@@ -101,7 +104,8 @@ public class DBMPPlus extends Application {
 		
         launch(args);
         try {
-			BufferedWriter bw = new BufferedWriter(new FileWriter(new File("fire.dat")));
+			Files.createDirectories(Paths.get(settingsFolder));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(new File(settingsFile)));
 			bw.write("DO NOT MANUALLY EDIT THIS FILE\n" 
 					+ lastDirectoryLoaded + "\n" 
 					+ lastFileLoaded + "\n" 
