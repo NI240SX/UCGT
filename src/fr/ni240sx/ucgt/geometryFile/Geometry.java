@@ -804,6 +804,12 @@ public class Geometry extends Block {
 							//use 1B_00 (fallback to 1A_00 if it doesn't exist) and 1Z_00 (no fallback), except XOs (keep everything)
 							Part lodA = null, lodB = null;
 							
+							// copy over unknown data, maybe LOD-related
+							for (var newPart : newGeom.parts) for (var oldPart : g.parts) if (newPart.header.binKey == oldPart.header.binKey) {
+								newPart.header.const11 = oldPart.header.const11;
+								newPart.header.const12 = oldPart.header.const12;
+							}
+							
 							newGeom.geomHeader.geomInfo.blockname = g.geomHeader.geomInfo.blockname;
 							if (newGeom.SAVE_autoReplaceWorldLODs && (chunk.name.startsWith("X") || chunk.name.startsWith("W") || chunk.name.startsWith("U")) && !newGeom.geomHeader.geomInfo.filename.contains("XOs")) {
 								for (var p : newGeom.parts) {
@@ -826,8 +832,15 @@ public class Geometry extends Block {
 						fosStream.write(outGeom);
 						currentPositionOut += outGeom.length;
 						posInChunk += outGeom.length;
-//					} else if (b.getClass() == Padding.class){
-						// do nothing, TODO padding is still not it (or is it geometry ???)
+//					} else if (b.getClass() == Padding.class && !bb.hasRemaining()){
+							// LAST PADDING BLOCK
+					} else if (b.getClass() == Padding.class){
+						// remake all padding with alignment modulo 2048, seems to fix some issues
+						byte[] outBlock = Padding.makePadding(posInChunk,2048);
+						fosStream.write(outBlock);
+						currentPositionOut += outBlock.length;
+						posInChunk += outBlock.length;
+						
 					} else {
 						byte[] outBlock = b.save(posInChunk);
 						fosStream.write(outBlock);

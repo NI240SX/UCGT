@@ -457,6 +457,16 @@ public class TestingFunctions {
 
 			
 		
-		Geometry.replaceInStream("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\STREAML8R_MW2 recompiled", "D:\\Jeux\\UCE 1.0.1.18\\TRACKS\\STREAML8R_MW2.BUN", "D:\\Jeux\\UCE 1.0.1.18\\TRACKS\\L8R_MW2.BUN");
+//		Geometry.replaceInStream("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\STREAML8R_MW2 recompiled", "D:\\Jeux\\UCE 1.0.1.18\\TRACKS\\STREAML8R_MW2.BUN", "D:\\Jeux\\UCE 1.0.1.18\\TRACKS\\L8R_MW2.BUN");
+		
+//		for (var f : new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\world models (again)").listFiles()) if (f.isFile()) {
+//			var geom = Geometry.load(f);
+//			geom.save(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\world models (again)\\recomp\\"+f.getName().replace(".bin", "-resaved.bin")));
+//			geom.writeConfig(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\world models (again)\\recomp\\"+f.getName().replace(".bin", "-recompiled.ini")));
+//			ZModelerZ3D.save(geom, "C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\world models (again)\\recomp\\"+f.getName().replace(".bin", "-recompiled.z3d"));
+//
+//			geom = Geometry.importFromFile(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\world models (again)\\recomp\\"+f.getName().replace(".bin", "-recompiled.z3d")));
+//			geom.save(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\world models (again)\\recomp\\"+f.getName().replace(".bin", "-recompiled.bin")));
+//		}
 	}
 }

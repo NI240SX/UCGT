@@ -7,6 +7,7 @@ import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.BlockType;
+import fr.ni240sx.ucgt.geometryFile.GeometryEditorCLI;
 
 public class Padding extends Block {
 	
@@ -53,7 +54,7 @@ public class Padding extends Block {
 		buf.order(ByteOrder.LITTLE_ENDIAN);
 		buf.putInt(BlockType.Padding.getKey());
 		buf.putInt(paddingLength);
-
+		if (paddingLength>36) Block.putString(buf, "Edited with UCGT v"+GeometryEditorCLI.programVersion+" | needeka", paddingLength);		
 		return buf.array();
 	}
 }

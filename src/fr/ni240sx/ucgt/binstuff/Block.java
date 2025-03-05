@@ -167,8 +167,7 @@ public abstract class Block {
 	public static void putString(ByteBuffer bb, String s, int maxSize) {
 		
 		for (int i=0; i<s.length(); i++) {
-			if (i>maxSize-1) {
-				System.out.println("[WARN] String too long !");
+			if (i>maxSize-2) {
 				break;
 			}
 			bb.put((byte)s.charAt(i));

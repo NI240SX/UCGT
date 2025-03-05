@@ -63,6 +63,7 @@ public class Material {
 		this.shaderUsageID = m.shaderUsageID;
 		for (var d : m.texturePriorities) this.texturePriorities.add(d);
 		this.renderingOrder = m.renderingOrder;
+		this.flags = m.flags;
 	}
 
 	public Material() {
@@ -133,33 +134,43 @@ public class Material {
 //	}
 
 	public void tryGuessFlags(Geometry geometry) {
-		flags[0] = (byte) 0x80;
-		flags[1] = (byte) 0x51;
-		flags[2] = (byte) 0x00;
-		flags[3] = (byte) 0x00;
+		
+		if (flags[0] == 0 && flags[1] == 0 && flags[2] == 0 && flags[3] == 0) if (geometry.SAVE_useOffsetsTable) { // for a car
+			flags[0] = (byte) 0x80;
+			flags[1] = (byte) 0x51;
+			flags[2] = (byte) 0x00;
+			flags[3] = (byte) 0x00;
 
-		//low quality rendering or smth
-		if (Hash.findBIN("PLAINNOTHING") == ShaderHash || Hash.findBIN("INTERIOR") == ShaderHash || Hash.findBIN("CHASSIS") == ShaderHash) flags[1] -= (byte) 0x01;
+			//low quality rendering or smth
+			if (Hash.findBIN("PLAINNOTHING") == ShaderHash || Hash.findBIN("INTERIOR") == ShaderHash || Hash.findBIN("CHASSIS") == ShaderHash) flags[1] -= (byte) 0x01;
+			
+			//reflections ? shadows ? METAL_SWATCH, %_MISC, REGPAINTBLACK, SIRENS, BLACK
+			if (//ShaderHash.label.equals("CARSKIN") ||
+					Hash.findBIN("CARBONFIBER") == ShaderHash || Hash.findBIN("HEADLIGHTGLASS") == ShaderHash ||
+					Hash.findBIN("BRAKELIGHTGLASS") == ShaderHash || Hash.findBIN("BRAKELIGHTGLASSRED") == ShaderHash ||				
+					
+					Hash.findBIN("CARBONFIBRE_PLACEHOLDER") == TextureHashes.get(0) || Hash.findBIN("CARBONFIBRE") == TextureHashes.get(0) || Hash.findBIN("METAL_SWATCH") == TextureHashes.get(0) || 
+					Hash.findBIN(geometry.carname+"_MISC") == TextureHashes.get(0) || Hash.findBIN("BLACK") == TextureHashes.get(0) || 
+					Hash.findBIN("SIRENS") == TextureHashes.get(0)) flags[2] += (byte) 0x01;
+			
+			//normals
+			if (textureUsages.contains(TextureUsage.NORMAL)) flags[2] += (byte) 0xA2;
+			
+			//idk
+			if(!textureUsages.contains(TextureUsage.NORMAL) && textureUsages.contains(TextureUsage.SWATCH)) flags[3] = (byte) 0x22;
+			if(textureUsages.contains(TextureUsage.NORMAL) && textureUsages.contains(TextureUsage.SWATCH)) flags[3] = (byte) 0x02;
+			
+		} else { // fallback for a generic model
+			flags[0] = (byte) 0x00;
+			flags[1] = (byte) 0x40;
+			flags[2] = (byte) 0x2a;
+			flags[3] = (byte) 0x00;
+		}
 		
-		//reflections ? shadows ? METAL_SWATCH, %_MISC, REGPAINTBLACK, SIRENS, BLACK
-		if (//ShaderHash.label.equals("CARSKIN") ||
-				Hash.findBIN("CARBONFIBER") == ShaderHash || Hash.findBIN("HEADLIGHTGLASS") == ShaderHash ||
-				Hash.findBIN("BRAKELIGHTGLASS") == ShaderHash || Hash.findBIN("BRAKELIGHTGLASSRED") == ShaderHash ||				
-				
-				Hash.findBIN("CARBONFIBRE_PLACEHOLDER") == TextureHashes.get(0) || Hash.findBIN("CARBONFIBRE") == TextureHashes.get(0) || Hash.findBIN("METAL_SWATCH") == TextureHashes.get(0) || 
-				Hash.findBIN(geometry.carname+"_MISC") == TextureHashes.get(0) || Hash.findBIN("BLACK") == TextureHashes.get(0) || 
-				Hash.findBIN("SIRENS") == TextureHashes.get(0)) flags[2] += (byte) 0x01;
-		
-		//normals
-		if (textureUsages.contains(TextureUsage.NORMAL)) flags[2] += (byte) 0xA2;
-		
-		//idk
-		if(!textureUsages.contains(TextureUsage.NORMAL) && textureUsages.contains(TextureUsage.SWATCH)) flags[3] = (byte) 0x22;
-		if(textureUsages.contains(TextureUsage.NORMAL) && textureUsages.contains(TextureUsage.SWATCH)) flags[3] = (byte) 0x02;
 	}
 	
 	public void tryGuessDefaultTex() {
-		for (var t : TextureHashes) {
+		if (textures.size() == 0) for (var t : TextureHashes) {
 			textures.add(t);
 		}
 		textureHash = textures.get(0);
@@ -188,10 +199,13 @@ public class Material {
 //		usageSpecific3 = -1;
 //		texturePriorities.clear();
 //		tryGuessTexturePriority(); //better like that
-		flags[0] = (byte) 0x00;
-		flags[1] = (byte) 0x00;
-		flags[2] = (byte) 0x00;
-		flags[3] = (byte) 0x00;
+		if (flags[0] == 80) {
+			// clean up flags on car models only
+			flags[0] = (byte) 0x00;
+			flags[1] = (byte) 0x00;
+			flags[2] = (byte) 0x00;
+			flags[3] = (byte) 0x00;
+		}
 		textureHash = 0; //we apparently can not give a shit about those ???
 		for (int i=0; i<textures.size(); i++) {
 			textures.set(i, 0);
@@ -275,11 +289,17 @@ public class Material {
 					TextureHashes.add(Hash.findBIN(s2.split("=")[0].replace("%", g.carname)));
 					textureUsages.add(TextureUsage.get(s2.split("=")[1]));
 					if (prio != Integer.MAX_VALUE) texturePriorities.add(prio);
-					else if (g.SAVE_optimizeMaterials) texturePriorities.add(texturePriorities.size()>0 ? -1 : 0);
+					else if (g.SAVE_optimizeMaterials && g.SAVE_useOffsetsTable) texturePriorities.add(texturePriorities.size()>0 ? -1 : 0);
 					else texturePriorities.add(texturePriorities.size());
 				}
 			}
 			i++;
+		}
+		if (!g.SAVE_useOffsetsTable) {
+			flags[0] = (byte) 0x00;
+			flags[1] = (byte) 0x40;
+			flags[2] = (byte) 0x2a;
+			flags[3] = (byte) 0x00;
 		}
 //		System.out.println("Material : "+toConfig(carname));
 	}

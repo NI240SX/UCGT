@@ -30,8 +30,8 @@ public class PartHeader extends Block {
 	
 	public int const02 = 947208;
 
-	public int const11 = 0;
-	public int const12 = 0;
+	public float const11 = 0;
+	public float const12 = 0;
 	
 	public String partName = "CAR_PART";
 	
@@ -77,13 +77,15 @@ public class PartHeader extends Block {
 
 		in.getInt(); //0
 		in.getInt(); //0
-		const11 = in.getInt(); //might be a float
-		const12 = in.getInt(); //might be a float
+		const11 = in.getFloat(); //might be a float
+		const12 = in.getFloat(); //might be a float
 		
 		if (const02 == 947640) in.position(in.position()+24); //PS model
 		else in.position(in.position()+40); //UC model
 		partName = Block.readString(in);
 		if (partName.isEmpty()) throw new Exception("Part name cannot be empty !");
+		
+//		System.out.println("part header data for "+partName+": const01="+String.format("0x%08X", Integer.reverseBytes(const01)) + ", const11="+const11+", const12="+const12);
 		
 //		System.out.println(partName);
 //		if (in.position()%4 != 0) in.position(in.position()+4-in.position()%4); //unnecessary complication
@@ -161,8 +163,8 @@ public class PartHeader extends Block {
 		
 		out.putInt(0);
 		out.putInt(0);
-		out.putInt(0); //const11
-		out.putInt(0); //const12
+		out.putFloat(const11); //const11
+		out.putFloat(const12); //const12
 		
 		if (const02 == 947640) out.position(out.position()+24);
 		else out.position(out.position()+40);

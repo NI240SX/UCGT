@@ -127,7 +127,7 @@ public class DBMPPart {
 		} else {
 			displayName = ((AttributeString)getAttribute("NAME_OFFSET")).value1;
 		}
-		listCell.update();
+		if (listCell != null) listCell.update();
 	}
 	
 	public void addAttribute(Attribute a) {

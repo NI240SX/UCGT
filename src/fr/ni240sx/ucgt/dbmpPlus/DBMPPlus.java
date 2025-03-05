@@ -69,7 +69,7 @@ public class DBMPPlus extends Application {
 	static String currentExhASZones = "11";
 	
 	public static final String programName = "UCGT DBModelParts Editor";
-	public static final String programVersion = "1.1.3";
+	public static final String programVersion = "1.1.3.1";
 	public static final String settingsFolder = "settings";
 	public static final String settingsFile = "settings/dbmpeditor.dat";
 

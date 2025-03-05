@@ -25,10 +25,10 @@ public class Vertex {
 	public byte colorB=(byte) 255;
 	public byte colorA=(byte) 255;
 
-	public float normX=0x7FFF/vecFactor; //normals
+	public float normX=1.0f; //normals
 	public float normY=0.0f;
 	public float normZ=0.0f;
-//	public float normW=0x7FFF/vecFactor;
+	public float normW=1.0f;
 
 	public float tanX=0.0f; //tangents, usually no data included
 	public float tanY=0.0f;
@@ -36,7 +36,7 @@ public class Vertex {
 	public float tanW=0.0f;
 
 	public static final float posFactor = 32767.0f/10f;
-	public static final float UVFactor = 32767.0f/32f;
+	public static final float UVFactor = 1024.0f; //32767.0f/32f;
 	public static final float vecFactor = 32767.0f;
 
 	public static final float short4n_10x_min = Short.MIN_VALUE/posFactor;
@@ -240,13 +240,13 @@ public class Vertex {
 		normX = in.getFloat();
 		normY = in.getFloat();
 		normZ = in.getFloat();
-		in.getFloat();
+		normW = in.getFloat();
 	}
 	private void norm0s_in(ByteBuffer in) {
 		normX = (in.getShort())/vecFactor; //short4n
 		normY = (in.getShort())/vecFactor;
 		normZ = (in.getShort())/vecFactor;
-		in.getShort();
+		normW = (in.getShort())/vecFactor;
 	}
 	private void norm0d4n_in(ByteBuffer in) {
 		var bits = Integer.reverseBytes(in.getInt());
@@ -522,13 +522,13 @@ public class Vertex {
 		out.putFloat((float) normX);
 		out.putFloat((float) normY);
 		out.putFloat((float) normZ);
-		out.putFloat(1.0f);
+		out.putFloat((float) normW);
 	}
 	private void norm0s_out(ByteBuffer out) {
 		out.putShort((short) (normX*vecFactor)); //short4n
 		out.putShort((short) (normY*vecFactor));
 		out.putShort((short) (normZ*vecFactor));
-		out.putShort((short) 0x7FFF);
+		out.putShort((short) (normW*vecFactor));
 	}
 	private void norm0d4n_out(ByteBuffer out) {
 		int x = Math.round(normX * 511);
