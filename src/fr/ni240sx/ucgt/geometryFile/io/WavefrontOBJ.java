@@ -108,35 +108,51 @@ public class WavefrontOBJ {
 	        		
         		if (!nextIsMarker) {
         			//part
-        			Vertex[] triVerts = new Vertex[3];
-        			for (int i=1; i<4; i++) {
+        			int numVerts = line.split(" ").length-1;
+        			Vertex[] triVerts = new Vertex[numVerts];
+        			for (int i=1; i<numVerts+1; i++) {
 	        			String vertdata = line.split(" ")[i];
 	        			Vertex v = new Vertex();
-	        			v.posX = verts.get(Integer.parseInt(vertdata.split("/")[0])-1).x;
-	        			v.posY = verts.get(Integer.parseInt(vertdata.split("/")[0])-1).y;
-	        			v.posZ = verts.get(Integer.parseInt(vertdata.split("/")[0])-1).z;
+
+	        			var OBJvert = verts.get(Integer.parseInt(vertdata.split("/")[0])-1);
+	        			var OBJtex = tex.get(Integer.parseInt(vertdata.split("/")[1])-1);
+	        			var OBJnorm = normals.get(Integer.parseInt(vertdata.split("/")[2])-1);
 	        			
-	        			if (verts.get(Integer.parseInt(vertdata.split("/")[0])-1).getClass() == VertexData6.class) {
-	        				v.colorR = (byte)(int)(((VertexData6)(verts.get(Integer.parseInt(vertdata.split("/")[0])-1))).a*255);
-	        				v.colorG = (byte)(int)(((VertexData6)(verts.get(Integer.parseInt(vertdata.split("/")[0])-1))).b*255);
-	        				v.colorB = (byte)(int)(((VertexData6)(verts.get(Integer.parseInt(vertdata.split("/")[0])-1))).c*255);
+	        			v.posX = OBJvert.x;
+	        			v.posY = OBJvert.y;
+	        			v.posZ = OBJvert.z;
+	        			
+	        			if (OBJvert.getClass() == VertexData6.class) {
+	        				v.colorR = (byte)(int)(((VertexData6)(OBJvert)).a*255);
+	        				v.colorG = (byte)(int)(((VertexData6)(OBJvert)).b*255);
+	        				v.colorB = (byte)(int)(((VertexData6)(OBJvert)).c*255);
 	        			}
 	
-	        			v.tex0U = tex.get(Integer.parseInt(vertdata.split("/")[1])-1).u;
-	        			if (geom.IMPORT_flipV) v.tex0V = 1-tex.get(Integer.parseInt(vertdata.split("/")[1])-1).v;
-	        			else v.tex0V = tex.get(Integer.parseInt(vertdata.split("/")[1])-1).v;
+	        			v.tex0U = OBJtex.u;
+	        			if (geom.IMPORT_flipV) v.tex0V = 1-OBJtex.v;
+	        			else v.tex0V = OBJtex.v;
 	        			
-	        			v.normX = normals.get(Integer.parseInt(vertdata.split("/")[2])-1).x;
-	        			v.normY = normals.get(Integer.parseInt(vertdata.split("/")[2])-1).y;
-	        			v.normZ = normals.get(Integer.parseInt(vertdata.split("/")[2])-1).z;
+	        			v.normX = OBJnorm.x;
+	        			v.normY = OBJnorm.y;
+	        			v.normZ = OBJnorm.z;
 	        			
 	        			if (!curMat.verticesBlock.vertices.contains(v)) 
 	        				curMat.verticesBlock.vertices.add(v);
 	        			triVerts[i-1] = v;
 	        		}
-        			Triangle t = new Triangle(	(short)(curMat.verticesBlock.vertices.indexOf(triVerts[0])), 
+        			
+        			curMat.triangles.add(new Triangle(	(short)(curMat.verticesBlock.vertices.indexOf(triVerts[0])), 
         										(short)(curMat.verticesBlock.vertices.indexOf(triVerts[1])),
-        										(short)(curMat.verticesBlock.vertices.indexOf(triVerts[2])) );
+        										(short)(curMat.verticesBlock.vertices.indexOf(triVerts[2])) ));
+					
+        			if (numVerts == 4) { //
+        				curMat.triangles.add(new Triangle(	(short)(curMat.verticesBlock.vertices.indexOf(triVerts[0])), 
+								(short)(curMat.verticesBlock.vertices.indexOf(triVerts[2])),
+								(short)(curMat.verticesBlock.vertices.indexOf(triVerts[3])) ));
+        			} if (numVerts > 4) { //
+        				System.out.println("[OBJLoader] Please triangulate the mesh for "+curPart.name);
+        			}
+        			
 //        			//check there isn't two identical vertices
 //        			if (t.vert0 == t.vert1) {
 //        				t.vert1 = (short) curMat.verticesBlock.vertices.size();
@@ -151,7 +167,7 @@ public class WavefrontOBJ {
 //        				curMat.verticesBlock.vertices.add(new Vertex(triVerts[1]));
 //        			}
         			
-        			curMat.triangles.add(t);
+//        			curMat.triangles.add(t);
         			
 //        			curMat.triangles.add( new Triangle(	(short)(curMat.verticesBlock.vertices.size()-3), 
 //							(short)(curMat.verticesBlock.vertices.size()-2),

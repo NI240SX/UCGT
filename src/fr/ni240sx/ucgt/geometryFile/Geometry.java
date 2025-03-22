@@ -1589,7 +1589,7 @@ public class Geometry extends Block {
 
 	public void processParts() {
 		
-		var toRemove = Collections.synchronizedList(new ArrayList<Part>()); // parts flagged to be removed to optimize the geometry (eg T0 autosculpt with no other actual morphtargets)
+		var toRemove = new ArrayList<Part>(); // parts flagged to be removed to optimize the geometry (eg T0 autosculpt with no other actual morphtargets)
 		
 		// RENAME moved to part constructor
 		
@@ -1603,53 +1603,108 @@ public class Geometry extends Block {
 				toRemove.add(p);
 			}
 		}
+
 		
 		for (var p : parts) {		
-			HashMap<Integer, Byte> shaderUsageIDs; //first int is either shader usage or shader hash
-			shaderUsageIDs = new HashMap<>();
-			
 			if (SAVE_removeInvalid) {if (!checkValid(toRemove, p)) continue;}
 			optimizeAutosculpt(toRemove, p); 
-			computeMatsList(p); // IMPORTANT TO KEEP HERE
-//			globalizePartMarkers(p);
-			if (SAVE_optimizeMaterials && p.strings != null) {
-				p.subBlocks.remove(p.strings);
-				p.strings = null;
-			}
-			if (p.mesh != null) {				
-				for (var m : p.mesh.materials.materials) if (m.renderingOrder!=0) shaderUsageIDs.put(m.ShaderHash , m.renderingOrder);
-				for (var m : p.mesh.materials.materials) {
-					m.tryGuessFEData(shaderUsageIDs);
-					if (SAVE_optimizeMaterials) {	
-		    			m.removeUnneeded();
-		    		} else {
-//						m.tryGuessTexturePriority();
-//						m.tryGuessFlags(this);
-		    			m.tryGuessDefaultTex();
-		    		}
-				}
-				for (var prio : priorities) if (p.name.contains(prio.partName)) {
-//					System.out.println("Changing render priorities for part "+p.name);
+		}
+		
+
+		if (USE_MULTITHREADING) {
+			ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+			for (final var p : parts){
+			    pool.execute(() -> {
+			    	computeMatsList(p); // IMPORTANT TO KEEP HERE
+//					globalizePartMarkers(p);
+				if (SAVE_optimizeMaterials && p.strings != null) {
+					p.subBlocks.remove(p.strings);
+					p.strings = null;
+				}	
+
+				HashMap<Integer, Byte> shaderUsageIDs; //first int is either shader usage or shader hash
+				shaderUsageIDs = new HashMap<>();
+				if (p.mesh != null) {				
+					for (var m : p.mesh.materials.materials) if (m.renderingOrder!=0) shaderUsageIDs.put(m.ShaderHash , m.renderingOrder);
 					for (var m : p.mesh.materials.materials) {
-						for (var pair : prio.values) {
-							if (m.equals(pair.getKey())) { //for some reason materials are NOT equal (materials are fucked up for some reason and have texture hashes repeated twice)
-								//HOW IS IT NOT FINDING THE FUCKING MATERIALS
-								m.texturePriorities.clear();
-								m.texturePriorities.add(0);
-								m.texturePriorities.add(pair.getValue());
-//								m.usageSpecific1 = pair.getValue();
+						m.tryGuessFEData(shaderUsageIDs);
+						if (SAVE_optimizeMaterials) {	
+			    			m.removeUnneeded();
+			    		} else {
+//							m.tryGuessTexturePriority();
+//							m.tryGuessFlags(this);
+			    			m.tryGuessDefaultTex();
+			    		}
+					}
+					for (var prio : priorities) if (p.name.contains(prio.partName)) {
+//						System.out.println("Changing render priorities for part "+p.name);
+						for (var m : p.mesh.materials.materials) {
+							for (var pair : prio.values) {
+								if (m.equals(pair.getKey())) { //for some reason materials are NOT equal (materials are fucked up for some reason and have texture hashes repeated twice)
+									//HOW IS IT NOT FINDING THE FUCKING MATERIALS
+									m.texturePriorities.clear();
+									m.texturePriorities.add(0);
+									m.texturePriorities.add(pair.getValue());
+//									m.usageSpecific1 = pair.getValue();
+								}
 							}
 						}
 					}
 				}
+			    fixAutosculptMeshes(p);
+			    });
 			}
-			fixAutosculptMeshes(p);
-			
-		}
+			pool.shutdown();
+			try {
+				pool.awaitTermination(10, TimeUnit.MINUTES);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		} else { // useful for debugging
+			for (var p : parts) {
+		    	computeMatsList(p); // IMPORTANT TO KEEP HERE
+//					globalizePartMarkers(p);
+				if (SAVE_optimizeMaterials && p.strings != null) {
+					p.subBlocks.remove(p.strings);
+					p.strings = null;
+				}	
 
+				HashMap<Integer, Byte> shaderUsageIDs; //first int is either shader usage or shader hash
+				shaderUsageIDs = new HashMap<>();
+				if (p.mesh != null) {				
+					for (var m : p.mesh.materials.materials) if (m.renderingOrder!=0) shaderUsageIDs.put(m.ShaderHash , m.renderingOrder);
+					for (var m : p.mesh.materials.materials) {
+						m.tryGuessFEData(shaderUsageIDs);
+						if (SAVE_optimizeMaterials) {	
+			    			m.removeUnneeded();
+			    		} else {
+//							m.tryGuessTexturePriority();
+//							m.tryGuessFlags(this);
+			    			m.tryGuessDefaultTex();
+			    		}
+					}
+					for (var prio : priorities) if (p.name.contains(prio.partName)) {
+//						System.out.println("Changing render priorities for part "+p.name);
+						for (var m : p.mesh.materials.materials) {
+							for (var pair : prio.values) {
+								if (m.equals(pair.getKey())) { //for some reason materials are NOT equal (materials are fucked up for some reason and have texture hashes repeated twice)
+									//HOW IS IT NOT FINDING THE FUCKING MATERIALS
+									m.texturePriorities.clear();
+									m.texturePriorities.add(0);
+									m.texturePriorities.add(pair.getValue());
+//									m.usageSpecific1 = pair.getValue();
+								}
+							}
+						}
+					}
+				}
+			    fixAutosculptMeshes(p);
+			}
+		}
+		
 		parts.removeAll(toRemove);
 		
-		var toAdd = Collections.synchronizedList(new ArrayList<Part>()); // parts flagged to be added (eg missing LODs)
+		var toAdd = new ArrayList<Part>(); // parts flagged to be added (eg missing LODs)
 
 		if (SAVE_copyMissingLODs) for (var p : parts) checkAndCopyMissingLODs(toAdd, p);
 		// will fuck up LODs for some copied parts if not done here
@@ -1666,10 +1721,9 @@ public class Geometry extends Block {
 		}
 		parts.addAll(toAdd);
 		
-		for (var p : parts) 
-			if (SAVE_protectModel) {
+		if (SAVE_protectModel) for (var p : parts) {
 				if (p.header != null) p.header.partName = "";
-			}
+		}
 	}
 
 	@SuppressWarnings("unlikely-arg-type")
@@ -1875,171 +1929,26 @@ public class Geometry extends Block {
 	}
 
 	public void rebuild() {
-		for (var p : parts) {
-
-        	//sort materials by name and add the materials data back to the mesh
-//        	if (Geometry.SAVE_sortEverythingByName) p.mesh.materials.materials.sort(new MaterialsSorterName());
-        	//same order as in config file
-//        	else 
-        	p.mesh.materials.materials.sort(new MaterialsSorterGlobalList(this));
-    		
-        	p.mesh.verticesBlocks.clear();
-    		p.mesh.triangles.triangles.clear();
-        	
-        	//make hashmaps for textures and shaders
-        	
-        	//    ID		TEX/SHAD        USAGE
-        	HashMap<Integer, Pair<Integer, Integer>> texturesAndUsage = new HashMap<>();
-        	HashMap<Pair<Integer, Integer>, Integer> texturesIDs = new HashMap<>();
-//        	HashMap<Integer, Pair<Integer, Integer>> shadersAndUsage = new HashMap<Integer, Pair<Integer, Integer>>();
-        	HashMap<Integer , Integer> shadersOnly = new HashMap<>();
-        	HashMap<Integer , Integer> shadersIDs = new HashMap<>();
-
-        	List<TextureUsage> allTextureUsages = new ArrayList<>();
-        	List<ShaderUsage> allShaderUsages = new ArrayList<>();
-        	
-        	int texi = 0;
-        	int shai = 0;
-
-        	int numTriangles = 0;
-        	int numTrianglesEXTRA = 0;
-        	for (var m : p.mesh.materials.materials) {
-        		switch (p.mesh.platform) {
-        		case PC:
-            		m.verticesBlock.vertexFormat = m.shaderUsage.vertexFormat_PC;
-        			break;
-        		case X360:
-            		m.verticesBlock.vertexFormat = m.shaderUsage.vertexFormat_X360;
-        			break;
-        		}
-        		
-        		p.mesh.verticesBlocks.add(m.verticesBlock);
-        		p.mesh.triangles.triangles.addAll(m.triangles);
-        		numTriangles += m.triangles.size();
-        		p.mesh.triangles.triangles.addAll(m.trianglesExtra);
-        		numTrianglesEXTRA += m.trianglesExtra.size();
-        		
-        		
-        		if (	(IMPORT_Tangents == SettingsImport_Tangents.LOW && m.needsTangentsLow()) || 
-    					(IMPORT_Tangents == SettingsImport_Tangents.HIGH && m.needsTangentsHigh()) || 
-    					(IMPORT_Tangents == SettingsImport_Tangents.MANUAL && m.useTangents == true) ||
-    					IMPORT_Tangents == SettingsImport_Tangents.ON ) {
-        			
-        			addToTangents(m);
-        			normalizeTangents(m.verticesBlock.vertices);
-        		}
-        		
-        		if (IMPORT_calculateVertexColors) {
-    				for (var v : m.verticesBlock.vertices) {
-    					// -1 to 1 -> 20 to 255
-        				int color;
-        				if (!p.header.partName.contains("WHEEL") && !p.header.partName.contains("BRAKE_") && !p.header.partName.contains("BRAKEROTOR"))
-        					color = Math.max(0, Math.min(255, (int)((v.normZ+0.8)*150)));
-        				else color = Math.max(20, Math.min(255, (int)((-v.normY+0.8)*150)));
-        				v.colorR = (byte) color;
-        				v.colorG = (byte) color;
-        				v.colorB = (byte) color;
-    				}
-    			}
-        		
-//        		if (!shadersAndUsage.containsValue(new Pair<Integer,Integer>(m.ShaderHash.binHash, m.shaderUsage.getKey()))) {
-//       			shadersAndUsage.put(shadersAndUsage.size(), new Pair<Integer,Integer>(m.ShaderHash.binHash, m.shaderUsage.getKey()));
-//        		}
-        		if (m.ShaderHash != 0) if (!shadersOnly.containsValue(m.ShaderHash)) {
-        			shadersOnly.put(shai, m.ShaderHash);
-        			shadersIDs.put(m.ShaderHash, shai);
-        			shai++;
-        		}
-        		if (!allShaderUsages.contains(m.shaderUsage)) allShaderUsages.add(m.shaderUsage);
-
-        		for (int i=0; i<m.TextureHashes.size(); i++) {
-        			if (!texturesAndUsage.containsValue(new Pair<>(m.TextureHashes.get(i), m.textureUsages.get(i).getKey()))) {
-	        				texturesAndUsage.put(texi, new Pair<>(m.TextureHashes.get(i), m.textureUsages.get(i).getKey()));
-	        				texturesIDs.put(new Pair<>(m.TextureHashes.get(i), m.textureUsages.get(i).getKey()), texi);
-	        				texi++;
-            			}
-        			if (!allTextureUsages.contains(m.textureUsages.get(i))) allTextureUsages.add(m.textureUsages.get(i));
-        		}
-        	}
-        	
-//        	System.out.println(texturesAndUsage);
-        	
-        	//post-treatment
-        	//--- header ---
-        	//calculate triangle count
-        	//calculate textures count
-        	//calculate shaders count
-        	//calculate bounds
-        	p.header.trianglesCount = p.mesh.triangles.triangles.size(); //total with EXTRA ??? or numTriangles
-        	p.header.texturesCount = (short) texturesAndUsage.size();
-        	p.header.shadersCount = (short) shadersOnly.size();
-        	p.computeBounds();
-        	//--- texusage ---
-        	//fill in the texusage pairs
-        	for (int i=0; i<texturesAndUsage.size(); i++) {
-        		p.texusage.texusage.add(texturesAndUsage.get(i));
-        	}
-        	//--- strings ---
-        	//fill in the strings based on mesh shader usages
-        	if (allTextureUsages.contains(TextureUsage.DIFFUSE)) p.strings.strings.add("DIFFUSE");
-        	if (allTextureUsages.contains(TextureUsage.NORMAL)) p.strings.strings.add("NORMAL");
-        	if (allTextureUsages.contains(TextureUsage.SWATCH)) p.strings.strings.add("AMBIENT");
-        	if (allTextureUsages.contains(TextureUsage.ALPHA) || allTextureUsages.contains(TextureUsage.OPACITY)) p.strings.strings.add("OPACITY");
-        	if (allTextureUsages.contains(TextureUsage.SELFILLUMINATION)) p.strings.strings.add("SELFILLUMINATION");
-        	//--- shaders ---
-        	//fill in the shaders binhashes
-        	for (int i=0; i<shadersOnly.size(); i++) p.shaderlist.shaders.add(shadersOnly.get(i));
-
-        	//=== mesh ===
-        	//--- info ---
-        	//numMaterials, numTriangles, numVertices
-        	p.mesh.info.numMaterials = p.mesh.materials.materials.size();
-        	p.mesh.info.numTriangles = numTriangles;
-        	p.mesh.info.numTrianglesExtra = numTrianglesEXTRA;
-
-        	for (var vb : p.mesh.verticesBlocks) p.mesh.info.numVertices += vb.vertices.size();
-        	
-        	int triVertI = 0;
-        	//--- materials ---
-        	//for each material :
-        	//numVertices, toVertID
-        	//shaderID, textureIDs
-        	//verticesDataLength
-        	for (var m : p.mesh.materials.materials) {
-        		
-        		m.fromTriVertID = triVertI; //actually concerns triangles
-        		m.toTriVertID = m.fromTriVertID + m.triangles.size()*3;
-        		m.numTriVertices = m.toTriVertID - m.fromTriVertID;
-        		triVertI = m.toTriVertID + m.trianglesExtra.size()*3;
-    			m.numTriVerticesExtra = m.trianglesExtra.size()*3;
-        		
-        		
-        		int shaderid;
-        		if (m.ShaderHash != 0) shaderid = shadersIDs.get(m.ShaderHash);
-        		else shaderid = -1;
-        		m.shaderID = (byte) shaderid;
-        		for (int i=0; i<m.TextureHashes.size(); i++) {
-        			int texid = texturesIDs.get(new Pair<>(m.TextureHashes.get(i), m.textureUsages.get(i).getKey()));
-        			m.textureIDs.add((byte) texid);
-        		}
-        		m.verticesDataLength = m.verticesBlock.vertices.size()*m.shaderUsage.vertexFormat_PC.getLength();
-            }
-        	
-        	//--- shadersusage ---
-        	//fill in the shaders usage
-        	for (var s : allShaderUsages) p.mesh.shadersUsage.shadersUsage.add(s.getKey());
-        	//--- vertices (several blocks) ---
-        	//normally already filled in
-        	//--- triangles (one block) ---
-        	//normally already filled in
-        	//--- autosculpt linking ---
-        	//already filled in
-        	//--- autosculpt zones ---
-        	//recalculated at export time
-        	
-        	p.rebuildSubBlocks();
-        }
-        
+		
+		if (USE_MULTITHREADING) {
+			ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+			for (final var p : parts){
+			    pool.execute(() -> {
+		        	rebuildPart(p);
+			    });
+			}
+			pool.shutdown();
+			try {
+				pool.awaitTermination(10, TimeUnit.MINUTES);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		} else { // useful for debugging
+			for (var p : parts) {
+	        	rebuildPart(p);
+			}
+		}
+		
         for (var mp : mpointsAll) {
 
         	for (var mp2 : mpointsAll) if (mp2 != mp && mp2.uniqueName.equals(mp.uniqueName) && mp2.verts.size()>0) {
@@ -2065,6 +1974,170 @@ public class Geometry extends Block {
 //        geom.computeMarkersList();
         IMPORT_flipV = false; //reset
         
+	}
+
+	public void rebuildPart(Part p) {
+		//sort materials by name and add the materials data back to the mesh
+//        	if (Geometry.SAVE_sortEverythingByName) p.mesh.materials.materials.sort(new MaterialsSorterName());
+		//same order as in config file
+//        	else 
+		p.mesh.materials.materials.sort(new MaterialsSorterGlobalList(this));
+		
+		p.mesh.verticesBlocks.clear();
+		p.mesh.triangles.triangles.clear();
+		
+		//make hashmaps for textures and shaders
+		
+		//    ID		TEX/SHAD        USAGE
+		HashMap<Integer, Pair<Integer, Integer>> texturesAndUsage = new HashMap<>();
+		HashMap<Pair<Integer, Integer>, Integer> texturesIDs = new HashMap<>();
+//        	HashMap<Integer, Pair<Integer, Integer>> shadersAndUsage = new HashMap<Integer, Pair<Integer, Integer>>();
+		HashMap<Integer , Integer> shadersOnly = new HashMap<>();
+		HashMap<Integer , Integer> shadersIDs = new HashMap<>();
+
+		List<TextureUsage> allTextureUsages = new ArrayList<>();
+		List<ShaderUsage> allShaderUsages = new ArrayList<>();
+		
+		int texi = 0;
+		int shai = 0;
+
+		int numTriangles = 0;
+		int numTrianglesEXTRA = 0;
+		for (var m : p.mesh.materials.materials) {
+			switch (p.mesh.platform) {
+			case PC:
+				m.verticesBlock.vertexFormat = m.shaderUsage.vertexFormat_PC;
+				break;
+			case X360:
+				m.verticesBlock.vertexFormat = m.shaderUsage.vertexFormat_X360;
+				break;
+			}
+			
+			p.mesh.verticesBlocks.add(m.verticesBlock);
+			p.mesh.triangles.triangles.addAll(m.triangles);
+			numTriangles += m.triangles.size();
+			p.mesh.triangles.triangles.addAll(m.trianglesExtra);
+			numTrianglesEXTRA += m.trianglesExtra.size();
+			
+			
+			if (	(IMPORT_Tangents == SettingsImport_Tangents.LOW && m.needsTangentsLow()) || 
+					(IMPORT_Tangents == SettingsImport_Tangents.HIGH && m.needsTangentsHigh()) || 
+					(IMPORT_Tangents == SettingsImport_Tangents.MANUAL && m.useTangents == true) ||
+					IMPORT_Tangents == SettingsImport_Tangents.ON ) {
+				
+				addToTangents(m);
+				normalizeTangents(m.verticesBlock.vertices);
+			}
+			
+			if (IMPORT_calculateVertexColors) {
+				for (var v : m.verticesBlock.vertices) {
+					// -1 to 1 -> 20 to 255
+					int color;
+					if (!p.header.partName.contains("WHEEL") && !p.header.partName.contains("BRAKE_") && !p.header.partName.contains("BRAKEROTOR"))
+						color = Math.max(0, Math.min(255, (int)((v.normZ+0.8)*150)));
+					else color = Math.max(20, Math.min(255, (int)((-v.normY+0.8)*150)));
+					v.colorR = (byte) color;
+					v.colorG = (byte) color;
+					v.colorB = (byte) color;
+				}
+			}
+			
+//        		if (!shadersAndUsage.containsValue(new Pair<Integer,Integer>(m.ShaderHash.binHash, m.shaderUsage.getKey()))) {
+//       			shadersAndUsage.put(shadersAndUsage.size(), new Pair<Integer,Integer>(m.ShaderHash.binHash, m.shaderUsage.getKey()));
+//        		}
+			if (m.ShaderHash != 0) if (!shadersOnly.containsValue(m.ShaderHash)) {
+				shadersOnly.put(shai, m.ShaderHash);
+				shadersIDs.put(m.ShaderHash, shai);
+				shai++;
+			}
+			if (!allShaderUsages.contains(m.shaderUsage)) allShaderUsages.add(m.shaderUsage);
+
+			for (int i=0; i<m.TextureHashes.size(); i++) {
+				if (!texturesAndUsage.containsValue(new Pair<>(m.TextureHashes.get(i), m.textureUsages.get(i).getKey()))) {
+						texturesAndUsage.put(texi, new Pair<>(m.TextureHashes.get(i), m.textureUsages.get(i).getKey()));
+						texturesIDs.put(new Pair<>(m.TextureHashes.get(i), m.textureUsages.get(i).getKey()), texi);
+						texi++;
+					}
+				if (!allTextureUsages.contains(m.textureUsages.get(i))) allTextureUsages.add(m.textureUsages.get(i));
+			}
+		}
+		
+//        	System.out.println(texturesAndUsage);
+		
+		//post-treatment
+		//--- header ---
+		//calculate triangle count
+		//calculate textures count
+		//calculate shaders count
+		//calculate bounds
+		p.header.trianglesCount = p.mesh.triangles.triangles.size(); //total with EXTRA ??? or numTriangles
+		p.header.texturesCount = (short) texturesAndUsage.size();
+		p.header.shadersCount = (short) shadersOnly.size();
+		p.computeBounds();
+		//--- texusage ---
+		//fill in the texusage pairs
+		for (int i=0; i<texturesAndUsage.size(); i++) {
+			p.texusage.texusage.add(texturesAndUsage.get(i));
+		}
+		//--- strings ---
+		//fill in the strings based on mesh shader usages
+		if (allTextureUsages.contains(TextureUsage.DIFFUSE)) p.strings.strings.add("DIFFUSE");
+		if (allTextureUsages.contains(TextureUsage.NORMAL)) p.strings.strings.add("NORMAL");
+		if (allTextureUsages.contains(TextureUsage.SWATCH)) p.strings.strings.add("AMBIENT");
+		if (allTextureUsages.contains(TextureUsage.ALPHA) || allTextureUsages.contains(TextureUsage.OPACITY)) p.strings.strings.add("OPACITY");
+		if (allTextureUsages.contains(TextureUsage.SELFILLUMINATION)) p.strings.strings.add("SELFILLUMINATION");
+		//--- shaders ---
+		//fill in the shaders binhashes
+		for (int i=0; i<shadersOnly.size(); i++) p.shaderlist.shaders.add(shadersOnly.get(i));
+
+		//=== mesh ===
+		//--- info ---
+		//numMaterials, numTriangles, numVertices
+		p.mesh.info.numMaterials = p.mesh.materials.materials.size();
+		p.mesh.info.numTriangles = numTriangles;
+		p.mesh.info.numTrianglesExtra = numTrianglesEXTRA;
+
+		for (var vb : p.mesh.verticesBlocks) p.mesh.info.numVertices += vb.vertices.size();
+		
+		int triVertI = 0;
+		//--- materials ---
+		//for each material :
+		//numVertices, toVertID
+		//shaderID, textureIDs
+		//verticesDataLength
+		for (var m : p.mesh.materials.materials) {
+			
+			m.fromTriVertID = triVertI; //actually concerns triangles
+			m.toTriVertID = m.fromTriVertID + m.triangles.size()*3;
+			m.numTriVertices = m.toTriVertID - m.fromTriVertID;
+			triVertI = m.toTriVertID + m.trianglesExtra.size()*3;
+			m.numTriVerticesExtra = m.trianglesExtra.size()*3;
+			
+			
+			int shaderid;
+			if (m.ShaderHash != 0) shaderid = shadersIDs.get(m.ShaderHash);
+			else shaderid = -1;
+			m.shaderID = (byte) shaderid;
+			for (int i=0; i<m.TextureHashes.size(); i++) {
+				int texid = texturesIDs.get(new Pair<>(m.TextureHashes.get(i), m.textureUsages.get(i).getKey()));
+				m.textureIDs.add((byte) texid);
+			}
+			m.verticesDataLength = m.verticesBlock.vertices.size()*m.shaderUsage.vertexFormat_PC.getLength();
+		}
+		
+		//--- shadersusage ---
+		//fill in the shaders usage
+		for (var s : allShaderUsages) p.mesh.shadersUsage.shadersUsage.add(s.getKey());
+		//--- vertices (several blocks) ---
+		//normally already filled in
+		//--- triangles (one block) ---
+		//normally already filled in
+		//--- autosculpt linking ---
+		//already filled in
+		//--- autosculpt zones ---
+		//recalculated at export time
+		
+		p.rebuildSubBlocks();
 	}
 	
 	private static void addToTangents(Material m) {
@@ -2185,13 +2258,13 @@ public class Geometry extends Block {
 			asParts.add(0, p);
 			for (var p2 : parts) if (p.asZones.zones.contains(p2.header.binKey)) asParts.add(p2);
 			
-			boolean invalidateVertsGlobal = false;
+			boolean invalidateVertsGlobal = true;
 			
 			ArrayList<Pair<Vertex,Vertex>> swapNormals = new ArrayList<>();
 			
 			//loop on each material for all autosculpt parts
 			matsloop: for (int mat=0; mat<p.mesh.materials.materials.size(); mat++) {
-				boolean invalidateVertsMat = false;
+				boolean invalidateVertsMat = true;
 				if (forceAsFixOnParts.contains(p.name)) {
 					invalidateVertsGlobal = true;
 	    			invalidateVertsMat = true;
@@ -2250,18 +2323,46 @@ public class Geometry extends Block {
 							}
 						}
 
+						// NEW RE-INDEXING METHOD
+						// enforces correct indexes as much as it can (solves the PS KIT03 issue), slower
+						
+						int finalIndex0 = -1;
+						int finalIndex1 = -1;
+						int finalIndex2 = -1;
+
+						for (int refPart=0; refPart<asParts.size(); refPart++) {
+							var index0 = asParts.get(refPart).mesh.materials.materials.get(mat).verticesBlock.vertices.indexOf(partsTris.get(refPart).get(i)[0]);
+							var index1 = asParts.get(refPart).mesh.materials.materials.get(mat).verticesBlock.vertices.indexOf(partsTris.get(refPart).get(i)[1]);
+							var index2 = asParts.get(refPart).mesh.materials.materials.get(mat).verticesBlock.vertices.indexOf(partsTris.get(refPart).get(i)[2]);
+							var lastIndex0 = asParts.get(refPart).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(refPart).get(i)[0]);
+							var lastIndex1 = asParts.get(refPart).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(refPart).get(i)[1]);
+							var lastIndex2 = asParts.get(refPart).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(refPart).get(i)[2]);
+
+							if (index0 == lastIndex0) finalIndex0 = index0;
+							if (index1 == lastIndex1) finalIndex1 = index1;
+							if (index2 == lastIndex2) finalIndex2 = index2;
+						}
+						
 						boolean move0 = false;
 						boolean move1 = false;
 						boolean move2 = false;
 						
 						for (int p2=0; p2<asParts.size(); p2++) {
 							//temporarily build the triangle
+							
 							asParts.get(p2).mesh.materials.materials.get(mat).triangles.add( new Triangle(
-								//INDICES SHOULD BE MOSTLY THE SAME FOR ALL PARTS HERE
-								(short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[0]),
-								(short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[1]),
-								(short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[2])
-							) );
+									(short)(finalIndex0 == -1 ? asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.indexOf(partsTris.get(p2).get(i)[0]) : finalIndex0),
+									(short)(finalIndex1 == -1 ? asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.indexOf(partsTris.get(p2).get(i)[1]) : finalIndex1),
+									(short)(finalIndex2 == -1 ? asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.indexOf(partsTris.get(p2).get(i)[2]) : finalIndex2)
+								) );
+							
+							// old method for reference
+//							asParts.get(p2).mesh.materials.materials.get(mat).triangles.add( new Triangle(
+//								//INDICES SHOULD BE MOSTLY THE SAME FOR ALL PARTS HERE
+//								(short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[0]),
+//								(short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[1]),
+//								(short)asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.lastIndexOf(partsTris.get(p2).get(i)[2])
+//							) );
 							
 							if (	partsTris.get(p2).get(i)[0].positionEquals(partsTris.get(p2).get(i)[1])	){
 								//vertex 1 is identical to vertex 0 on at least one part
@@ -2630,7 +2731,7 @@ public class Geometry extends Block {
 		if (lodDTris > 3000) System.out.println("High lod D polycount ("+lodDTris+" triangles), please reduce it! Vanilla models are around 1500 triangles.");
 		for (var e : lodATris.entrySet()) {
 			if (e.getKey().equals("KIT00") && e.getValue() < 16000) System.out.println("Your model is low-poly for the game's standards.");
-			if (e.getValue() > 50000) System.out.printf("Your model is high-poly (%i triangles on %s), make sure no customization combination crashes the game.\n",e.getValue(), e.getKey());
+			if (e.getValue() > 50000) System.out.printf("Your model is high-poly (%s triangles on %s), make sure no customization combination crashes the game.\n",e.getValue().toString(), e.getKey());
 			// quite inaccurate as it doesn't take into account the parts loaded by default from other kits, this would need a cross check from dbmodelparts.
 		}
 	}

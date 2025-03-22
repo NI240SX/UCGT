@@ -69,7 +69,7 @@ public class DBMPPlus extends Application {
 	static String currentExhASZones = "11";
 	
 	public static final String programName = "UCGT DBModelParts Editor";
-	public static final String programVersion = "1.1.3.1";
+	public static final String programVersion = "1.1.3.2";
 	public static final String settingsFolder = "settings";
 	public static final String settingsFile = "settings/dbmpeditor.dat";
 
@@ -1062,7 +1062,7 @@ public class DBMPPlus extends Application {
 		if (partsDisplay.getSelectionModel().getSelectedItem()!=null) {	
 			String kit = ((AttributeTwoString)partsDisplay.getSelectionModel().getSelectedItem().getAttribute("PART_NAME_OFFSETS")).value1;
 			FileChooser fc = new FileChooser();
-			fc.setInitialDirectory(new File("kits"));
+			fc.setInitialDirectory(new File("data\\DBMPKitTemplates"));
 			fc.setInitialFileName("Template");
 			fc.getExtensionFilters().addAll(
 		        new FileChooser.ExtensionFilter("All files", "*.*"));
@@ -1454,7 +1454,7 @@ public class DBMPPlus extends Application {
 		
 		kitTemplate.setOnAction(evh -> {
 			FileChooser fc = new FileChooser();
-			fc.setInitialDirectory(new File("kits"));
+			fc.setInitialDirectory(new File("data\\DBMPKitTemplates"));
 			fc.setInitialFileName(kitTemplateInput.getText());
 			fc.getExtensionFilters().addAll(
 		        new FileChooser.ExtensionFilter("All files", "*.*"));
@@ -1501,7 +1501,7 @@ public class DBMPPlus extends Application {
 				
 				//first load kit parts from template
 				ArrayList<String> parts = new ArrayList<>();
-				BufferedReader br = new BufferedReader(new FileReader(new File("kits\\" + kitTemplateInput.getText())));
+				BufferedReader br = new BufferedReader(new FileReader(new File("data\\DBMPKitTemplates\\" + kitTemplateInput.getText())));
 				String line;
 				while((line = br.readLine()) != null) {
 					parts.add(line);
