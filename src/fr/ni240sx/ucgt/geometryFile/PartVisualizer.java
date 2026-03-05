@@ -46,9 +46,9 @@ public class PartVisualizer extends Stage{
 				matMesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
 				
 				for (var v : m.verticesBlock.vertices) {
-					matMesh.getPoints().addAll((float)v.posX, (float)v.posY, (float)v.posZ);
-					matMesh.getNormals().addAll((float)v.normX, (float)v.normY, (float)v.normZ);
-					matMesh.getTexCoords().addAll((float)v.tex0U, 1-(float)v.tex0V);
+					matMesh.getPoints().addAll(v.posX, v.posY, v.posZ);
+					matMesh.getNormals().addAll(v.normX, v.normY, v.normZ);
+					matMesh.getTexCoords().addAll(v.tex0U, 1-v.tex0V);
 				}
 				
 				for (var tr : m.triangles) {

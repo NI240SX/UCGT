@@ -134,7 +134,7 @@ public class HalfPrecisionFloat {
      * @param number the full-precision floating pointing number.
      * @return the integer representation.
      */
-    private int fromFullPrecision(final float number) {
+    private static int fromFullPrecision(final float number) {
         int fbits = Float.floatToIntBits(number);
         int sign = fbits >>> 16 & 0x8000;
 

@@ -25,31 +25,49 @@ public enum BlockType {
 	Part_Mesh_Info_X360(0x004D1300, "Part_Mesh_Info_X360"),
 	Part_Mesh_ShadersUsage(0x014F1300, "Part_Mesh_Shaders"),
 	Part_Mesh_Materials_PC(0x02491300, "Part_Mesh_Materials_PC"),
+	Part_Mesh_LegacyMaterials(0x024b1300, "Part_Mesh_LegacyMaterials_PC"),
 	Part_Mesh_Materials_X360(0x024D1300, "Part_Mesh_Materials_X360"),
 	Part_Mesh_VertsHeader(0x024C1300, "Part_Mesh_VertsHeader"),
 	Part_Mesh_Vertices_PC(0x01491300, "Part_Mesh_Vertices_PC"),
+	Part_Mesh_LegacyVertices(0x014b1300, "Part_Mesh_LegacyVertices_PC"),
 	Part_Mesh_Vertices_X360(0x014D1300, "Part_Mesh_Vertices_X360"),
 	Part_Mesh_Triangles_PC(0x03491300, "Part_Mesh_Triangles_PC"),
+	Part_Mesh_LegacyTriangles(0x034b1300, "Part_Mesh_LegacyTriangles_PC"),
 	Part_Mesh_Triangles_X360(0x034D1300, "Part_Mesh_Triangles_X360"),
+	//0x22134000 in game code
 	Part_Padding(0x17401300, "Part_Padding?"),
 	Part_HashList(0x18401300, "Part_HashList?"),
 	Part_HashAssign(0x19401300, "Part_HashAssign?"),
 	Part_AutosculptLinking(0x1E401300, "Part_AutosculptLinking"),
 	Part_AutosculptZones(0x1D401300, "Part_AutosculptZones"),
+	//0x1F401300 in game code
+	//0x20401300 in game code
+	//0x21401300 in game code
+	//0x01033030
+	//0x02033030
+	//0x03033030
 
 	TPK(0x000030b3, "TPK"),
 	TPK_Header(0x000031b3, "TPK_Header"),
 	TPK_Info(0x01003133, "TPK_Info"),
 	TPK_TexList(0x02003133, "TPK_TexList"),
 	TPK_TexOffsets(0x03003133, "TPK_TexOffsets"),
+	TPK_Names(0x04003133, "TPK_Names"),
+	TPK_Formats(0x05003133, "TPK_Formats"),
+	TPK_Animations(0x002031B3, "TPK_Animations"),
 	
 	Tex_Container(0x000032b3, "Tex_Container"),
 	Tex_Header(0x01003233, "Tex_Header"),
-	Tex_Data(0x02003233, "Tex_Data"),
-	
+	Tex_PackedData(0x02003233, "Tex_PackedData"),
+
 	NIS_Skeleton(0x0940a300, "NIS_Skeleton?"),
 	
 	StreamBlocksOffsets(0x10410300, "StreamBlocksOffsets"),
+
+	WorldChunkObjects(0x00410380, "WorldChunkObjects"), //has everything, incl chop, positioned objects, race barriers, etc
+	WorldChunkCollisions(0x01B80300, "WorldChunkCollisions"),
+	
+	Damage(0x0D460300, "Damage"),
 	
 	INVALID(0xFFFFFFFF, "INVALID");
 	

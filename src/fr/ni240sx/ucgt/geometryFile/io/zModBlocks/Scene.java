@@ -15,7 +15,6 @@ import fr.ni240sx.ucgt.geometryFile.part.MPoint;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangle;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.Vertices_PC;
 
 public class Scene extends ZModBlock {
 	
@@ -134,7 +133,7 @@ public class Scene extends ZModBlock {
 							for (var m : geom.materials) {
 								if (m.uniqueName.equals(((ZMaterial)ZModelerZ3D.blocks.get(poly.materialUID)).name.replace(" ", "_"))) {
 			        				curMat = new Material(m); //copies the material the mesh uses to make it part specific
-			        				curMat.verticesBlock = new Vertices_PC();
+			        				curMat.createVerticesBlock(geom.platform);
 			        				curPart.mesh.materials.materials.add(curMat);
 			        				ZMMatsToBINMats.put(poly.materialUID, curMat);
 			        				break findMaterial;
@@ -157,7 +156,7 @@ public class Scene extends ZModBlock {
 		        			// if no material data is found give a warning and create a fallback material
 		        			System.out.println("[Z3DLoader] Warning : material "+((ZMaterial)ZModelerZ3D.blocks.get(poly.materialUID)).name.replace(" ", "_")+" not found in config !");
 		        			curMat = Material.getFallbackMaterial(geom);
-		    				curMat.verticesBlock = new Vertices_PC();
+		    				curMat.createVerticesBlock(geom.platform);
 		    				curPart.mesh.materials.materials.add(curMat);
 	        				ZMMatsToBINMats.put(poly.materialUID, curMat);
 						}
@@ -209,16 +208,16 @@ public class Scene extends ZModBlock {
 		        			}
 		        			
 		        			ZMMatsToBINMats.get(poly.materialUID).triangles.add( new Triangle(	//TRIANGLES ARE FLIPPED WITH THIS AXIS CONVENTION
-		        					(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[2])), 
-									(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[1])),
-									(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[0])) 
+		        					(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[2])), 
+									(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[1])),
+									(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[0])) 
 									) );
 							
 		        			if (poly.vertIDs.length == 4) { //
 		        				ZMMatsToBINMats.get(poly.materialUID).triangles.add( new Triangle(
-			        					(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[3])), 
-										(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[2])),
-										(short)(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[0])) 
+			        					(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[3])), 
+										(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[2])),
+										(ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.indexOf(triVerts[0])) 
 										) );
 		        			} if (poly.vertIDs.length > 4) { //
 		        				System.out.println("Please triangulate the mesh for "+mn.embeddedNode.name);
@@ -229,7 +228,7 @@ public class Scene extends ZModBlock {
 							
 							//process the triangle's vertices and find corresponding ones
 							
-		        			short[] triVerts = new short[poly.vertIDs.length];
+		        			int[] triVerts = new int[poly.vertIDs.length];
 		        			for (int i=0; i<poly.vertIDs.length; i++) {
 		        				
 		        				Vertex v = new Vertex();

@@ -19,6 +19,18 @@ public abstract class Mesh_Info extends Block {
 	
 	public int numVertices;
 	
+	public Mesh_Info() {
+	}
+	
+	public Mesh_Info(Mesh_Info info) {
+		this.version = info.version;
+		this.flags = info.flags;
+		this.numMaterials = info.numMaterials;
+		this.numTriangles = info.numTriangles;
+		this.numTrianglesExtra = info.numTrianglesExtra;
+		this.numVertices = info.numVertices;
+	}
+
 	@Override
 	public abstract BlockType getBlockID();
 

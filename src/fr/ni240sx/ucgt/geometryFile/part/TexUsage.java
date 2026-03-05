@@ -25,7 +25,7 @@ public class TexUsage extends Block {
 			var tex = in.getInt();
 			var us = in.getInt();
 			texusage.add(new Pair<>(tex, us));
-			if (us != 0) { //PS compatibility (it has no usage)
+			if (us != 0) { //PS and below compatibility (it has no usage)
 				in.getInt(); //0
 			}
 		}

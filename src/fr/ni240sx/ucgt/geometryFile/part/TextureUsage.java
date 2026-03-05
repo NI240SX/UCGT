@@ -4,12 +4,12 @@ public enum TextureUsage {
 	DIFFUSE(0xAE76334E, "DIFFUSE"),		//DIFFUSE_SAMPLER		diffuse
 	VOLUMEMAP(0x4595E87E, "VOLUMEMAP"),	//VOLUMEMAP_SAMPLER		volume
 	NORMALMAP(0x958A9502,"NORMALMAP"),
-	NORMAL(0x958A9502, "NORMAL"),		//NORMALMAP_SAMPLER		normal	TODO remove this line soon, for compatibility with old exports (wrong as this is the normalmap sampler not the normal one !)
+//	NORMAL(0x958A9502, "NORMAL"),		//NORMALMAP_SAMPLER		normal	TODO remove this line soon, for compatibility with old exports (wrong as this is the normalmap sampler not the normal one !)
 	MISCMAP1(0x8E1E2578, "MISCMAP1"),	//MISCMAP1_SAMPLER		diffuse2
 	AMBIENT(0x0C8C5ED6, "AMBIENT"),		//AMBIENT_SAMPLER		vinyl
-	SWATCH(0x0C8C5ED6, "SWATCH"),		//AMBIENT_SAMPLER		vinyl	TODO remove this line soon, for compatibility with old exports
+//	SWATCH(0x0C8C5ED6, "SWATCH"),		//AMBIENT_SAMPLER		vinyl	TODO remove this line soon, for compatibility with old exports
 	OPACITY(0x5aff315c, "OPACITY"),			//OPACITY_SAMPLER		opacity
-	ALPHA(0x5aff315c, "ALPHA"),			//OPACITY_SAMPLER		opacity	TODO remove this line soon, for compatibility with old exports
+//	ALPHA(0x5aff315c, "ALPHA"),			//OPACITY_SAMPLER		opacity	TODO remove this line soon, for compatibility with old exports
 	SELFILLUMINATION(0x39143000, "SELFILLUMINATION"),	//SELFILLUMINATION_SAMPLER	selfillumination
 	// not in cars !
 	SPECULAR(0xEE420FBD, "SPECULAR"),	//SPECULAR_SAMPLER		specular
@@ -25,7 +25,8 @@ public enum TextureUsage {
 	MASK(0xE2869C70,"MASK"),
 	DISPLACEMENT(0x0B46857E,"DISPLACEMENT"),
 	SPECULARBONE(0xAAF03291,"SPECULARBONE"),
-	NORMAL_SAMPLER(0x90E0C892,"NORMAL_SAMPLER"),
+	NORMAL(0x90E0C892,"NORMAL"),
+	NORMAL_SAMPLER(0x90E0C892,"NORMAL_SAMPLER"),	//TODO remove soon, for compatibility
 	ROADELEMENTS(0xB7BC3023, "ROADELEMENTS"),
 	BLEND_SPEC_REFL(0x649E9B97,"BLEND_SPEC_REFL"),
 	ELEMENTSMASK(0x3DC91356,"ELEMENTSMASK"),

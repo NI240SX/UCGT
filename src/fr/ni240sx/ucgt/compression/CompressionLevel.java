@@ -50,6 +50,11 @@ public class CompressionLevel
     public String getName() {
     	return name;
     }
+    @Override
+	public String toString() {
+    	return name;
+    }
+    
     public static CompressionLevel fromName(String name) {
     	switch (name) {
     	case "Maximum": return Maximum;
@@ -60,5 +65,8 @@ public class CompressionLevel
     	case "Low": return Low;
     	default: return Minimum;
     	}
+    }
+    public static CompressionLevel[] values() {
+    	return new CompressionLevel[] {Maximum,Ultra,VeryHigh,High,Medium,Low,Minimum};
     }
 }

@@ -15,7 +15,7 @@ public class VirtualFixUp {
 
 	@Override
 	public String toString() {
-		return "VirtualFixUp [fromOffset=" + fromOffset + ", ClassID=" + ClassID + "]";
+		return "VirtualFixUp [fromOffset=" + fromOffset + ", ClassID=" + ClassID + "/" + String.format("0x%08X", Integer.reverseBytes(ClassID)) + "]";
 	}
 	
 	public byte[] save() {

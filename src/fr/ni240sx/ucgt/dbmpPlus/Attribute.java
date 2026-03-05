@@ -5,8 +5,10 @@ import java.nio.ByteBuffer;
 import fr.ni240sx.ucgt.binstuff.Hash;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
 
 abstract class Attribute {
@@ -20,18 +22,35 @@ abstract class Attribute {
 		Key = Hash.findBIN(key);
 		displayName = Hash.getBIN(Key);
 		dataHBox.getChildren().addAll(new Label(displayName));
+		setupDeletion();
 	}
 	
 	public Attribute(int key, boolean useGUI) {
 		Key = key;
 		displayName = Hash.getBIN(key);
 		if (useGUI) dataHBox.getChildren().addAll(new Label(displayName));
+		setupDeletion();
 	}
 
 	public Attribute(Attribute copyFrom) {
 		Key = copyFrom.Key;
 		displayName = copyFrom.displayName;
 		dataHBox.getChildren().addAll(new Label(displayName));
+		setupDeletion();
+	}
+
+	private void setupDeletion() {
+		dataHBox.setOnMouseClicked(e -> {
+			if (e.getButton() == MouseButton.SECONDARY) {
+		        ButtonType sure = null;
+				if (!DBMPPlus.disableWarnings) sure = new Alert(Alert.AlertType.INFORMATION, "Delete attribute ?", ButtonType.YES, ButtonType.NO).showAndWait().orElse(ButtonType.NO);
+				if (ButtonType.YES.equals(sure) || DBMPPlus.disableWarnings) {
+					DBMPPlus.partsDisplay.getSelectionModel().getSelectedItem().attributes.remove(this);
+					DBMPPlus.updateAttributesDisplay();
+				}
+				e.consume();
+			}
+		});
 	}
 	
 	public void writeToFile(ByteBuffer bb) {
@@ -50,6 +69,8 @@ abstract class Attribute {
 	public String toString() {
 		return "Generic " + super.toString();
 	}
+	
+	
 }
 
 class AttributeTwoString extends Attribute{
@@ -304,58 +325,52 @@ class AttributeKey extends Attribute{
 class AttributeBoolean extends Attribute{
 //	public static String AttributeIdentifier = "Integer";
 	public boolean value = false;
-	TextField valuegui;
+	ComboBox<Boolean> valuegui;
 	public AttributeBoolean(String key) {
 		super(key);
-		valuegui = new TextField();
+		valuegui = new ComboBox<>();
 		initGUI();
 	}
 	public AttributeBoolean(String key, boolean value) {
 		super(key);
 		this.value = value;
-		valuegui = new TextField();
+		valuegui = new ComboBox<>();
 		initGUI();
 	}
 	public AttributeBoolean(int key, ByteBuffer bb, boolean useGUI) {
 		super(key, useGUI);
 		value = bb.get()==1;
 		if (useGUI) {
-			valuegui = new TextField();
+			valuegui = new ComboBox<>();
 			initGUI();
 		}
 	}
 	public AttributeBoolean(AttributeBoolean copyFrom) {
 		super(copyFrom);
 		this.value = copyFrom.value;
-		valuegui = new TextField();
+		valuegui = new ComboBox<>();
 		initGUI();
 	}
 	@SuppressWarnings("unused")
 	public void initGUI() {
-		valuegui.setText(Boolean.toString(value));
+		valuegui.getItems().add(false);
+		valuegui.getItems().add(true);
+		valuegui.getSelectionModel().select(this.value);
 		dataHBox.getChildren().addAll(valuegui);
 		valuegui.setOnAction(e -> {
-			int caretB4Save = valuegui.getCaretPosition();
-			if (valuegui.getText().isBlank()) valuegui.setText("false");
 			new UndoAttributeChange(this);
-			try {
-				value = Boolean.getBoolean(valuegui.getText().strip());
-			}catch(NumberFormatException ex) {
-				new Alert(Alert.AlertType.ERROR, "Please enter a valid boolean", ButtonType.OK).show();
-			}
-			valuegui.setText(Boolean.toString(value));
-			valuegui.positionCaret(caretB4Save);
+			value = valuegui.getValue();
 			e.consume();
 		});
 	}
 	@Override
 	public void update() {
-		valuegui.setText(Boolean.toString(value));
+		valuegui.getSelectionModel().select(this.value);
 	}
 	@Override
 	public void revertFrom(Attribute a) {
 		this.value = ((AttributeBoolean)a).value;
-		valuegui.setText(Boolean.toString(value));
+		valuegui.getSelectionModel().select(this.value);
 	}
 	@Override
 	public void writeToFile(ByteBuffer bb) {

@@ -9,7 +9,6 @@ import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.compression.Compression;
 import fr.ni240sx.ucgt.geometryFile.part.*;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.Mesh_VertsHeader;
 
 public class Part extends Block {
 
@@ -34,18 +33,27 @@ public class Part extends Block {
 	public String kit;
 	public String part;
 	public String lod;
-	public String name = "";
+	public String name;
 	
 	public Part(ByteBuffer in) throws Exception {
 		
 		in.order(ByteOrder.LITTLE_ENDIAN);
-		in.getInt(); //ID
 		var blockLength = in.getInt();
 		var blockStart = in.position();
-		Block block;
+		Block block = null;
 		
 		while((in.position() < blockStart+blockLength)) {
-			if ((block = Block.read(in)) != null) subBlocks.add(block);
+			try {
+				if ((block = Block.read(in)) != null) subBlocks.add(block);
+			} catch (Exception e) {
+				@SuppressWarnings("hiding")
+				String name = "";
+				for (var b : subBlocks) if (b.getBlockID() == BlockType.Part_Header) name = ((PartHeader)b).partName;
+				System.out.println("Error reading part "+name+" at "+in.position()+": "+e.getMessage());
+				if (block != null) System.out.println("Last successfully read part sub-block: "+block.getClass().getSimpleName());
+				e.printStackTrace();
+				break;
+			}
 		}
 		
 		// SUB-BLOCKS PRE-TREATMENT TO REFERENCE THEM ALL
@@ -84,7 +92,7 @@ public class Part extends Block {
 				break;
 			}
 		}
-		
+		if (header == null) throw new Exception("Part header could not be found!");
 //		if (header != null) {
 //			if (new Hash(header.partName).binHash != partKey) System.out.println("WARNING : incorrect part name "+header.partName);
 //			
@@ -94,7 +102,8 @@ public class Part extends Block {
 	
 	public void findName(String carname) {
 		if (header != null) {
-			if (carname.isBlank() || carname.equals("UNDETERMINED")) name = header.partName;
+			if (carname == null) carname = Geometry.UNDETERMINED_CARNAME;
+			if (carname.isBlank() || carname.equals(Geometry.UNDETERMINED_CARNAME)) name = header.partName;
 			else name = header.partName.replace(carname+"_", "");
 			findKitLodPart(carname);
 		}
@@ -103,34 +112,50 @@ public class Part extends Block {
 
 	@SuppressWarnings("unused")
 	public void findKitLodPart(String carname) {
+		if (carname == null) carname = Geometry.UNDETERMINED_CARNAME;
 		try {
-			kit = "KIT" + header.partName.split("_KIT")[1].split("_")[0];
-			lod = header.partName.split("_")[header.partName.split("_").length-1];
-	//			String s = header.partName.split("_")[header.partName.split("_").length-2];
-	//			if (s.length() == 2 && s.charAt(0) == 'T') autosculptZone = Byte.parseByte(s.substring(1));
-			part = header.partName.split(kit+"_")[1].substring(0, header.partName.split(kit+"_")[1].length()-2) /*.replace("_T"+autosculptZone, "")*/;
-	//			if (autosculptZone == -1) 
-	//				System.out.println("Kit : "+kit+", part : "+part+", lod : "+lod);
-	//			else System.out.println("Kit : "+kit+", part : "+part+", autosculpt : T"+autosculptZone+", lod : "+lod);
-		} catch (Exception e) {
-//			System.out.println("Could not read part kit : "+header.partName);
-			kit = "";
-			try {
-				lod = header.partName.split("_")[header.partName.split("_").length-1];
-				part = header.partName.replaceFirst(carname+"_","").substring(0, header.partName.replaceFirst(carname+"_","").length()-lod.length()-1);
-			} catch (Exception e2) {
-//				System.out.println("Could not read part lod : "+header.partName);
-				lod = "";
-				part = header.partName.replaceFirst(carname+"_","");
+			kit = header.partName.replaceFirst(carname+"_","").split("_")[0];
+			if (header.partName.split("_")[header.partName.split("_").length-1].length() == 1) lod = header.partName.split("_")[header.partName.split("_").length-1];
+			else if (header.partName.split("_").length > 2 && header.partName.split("_")[header.partName.split("_").length-1].length() == 2 && header.partName.split("_")[header.partName.split("_").length-2].length() == 2) 
+				lod = header.partName.split("_")[header.partName.split("_").length-2] + "_" + header.partName.split("_")[header.partName.split("_").length-1];
+			else lod = "";
+			
+			part = header.partName.replaceFirst(carname+"_", "").replaceFirst(kit+"_", "").replaceFirst("(?s)(.*)_"+lod, "$1");
+			if (part.length() == 0) {
+				part = kit;
+				kit = null;
 			}
+			if (lod.length()==0) lod = null;
+//			
+//			
+//			kit = "KIT" + header.partName.split("_KIT")[1].split("_")[0];
+//
+//	//			String s = header.partName.split("_")[header.partName.split("_").length-2];
+//	//			if (s.length() == 2 && s.charAt(0) == 'T') autosculptZone = Byte.parseByte(s.substring(1));
+//			part = header.partName.split(kit+"_")[1].substring(0, header.partName.split(kit+"_")[1].length()-2) /*.replace("_T"+autosculptZone, "")*/;
+//	//			if (autosculptZone == -1) 
+//	//				System.out.println("Kit : "+kit+", part : "+part+", lod : "+lod);
+//	//			else System.out.println("Kit : "+kit+", part : "+part+", autosculpt : T"+autosculptZone+", lod : "+lod);
+		} catch (Exception e) {
+////			System.out.println("Could not read part kit : "+header.partName);
+////			kit = "";
+//			try {
+//				lod = header.partName.split("_")[header.partName.split("_").length-1];
+//				part = header.partName.replaceFirst(carname+"_","").substring(0, header.partName.replaceFirst(carname+"_","").length()-lod.length()-1);
+//			} catch (Exception e2) {
+////				System.out.println("Could not read part lod : "+header.partName);
+////				lod = "";
+//				part = header.partName.replaceFirst(carname+"_","");
+//			}
 		}
 	}
 	
 
 	public Part(String carname, String substring, Platform plat) {
 
-		if (carname.isBlank() || carname.equals("UNDETERMINED")) this.header = new PartHeader(substring);
-		else this.header = new PartHeader(carname+"_"+substring);
+		if (carname == null) carname = Geometry.UNDETERMINED_CARNAME;
+		if (carname.isBlank() || carname.equals(Geometry.UNDETERMINED_CARNAME)) this.header = new PartHeader(substring, plat);
+		else this.header = new PartHeader(carname+"_"+substring, plat);
 		this.texusage = new TexUsage();
 		this.strings = new Strings();
 		this.shaderlist = new Shaders();
@@ -142,6 +167,7 @@ public class Part extends Block {
 
 
 	public Part(Part p, String carname, String substring) {
+		if (carname == null) carname = Geometry.UNDETERMINED_CARNAME;
 		// no need to be a deep copy (this is used for generated LODs), only the header changes
 		this.header = new PartHeader(p.header, carname+"_"+substring);
 		this.texusage = p.texusage;
@@ -175,10 +201,7 @@ public class Part extends Block {
 //			}
 			for (var r : geom.renameParts) if (name.contains(r.getKey())) {
 				System.out.print("Renaming part "+name);
-				header.partName = header.partName.replace(r.getKey(), r.getValue());
-				header.binKey = Hash.findBIN(header.partName);
-				name = name.replace(r.getKey(), r.getValue());
-				findKitLodPart(geom.carname);
+				rename(geom.carname, header.partName.replace(r.getKey(), r.getValue()));
 				System.out.println(" to "+name);
 			}
 		}
@@ -198,6 +221,17 @@ public class Part extends Block {
 			this.asLinking = asl;
 			break;
 		}	}
+
+	/**
+	 * Rename this part
+	 * @param carname the car or group name, if applicable
+	 * @param newName the new part name
+	 */
+	public void rename(String carname, String newName) {
+		header.partName = newName;
+		header.binKey = Hash.findBIN(header.partName);
+		findName(carname);
+	}
 
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
@@ -249,15 +283,7 @@ public class Part extends Block {
 		if (asLinking != null) subBlocks.add(asLinking);
 		if (asZones != null) subBlocks.add(asZones);
 		
-		mesh.subBlocks.clear();
-		mesh.subBlocks.add(mesh.info);
-		mesh.subBlocks.add(mesh.shadersUsage);
-		mesh.subBlocks.add(mesh.materials);
-		for (var v : mesh.verticesBlocks) {
-			mesh.subBlocks.add(new Mesh_VertsHeader());
-			mesh.subBlocks.add(v);
-		}
-		mesh.subBlocks.add(mesh.triangles);
+		mesh.rebuildSubBlocks();
 	}
 	
 	public void computeBounds() {
@@ -268,12 +294,12 @@ public class Part extends Block {
 		this.header.boundsYmin = Float.POSITIVE_INFINITY;
 		this.header.boundsZmin = Float.POSITIVE_INFINITY;
 		for (var vb : this.mesh.verticesBlocks) for (var v : vb.vertices) {
-			if (v.posX > header.boundsXmax) header.boundsXmax = (float)v.posX;
-			if (v.posY > header.boundsYmax) header.boundsYmax = (float)v.posY;
-			if (v.posZ > header.boundsZmax) header.boundsZmax = (float)v.posZ;
-			if (v.posX < header.boundsXmin) header.boundsXmin = (float)v.posX;
-			if (v.posY < header.boundsYmin) header.boundsYmin = (float)v.posY;
-			if (v.posZ < header.boundsZmin) header.boundsZmin = (float)v.posZ;
+			if (v.posX > header.boundsXmax) header.boundsXmax = v.posX;
+			if (v.posY > header.boundsYmax) header.boundsYmax = v.posY;
+			if (v.posZ > header.boundsZmax) header.boundsZmax = v.posZ;
+			if (v.posX < header.boundsXmin) header.boundsXmin = v.posX;
+			if (v.posY < header.boundsYmin) header.boundsYmin = v.posY;
+			if (v.posZ < header.boundsZmin) header.boundsZmin = v.posZ;
 		}
 		header.boundsXmax += 0.01;
 		header.boundsYmax += 0.01;

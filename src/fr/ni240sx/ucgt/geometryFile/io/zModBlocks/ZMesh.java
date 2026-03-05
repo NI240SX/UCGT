@@ -451,25 +451,25 @@ public class ZMesh extends ZModBlock {
 			else if (vf.getNumTexChannels()==2) format = 55;
 			else if (vf.getNumTexChannels()>2) format = 119;
 			
-			x = (float) v.posX;
-			y = (float) v.posY;
-			z = (float) v.posZ;
+			x = v.posX;
+			y = v.posY;
+			z = v.posZ;
 			if (vf.hasNormals()) {
-				nx = (float) v.normX;
-				ny = (float) v.normY;
-				nz = (float) v.normZ;
+				nx = v.normX;
+				ny = v.normY;
+				nz = v.normZ;
 			}
 			if (vf.getNumTexChannels()>0) {
-				u0 = (float) v.tex0U;
-				v0 = (float) (1-v.tex0V);
+				u0 = v.tex0U;
+				v0 = 1-v.tex0V;
 			}
 			if (vf.getNumTexChannels()>1) {
-				u1 = (float) v.tex1U;
-				v1 = (float) (1-v.tex1V);
+				u1 = v.tex1U;
+				v1 = 1-v.tex1V;
 			}
 			if (vf.getNumTexChannels()>2) {
-				u2 = (float) v.tex2U;
-				v2 = (float) (1-v.tex2V);
+				u2 = v.tex2U;
+				v2 = 1-v.tex2V;
 			}
 			if (vf.hasColor()) {
 				r = v.colorR;

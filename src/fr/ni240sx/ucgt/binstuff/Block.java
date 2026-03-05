@@ -11,15 +11,10 @@ import fr.ni240sx.ucgt.geometryFile.*;
 import fr.ni240sx.ucgt.geometryFile.geometry.*;
 import fr.ni240sx.ucgt.geometryFile.part.*;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.*;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.Materials_PC;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.Mesh_Info_PC;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.Triangles_PC;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.Vertices_PC;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.Materials_X360;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.Mesh_Info_X360;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.Triangles_X360;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.Vertices_X360;
-import fr.ni240sx.ucgt.geometryFile.textures.TPK;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.LegacyPC.*;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.*;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.*;
+import fr.ni240sx.ucgt.geometryFile.textures.*;
 
 public abstract class Block {
 	public abstract BlockType getBlockID();
@@ -111,9 +106,22 @@ public abstract class Block {
 			return new Vertices_X360(in);
 		case Part_Mesh_Triangles_X360:
 			return new Triangles_X360(in);
+
+		case Part_Mesh_LegacyMaterials:
+			return new LegacyMaterials(in);
+		case Part_Mesh_LegacyVertices:
+			return new LegacyVertices(in);
+		case Part_Mesh_LegacyTriangles:
+			return new LegacyTriangles(in);
 			
 		case TPK:
 			return new TPK(in);
+		case TPK_Info:
+			return new TPKInfo(in);
+		case TPK_TexList:
+			return new TexList(in);
+		case TPK_TexOffsets:
+			return new TexOffsets(in);
 			
 		case NIS_Skeleton:
 			System.out.println("NIS Skeleton block");
@@ -124,7 +132,7 @@ public abstract class Block {
 			
 		case INVALID:
 		default:
-//			System.out.println("Unknown block, ID="+Integer.toHexString(Integer.reverseBytes(chunkToInt)));
+//			System.out.println("Unknown block, ID="+String.format("0x%08X", chunkToInt)+" ("+BlockType.get(chunkToInt)+")");
 			return new UnknownBlock(in, chunkToInt);
 		}
 		//} catch (Exception e) {
@@ -132,7 +140,7 @@ public abstract class Block {
 		//	e.printStackTrace();
 		//	in.position(pos);
 		//}
-		return new UnknownBlock(in, chunkToInt);
+		return new SkippedBlock(in, chunkToInt);
 	}
 	
 
@@ -143,7 +151,7 @@ public abstract class Block {
 	}
 	
 	public static String readString(ByteBuffer bb) {
-		byte[] stringBytesOversize = new byte[64];
+		byte[] stringBytesOversize = new byte[128];
 		byte b;
 		int i = 0;
 		while ((b=bb.get())!=0) {
@@ -211,5 +219,11 @@ public abstract class Block {
 	public static int findAlignment(int position, int alignment) {
 		if (position%alignment == 0) return 0;
 		return alignment-position%alignment;
+	}
+
+	public static void makeAlignment(ByteArrayOutputStream out, int length, byte pattern) {
+		for (int i=0; i<length; i++) {
+		out.write(pattern);
+		}
 	}
 }

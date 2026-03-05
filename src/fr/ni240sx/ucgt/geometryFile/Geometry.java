@@ -15,12 +15,12 @@ import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.binstuff.Hash;
@@ -28,6 +28,8 @@ import fr.ni240sx.ucgt.compression.Compression;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.compression.CompressionType;
 import fr.ni240sx.ucgt.geometryFile.geometry.*;
+import fr.ni240sx.ucgt.geometryFile.gui.CustomProgressBar;
+import fr.ni240sx.ucgt.geometryFile.io.GLTF;
 import fr.ni240sx.ucgt.geometryFile.io.VertexData3;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
 import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
@@ -47,6 +49,7 @@ import fr.ni240sx.ucgt.geometryFile.sorters.MaterialsSorterGlobalList;
 import fr.ni240sx.ucgt.geometryFile.sorters.MaterialsSorterName;
 import fr.ni240sx.ucgt.geometryFile.sorters.PartSorterBinKey;
 import fr.ni240sx.ucgt.geometryFile.sorters.PartSorterLodKitName;
+import fr.ni240sx.ucgt.geometryFile.textures.TPK;
 import javafx.util.Pair;
 import fr.ni240sx.ucgt.geometryFile.settings.*;
 
@@ -69,14 +72,15 @@ public class Geometry extends Block {
 	public ArrayList<RenderPriority> priorities = new ArrayList<>();
 	
 	
-	public String carname = "UNDETERMINED";
+	public String carname = UNDETERMINED_CARNAME;
+	public static final String UNDETERMINED_CARNAME = "UNDETERMINED";
 	
 	public static boolean USE_MULTITHREADING = true;
 
-	public CompressionType defaultCompressionType = CompressionType.RawDecompressed;
-	public CompressionLevel defaultCompressionLevel = CompressionLevel.Low;
+	public CompressionType defaultCompressionType = null; //CompressionType.RawDecompressed;
+	public CompressionLevel defaultCompressionLevel = CompressionLevel.High;
 	
-	public boolean LOAD_removeUselessAutosculptParts = false;
+//	public boolean LOAD_removeUselessAutosculptParts = false;
 
 	public boolean SAVE_useOffsetsTable = true;
 	public boolean SAVE_removeUselessAutosculptParts = true;
@@ -97,6 +101,8 @@ public class Geometry extends Block {
 	public SettingsImport_Tangents IMPORT_Tangents = SettingsImport_Tangents.HIGH;
 	public boolean IMPORT_flipV = false;
 	
+	public boolean isImported = false;
+	
 	public Platform platform = Platform.PC;
 	
 	//---------------------------------------------------------------------------------------------------
@@ -113,7 +119,9 @@ public class Geometry extends Block {
 		Block.read(in); //skip padding block
 		
 		// read the header, if this goes wrong the file is probably corrupted or smth
-		geomHeader = (GeomHeader) Block.read(in);
+//		geomHeader = (GeomHeader) Block.read(in);
+		in.getInt();
+		geomHeader = new GeomHeader(in);
 		
 		if (geomHeader.geomData != null) {
 			for (var d : geomHeader.geomData.datas.entrySet()) {
@@ -128,99 +136,82 @@ public class Geometry extends Block {
 			SAVE_copyMissingLODs = false;
 			SAVE_copyLOD_D = false;
 			while (in.position() < blockStart+blockLength) {
-				parts.add(new Part(in));				
+				in.getInt();
+				parts.add(new Part(in));
 			}
 		} else {		
 			//load from offsets
 			SAVE_useOffsetsTable = true;
-	//		if (USE_MULTITHREADING) {
-	//			ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-	//			for (final var o : geomHeader.partsOffsets.partOffsets){
-	//			    pool.execute(new Runnable() {
-	//			        @Override
-	//			        public void run() { //for each offset load the corresponding data into memory
-	//			        	byte[] partData = new byte[o.sizeDecompressed];
-	//						ByteBuffer dataWriter = ByteBuffer.wrap(partData);
-	//						
-	//						ByteBuffer threadedIn = ByteBuffer.wrap(in.array());
-	//						threadedIn.order(ByteOrder.LITTLE_ENDIAN);
-	//						
-	//						threadedIn.position(o.offset);
-	//						//loops on the one or multiple compressed blocks
-	//						while (threadedIn.position() < o.offset + o.sizeCompressed) {
-	//							CompressedData d = (CompressedData) Block.read(threadedIn);
-	//							dataWriter.put(d.decompressionOffset, Compression.decompress(d.data));
-	//						}
-	//						
-	//						dataWriter.position(0);
-	//						parts.add(new Part(dataWriter, o.partKey));
-	//			        }
-	//			    });
-	//			}
-	//			pool.shutdown();
-	//			// wait for them to finish for up to one minute.
-	//			try {
-	//				pool.awaitTermination(10, TimeUnit.MINUTES);
-	//			} catch (InterruptedException e) {
-	//				System.out.println("Critical failure ! Please disable multi-threading.");
-	//				e.printStackTrace();
-	//			}
-	//		} else { // useful for debugging
-				for (var o : geomHeader.partsOffsets.partOffsets) { //.values()
-					try {
-						if (o.isCompressed == 512) {
-							byte[] partData = new byte[o.sizeDecompressed];
-							ByteBuffer dataWriter = ByteBuffer.wrap(partData);
-							
-							in.position(o.offset -4); //-4 because we don't have the full file header here
-							//loops on the one or multiple compressed blocks
-							while (in.position() < o.offset -4 + o.sizeCompressed) {
-								CompressedData d = (CompressedData) Block.read(in);
-								dataWriter.put(d.decompressionOffset, Compression.decompress(d.data));
-							}
-							
-							dataWriter.position(0);
-							parts.add(new Part(dataWriter));	
-						} else {
-							in.position(o.offset -4);
-							parts.add(new Part(in));	
-						}
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-	//		}
-	
-			// determines the compressiontype to put the right one for re-exporting
-			// disabled for testing purposes
-			if (geomHeader.partsOffsets.partOffsets.get(0).isCompressed == 512) defaultCompressionType = CompressionType.RefPack;
-			else if (geomHeader.partsOffsets.partOffsets.get(0).isCompressed == 0) defaultCompressionType = CompressionType.RawDecompressed;
-
-			carname = null;
-			for (var p : parts) {
+			offsets: for (var o : geomHeader.partsOffsets.partOffsets) { //.values()
+				ByteBuffer dataWriter = null;
 				try {
-					if (carname == null) {
-						if (p.header.partName.contains("_KIT")) carname = p.header.partName.split("_KIT")[0];
-					} else {
-						//check that each part has the same car name
-						if (p.header.partName.contains("_KIT")) {
-							if (!carname.equals(p.header.partName.split("_KIT")[0])) {
-								carname = null;
-								break;
-							}
+					if (o.isCompressed == 512) {
+						byte[] partData = new byte[o.sizeDecompressed];
+						dataWriter = ByteBuffer.wrap(partData);
+						
+						in.position(o.offset -4); //-4 because we don't have the full file header here
+						//loops on the one or multiple compressed blocks
+						while (in.position() < o.offset -4 + o.sizeCompressed) {
+							CompressedData d = (CompressedData) Block.read(in);
+							var decomp = Compression.decompress(d.data);
+							if (decomp==null) continue offsets;
+							dataWriter.put(d.decompressionOffset, decomp);
+							if (defaultCompressionType == null) defaultCompressionType = CompressionType.get(String.valueOf(new char[] {(char)(d.data[0]), (char)(d.data[1]), (char)(d.data[2]), (char)(d.data[3])}));
 						}
 						
+						dataWriter.position(4);
+						parts.add(new Part(dataWriter));	
+					} else {
+						in.position(o.offset -4);
+						in.getInt();
+						parts.add(new Part(in));
+						if (defaultCompressionType == null) defaultCompressionType = CompressionType.RawDecompressed;
 					}
-				} catch (@SuppressWarnings("unused") Exception e) {
-					//header is null
+				} catch (Exception e) {
+					e.printStackTrace();
+					if (dataWriter != null) {
+						try {
+							File f;
+							var fos = new FileOutputStream(f = new File(geomHeader.geomInfo.filename + "-"+ String.format("0x%08X",o.partKey)));
+							fos.write(dataWriter.array());
+							fos.close();
+							System.out.println("Geometry: Dumped raw decompressed data in "+f.getAbsolutePath());
+						} catch (@SuppressWarnings("unused") Exception e2) {}
+					}
 				}
 			}
-			if (carname == null) {
-//				System.out.println("Could not determine car name.");
-				carname = "UNDETERMINED";
+			
+			// determines the compressiontype to put the right one for re-exporting
+			// disabled for testing purposes
+//			if (geomHeader.partsOffsets.partOffsets.get(0).isCompressed == 512) defaultCompressionType = CompressionType.RefPack;
+//			else if (geomHeader.partsOffsets.partOffsets.get(0).isCompressed == 0) defaultCompressionType = CompressionType.RawDecompressed;
+
+		}
+
+		carname = null;
+		for (var p : parts) {
+			try {
+				if (carname == null) {
+					if (p.header.partName.contains("_KIT")) carname = p.header.partName.split("_KIT")[0];
+				} else {
+					//check that each part has the same car name
+					if (p.header.partName.contains("_KIT")) {
+						if (!carname.equals(p.header.partName.split("_KIT")[0])) {
+							carname = null;
+							break;
+						}
+					}
+					
+				}
+			} catch (@SuppressWarnings("unused") Exception e) {
+				//header is null
 			}
 		}
-			
+		if (carname == null) {
+//			System.out.println("Could not determine car name.");
+			carname = UNDETERMINED_CARNAME;
+		}
+
 		updateHashes();
 		
 		
@@ -252,6 +243,7 @@ public class Geometry extends Block {
 	}
 
 	public Geometry() {
+		this.defaultCompressionType = CompressionType.RawDecompressed;
 		this.geomHeader = new GeomHeader();
 	}
 
@@ -276,37 +268,32 @@ public class Geometry extends Block {
 	//
 	//---------------------------------------------------------------------------------------------------
 	
-	/**
-	 * MAIN GEOMETRY SAVING METHOD
-	 * Saves the loaded geometry object to a byte array ready to be written to a file
-	 */
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
+		return save(currentPosition, null);
+	}
+	
+	public byte[] save(int currentPosition, CustomProgressBar prog) throws IOException, InterruptedException {
 
+//		if (prog != null) 
+//			javafx.application.Platform.runLater(() -> {
+//				prog.text.setText("Checking and preparing model...");
+//				prog.progress.setProgress(-1);
+//			});
+//		prepare();
 		long t = System.currentTimeMillis();
-		//process stuff on parts
-		if (SAVE_processParts) processParts();
-		if(SAVE_checkModel) checkModel();
-		if (!SAVE_makeDataBlock) {
-			geomHeader.subBlocks.remove(geomHeader.geomData);
-			geomHeader.geomData = null;
-		}
-		//sort things once again just in case
-		if (SAVE_sortEverythingByName) {
-			if (SAVE_useOffsetsTable) parts.sort(new PartSorterLodKitName());
-			materials.sort(new MaterialsSorterName());
-			for (var mpc : mpointsPositions) mpc.mpoints.sort(new MPointSorterName());
-			mpointsPositions.sort(new MPointPosSorterName());
-		}
-		if (!SAVE_useOffsetsTable) parts.sort(new PartSorterBinKey());
-
-		System.out.println("Geometry checked and prepared in "+(System.currentTimeMillis()-t)+" ms.");
-		t = System.currentTimeMillis();
 		
 		// first compresses all parts to get their compressed and decompressed size
 		// using RFPK compression but no blocks
 
+		var progress = new AtomicInteger(0);
+		
 		if (SAVE_useOffsetsTable && defaultCompressionType != CompressionType.RawDecompressed) { //compress parts (eg traffic is not compressed)
+			if (prog != null) 
+			javafx.application.Platform.runLater(() -> {
+				prog.text.setText("Compressing parts...");
+				prog.progress.setProgress(0);
+			});
 			System.out.println("Compressing parts...");
 			if (USE_MULTITHREADING) {
 				ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
@@ -315,8 +302,16 @@ public class Geometry extends Block {
 				for (final var p : parts){
 				    pool.execute(() -> {
 						try {
+							if (prog != null) {
+								javafx.application.Platform.runLater(() -> {
+									prog.progress.setProgress(((double)progress.incrementAndGet())/parts.size());
+									prog.text.setText("Compressing parts "+Math.round(100*((float)(progress.get())/parts.size()))+"%...");
+//									prog.progress.setProgress(((double)parts.indexOf(p))/parts.size());
+								});
+							} else
+								System.out.print("\rProgress " + Math.round(100*((float)(progress.incrementAndGet())/parts.size()))+ " %" );
+//								System.out.print("\rProgress " + Math.round(100*((float)(parts.indexOf(p))/parts.size()))+ " %" );
 							p.precompress(this);
-							System.out.print("\rProgress " + Math.round(100*((float)(parts.indexOf(p))/parts.size()))+ " %" );
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -328,13 +323,25 @@ public class Geometry extends Block {
 			} else { // useful for debugging
 				for (var p : parts) {
 					p.precompress(this);
+					if (prog != null) {
+						javafx.application.Platform.runLater(() -> {
+							prog.progress.setProgress(((double)parts.indexOf(p))/parts.size());
+							prog.text.setText("Compressing parts "+Math.round(100*((float)(parts.indexOf(p))/parts.size()))+"%...");
+						});
+					} else
 					System.out.print("\rProgress " + Math.round(100*((float)(parts.indexOf(p))/parts.size()))+ " %" );
 				}
 			}
 			System.out.println("\nParts compressed in "+(System.currentTimeMillis()-t)+" ms.");
 			t = System.currentTimeMillis();
 		}
-			
+
+		if (prog != null) 
+			javafx.application.Platform.runLater(() -> {
+				prog.text.setText("Refreshing header...");
+				prog.progress.setProgress(-1);
+			});
+
 		geomHeader.refresh(this);
 		
 		if (!SAVE_useOffsetsTable) {
@@ -347,6 +354,12 @@ public class Geometry extends Block {
 			geomHeader.subBlocks.add(new Geom_Unknown());
 		}
 		
+		if (prog != null) 
+			javafx.application.Platform.runLater(() -> {
+				prog.text.setText("Writing file...");
+				prog.progress.setProgress(-1);
+			});
+
 		var out = new ByteArrayOutputStream();
 
 		var buf = ByteBuffer.wrap(new byte[8]); //16
@@ -387,10 +400,14 @@ public class Geometry extends Block {
 		return buf.array();
 	}
 
-	public void save(File f) throws IOException, InterruptedException {
+	public void save(File f) throws IOException, InterruptedException{
+		save(f, null);
+	}
+
+	public void save(File f, CustomProgressBar prog) throws IOException, InterruptedException {
 		long t = System.currentTimeMillis();
 		System.out.println("Saving geometry...");
-		var save = save(0);
+		var save = save(0, prog);
 		var fos = new FileOutputStream(f);
 		fos.write(save);
 		fos.close();		
@@ -411,20 +428,12 @@ public class Geometry extends Block {
 	public void writeConfig(File f) throws IOException {
 		var bw = new BufferedWriter(new FileWriter(f));
 		
-		if (!carname.equals("UNDETERMINED")) bw.write("=== CONFIGURATION FILE FOR CAR "+carname+" ===\n");
+		if (!carname.equals(UNDETERMINED_CARNAME)) bw.write("=== CONFIGURATION FILE FOR CAR "+carname+" ===\n");
 		else bw.write("=== CONFIGURATION FILE  ===\n");
 		bw.write("UCGT v"+GeometryEditorCLI.programVersion+" by needeka\n"
 				+ "\n--- Settings ---\n");
-		if (!carname.equals("UNDETERMINED")) bw.write("SETTING	CarName="+this.carname+"\n");
-		switch (platform) {
-		case PC:
-			break;
-		case X360:
-			bw.write("SETTING	Platform=X360\n");
-			break;
-		default:
-			break;
-		}
+		if (!carname.equals(UNDETERMINED_CARNAME)) bw.write("SETTING	CarName="+this.carname+"\n");
+		if (platform != Platform.PC) bw.write("SETTING	Platform="+platform.getName()+"\n");
 		if (SAVE_useOffsetsTable) bw.write("SETTING	UseMultithreading="+USE_MULTITHREADING+"\n"
 				+ "SETTING	CompressionType="+defaultCompressionType+"\n"
 				+ "SETTING	CompressionLevel="+defaultCompressionLevel.getName()+"\n");
@@ -522,25 +531,69 @@ public class Geometry extends Block {
 					
 //					if (filter == null || geom.geomHeader.geomInfo.filename.contains(filter) || geom.geomHeader.geomInfo.blockname.contains(filter)) {
 					if (filterRead) {
-						geom.writeConfig(new File(dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename+".ini"));
 						switch (format.toUpperCase()) {
 						case "Z3D":
 						case "ZMODELER2":
 						case "ZM2":
+							geom.writeConfig(new File(dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename+".ini"));
 							ZModelerZ3D.save(geom, dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename);
+							break;
+						case "GLTF":
+						case "GLB":
+							geom.writeConfig(new File(dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename+".ini"));
+							GLTF.save(geom, dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename, false);
 							break;
 						case "OBJ":
 						case "WAVEFRONT":
+							geom.writeConfig(new File(dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename+".ini"));
 							WavefrontOBJ.save(geom, dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename);
 							break;
+						case "BIN":
+						case "GEOMETRY":
 						default:
-							ZModelerZ3D.save(geom, dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename);
-							WavefrontOBJ.save(geom, dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename);
+							geom.save(new File(dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename));
 						}
 					}
 					
 				} catch (Exception e) {
 					System.out.println("Error loading Geometry in block #"+blockIndex+" at "+inPos+" !");
+					e.printStackTrace();
+				}
+			} 
+			if (blockID == BlockType.TPK.getKey()) {
+				var bb = ByteBuffer.wrap(block);
+				bb.order(ByteOrder.LITTLE_ENDIAN);
+				try {
+					var tpk = (TPK) Block.read(bb);
+//					System.out.print("\rBlock #"+blockIndex+" : Geometry, length="+blockLength+", position="+inPos+", name="+geom.geomHeader.geomInfo.filename+", block name="+geom.geomHeader.geomInfo.blockname);
+
+					boolean filterRead = true;
+					// no filter set, anything is read; filters set, if we don't find one of them in either the file name or the blck name, then we skip
+					for (var fil : filters) if (!tpk.header.info.filename.contains(fil) && !tpk.header.info.blockname.contains(fil)) {
+						filterRead = false;
+						break;
+					}
+					
+					if (filterRead) {
+						switch (format.toUpperCase()) {
+						case "Z3D":
+						case "ZMODELER2":
+						case "ZM2":
+						case "OBJ":
+						case "WAVEFRONT":
+						case "GLTF":
+						case "GLB":
+							tpk.exportToFolder(dumpfolder+tpk.header.info.blockname+"-"+tpk.header.info.filename, null);
+							break;
+						case "BIN":
+						case "GEOMETRY":
+						default:
+							tpk.save(new File(dumpfolder+tpk.header.info.blockname+"-"+tpk.header.info.filename));
+						}
+					}
+					
+				} catch (Exception e) {
+					System.out.println("Error loading TPK in block #"+blockIndex+" at "+inPos+" !");
 					e.printStackTrace();
 				}
 			} 
@@ -563,8 +616,15 @@ public class Geometry extends Block {
 		return importFromFile(modelFile, new File(modelFile.getPath().replace(modelFile.getName().split("\\.")[modelFile.getName().split("\\.").length-1], "ini")));
 	}
 	public static Geometry importFromFile(File modelFile, File configFile) throws IOException, Exception {
-		if (!modelFile.getName().endsWith(".obj") && !modelFile.getName().endsWith(".z3d")) {
-			throw new Exception("Wrong file format ! Only Wavefront OBJ and ZModeler 2 Z3D are supported.");
+		FileInputStream fis = new FileInputStream(modelFile);
+		int signature = fis.read() | fis.read() << 8 | fis.read() << 16 | fis.read() << 24;
+		fis.close();
+		
+		if (signature != WavefrontOBJ.OBJ_blender && signature != WavefrontOBJ.OBJ_UCGT 
+				&& signature != ZModelerZ3D.Z3DM && signature != ZModelerZ3D.ZM2S 
+				&& signature != GLTF.glTF_blender && signature != GLTF.glTF_BINARY 
+				&& !modelFile.getName().endsWith(".obj") && !modelFile.getName().endsWith(".gltf")) {
+			throw new Exception("Wrong file format ! Only Wavefront OBJ, glTF and ZModeler 2 Z3D are supported.");
 		}
 		long time = System.currentTimeMillis();
 		System.out.println("Loading config from "+configFile.getName());
@@ -573,8 +633,12 @@ public class Geometry extends Block {
 		System.out.println("Config read in "+(System.currentTimeMillis()-time)+" ms.");
 		time = System.currentTimeMillis();
 		System.out.println("Importing meshes from "+modelFile.getName());
-		if (modelFile.getName().endsWith(".obj")) WavefrontOBJ.load(geom, modelFile);
-		if (modelFile.getName().endsWith(".z3d")) ZModelerZ3D.load(geom, modelFile);
+		if (signature == WavefrontOBJ.OBJ_blender || signature == WavefrontOBJ.OBJ_UCGT || modelFile.getName().endsWith(".obj")) 
+			WavefrontOBJ.load(geom, modelFile);
+		if (signature == ZModelerZ3D.Z3DM || signature == ZModelerZ3D.ZM2S) 
+			ZModelerZ3D.load(geom, modelFile);
+		if (signature == GLTF.glTF_blender || signature == GLTF.glTF_BINARY || modelFile.getName().endsWith(".gltf")) 
+			GLTF.load(geom, modelFile);
 		System.out.println("3D model converted in "+(System.currentTimeMillis()-time)+" ms.");			
 		return geom;			
 	}
@@ -583,6 +647,7 @@ public class Geometry extends Block {
 		// REPLACE IN STREAM \/
 		
 //		if (!modelsDirectory.endsWith("\\")) modelsDirectory += "\\";
+		if (streamFile.contains("STREAM") && l8rFile == null) l8rFile = streamFile.replace("STREAM", "");
 		
 		new File(streamFile).renameTo(new File(streamFile.replace(".BUN", "").replace(".BIN", "")+".OLD")); //i'll read this file and transfer the data to a new file as it is read, to lower RAM usage which already gets high just with cars
 		if (l8rFile != null) new File(l8rFile).renameTo(new File(l8rFile.replace(".BUN", "").replace(".BIN", "")+".OLD"));
@@ -618,7 +683,7 @@ public class Geometry extends Block {
 		
 
 //		HashMap<Pair<String,String>,ReplaceInStream> geometriesToReplace = new HashMap<>();
-		HashMap<Pair<String,String>,Geometry> binBlocksToReplace = new HashMap<>();
+		HashMap<Pair<String,String>,Block> binBlocksToReplace = new HashMap<>();
 		
 		if (new File (modelsDirectory).isDirectory()) {
 			var filesInDir = new File (modelsDirectory).list();
@@ -647,7 +712,7 @@ public class Geometry extends Block {
 					}
 					
 					// compiled Geometries and TPKs
-					if (s.endsWith(".bin") || s.toLowerCase().endsWith(".tpk")) {
+					if (s.endsWith(".bin") || s.endsWith(".bun") || s.endsWith(".tpk") || s.endsWith(".mpk")) {
 						var binFile = new File(modelsDirectory + s);
 						var fis = new FileInputStream(binFile);
 						var binFileToBytes = new byte[(int)binFile.length()];
@@ -665,10 +730,25 @@ public class Geometry extends Block {
 										new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename),
 										g
 										);
-							} // TODO support replacing other shit
-							
+							} 
+							if (b.getClass() == TPK.class) {
+								var tpk = (TPK) b;
+								binBlocksToReplace.put(
+										new Pair<>(tpk.header.info.blockname.replace("STREAMINGTEXTUREPACK", ""), tpk.header.info.filename.split("\\.")[0].toUpperCase()), //getting around binary's xml
+										tpk);
+							}
 						}	
 					}
+					
+					//TPKs as folders (using UC support)
+					if (new File(s).isDirectory()) {
+						var tpk = new TPK(new File(s), 9);
+						if (tpk.textures.size() > 0)
+						binBlocksToReplace.put(
+								new Pair<>(tpk.header.info.blockname.replace("STREAMINGTEXTUREPACK", ""), tpk.header.info.filename.split("\\.")[0].toUpperCase()),
+								tpk);
+					}
+					
 				} catch (Exception e) {
 					System.out.println("Error reading file "+s+" : "+e.getMessage());
 					e.printStackTrace();
@@ -680,13 +760,18 @@ public class Geometry extends Block {
 		}
 		
 
-		HashMap<Pair<String,String>,Geometry> merge = new HashMap<>();
+		HashMap<Pair<String,String>,Block> merge = new HashMap<>();
 		for (var p : binBlocksToReplace.entrySet()) {
-			if(p.getValue().SAVE_autoReplaceWorldLODs && (p.getKey().getKey().startsWith("U") || p.getKey().getKey().startsWith("W") || p.getKey().getKey().startsWith("X") || p.getKey().getKey().startsWith("Y"))) {
+			if(p.getValue().getClass() == Geometry.class && ((Geometry)p.getValue()).SAVE_autoReplaceWorldLODs && (p.getKey().getKey().startsWith("U") || p.getKey().getKey().startsWith("W") || p.getKey().getKey().startsWith("X") || p.getKey().getKey().startsWith("Y"))) {
 				merge.put(new Pair<>("U"+p.getKey().getKey().substring(1), p.getKey().getValue()), p.getValue());
 				merge.put(new Pair<>("W"+p.getKey().getKey().substring(1), p.getKey().getValue()), p.getValue());
 				merge.put(new Pair<>("X"+p.getKey().getKey().substring(1), p.getKey().getValue()), p.getValue());
 				merge.put(new Pair<>("Y"+p.getKey().getKey().substring(1), p.getKey().getValue()), p.getValue());
+			}
+			if(p.getValue().getClass() == TPK.class && (p.getKey().getKey().startsWith("Y"))) {
+				merge.put(new Pair<>("U"+p.getKey().getKey().substring(1), p.getKey().getValue().replace("Y", "U")), ((TPK)p.getValue()).removeHighMipMapsUntilSize(32));
+				merge.put(new Pair<>("W"+p.getKey().getKey().substring(1), p.getKey().getValue().replace("Y", "W")), ((TPK)p.getValue()).removeNHighMipMaps(2));
+				merge.put(new Pair<>("X"+p.getKey().getKey().substring(1), p.getKey().getValue().replace("Y", "X")), ((TPK)p.getValue()).removeNHighMipMaps(1));
 			}
 		}
 		for (var p : merge.entrySet()) {
@@ -726,7 +811,6 @@ public class Geometry extends Block {
 			fisL8r.close();
 			
 			l8rBlocks = new ArrayList<>();
-			offsets = null;
 			var l8rBB = ByteBuffer.wrap(L8rToBytes);
 			l8rBB.order(ByteOrder.LITTLE_ENDIAN);
 			while (l8rBB.remaining()>8) {
@@ -779,6 +863,8 @@ public class Geometry extends Block {
 				fisStream.read(chunkBytes);
 				currentPositionIn += chunk.length1;
 				int posInChunk = 0;
+//				boolean hasPadding = false;
+//				int previousPaddingLength = 0;
 				
 				var bb = ByteBuffer.wrap(chunkBytes);
 				bb.order(ByteOrder.LITTLE_ENDIAN);
@@ -795,12 +881,65 @@ public class Geometry extends Block {
 //					bb.position(blockStart);
 					Block b = Block.read(bb);
 					
+					
+//					if (b.getClass() != Padding.class) {
+//						if (hasPadding) {
+//
+////0x00000000 (Padding) has alignment modulo 4
+////0xB3300000 (TPK) has alignment modulo 128
+////0x80134000 (Geometry) has alignment modulo 4
+////0x00034027 (INVALID) has alignment modulo 128 <-
+////0x80034100 (INVALID) has alignment modulo 128 <-      Model something, unhappy
+////!0x00034159 (INVALID) has alignment modulo 4	<-					
+////!0x00034185 (INVALID) has alignment modulo 16 <-
+////0x80036000 (INVALID) has alignment modulo 16
+////0x00037220 (INVALID) has alignment modulo 128 - WorldAnim, unhappy
+////0x00037250 (INVALID) has alignment modulo 4
+////0x00037260 (INVALID) has alignment modulo 4
+////0x00037270 (INVALID) has alignment modulo 8
+////0x0003B801 (INVALID) has alignment modulo 32 <-      
+////0x0003B802 (INVALID) has alignment modulo 32
+////0x0003BC00 (INVALID) has alignment modulo 16
+//
+//							byte[] padding;
+//							if (b.getClass() == TPK.class || b.getClass() == Geometry.class) {
+//								padding = Padding.makePadding(posInChunk,128); //fixes broken textures
+//							} else {
+////							if (b.getClass() == UnknownBlock.class) {
+////								var unk = (UnknownBlock)b;
+//////								if (unk.ID == 0x80034100 || unk.ID == 0x00037220 || unk.ID == 0x00034027
+//////										|| unk.ID == 0x0003B801 || unk.ID == 0x0003B802
+////										//|| unk.ID == 0x00034185 
+////										//|| unk.ID == 0x00034159
+//////										) paddingSize = 128;
+////								if (unk.ID == 0x00034185) {
+////									paddingSize = 2048;
+////								}
+////								if (unk.ID == 0x00034159) {
+////									paddingStart -=4;
+////									paddingSize = 128;
+////								}
+////							}
+//								padding = new Padding(previousPaddingLength).save(posInChunk); //(almost) fixes crashes and missing collision
+//							
+//							}
+//
+//							fosStream.write(padding);
+//							currentPositionOut += padding.length;
+//							posInChunk += padding.length;
+//						}
+//						hasPadding = false;
+//					}
+					
+					
 //					System.out.println(", ID="+(b.getBlockID() == BlockType.INVALID ? String.format("0x%08X", ((UnknownBlock)b).ID) : b.getBlockID())+", end at "+bb.position()+", length "+(bb.position()-blockStart));
 					if (b.getClass() == Geometry.class) { // check the need to replace the geometry
 						Geometry g = (Geometry) b;
 						byte[] outGeom;
-						Geometry newGeom = binBlocksToReplace.get(new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename));
-						if (newGeom != null) {
+						var replacementBlock = binBlocksToReplace.get(new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename));
+						Geometry newGeom;
+						if (replacementBlock != null && replacementBlock.getClass() == Geometry.class) {
+							newGeom = (Geometry)replacementBlock;
 							//use 1B_00 (fallback to 1A_00 if it doesn't exist) and 1Z_00 (no fallback), except XOs (keep everything)
 							Part lodA = null, lodB = null;
 							
@@ -832,15 +971,39 @@ public class Geometry extends Block {
 						fosStream.write(outGeom);
 						currentPositionOut += outGeom.length;
 						posInChunk += outGeom.length;
-//					} else if (b.getClass() == Padding.class && !bb.hasRemaining()){
-							// LAST PADDING BLOCK
-					} else if (b.getClass() == Padding.class){
-						// remake all padding with alignment modulo 2048, seems to fix some issues
-						byte[] outBlock = Padding.makePadding(posInChunk,2048);
-						fosStream.write(outBlock);
-						currentPositionOut += outBlock.length;
-						posInChunk += outBlock.length;
 						
+					} else if (b.getClass() == TPK.class) {
+						TPK tpk = (TPK) b;
+						byte[] outTPK;
+
+						var replacementBlock = binBlocksToReplace.get(new Pair<>(tpk.header.info.blockname.replace("STREAMINGTEXTUREPACK", ""), tpk.header.info.filename.split("\\.")[0].toUpperCase()));
+						TPK newTPK;
+						if (replacementBlock != null && replacementBlock.getClass() == TPK.class) {
+							newTPK= (TPK)replacementBlock;
+							newTPK.header.info.blockname = tpk.header.info.blockname;
+							newTPK.header.info.filename = tpk.header.info.filename;
+							
+							// copy over unknown data
+							for (var newPart : newTPK.textures) for (var oldPart : tpk.textures) if (newPart.binKey == oldPart.binKey) {
+								//TODO necessary?
+							}
+
+							outTPK = newTPK.save(posInChunk);
+						} else {
+							outTPK = tpk.save(posInChunk);
+						}
+							
+						fosStream.write(outTPK);
+						currentPositionOut += outTPK.length;
+						posInChunk += outTPK.length;
+						
+					} else if (b.getClass() == Padding.class){
+//						hasPadding = true;
+//						previousPaddingLength = ((Padding)b).length;
+						byte[] padding = Padding.makePadding(posInChunk,2048); //game crashes when not set to 2048, collisions bug out if set to 2048
+						fosStream.write(padding);
+						currentPositionOut += padding.length;
+						posInChunk += padding.length;
 					} else {
 						byte[] outBlock = b.save(posInChunk);
 						fosStream.write(outBlock);
@@ -848,15 +1011,14 @@ public class Geometry extends Block {
 						posInChunk += outBlock.length;
 					}
 
-					// make padding after each block read
-//					byte[] outBlock = Padding.makePadding(posInChunk, 128);
-//					fosStream.write(outBlock);
-//					currentPositionOut += outBlock.length;
-//					posInChunk += outBlock.length;
-
 					chunk.length1 = (int) (currentPositionOut - chunk.offset);
 					chunk.length2 = chunk.length1;
 				}
+				
+				byte[] padding = Padding.makePadding(posInChunk,2048);
+				fosStream.write(padding);
+				currentPositionOut += padding.length;
+				posInChunk += padding.length;
 				
 			} else { //no need to edit this block, just pump and update offsets
 				
@@ -866,6 +1028,7 @@ public class Geometry extends Block {
 					System.out.println("something went wrong at "+currentPositionIn+" in chunk "+chunk.name);
 					chunk = null;
 				}
+				assert(chunk != null); //remove compiler whining for a willingly executed crash
 				currentPositionIn += chunk.length1;
 				fosStream.write(arr); 
 				fosStream.flush();
@@ -923,7 +1086,7 @@ public class Geometry extends Block {
 		fisStream.close();
 		fosStream.close();
 		
-		if (l8rFile != null) {
+		if (l8rFile != null && l8rBlocks != null) {
 			FileOutputStream fosL8r = new FileOutputStream(outputL8rFile);
 			for (var b : l8rBlocks) {
 				fosL8r.write(b.save(0));
@@ -932,6 +1095,7 @@ public class Geometry extends Block {
 		}
 //		System.out.println();
 	}
+
 	
 	public void readConfig(File f) throws IOException {
 		var br = new BufferedReader(new FileReader(f));
@@ -1074,17 +1238,9 @@ public class Geometry extends Block {
 						break;
 						
 					case "Platform":
-						if (s2.split("=")[1].equals("PC")) {
-							platform = Platform.PC;
-							System.out.println("Using PC platform");
-						}
-						else if (s2.split("=")[1].equals("X360") || s2.split("=")[1].equals("XBOX360") || s2.split("=")[1].equals("XBOX") || s2.split("=")[1].equals("XENON")) {
-							platform = Platform.X360;
-							System.out.println("Using X360 platform");
-						} else {
-							platform = Platform.PC;
-							System.out.println("Invalid platform, defaulting to PC. Valid platforms: PC, X360");
-						}
+						platform = Platform.get(s2.split("=")[1]);
+						System.out.println("Using "+platform.getName()+" support.");
+						this.changePlatform(platform);
 						break;
 						
 					default:
@@ -1244,7 +1400,7 @@ public class Geometry extends Block {
 				
 			case "SHADERUSAGE": //define a custom shader usage in the config
 				if (SAVE_makeDataBlock) this.geomHeader.geomData.datas.put("SHADERUSAGE",l.substring(12));
-				if (!ShaderUsage.isLoaded) ShaderUsage.updateUsages();
+//				if (!ShaderUsage.isLoaded) ShaderUsage.updateUsages();
 				ShaderUsage.parseUsage(l.substring(12));
 				break;
 			}
@@ -1255,7 +1411,11 @@ public class Geometry extends Block {
 		}
 	}
 
-	public static void ctkConfigToUCGTConfig(File ctkConfig, File config) throws IOException {
+
+	public static void ctkConfigToUCGTConfig(File ctkConfig, File config) throws IOException{
+		ctkConfigToUCGTConfig(ctkConfig,config,"MISSING");
+	}
+	public static void ctkConfigToUCGTConfig(File ctkConfig, File config, String carname) throws IOException {
 		var br = new BufferedReader(new FileReader(ctkConfig));
 		
 		var bw = new BufferedWriter(new FileWriter(config));
@@ -1264,7 +1424,7 @@ public class Geometry extends Block {
 				+ "UCGT v"+GeometryEditorCLI.programVersion+" by needeka\n"
 				+ "Converted from a CTK model - please fill in what's missing and check what's already filled in !\n"
 				+ "\n--- Settings ---\n");
-		bw.write("SETTING	CarName=MISSING\n"
+		bw.write("SETTING	CarName="+carname+"\n"
 				+ "SETTING	UseMultithreading=true\n"
 				+ "SETTING	CompressionType=RawDecompressed\n"
 				+ "SETTING	CompressionLevel=Maximum\n"
@@ -1615,43 +1775,47 @@ public class Geometry extends Block {
 			ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 			for (final var p : parts){
 			    pool.execute(() -> {
-			    	computeMatsList(p); // IMPORTANT TO KEEP HERE
-//					globalizePartMarkers(p);
-				if (SAVE_optimizeMaterials && p.strings != null) {
-					p.subBlocks.remove(p.strings);
-					p.strings = null;
-				}	
-
-				HashMap<Integer, Byte> shaderUsageIDs; //first int is either shader usage or shader hash
-				shaderUsageIDs = new HashMap<>();
-				if (p.mesh != null) {				
-					for (var m : p.mesh.materials.materials) if (m.renderingOrder!=0) shaderUsageIDs.put(m.ShaderHash , m.renderingOrder);
-					for (var m : p.mesh.materials.materials) {
-						m.tryGuessFEData(shaderUsageIDs);
-						if (SAVE_optimizeMaterials) {	
-			    			m.removeUnneeded();
-			    		} else {
-//							m.tryGuessTexturePriority();
-//							m.tryGuessFlags(this);
-			    			m.tryGuessDefaultTex();
-			    		}
-					}
-					for (var prio : priorities) if (p.name.contains(prio.partName)) {
-//						System.out.println("Changing render priorities for part "+p.name);
-						for (var m : p.mesh.materials.materials) {
-							for (var pair : prio.values) {
-								if (m.equals(pair.getKey())) { //for some reason materials are NOT equal (materials are fucked up for some reason and have texture hashes repeated twice)
-									//HOW IS IT NOT FINDING THE FUCKING MATERIALS
-									m.texturePriorities.clear();
-									m.texturePriorities.add(0);
-									m.texturePriorities.add(pair.getValue());
-//									m.usageSpecific1 = pair.getValue();
+			    	try {
+				    	computeMatsList(p); // IMPORTANT TO KEEP HERE
+	//					globalizePartMarkers(p);
+						if (SAVE_optimizeMaterials && p.strings != null && (platform == Platform.PC || platform == Platform.X360)) { //these optimizations only work for UC
+							p.subBlocks.remove(p.strings);
+							p.strings = null;
+						}	
+		
+						HashMap<Integer, Byte> shaderUsageIDs; //first int is either shader usage or shader hash
+						shaderUsageIDs = new HashMap<>();
+						if (p.mesh != null) {				
+							for (var m : p.mesh.materials.materials) if (m.renderingOrder!=0) shaderUsageIDs.put(m.ShaderHash , m.renderingOrder);
+							for (var m : p.mesh.materials.materials) {
+								m.tryGuessFEData(shaderUsageIDs);
+								if (SAVE_optimizeMaterials) {
+					    			m.removeUnneeded();
+					    		} else {
+		//							m.tryGuessTexturePriority();
+		//							m.tryGuessFlags(this);
+					    			m.tryGuessDefaultTex();
+					    		}
+							}
+							for (var prio : priorities) if (p.name.contains(prio.partName)) {
+		//						System.out.println("Changing render priorities for part "+p.name);
+								for (var m : p.mesh.materials.materials) {
+									for (var pair : prio.values) {
+										if (m.equals(pair.getKey())) { //for some reason materials are NOT equal (materials are fucked up for some reason and have texture hashes repeated twice)
+											//HOW IS IT NOT FINDING THE FUCKING MATERIALS
+											m.texturePriorities.clear();
+											m.texturePriorities.add(0);
+											m.texturePriorities.add(pair.getValue());
+		//									m.usageSpecific1 = pair.getValue();
+										}
+									}
 								}
 							}
 						}
-					}
-				}
-			    fixAutosculptMeshes(p);
+					    fixAutosculptMeshes(p);
+			    	} catch (Exception e) {
+			    		e.printStackTrace();
+			    	}
 			    });
 			}
 			pool.shutdown();
@@ -1765,7 +1929,7 @@ public class Geometry extends Block {
 		
 		
 		if (p.mesh != null) if (p.mesh.materials != null) for (var m : p.mesh.materials.materials) {	
-			m.tryGuessHashes(this, p);
+			m.tryGuessHashes(p);
 
 			//destructive tests 
 //				m.tryGuessUsageSpecific();
@@ -1802,8 +1966,8 @@ public class Geometry extends Block {
 	public static boolean checkValid(List<Part> toRemove, Part p) {
 		boolean valid = true;
 		
-		if (p.kit.equals("")) valid = false;
-		if (!p.lod.equals("A") && !p.lod.equals("B") && !p.lod.equals("C") && !p.lod.equals("D")) valid = false;
+		if (p.kit == null) valid = false;
+		if (!"A".equals(p.lod) && !"B".equals(p.lod) && !"C".equals(p.lod) && !"D".equals(p.lod) && !"E".equals(p.lod)) valid = false;
 		
 		if (!valid) {
 			toRemove.add(p);
@@ -1928,6 +2092,28 @@ public class Geometry extends Block {
 		}
 	}
 
+	public void prepare() {
+		long t = System.currentTimeMillis();
+		//process stuff on parts
+		if (SAVE_processParts) processParts();
+		if(SAVE_checkModel) checkModel();
+		if (!SAVE_makeDataBlock) {
+			geomHeader.subBlocks.remove(geomHeader.geomData);
+			geomHeader.geomData = null;
+		}
+		//sort things once again just in case
+		if (SAVE_sortEverythingByName) {
+			if (SAVE_useOffsetsTable) parts.sort(new PartSorterLodKitName());
+			materials.sort(new MaterialsSorterName());
+			for (var mpc : mpointsPositions) mpc.mpoints.sort(new MPointSorterName());
+			mpointsPositions.sort(new MPointPosSorterName());
+		}
+		if (!SAVE_useOffsetsTable) parts.sort(new PartSorterBinKey());
+
+		
+		System.out.println("Geometry checked and prepared in "+(System.currentTimeMillis()-t)+" ms.");
+	}
+	
 	public void rebuild() {
 		
 		if (USE_MULTITHREADING) {
@@ -1949,11 +2135,12 @@ public class Geometry extends Block {
 			}
 		}
 		
-        for (var mp : mpointsAll) {
+        for (var mp : mpointsAll) if (mp.verts.size()>0) {
 
-        	for (var mp2 : mpointsAll) if (mp2 != mp && mp2.uniqueName.equals(mp.uniqueName) && mp2.verts.size()>0) {
-        		mp.verts = mp2.verts;
-        	}
+        	//don't know what that did but seems pointless
+//        	for (var mp2 : mpointsAll) if (mp2 != mp && mp2.uniqueName.equals(mp.uniqueName) && mp2.verts.size()>0) {
+//        		mp.verts = mp2.verts;
+//        	}
         	
         	//calculate mpoint coords
         	VertexData3 avgPos = new VertexData3(0,0,0);
@@ -1962,18 +2149,28 @@ public class Geometry extends Block {
         		avgPos.y += v.y;
         		avgPos.z += v.z;
         	}
-        	mp.positionX = (float) (avgPos.x / mp.verts.size());
-        	mp.positionY = (float) (avgPos.y / mp.verts.size());
-        	mp.positionZ = (float) (avgPos.z / mp.verts.size());
+        	mp.positionX = avgPos.x / mp.verts.size();
+        	mp.positionY = avgPos.y / mp.verts.size();
+        	mp.positionZ = avgPos.z / mp.verts.size();
         	
         	
-        	if (Float.isNaN(mp.positionX)) System.out.println("NaN position for "+mp.uniqueName);
+        	if (Float.isNaN(mp.positionX) || Float.isNaN(mp.positionY) || Float.isNaN(mp.positionZ)) System.out.println("NaN position for "+mp.uniqueName);
+        	if (mp.positionX == 0 && mp.positionY == 0 && mp.positionZ == 0) System.out.println("Marker "+mp.uniqueName+ " has coordinates (0,0,0)");
+        	
+        	for (var mp2 : mpointsAll) if (mp2 != mp && mp2.uniqueName.equals(mp.uniqueName)) {
+        		mp2.positionX = mp.positionX;
+        		mp2.positionY = mp.positionY;
+        		mp2.positionZ = mp.positionZ;
+        	}
+
         }
 //        geom.mpointsAll.clear();
 //        for (var p : geom.parts) geom.globalizePartMarkers(p);
 //        geom.computeMarkersList();
         IMPORT_flipV = false; //reset
         
+        //i don't know why this was in saving before, hopefully won't break anything
+        prepare();
 	}
 
 	public void rebuildPart(Part p) {
@@ -2003,9 +2200,21 @@ public class Geometry extends Block {
 
 		int numTriangles = 0;
 		int numTrianglesEXTRA = 0;
+
+		boolean legacy = switch (p.mesh.platform) {
+		case PC:
+		case X360:
+			yield false;
+		default:
+			yield true;
+		};
+		
 		for (var m : p.mesh.materials.materials) {
 			switch (p.mesh.platform) {
 			case PC:
+			case Prostreet_PC:
+			case Prostreet_X360:
+			case Carbon_PC:
 				m.verticesBlock.vertexFormat = m.shaderUsage.vertexFormat_PC;
 				break;
 			case X360:
@@ -2052,13 +2261,22 @@ public class Geometry extends Block {
 			}
 			if (!allShaderUsages.contains(m.shaderUsage)) allShaderUsages.add(m.shaderUsage);
 
-			for (int i=0; i<m.TextureHashes.size(); i++) {
+			//m.shaderUsage.getClass() != ShaderUsage.Legacy.class && 
+			if (!legacy && m.textureUsages.size() > 0) for (int i=0; i<m.TextureHashes.size(); i++) {
 				if (!texturesAndUsage.containsValue(new Pair<>(m.TextureHashes.get(i), m.textureUsages.get(i).getKey()))) {
 						texturesAndUsage.put(texi, new Pair<>(m.TextureHashes.get(i), m.textureUsages.get(i).getKey()));
 						texturesIDs.put(new Pair<>(m.TextureHashes.get(i), m.textureUsages.get(i).getKey()), texi);
 						texi++;
 					}
 				if (!allTextureUsages.contains(m.textureUsages.get(i))) allTextureUsages.add(m.textureUsages.get(i));
+			}
+			else for (int i=0; i<m.TextureHashes.size(); i++) {
+				if (!texturesAndUsage.containsValue(new Pair<>(m.TextureHashes.get(i), 0))) {
+						texturesAndUsage.put(texi, new Pair<>(m.TextureHashes.get(i), 0));
+						texturesIDs.put(new Pair<>(m.TextureHashes.get(i), 0), texi);
+						texi++;
+					}
+				if (!allTextureUsages.contains(m.textureUsages.get(i))) allTextureUsages.add(m.textureUsages.get(i)); //for the strings block
 			}
 		}
 		
@@ -2076,16 +2294,14 @@ public class Geometry extends Block {
 		p.computeBounds();
 		//--- texusage ---
 		//fill in the texusage pairs
+		p.texusage.texusage.clear();
 		for (int i=0; i<texturesAndUsage.size(); i++) {
 			p.texusage.texusage.add(texturesAndUsage.get(i));
 		}
 		//--- strings ---
 		//fill in the strings based on mesh shader usages
-		if (allTextureUsages.contains(TextureUsage.DIFFUSE)) p.strings.strings.add("DIFFUSE");
-		if (allTextureUsages.contains(TextureUsage.NORMAL)) p.strings.strings.add("NORMAL");
-		if (allTextureUsages.contains(TextureUsage.SWATCH)) p.strings.strings.add("AMBIENT");
-		if (allTextureUsages.contains(TextureUsage.ALPHA) || allTextureUsages.contains(TextureUsage.OPACITY)) p.strings.strings.add("OPACITY");
-		if (allTextureUsages.contains(TextureUsage.SELFILLUMINATION)) p.strings.strings.add("SELFILLUMINATION");
+		p.strings.strings.clear();
+		allTextureUsages.forEach(tu -> p.strings.strings.add(tu.getName()));
 		//--- shaders ---
 		//fill in the shaders binhashes
 		for (int i=0; i<shadersOnly.size(); i++) p.shaderlist.shaders.add(shadersOnly.get(i));
@@ -2097,6 +2313,7 @@ public class Geometry extends Block {
 		p.mesh.info.numTriangles = numTriangles;
 		p.mesh.info.numTrianglesExtra = numTrianglesEXTRA;
 
+		p.mesh.info.numVertices = 0;
 		for (var vb : p.mesh.verticesBlocks) p.mesh.info.numVertices += vb.vertices.size();
 		
 		int triVertI = 0;
@@ -2107,27 +2324,37 @@ public class Geometry extends Block {
 		//verticesDataLength
 		for (var m : p.mesh.materials.materials) {
 			
-			m.fromTriVertID = triVertI; //actually concerns triangles
-			m.toTriVertID = m.fromTriVertID + m.triangles.size()*3;
-			m.numTriVertices = m.toTriVertID - m.fromTriVertID;
-			triVertI = m.toTriVertID + m.trianglesExtra.size()*3;
-			m.numTriVerticesExtra = m.trianglesExtra.size()*3;
+			m.fromTriIndex = triVertI; //actually concerns triangles
+			m.toTriIndex = m.fromTriIndex + m.triangles.size()*3;
+			m.numTriIndices = m.toTriIndex - m.fromTriIndex;
+			triVertI = m.toTriIndex + m.trianglesExtra.size()*3;
+			m.numTriIndicesExtra = m.trianglesExtra.size()*3;
 			
 			
 			int shaderid;
 			if (m.ShaderHash != 0) shaderid = shadersIDs.get(m.ShaderHash);
 			else shaderid = -1;
 			m.shaderID = (byte) shaderid;
-			for (int i=0; i<m.TextureHashes.size(); i++) {
+			m.textureIDs.clear();
+			if (!legacy && m.textureUsages.size() > 0) for (int i=0; i<m.TextureHashes.size(); i++) {
 				int texid = texturesIDs.get(new Pair<>(m.TextureHashes.get(i), m.textureUsages.get(i).getKey()));
 				m.textureIDs.add((byte) texid);
+			} else {
+				for (int i=0; i<m.TextureHashes.size(); i++) {
+					int texid = texturesIDs.get(new Pair<>(m.TextureHashes.get(i), 0));
+					m.textureIDs.add((byte) texid);
+				}
 			}
-			m.verticesDataLength = m.verticesBlock.vertices.size()*m.shaderUsage.vertexFormat_PC.getLength();
+			if ((p.mesh.platform == Platform.X360)) m.verticesDataLength = m.verticesBlock.vertices.size()*m.shaderUsage.vertexFormat_X360.getLength();
+			else m.verticesDataLength = m.verticesBlock.vertices.size()*m.shaderUsage.vertexFormat_PC.getLength();
 		}
 		
 		//--- shadersusage ---
 		//fill in the shaders usage
-		for (var s : allShaderUsages) p.mesh.shadersUsage.shadersUsage.add(s.getKey());
+		if (!legacy && p.mesh.shadersUsage != null) {
+			p.mesh.shadersUsage.shadersUsage.clear();
+			for (var s : allShaderUsages) p.mesh.shadersUsage.shadersUsage.add(s.getKey());
+		}
 		//--- vertices (several blocks) ---
 		//normally already filled in
 		//--- triangles (one block) ---
@@ -2226,7 +2453,7 @@ public class Geometry extends Block {
 		}
 	}
 	
-	private static void normalizeTangents(ArrayList<Vertex> vertices) {
+	private static void normalizeTangents(List<Vertex> vertices) {
 		// Normalize tangents
 	    for (var v : vertices) {
 	        double nx = v.normX;
@@ -2248,7 +2475,7 @@ public class Geometry extends Block {
 	        v.tanX = (float) (tx / length);
 	        v.tanY = (float) (ty / length);
 	        v.tanZ = (float) (tz / length);
-	        v.tanW = 0x7FFF/32768.0f;
+	        v.tanW = 1.0f;
 	    }
 	}
 
@@ -2270,7 +2497,12 @@ public class Geometry extends Block {
 	    			invalidateVertsMat = true;
 				} else {
 					for (var p2 : asParts) {
-			    		if (p2.mesh.materials.materials.get(mat).triangles.size() != p.mesh.materials.materials.get(mat).triangles.size()) {
+			    		if (p2
+			    				.mesh.materials.materials.get(mat)
+			    				.triangles.size() 
+			    				!= p
+			    				.mesh.materials.materials.get(mat)
+			    				.triangles.size()) {
 			    			System.out.println("Warning : Different triangle counts across Autosculpt zones on part "+p.header.partName+", Autosculpt may break, please check your model !");
 			    			break matsloop; //avoids further issues for the current part
 			    		}
@@ -2351,9 +2583,9 @@ public class Geometry extends Block {
 							//temporarily build the triangle
 							
 							asParts.get(p2).mesh.materials.materials.get(mat).triangles.add( new Triangle(
-									(short)(finalIndex0 == -1 ? asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.indexOf(partsTris.get(p2).get(i)[0]) : finalIndex0),
-									(short)(finalIndex1 == -1 ? asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.indexOf(partsTris.get(p2).get(i)[1]) : finalIndex1),
-									(short)(finalIndex2 == -1 ? asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.indexOf(partsTris.get(p2).get(i)[2]) : finalIndex2)
+									(finalIndex0 == -1 ? asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.indexOf(partsTris.get(p2).get(i)[0]) : finalIndex0),
+									(finalIndex1 == -1 ? asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.indexOf(partsTris.get(p2).get(i)[1]) : finalIndex1),
+									(finalIndex2 == -1 ? asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.indexOf(partsTris.get(p2).get(i)[2]) : finalIndex2)
 								) );
 							
 							// old method for reference
@@ -2540,10 +2772,10 @@ public class Geometry extends Block {
 		        	p2.mesh.info.numVertices = 0;
 		        	for (var vb : p2.mesh.verticesBlocks) p2.mesh.info.numVertices += vb.vertices.size();
 		        	for (var m : p2.mesh.materials.materials) {
-		        		m.fromTriVertID = triVertI; //actually concerns triangles
-		        		m.toTriVertID = m.fromTriVertID + m.triangles.size()*3;
-		        		m.numTriVertices = m.toTriVertID - m.fromTriVertID;
-		        		triVertI = m.toTriVertID;
+		        		m.fromTriIndex = triVertI; //actually concerns triangles
+		        		m.toTriIndex = m.fromTriIndex + m.triangles.size()*3;
+		        		m.numTriIndices = m.toTriIndex - m.fromTriIndex;
+		        		triVertI = m.toTriIndex;
 		        		m.verticesDataLength = m.verticesBlock.vertices.size()*m.shaderUsage.vertexFormat_PC.getLength();
 		            }
 		        	p2.rebuildSubBlocks();
@@ -2742,11 +2974,10 @@ public class Geometry extends Block {
 		boolean UVOOB = false;
 		for (var m : p.mesh.materials.materials) {
 			for (var v : m.verticesBlock.vertices) {
-				if (m.verticesBlock.vertexFormat.has_short4n_10x_position())
-					if (v.posX > Vertex.short4n_10x_max || v.posY > Vertex.short4n_10x_max || v.posZ > Vertex.short4n_10x_max || 
-						v.posX < Vertex.short4n_10x_min || v.posX < Vertex.short4n_10x_min || v.posX < Vertex.short4n_10x_min) posOOB = true;
-				if (m.verticesBlock.vertexFormat.has_short2n_32x_texcoord())
-					if (v.tex0U > Vertex.short2n_32x_max || v.tex0V > Vertex.short2n_32x_max || v.tex0U < Vertex.short2n_32x_min || v.tex0V < Vertex.short2n_32x_min) UVOOB = true;
+				var vf = m.verticesBlock.vertexFormat;
+				if (v.posX > vf.positionMax || v.posY > vf.positionMax || v.posZ > vf.positionMax || 
+					v.posX < vf.positionMin || v.posX < vf.positionMin || v.posX < vf.positionMin) posOOB = true;
+				if (v.tex0U > vf.texcoordMax || v.tex0V > vf.texcoordMax || v.tex0U < vf.texcoordMin || v.tex0V < vf.texcoordMin) UVOOB = true;
 			}
 		}
 		if (posOOB) System.out.println("Warning : one or multiple vertices are too far away from the origin on part "+p.name+" ! Please keep X, Y and Z between -10 and +10.");
@@ -2800,6 +3031,64 @@ public class Geometry extends Block {
 			return new Pair<>(blockname, filename);
 		}
 		return null;
+	}
+
+	public void changePlatform(Platform plat) {
+		platform = plat;
+		geomHeader.geomInfo.setPlatform(plat);
+		for (var p : parts) {
+			p.header.setPlatform(plat);
+			p.mesh.changePlatform(plat);
+			
+			p.texusage.texusage.clear();
+			if (plat == Platform.PC || plat == Platform.X360) p.mesh.shadersUsage.shadersUsage.clear();
+	
+			for (var m : p.mesh.materials.materials) {
+				if (plat == Platform.PC || plat == Platform.X360) {
+					if (!p.mesh.shadersUsage.shadersUsage.contains(m.shaderUsage.getKey())) p.mesh.shadersUsage.shadersUsage.add(m.shaderUsage.getKey());
+					m.shaderUsageID = (byte) p.mesh.shadersUsage.shadersUsage.indexOf(m.shaderUsage.getKey());
+					
+					for (int i=0; i<m.TextureHashes.size() && i<m.textureUsages.size(); i++) 
+						if (!p.texusage.texusage.contains(new Pair<>(m.TextureHashes.get(i),m.textureUsages.get(i).getKey())))
+							p.texusage.texusage.add(new Pair<>(m.TextureHashes.get(i),m.textureUsages.get(i).getKey()));
+					
+					m.textureIDs.clear();
+					for (int i=0; i<m.TextureHashes.size() && i<m.textureUsages.size(); i++)
+						m.textureIDs.add((byte) p.texusage.texusage.indexOf(new Pair<>(m.TextureHashes.get(i),m.textureUsages.get(i).getKey())));
+						
+				} else {
+					
+
+					var oldTextureHashes = m.TextureHashes;
+					m.TextureHashes = new ArrayList<>();
+					for (int i=0; i<((ShaderUsage.Legacy)m.shaderUsage).texusages.size(); i++) m.TextureHashes.add(0);
+					
+					for (int i=0; i<oldTextureHashes.size() && i<m.textureUsages.size(); i++) {
+						if (((ShaderUsage.Legacy)m.shaderUsage).texusages.contains(m.textureUsages.get(i))) {
+							m.TextureHashes.set(((ShaderUsage.Legacy)m.shaderUsage).texusages.indexOf(m.textureUsages.get(i)), oldTextureHashes.get(i));
+						}
+					}
+					m.textureUsages = new ArrayList<>(((ShaderUsage.Legacy)m.shaderUsage).texusages);
+					for (int i=m.TextureHashes.size()-1; i>=0; i--) {
+						if (m.TextureHashes.get(i) == 0) {
+							m.TextureHashes.remove(i);
+							m.textureUsages.remove(i);
+						}
+						else break;
+					}
+					
+					for (int i=0; i<m.TextureHashes.size(); i++) 
+						if (!p.texusage.texusage.contains(new Pair<>(m.TextureHashes.get(i),0)))
+							p.texusage.texusage.add(new Pair<>(m.TextureHashes.get(i),0));
+	
+					m.textureIDs.clear();
+					for (int i=0; i<m.TextureHashes.size() && i<m.textureUsages.size(); i++)
+						m.textureIDs.add((byte) p.texusage.texusage.indexOf(new Pair<>(m.TextureHashes.get(i),0)));
+	
+				}
+			}
+		}
+		
 	}
 }
 

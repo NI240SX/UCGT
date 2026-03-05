@@ -38,6 +38,10 @@ public class Triangles_X360 extends Triangles {
 	public Triangles_X360() {
 	}
 
+	public Triangles_X360(Triangles triangles) {
+		super(triangles);
+	}
+
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 

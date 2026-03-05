@@ -35,6 +35,10 @@ public class Triangles_PC extends Triangles {
 	public Triangles_PC() {
 	}
 
+	public Triangles_PC(Triangles triangles) {
+		super(triangles);
+	}
+
 	@Override
 	public byte[] save(int currentPosition) {
 

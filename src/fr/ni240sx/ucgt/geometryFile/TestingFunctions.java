@@ -14,8 +14,17 @@ import java.util.HashMap;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
+import fr.ni240sx.ucgt.geometryFile.geometry.GeomHeader;
+import fr.ni240sx.ucgt.geometryFile.gui.FileOffset;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
 import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
+import fr.ni240sx.ucgt.geometryFile.textures.TPK;
+import fr.ni240sx.ucgt.geometryFile.textures.TPKHeader;
+import javafx.scene.Group;
+import javafx.scene.shape.CullFace;
+import javafx.scene.shape.MeshView;
+import javafx.scene.shape.TriangleMesh;
+import javafx.scene.shape.VertexFormat;
 import javafx.util.Pair;
 
 @SuppressWarnings("unused")
@@ -189,6 +198,193 @@ public class TestingFunctions {
 		try {
 			Geometry.ctkConfigToUCGTConfig(new File(ctkConfig), new File(ucgtConfig));
 		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static int getNextInt(FileInputStream fis) throws IOException {
+		return fis.read() | fis.read() << 8 | fis.read() << 16 | fis.read() << 24;
+	}
+	
+	public static void findAlignment(boolean findMinFileAlignment, String s)
+			throws FileNotFoundException, IOException, Exception {
+		var dict = new HashMap<Integer,Integer>(); //block type, alignment
+		var fis = new FileInputStream(new File(s));
+		int inPos=0;
+		while (fis.available()>0) {
+			var bTypeRaw = getNextInt(fis);
+			var bType = BlockType.get(bTypeRaw);
+			var bSize = getNextInt(fis);
+			
+			if (!findMinFileAlignment) {
+				int mod = 16384;
+				while (inPos % mod != 0) mod /= 2;
+				if (mod > 1024) System.out.println();
+				
+				if (bType.equals(BlockType.Geometry)) {
+					getNextInt(fis);
+					var paddingLength = getNextInt(fis);
+					fis.skipNBytes(paddingLength);
+					getNextInt(fis); //BlockType.GeomHeader
+					var headerLength = getNextInt(fis);
+					
+					var headerData = ByteBuffer.allocate(headerLength+4);
+					headerData.order(ByteOrder.LITTLE_ENDIAN);
+					headerData.putInt(0, headerLength);
+					fis.read(headerData.array(), 4, headerLength);
+					
+					fis.skipNBytes(bSize-headerLength-paddingLength-16);
+					
+					var header = new GeomHeader(headerData);
+	//								System.out.println(header.geomInfo.filename);
+					System.out.println(String.format("%10d", inPos) + " - " + String.format("0x%08X", bTypeRaw) + " (" + bType + ") has alignment modulo "+mod+" - \""+header.geomInfo.filename+"\" chunk "+header.geomInfo.blockname);
+				} else if (bType.equals(BlockType.TPK)){
+					getNextInt(fis);
+					var paddingLength = getNextInt(fis);
+					fis.skipNBytes(paddingLength);
+					getNextInt(fis); //BlockType.GeomHeader
+					var headerLength = getNextInt(fis);
+					
+					var headerData = ByteBuffer.allocate(headerLength+4);
+					headerData.order(ByteOrder.LITTLE_ENDIAN);
+					headerData.putInt(0, headerLength);
+					fis.read(headerData.array(), 4, headerLength);
+					
+					fis.skipNBytes(bSize-headerLength-paddingLength-16);
+					
+					var header = new TPKHeader(headerData);
+					System.out.println(String.format("%10d", inPos) + " - " + String.format("0x%08X", bTypeRaw) + " (" + bType + ") has alignment modulo "+mod+" - \""+header.info.filename+"\" chunk "+header.info.blockname);
+				} else {
+					if (bType == BlockType.Padding)
+						System.out.println(String.format("%10d", inPos) + " - " + String.format("0x%08X", bTypeRaw) + " (" + bType + ") has alignment modulo "+mod+" - padding length "+bSize);
+					else
+						System.out.println(String.format("%10d", inPos) + " - " + String.format("0x%08X", bTypeRaw) + " (" + bType + ") has alignment modulo "+mod);
+					fis.skipNBytes(bSize);
+				}
+			}else {
+			
+				
+				int mod = 4096;
+				while (inPos % mod != 0) mod /= 2;
+				if (!dict.containsKey(bTypeRaw)) {
+					dict.put(bTypeRaw, mod);
+				} else {
+					if (dict.get(bTypeRaw) > mod) dict.put(bTypeRaw, mod);
+				}
+				fis.skipNBytes(bSize);
+
+			}
+			
+			inPos+=bSize+8;
+		}
+		fis.close();
+	
+		if (findMinFileAlignment) {
+			for (var k : dict.keySet()) {
+				System.out.println(String.format("0x%08X", k) + " (" + BlockType.get(k) + ") has alignment modulo "+dict.get(k));
+			}
+		}
+	}
+
+	public static void collisionDisplayTest(Group viewportGroup) {
+		try {
+			File f;
+			var fis = new FileInputStream(f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\UCGT\\chunk B3 PRAC block suspected verts0"));
+			byte[] verts0 = new byte[(int) f.length()];
+			fis.read(verts0);
+			fis.close();
+			
+			fis = new FileInputStream(f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\UCGT\\chunk B3 PRAC suspected tri0"));
+			byte[] tri0 = new byte[(int) f.length()];
+			fis.read(tri0);
+			fis.close();
+
+			var Verts0 = ByteBuffer.wrap(verts0);
+			Verts0.order(ByteOrder.LITTLE_ENDIAN);
+			var Tris0 = ByteBuffer.wrap(tri0);		
+			Tris0.order(ByteOrder.LITTLE_ENDIAN);	
+			
+			TriangleMesh matMesh = new TriangleMesh();
+			
+			matMesh.setVertexFormat(VertexFormat.POINT_TEXCOORD);
+			matMesh.getTexCoords().addAll(0, 0);
+			
+			while (Verts0.hasRemaining()) {
+				matMesh.getPoints().addAll(Verts0.getFloat(), Verts0.getFloat(), -Verts0.getFloat());
+				Verts0.getFloat();
+			}
+			while (Tris0.hasRemaining()) {
+				var v1 = Tris0.getShort();
+				var v2 = Tris0.getShort();
+				var v3 = Tris0.getShort();
+				matMesh.getFaces().addAll(
+						// points normals   texcoords
+						v1, 0, //v1
+						v3, 0, //v2
+						v2, 0);//v3						
+				Tris0.getShort();
+			}
+			
+			var mv = new MeshView(matMesh);
+			mv.setCullFace(CullFace.NONE);
+			
+			viewportGroup.getChildren().add(mv);
+
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			fis = new FileInputStream(f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\UCGT\\chunk B3 suspected verts1"));
+			byte[] verts1 = new byte[(int) f.length()];
+			fis.read(verts1);
+			fis.close();
+			
+			fis = new FileInputStream(f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\UCGT\\chunk B3 suspected tri1"));
+			byte[] tri1 = new byte[(int) f.length()];
+			fis.read(tri1);
+			fis.close();
+
+			var Verts1 = ByteBuffer.wrap(verts1);
+			Verts1.order(ByteOrder.LITTLE_ENDIAN);
+			var Tris1 = ByteBuffer.wrap(tri1);		
+			Tris1.order(ByteOrder.LITTLE_ENDIAN);	
+			
+			matMesh = new TriangleMesh();
+			
+			matMesh.setVertexFormat(VertexFormat.POINT_TEXCOORD);
+			matMesh.getTexCoords().addAll(0, 0);
+			
+			while (Verts1.hasRemaining()) {
+				matMesh.getPoints().addAll(Verts1.getFloat(), Verts1.getFloat(), -Verts1.getFloat());
+				Verts1.getFloat();
+			}
+			while (Tris1.hasRemaining()) {
+				var v1 = Tris1.getShort();
+				var v2 = Tris1.getShort();
+				var v3 = Tris1.getShort();
+				matMesh.getFaces().addAll(
+						// points normals   texcoords
+						v1, 0, //v1
+						v3, 0, //v2
+						v2, 0);//v3				
+				Tris1.getShort();
+			}
+			
+			mv = new MeshView(matMesh);
+			mv.setCullFace(CullFace.NONE);
+			
+			viewportGroup.getChildren().add(mv);
+
+
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -468,5 +664,50 @@ public class TestingFunctions {
 //			geom = Geometry.importFromFile(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\world models (again)\\recomp\\"+f.getName().replace(".bin", "-recompiled.z3d")));
 //			geom.save(new File("C:\\Users\\NI240SX\\Documents\\NFS\\a MUCP\\UCGT\\world models (again)\\recomp\\"+f.getName().replace(".bin", "-recompiled.bin")));
 //		}
+		
+		
+//		var fis = new FileInputStream(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\UCGT\\TPK X0.mpk"));
+//		fis.readNBytes(4);
+//		var arr = fis.readAllBytes();
+//		fis.close();
+//		
+//		var tpk = new TPK(ByteBuffer.wrap(arr));
+//		var fos = new FileOutputStream(new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\UCGT\\TPK X0-recompiled.mpk"));
+//		fos.write(tpk.save(0));
+//		fos.close();
+//		tpk.exportToFolder("C:\\jeux\\UCE 1.0.1.18\\CARS\\AUD_RS4_STK_08");
+//		tpk.textures.forEach(t -> {
+//			try {
+//				var fos = new FileOutputStream(new File("C:\\jeux\\UCE 1.0.1.18\\0 VANILLA 1.0.1.18 FILES BACKUP\\CARS\\BMW_M3_E92_08\\textures\\"+t.name));
+//				fos.write(t.save(9));
+//				fos.close();
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//		});
+
+	/*
+0x00000000 (Padding) has alignment modulo 4
+0x0003B802 (INVALID) has alignment modulo 32
+0x0003B801 (INVALID) has alignment modulo 32
+0x80034100 (INVALID) has alignment modulo 128
+0x00037220 (INVALID) has alignment modulo 128
+0x00037260 (INVALID) has alignment modulo 4
+0x0003BC00 (INVALID) has alignment modulo 16
+0x80036000 (INVALID) has alignment modulo 16
+0x00034027 (INVALID) has alignment modulo 128
+0x00034185 (INVALID) has alignment modulo 16
+0xB3300000 (TPK) has alignment modulo 128
+0x80134000 (Geometry) has alignment modulo 4
+0x00037250 (INVALID) has alignment modulo 4
+0x00037270 (INVALID) has alignment modulo 8
+0x00034159 (INVALID) has alignment modulo 4
+	 */
+
+//		findAlignment(false, "C:\\jeux\\UCE 1.0.1.18\\TRACKS\\STREAML8R_MW2.OLD");
+//		findAlignment(false, "C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\UCGT\\stream chunk C85");
+	
+		dumpPartsAsIs("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\UCGT\\PS X360\\GEOMETRY.BIN");
+		
 	}
 }

@@ -11,8 +11,35 @@ public class DBMPPart {
 	public int kitnumber = 99;
 	public boolean isWidebody = false;
 	public boolean isCarPart = false;
+	public boolean isVectorVinyl = false;
 	
 	CarPartListCell listCell;
+	
+	/*
+
+	VECTORVINYL common attributes
+
+	PARTID_UPGRADE_GROUP	VECTORVINYL i
+	PART_NAME_BASE_HASH
+	PART_NAME_OFFSETS
+	NAME_OFFSET
+	
+	VINYLLANGUAGEHASH		vinyl name
+	GROUPLANGUAGEHASH 		vinyl group name
+
+	PART_NAME_SELECTOR		always 2
+	BRAND_NAME 				unused ? leftover ?
+	
+	FULLBODY
+	ISDECAL
+	MIRROR
+	
+	SPECIFICCARNAME
+	COLOR0ID, COLOR1ID, COLOR2ID, COLOR3ID
+	COLOR0LANGUAGEHASH, 1, 2, 3
+
+
+	 */
 	
 	public DBMPPart(boolean useGUI) {
 		if (useGUI) listCell = new CarPartListCell();
@@ -80,6 +107,9 @@ public class DBMPPart {
 	
 	public void update() {
 		if (getAttribute("LOD_BASE_NAME") != null) isCarPart = true;
+		else isCarPart = false;
+		if (((AttributeCarPartID)getAttribute("PARTID_UPGRADE_GROUP"))!= null && ((AttributeCarPartID)getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.VECTORVINYL ) isVectorVinyl = true;
+		else isVectorVinyl = false;
 		if(isCarPart) {
 			if (DBMPPlus.widebodyAutoCorrect && ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )) != null){
 				if (((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )).value1.contains("W")) {
@@ -125,61 +155,28 @@ public class DBMPPart {
 				displayName = name1 + " (reference to " + name2 + ")";
 			}
 		} else {
-			displayName = ((AttributeString)getAttribute("NAME_OFFSET")).value1;
+			displayName = getAttribute("NAME_OFFSET") != null ? ((AttributeString)getAttribute("NAME_OFFSET")).value1 : "MISSING ATTRIBUTES";
 		}
 		if (listCell != null) listCell.update();
 	}
 	
 	public void addAttribute(Attribute a) {
+		if (a == null) return;
 		attributes.add(a);
 		if (getAttribute("LOD_BASE_NAME") != null) isCarPart = true;
 		update();
 	}
-	public Attribute getAttribute(String a) {
-		Attribute att = null;
+	@SuppressWarnings("unchecked")
+	public <T extends Attribute> T getAttribute(String a) {
+		T att = null;
 		for (Attribute attribute : attributes) {
 			if (Hash.getBIN(attribute.Key).equals(a)) {
-				att = attribute;
+				att = (T)attribute;
 			}
 		}
 		return att;
 	}
-	public AttributeInteger getAttributeInteger(String a) {
-		AttributeInteger att = null;
-		for (Attribute attribute : attributes) {
-			if (Hash.getBIN(attribute.Key).equals(a)) {
-				att = (AttributeInteger)attribute;
-			}
-		}
-		return att;
-	}
-	public AttributeKey getAttributeKey(String a) {
-		AttributeKey att = null;
-		for (Attribute attribute : attributes) {
-			if (Hash.getBIN(attribute.Key).equals(a)) {
-				att = (AttributeKey)attribute;
-			}
-		}
-		return att;
-	}
-	public AttributeCarPartID getAttributeCarPartID(String a) {
-		AttributeCarPartID att = null;
-		for (Attribute attribute : attributes) {
-			if (Hash.getBIN(attribute.Key).equals(a)) {
-				att = (AttributeCarPartID)attribute;
-			}
-		}
-		return att;
-	}
-	public AttributeString getAttributeString(String a) {
-		AttributeString att = null;
-		for (Attribute attribute : attributes) {
-			if (Hash.getBIN(attribute.Key).equals(a)) {
-				att = (AttributeString)attribute;
-			}
-		}
-		return att;
-	}
+	
 	public void removeAttribute(String a) {
 		for (Attribute attribute : attributes) {
 			if (Hash.getBIN(attribute.Key).equals(a)) {

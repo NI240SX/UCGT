@@ -8,7 +8,7 @@ import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.geometryFile.BlockType;
 
 public class Mesh_VertsHeader extends Block {
-	//apparently always empty, still saves data in case it's not
+	//apparently always empty, stores a name in legacy games, still saves data in case it's not
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Part_Mesh_VertsHeader;}
@@ -19,7 +19,7 @@ public class Mesh_VertsHeader extends Block {
 		data = new byte[length];
 		in.get(data); //raw data if there's any
 		
-		if (length > 0) System.out.println("Found VertsHeader block with length="+length+", this shouldn't happen !");
+//		if (length > 0) System.out.println("Found VertsHeader block with length="+length+", this shouldn't happen !");
 	}
 	
 	public Mesh_VertsHeader() {

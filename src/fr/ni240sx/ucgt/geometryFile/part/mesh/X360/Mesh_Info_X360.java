@@ -45,6 +45,10 @@ public class Mesh_Info_X360 extends Mesh_Info {
 		flags = new byte[]{(byte) 0x80, 0x41, (byte) 0xA3, 0x02};
 	}
 
+	public Mesh_Info_X360(Mesh_Info info) {
+		super(info);
+	}
+
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 		var alignment = Block.findAlignment(currentPosition+8, 16);

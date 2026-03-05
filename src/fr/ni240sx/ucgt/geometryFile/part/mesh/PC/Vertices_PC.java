@@ -28,10 +28,11 @@ public class Vertices_PC extends Vertices {
 
 	@Override
 	public void readVertices() {
+		if (verticesData == null) return;
 		var bb = ByteBuffer.wrap(verticesData);
 		bb.order(ByteOrder.LITTLE_ENDIAN);
 //		System.out.println("Vertex format to use "+vertexFormat.getName());
-		while (bb.position() < bb.capacity()) {
+		while (bb.position() <= bb.capacity() - vertexFormat.getLength()) {
 			vertices.add(new Vertex(bb, vertexFormat));
 		}
 		bb = null;
@@ -39,6 +40,10 @@ public class Vertices_PC extends Vertices {
 	}
 	
 	public Vertices_PC() {
+	}
+
+	public Vertices_PC(Vertices vertices) {
+		super(vertices);
 	}
 
 	@Override

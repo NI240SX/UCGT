@@ -29,13 +29,13 @@ public class Materials_X360 extends Materials {
 			in.position(matStart+36);
 			m.verticesDataLength = in.getInt();
 			in.getInt(); //vertex format data, 0x00001880 for cars
-			m.fromTriVertID = in.getInt();
-			m.toTriVertID = in.getInt();
+			m.fromTriIndex = in.getInt();
+			m.toTriIndex = in.getInt();
 
 			m.textureHash = in.getInt();
 			in.get(m.flags);
-			m.numTriVertices = in.getInt();
-			m.numTriVerticesExtra = in.getInt();
+			m.numTriIndices = in.getInt();
+			m.numTriIndicesExtra = in.getInt();
 			
 			m.shaderID = in.get();
 			var numtextures = in.get();
@@ -76,6 +76,10 @@ public class Materials_X360 extends Materials {
 	}
 	
 
+	public Materials_X360(Materials materials) {
+		super(materials);
+	}
+
 	@Override
 	public BlockType getBlockID() {
 		return BlockType.Part_Mesh_Materials_X360;
@@ -103,13 +107,13 @@ public class Materials_X360 extends Materials {
 			out.put((byte) 0x00);
 			out.put((byte) m.shaderUsage.vertexFormat_X360.getLength());
 			out.put((byte) 0x80);
-			out.putInt(m.fromTriVertID);
-			out.putInt(m.toTriVertID);
+			out.putInt(m.fromTriIndex);
+			out.putInt(m.toTriIndex);
 
 			out.putInt(m.textureHash);
 			out.put(m.flags);
-			out.putInt(m.numTriVertices);
-			out.putInt(m.numTriVerticesExtra);
+			out.putInt(m.numTriIndices);
+			out.putInt(m.numTriIndicesExtra);
 
 			out.put(m.shaderID);
 			out.put((byte)m.textureIDs.size());

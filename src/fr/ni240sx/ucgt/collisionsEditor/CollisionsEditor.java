@@ -9,11 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-
 import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionBoxShape;
 import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionConvexTranslate;
@@ -62,7 +58,7 @@ public class CollisionsEditor extends Application {
 //	public static boolean widebodyAutoCorrect = true;
 	
 	public static final String programName = "UCGT Collisions Editor";
-	public static final String programVersion = "1.0.0";
+	public static final String programVersion = "1.0.1";
 	public static final String settingsFolder = "settings";
 	public static final String settingsFile = "settings/colseditor.dat";
 	
@@ -360,7 +356,7 @@ public class CollisionsEditor extends Application {
         handleSettingsDark(settingsDark, scene);
     }
 
-	public void handleSettingsBoundsFromModel(Button boundsFromModel) {
+	public static void handleSettingsBoundsFromModel(Button boundsFromModel) {
 		boundsFromModel.setOnAction(e -> {
 			try {
 			if (visualModel != null) {
@@ -405,7 +401,7 @@ public class CollisionsEditor extends Application {
     	});
 	}
 
-	private void updateBoundsView() {
+	private static void updateBoundsView() {
 		if (renderBounds.get()) {
 			mainCollisions.mainBound.getChildrenRecursively().forEach(b -> {
 				if (!viewportGroup.getChildren().contains(b.displayBound)) viewport.viewportGroup.getChildren().add(b.displayBound);
@@ -417,7 +413,7 @@ public class CollisionsEditor extends Application {
 		}
 	}
 
-	private void updatePivotsView() {
+	private static void updatePivotsView() {
 		if (renderPivots.get()) {
 			mainCollisions.mainBound.getChildrenRecursively().forEach(b -> {
 				if (!viewportGroup.getChildren().contains(b.displayPivot)) viewport.viewportGroup.getChildren().add(b.displayPivot);
@@ -429,7 +425,7 @@ public class CollisionsEditor extends Application {
 		}
 	}
 
-	private void handleSettingsDark(CheckMenuItem settingsDark, Scene scene) {
+	private static void handleSettingsDark(CheckMenuItem settingsDark, Scene scene) {
 		//minor inconvenience
         if (useDarkMode) {
             scene.getRoot().setStyle("-fx-base:black");
@@ -446,7 +442,7 @@ public class CollisionsEditor extends Application {
         });
 	}
 
-	private void handleSettingsAbout(MenuItem settingsAbout) {
+	private static void handleSettingsAbout(MenuItem settingsAbout) {
 		settingsAbout.setOnAction(e -> {
 			Stage st = new Stage();
 			st.setTitle("About " + programName);
@@ -468,7 +464,7 @@ public class CollisionsEditor extends Application {
         });
 	}
 
-	private void handleSettingsWarnings(CheckMenuItem settingsWarnings) {
+	private static void handleSettingsWarnings(CheckMenuItem settingsWarnings) {
 		if (disableWarnings) settingsWarnings.setSelected(true);
         settingsWarnings.selectedProperty().addListener((obs, wasSelected, isSelected) -> {
             if (isSelected) {
@@ -479,7 +475,7 @@ public class CollisionsEditor extends Application {
         });
 	}
 
-	private void handleFileLoadVisual(MenuItem fileLoadVisual) {
+	private static void handleFileLoadVisual(MenuItem fileLoadVisual) {
 		fileLoadVisual.setOnAction(evt -> {
 				FileChooser fc = new FileChooser();
 				fc.setInitialDirectory(new File(lastGeomRepLoaded));
@@ -522,9 +518,9 @@ public class CollisionsEditor extends Application {
 								matMesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
 								
 								for (var v : m.verticesBlock.vertices) {
-									matMesh.getPoints().addAll((float)v.posY, (float)v.posZ, (float)v.posX);
-									matMesh.getNormals().addAll((float)v.normY, (float)v.normZ, (float)v.normX);
-									matMesh.getTexCoords().addAll((float)v.tex0U, 1-(float)v.tex0V);
+									matMesh.getPoints().addAll(v.posY, v.posZ, v.posX);
+									matMesh.getNormals().addAll(v.normY, v.normZ, v.normX);
+									matMesh.getTexCoords().addAll(v.tex0U, 1-v.tex0V);
 								}
 								
 								for (var tr : m.triangles) {
@@ -571,7 +567,7 @@ public class CollisionsEditor extends Application {
         fileLoadVisual.setAccelerator(KeyCombination.keyCombination("Ctrl+Shift+O"));
 	}
 
-	private void handleFileExit(Stage primaryStage, MenuItem fileExit) {
+	private static void handleFileExit(Stage primaryStage, MenuItem fileExit) {
 		fileExit.setOnAction(e -> {
 	        ButtonType sure = null;
 	        if (!disableWarnings)  sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to exit ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
@@ -582,33 +578,36 @@ public class CollisionsEditor extends Application {
         fileExit.setAccelerator(KeyCombination.keyCombination("Alt+F4"));
 	}
 
-	private void handleFileSave(MenuItem fileSave) {
+	private static void handleFileSave(MenuItem fileSave) {
 		fileSave.setOnAction(e -> {
-    		FileChooser fc = new FileChooser();
-			fc.setInitialDirectory(new File(lastDirectoryLoaded));
-			fc.setInitialFileName(mainCollisions.carname);
-			fc.getExtensionFilters().addAll(
-			        new FileChooser.ExtensionFilter("Binary serialized collisions", "*.bin"),
-			        new FileChooser.ExtensionFilter("All files", "*.*"));
-			fc.setTitle("Save " + mainCollisions.carname+ "");
+			new Alert(Alert.AlertType.WARNING, "Saving files not supported!", ButtonType.OK).show();
 			
-
-			try {
-				File f = fc.showSaveDialog(null);
-				lastFileSaved = f.getAbsolutePath().replace(lastFileLoaded, "");
-				File f_old = f;
-				f_old.renameTo(new File(f_old.getAbsoluteFile() + ".bak_" + DateTimeFormatter.ofPattern("uuMMdd-HHmmss").format(LocalDateTime.ofEpochSecond(f_old.lastModified(), 0, ZoneOffset.UTC))));
-				mainCollisions.saveToFile(f);
-				if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Database saved successfully.", ButtonType.OK).show();
-	    		e.consume();        
-			} catch (@SuppressWarnings("unused") Exception e1) {
-            	new Alert(Alert.AlertType.WARNING, "Error saving collisions, please try again !").show();
-			}
+//    		FileChooser fc = new FileChooser();
+//			fc.setInitialDirectory(new File(lastDirectoryLoaded).exists() ? new File(lastDirectoryLoaded) : new File("."));
+//			fc.setInitialFileName(mainCollisions.carname);
+//			fc.getExtensionFilters().addAll(
+//			        new FileChooser.ExtensionFilter("Binary serialized collisions", "*.bin"),
+//			        new FileChooser.ExtensionFilter("All files", "*.*"));
+//			fc.setTitle("Save " + mainCollisions.carname+ "");
+//			
+//
+//			try {
+//				File f = fc.showSaveDialog(null);
+//				lastFileSaved = f.getAbsolutePath().replace(lastFileLoaded, "");
+//				File f_old = f;
+//				f_old.renameTo(new File(f_old.getAbsolutePath() + ".bak_" + new SimpleDateFormat("yyMMdd-HHmmss").format(new Date(f_old.lastModified()))));
+////				f_old.renameTo(new File(f_old.getAbsoluteFile() + ".bak_" + DateTimeFormatter.ofPattern("uuMMdd-HHmmss").format(LocalDateTime.ofEpochSecond(f_old.lastModified(), 0, ZoneOffset.UTC))));
+//				mainCollisions.saveToFile(f);
+//				if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Database saved successfully.", ButtonType.OK).show();
+//	    		e.consume();        
+//			} catch (@SuppressWarnings("unused") Exception e1) {
+//            	new Alert(Alert.AlertType.WARNING, "Error saving collisions, please try again !").show();
+//			}
         });
         fileSave.setAccelerator(KeyCombination.keyCombination("Ctrl+S"));
 	}
 
-	private void handleFileNew(Stage primaryStage, MenuItem fileNew) {
+	private static void handleFileNew(Stage primaryStage, MenuItem fileNew) {
 		fileNew.setOnAction(e -> {
 	        ButtonType sure = null;
 	        if (!disableWarnings) sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to create blank collisions ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
@@ -624,13 +623,13 @@ public class CollisionsEditor extends Application {
         fileNew.setAccelerator(KeyCombination.keyCombination("Ctrl+N"));
 	}
 
-	private void handleFileLoad(Stage primaryStage, MenuItem fileLoad) {
+	private static void handleFileLoad(Stage primaryStage, MenuItem fileLoad) {
 		fileLoad.setOnAction(e -> {
 	        ButtonType sure = null;
 	        if (!disableWarnings) sure = new Alert(Alert.AlertType.INFORMATION, "Are you sure you want to load new collisions ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
 			if (ButtonType.YES.equals(sure) || disableWarnings) {
 				FileChooser fc = new FileChooser();
-				fc.setInitialDirectory(new File(lastDirectoryLoaded));
+				fc.setInitialDirectory(new File(lastDirectoryLoaded).exists() ? new File(lastDirectoryLoaded) : new File("."));
 				fc.setInitialFileName(lastFileLoaded);
 				fc.getExtensionFilters().addAll(
 			        new FileChooser.ExtensionFilter("Binary serialized collisions", "*.bin"),
@@ -658,7 +657,7 @@ public class CollisionsEditor extends Application {
         fileLoad.setAccelerator(KeyCombination.keyCombination("Ctrl+O"));
 	}
 
-	public void updateVisualModel() {
+	public static void updateVisualModel() {
 		if (renderVisualModel.get()) {
 			if (modelGroup != null && !viewportGroup.getChildren().contains(modelGroup)) viewportGroup.getChildren().add(modelGroup);
 		} else {

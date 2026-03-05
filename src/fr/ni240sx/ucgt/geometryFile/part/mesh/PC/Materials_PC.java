@@ -34,8 +34,8 @@ public class Materials_PC extends Materials {
 
 			var numtextures = in.get(matStart+58);
 			
-			m.fromTriVertID = in.getInt();
-			m.toTriVertID = in.getInt();
+			m.fromTriIndex = in.getInt();
+			m.toTriIndex = in.getInt();
 //			in.getInt(); //0 ?				// TEXTURE ORDER OR SOMETHING
 //			m.usageSpecific1 = in.getInt(); // TEXTURE ORDER OR SOMETHING - there's room for 10 textures in total
 //
@@ -55,8 +55,8 @@ public class Materials_PC extends Materials {
 			m.textureHash = in.getInt();
 			
 			in.get(m.flags);
-			m.numTriVertices = in.getInt();
-			m.numTriVerticesExtra = in.getInt();
+			m.numTriIndices = in.getInt();
+			m.numTriIndicesExtra = in.getInt();
 			
 			in.position(matStart+96);
 			in.get();
@@ -87,6 +87,11 @@ public class Materials_PC extends Materials {
 	public Materials_PC() {
 	}
 
+	public Materials_PC(Materials materials) {
+		super(materials);
+	}
+	
+
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 
@@ -102,8 +107,8 @@ public class Materials_PC extends Materials {
 		
 		for (var m : materials) {
 			int matStart = out.position();
-			out.putInt(m.fromTriVertID);
-			out.putInt(m.toTriVertID);
+			out.putInt(m.fromTriIndex);
+			out.putInt(m.toTriIndex);
 //			out.putInt(0);
 //			out.putInt(m.usageSpecific1);		
 //			out.putInt(m.usageSpecific2);
@@ -126,8 +131,8 @@ public class Materials_PC extends Materials {
 			out.putInt(m.textureHash);
 			
 			out.put(m.flags);
-			out.putInt(m.numTriVertices);
-			out.putInt(m.numTriVerticesExtra);
+			out.putInt(m.numTriIndices);
+			out.putInt(m.numTriIndicesExtra);
 			
 			out.position(matStart+96);
 			out.put((byte) 0);

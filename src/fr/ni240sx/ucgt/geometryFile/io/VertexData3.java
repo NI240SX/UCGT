@@ -17,4 +17,9 @@ public class VertexData3{
 		y = Float.parseFloat(string2);
 		z = Float.parseFloat(string3);
 	}
+
+	@Override
+	public String toString() {
+		return "VertexData3 [x=" + x + ", y=" + y + ", z=" + z + "]";
+	}
 }

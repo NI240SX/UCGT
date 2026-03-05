@@ -11,11 +11,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
 
@@ -69,7 +68,7 @@ public class DBMPPlus extends Application {
 	static String currentExhASZones = "11";
 	
 	public static final String programName = "UCGT DBModelParts Editor";
-	public static final String programVersion = "1.1.3.2";
+	public static final String programVersion = "1.1.4";
 	public static final String settingsFolder = "settings";
 	public static final String settingsFile = "settings/dbmpeditor.dat";
 
@@ -411,8 +410,7 @@ public class DBMPPlus extends Application {
         	if (e.getCode().equals(KeyCode.DELETE)) deleteSelectedParts();
         	for (CarPartListCell c : DBMPPlus.carPartListCells) if(c!=null && c.getItem()!=null) c.checkBox.setSelected(DBMPPlus.partsDisplay.getSelectionModel().getSelectedItems().contains(c.getItem()));
 
-        	DBMPPlus.attributesDisplay.getChildren().clear();
-        	if (partsDisplay.getSelectionModel().getSelectedItem()!=null) for (Attribute a: partsDisplay.getSelectionModel().getSelectedItem().attributes) DBMPPlus.attributesDisplay.getChildren().add(a.dataHBox);
+        	updateAttributesDisplay();
         	
         	e.consume();
         });
@@ -607,22 +605,55 @@ public class DBMPPlus extends Application {
 
 	public static void dbSortAttributes(ActionEvent e) {
 		for(DBMPPart p: mainDBMP.dBMPParts) {
-			int s = p.attributes.size();
-			//most wack ass sorting method but it works
-			p.addAttribute(p.getAttribute("PART_NAME_SELECTOR"));
-			p.addAttribute(p.getAttribute("LOD_NAME_PREFIX_SELECTOR"));
-			p.addAttribute(p.getAttribute("MAX_LOD"));
-			p.addAttribute(p.getAttribute("LOD_CHARACTERS_OFFSET"));
-			p.addAttribute(p.getAttribute("NAME_OFFSET"));
-			if (p.getAttribute("MORPHTARGET_NUM")!=null) p.addAttribute(p.getAttribute("MORPHTARGET_NUM"));
-			p.addAttribute(p.getAttribute("PARTID_UPGRADE_GROUP"));
-			p.addAttribute(p.getAttribute("PART_NAME_OFFSETS"));
-			p.addAttribute(p.getAttribute("LOD_BASE_NAME"));
-			if (p.getAttribute("CV")!=null) p.addAttribute(p.getAttribute("CV"));
-			for (int i=0; i<s; i++) p.attributes.remove(0);
+			if (p.isCarPart) {
+				int s = p.attributes.size();
+				//most wack ass sorting method but it works
+				p.addAttribute(p.getAttribute("PART_NAME_SELECTOR"));
+				p.addAttribute(p.getAttribute("LOD_NAME_PREFIX_SELECTOR"));
+				p.addAttribute(p.getAttribute("MAX_LOD"));
+				p.addAttribute(p.getAttribute("LOD_CHARACTERS_OFFSET"));
+				p.addAttribute(p.getAttribute("NAME_OFFSET"));
+				if (p.getAttribute("MORPHTARGET_NUM")!=null) p.addAttribute(p.getAttribute("MORPHTARGET_NUM"));
+				p.addAttribute(p.getAttribute("PARTID_UPGRADE_GROUP"));
+				p.addAttribute(p.getAttribute("PART_NAME_OFFSETS"));
+				p.addAttribute(p.getAttribute("LOD_BASE_NAME"));
+				if (p.getAttribute("CV")!=null) p.addAttribute(p.getAttribute("CV"));
+				for (int i=0; i<s; i++) p.attributes.remove(0);
+			}
+			if (p.isVectorVinyl) {
+				int s = p.attributes.size();
+				//attributes skipped if null
+				p.addAttribute(p.getAttribute("PARTID_UPGRADE_GROUP"));
+				p.addAttribute(p.getAttribute("PART_NAME_BASE_HASH"));
+				p.addAttribute(p.getAttribute("PART_NAME_OFFSETS"));
+				p.addAttribute(p.getAttribute("NAME_OFFSET"));
+				
+				p.addAttribute(p.getAttribute("VINYLLANGUAGEHASH"));
+				p.addAttribute(p.getAttribute("GROUPLANGUAGEHASH"));
+				
+				p.addAttribute(p.getAttribute("PART_NAME_SELECTOR"));
+				p.addAttribute(p.getAttribute("BRAND_NAME"));
+
+				p.addAttribute(p.getAttribute("FULLBODY"));
+				p.addAttribute(p.getAttribute("ISDECAL"));
+				p.addAttribute(p.getAttribute("MIRROR"));
+				p.addAttribute(p.getAttribute("SPECIFICCARNAME"));
+				
+				p.addAttribute(p.getAttribute("COLOR0ID"));
+				p.addAttribute(p.getAttribute("COLOR1ID"));
+				p.addAttribute(p.getAttribute("COLOR2ID"));
+				p.addAttribute(p.getAttribute("COLOR3ID"));
+
+				p.addAttribute(p.getAttribute("COLOR0LANGUAGEHASH"));
+				p.addAttribute(p.getAttribute("COLOR1LANGUAGEHASH"));
+				p.addAttribute(p.getAttribute("COLOR2LANGUAGEHASH"));
+				p.addAttribute(p.getAttribute("COLOR3LANGUAGEHASH"));
+
+				for (int i=0; i<s; i++) p.attributes.remove(0);
+				
+			}
 		}
-		DBMPPlus.attributesDisplay.getChildren().clear();
-		if (partsDisplay.getSelectionModel().getSelectedItem()!=null) for (Attribute a: partsDisplay.getSelectionModel().getSelectedItem().attributes) DBMPPlus.attributesDisplay.getChildren().add(a.dataHBox);
+		updateAttributesDisplay();
 		e.consume();
 		if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All attributes sorted.").show();
 	}
@@ -630,34 +661,114 @@ public class DBMPPlus extends Application {
 	@SuppressWarnings("unused")
 	public static void dbOptimizeAttributes() {
 		for (DBMPPart p : mainDBMP.dBMPParts) {
-			// autosculpt either missing or maxed (11) + removed for parts that forcefully don't have it
-			if (p.getAttribute("MORPHTARGET_NUM")!=null) {
-				if (p.getAttributeInteger("MORPHTARGET_NUM").value != 0 
-						&& p.getAttributeCarPartID("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST
-						&& p.getAttributeCarPartID("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST_TIPS_CENTER
-						&& p.getAttributeCarPartID("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST_TIPS_LEFT
-						&& p.getAttributeCarPartID("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST_TIPS_RIGHT) {
-					p.getAttributeInteger("MORPHTARGET_NUM").value = 11;
-				} else {
-		    		try {
-		    			p.removeAttribute("MORPHTARGET_NUM");
-		    		} catch (Exception e2) {
-		    			// a ConcurrentModificationException occurs but this still works somehow
-		    			//e2.printStackTrace();
-		    		}
+			if (p.isCarPart) {
+				// autosculpt either missing or maxed (11) + removed for parts that forcefully don't have it
+				if (p.getAttribute("MORPHTARGET_NUM")!=null) {
+					if (p.<AttributeInteger>getAttribute("MORPHTARGET_NUM").value != 0 
+							&& p.<AttributeCarPartID>getAttribute("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST
+							&& p.<AttributeCarPartID>getAttribute("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST_TIPS_CENTER
+							&& p.<AttributeCarPartID>getAttribute("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST_TIPS_LEFT
+							&& p.<AttributeCarPartID>getAttribute("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST_TIPS_RIGHT) {
+						p.<AttributeInteger>getAttribute("MORPHTARGET_NUM").value = 11;
+					} else {
+			    		try {
+			    			p.removeAttribute("MORPHTARGET_NUM");
+			    		} catch (Exception e2) {
+			    			// a ConcurrentModificationException occurs but this still works somehow
+			    			//e2.printStackTrace();
+			    		}
+					}
 				}
-			}
 
-			// all CVs set to a custom value
-			if (p.getAttribute("CV")!=null) {
-				p.getAttributeKey("CV").value = optimizedCVName;
-			}
+				// all CVs set to a custom value
+				if (p.getAttribute("CV")!=null) {
+					p.<AttributeKey>getAttribute("CV").value = optimizedCVName;
+				}
 
-			// uniformized characters offsets 
-			p.getAttributeString("LOD_CHARACTERS_OFFSET").value1 = "ABCDE";
-			
-			// fixed name offsets
-			((AttributeString)p.getAttribute("NAME_OFFSET")).value1 = ((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value1.replace("KIT", "").replace("W", "");
+				// uniformized characters offsets 
+				p.<AttributeString>getAttribute("LOD_CHARACTERS_OFFSET").value1 = "ABCDE";
+				
+				// fixed name offsets
+				((AttributeString)p.getAttribute("NAME_OFFSET")).value1 = ((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value1.replace("KIT", "").replace("W", "");
+			}
+			if (p.isVectorVinyl) {
+				//VECTORVINYL OPTIMIZATION
+				/*
+
+				VECTORVINYL common attributes
+
+				PARTID_UPGRADE_GROUP	VECTORVINYL i
+				PART_NAME_BASE_HASH
+				PART_NAME_OFFSETS
+				NAME_OFFSET
+				
+				VINYLLANGUAGEHASH		vinyl name
+				GROUPLANGUAGEHASH 		vinyl group name
+
+				PART_NAME_SELECTOR		always 2
+				BRAND_NAME 				necessary (keep blank to use with any car brands)
+				
+				FULLBODY
+				ISDECAL
+				MIRROR
+				
+				SPECIFICCARNAME
+				COLOR0ID, COLOR1ID, COLOR2ID, COLOR3ID
+				COLOR0LANGUAGEHASH, 1, 2, 3
+
+
+				 */
+				if (p.getAttribute("BRAND_NAME")==null) {
+					p.addAttribute(new AttributeKey("BRAND_NAME"));
+				}
+
+				if (p.getAttribute("FULLBODY")!=null) {
+					if (!p.<AttributeBoolean>getAttribute("FULLBODY").value) 
+						try {p.removeAttribute("FULLBODY");}catch(Exception e) {}
+				}
+				if (p.getAttribute("ISDECAL")!=null) {
+					if (!p.<AttributeBoolean>getAttribute("ISDECAL").value) 
+						try{p.removeAttribute("ISDECAL");}catch(Exception e) {}
+				}
+				if (p.getAttribute("MIRROR")!=null) {
+					if (!p.<AttributeBoolean>getAttribute("MIRROR").value) 
+						try{p.removeAttribute("MIRROR");}catch(Exception e) {}
+				}
+
+				if (p.getAttribute("SPECIFICCARNAME")!=null) {
+					if (p.<AttributeKey>getAttribute("SPECIFICCARNAME").value.isBlank()) 
+						try{p.removeAttribute("SPECIFICCARNAME");}catch(Exception e) {}
+				}
+
+				if (p.getAttribute("COLOR3ID")!=null) {
+					if (p.<AttributeColor>getAttribute("COLOR3ID").alpha == 0) {
+						try {p.removeAttribute("COLOR3ID");}catch(Exception e) {}
+						try{p.removeAttribute("COLOR3LANGUAGEHASH");} catch(Exception e) {}
+					}
+				}
+				if (p.getAttribute("COLOR2ID")!=null) {
+					if (p.<AttributeColor>getAttribute("COLOR2ID").alpha == 0)  {
+						try {p.removeAttribute("COLOR2ID");}catch(Exception e) {}
+						try{p.removeAttribute("COLOR2LANGUAGEHASH");} catch(Exception e) {}
+					}
+				}
+				if (p.getAttribute("COLOR1ID")!=null) {
+					if (p.<AttributeColor>getAttribute("COLOR1ID").alpha == 0)  {
+						try {p.removeAttribute("COLOR1ID");}catch(Exception e) {}
+						try{p.removeAttribute("COLOR1LANGUAGEHASH");} catch(Exception e) {}
+					}
+				}
+				if (p.getAttribute("COLOR0ID")!=null) {
+					if (p.<AttributeColor>getAttribute("COLOR0ID").alpha == 0)  {
+						try {p.removeAttribute("COLOR0ID");}catch(Exception e) {}
+						try{p.removeAttribute("COLOR0LANGUAGEHASH");} catch(Exception e) {}
+					}
+				}
+				
+				
+				
+				
+			}
 		}
 		
 		updateAllPartsDisplay();
@@ -1580,22 +1691,23 @@ public class DBMPPlus extends Application {
 
 	public static void attributeSort() {
 		for(DBMPPart p: partsDisplay.getSelectionModel().getSelectedItems()) {
-			int s = p.attributes.size();
-			//most wack ass sorting method but it works
-			p.addAttribute(p.getAttribute("PART_NAME_SELECTOR"));
-			p.addAttribute(p.getAttribute("LOD_NAME_PREFIX_SELECTOR"));
-			p.addAttribute(p.getAttribute("MAX_LOD"));
-			p.addAttribute(p.getAttribute("LOD_CHARACTERS_OFFSET"));
-			p.addAttribute(p.getAttribute("NAME_OFFSET"));
-			if (p.getAttribute("MORPHTARGET_NUM")!=null) p.addAttribute(p.getAttribute("MORPHTARGET_NUM"));
-			p.addAttribute(p.getAttribute("PARTID_UPGRADE_GROUP"));
-			p.addAttribute(p.getAttribute("PART_NAME_OFFSETS"));
-			p.addAttribute(p.getAttribute("LOD_BASE_NAME"));
-			if (p.getAttribute("CV")!=null) p.addAttribute(p.getAttribute("CV"));
-			for (int i=0; i<s; i++) p.attributes.remove(0);
+			if (p.isCarPart) {
+				int s = p.attributes.size();
+				//most wack ass sorting method but it works
+				p.addAttribute(p.getAttribute("PART_NAME_SELECTOR"));
+				p.addAttribute(p.getAttribute("LOD_NAME_PREFIX_SELECTOR"));
+				p.addAttribute(p.getAttribute("MAX_LOD"));
+				p.addAttribute(p.getAttribute("LOD_CHARACTERS_OFFSET"));
+				p.addAttribute(p.getAttribute("NAME_OFFSET"));
+				if (p.getAttribute("MORPHTARGET_NUM")!=null) p.addAttribute(p.getAttribute("MORPHTARGET_NUM"));
+				p.addAttribute(p.getAttribute("PARTID_UPGRADE_GROUP"));
+				p.addAttribute(p.getAttribute("PART_NAME_OFFSETS"));
+				p.addAttribute(p.getAttribute("LOD_BASE_NAME"));
+				if (p.getAttribute("CV")!=null) p.addAttribute(p.getAttribute("CV"));
+				for (int i=0; i<s; i++) p.attributes.remove(0);
+			}
 		}
-		DBMPPlus.attributesDisplay.getChildren().clear();
-		if (partsDisplay.getSelectionModel().getSelectedItem()!=null) for (Attribute a: partsDisplay.getSelectionModel().getSelectedItem().attributes) DBMPPlus.attributesDisplay.getChildren().add(a.dataHBox);
+		updateAttributesDisplay();
 	}
 
 	public static void attributeRemoveCV() {
@@ -1605,8 +1717,7 @@ public class DBMPPlus extends Application {
 				p.update();
 			}
 		}
-		DBMPPlus.attributesDisplay.getChildren().clear();
-		if (partsDisplay.getSelectionModel().getSelectedItem()!=null) for (Attribute a: partsDisplay.getSelectionModel().getSelectedItem().attributes) DBMPPlus.attributesDisplay.getChildren().add(a.dataHBox);
+		updateAttributesDisplay();
 	}
 
 	public static void attributeAddCV() {
@@ -1616,8 +1727,7 @@ public class DBMPPlus extends Application {
 				p.update();
 			}
 		}
-		DBMPPlus.attributesDisplay.getChildren().clear();
-		if (partsDisplay.getSelectionModel().getSelectedItem()!=null) for (Attribute a: partsDisplay.getSelectionModel().getSelectedItem().attributes) DBMPPlus.attributesDisplay.getChildren().add(a.dataHBox);
+		updateAttributesDisplay();
 	}
 
 	public static void attributeRemoveAS() {
@@ -1627,8 +1737,7 @@ public class DBMPPlus extends Application {
 				p.update();
 			}
 		}
-		DBMPPlus.attributesDisplay.getChildren().clear();
-		if (partsDisplay.getSelectionModel().getSelectedItem()!=null) for (Attribute a: partsDisplay.getSelectionModel().getSelectedItem().attributes) DBMPPlus.attributesDisplay.getChildren().add(a.dataHBox);
+		updateAttributesDisplay();
 	}
 
 	public static void attributeAddAS() {
@@ -1638,8 +1747,7 @@ public class DBMPPlus extends Application {
 				p.update();
 			}
 		}
-		DBMPPlus.attributesDisplay.getChildren().clear();
-		if (partsDisplay.getSelectionModel().getSelectedItem()!=null) for (Attribute a: partsDisplay.getSelectionModel().getSelectedItem().attributes) DBMPPlus.attributesDisplay.getChildren().add(a.dataHBox);
+		updateAttributesDisplay();
 	}
 
 	//---------------------------------------------------------------------------------------------------
@@ -1669,9 +1777,11 @@ public class DBMPPlus extends Application {
 
 		try {
 			File f = fc.showSaveDialog(null);
+			if (f==null) return;
 			lastFileSaved = f.getAbsolutePath().replace(lastFileLoaded, "");
 			File f_old = f;
-			f_old.renameTo(new File(f_old.getAbsoluteFile() + ".bak_" + DateTimeFormatter.ofPattern("uuMMdd-HHmmss").format(LocalDateTime.ofEpochSecond(f_old.lastModified(), 0, ZoneOffset.UTC))));
+			f_old.renameTo(new File(f_old.getAbsolutePath() + ".bak_" + new SimpleDateFormat("yyMMdd-HHmmss").format(new Date(f_old.lastModified()))));
+//			f_old.renameTo(new File(f_old.getAbsoluteFile() + ".bak_" + DateTimeFormatter.ofPattern("uuMMdd-HHmmss").format(LocalDateTime.ofEpochSecond(f_old.lastModified(), 0, ZoneOffset.UTC))));
 			mainDBMP.saveToFile(f);
 			if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Database saved successfully.", ButtonType.OK).show();
 			e.consume();        
@@ -1693,6 +1803,7 @@ public class DBMPPlus extends Application {
 			fc.setTitle("Load an existing DBModelParts");
 			DBMP loadDBMP;
 			File selected = fc.showOpenDialog(null);
+			if (selected==null) return;
 			if ((loadDBMP = DBMP.loadDBMP(selected))!=null) {
 				mainDBMP = loadDBMP;
 				lastFileLoaded = selected.getName();
@@ -1734,10 +1845,64 @@ public class DBMPPlus extends Application {
     	}
     	//while we're at it
     	partsDisplay.getSelectionModel().select(selected);
-    	DBMPPlus.attributesDisplay.getChildren().clear();
-    	if (partsDisplay.getSelectionModel().getSelectedItem()!=null) for (Attribute a: partsDisplay.getSelectionModel().getSelectedItem().attributes) DBMPPlus.attributesDisplay.getChildren().add(a.dataHBox);
+    	updateAttributesDisplay();
     }
     
+	public static void updateAttributesDisplay() {
+		DBMPPlus.attributesDisplay.getChildren().clear();
+		if (partsDisplay.getSelectionModel().getSelectedItem()!=null) {			
+			for (Attribute a: partsDisplay.getSelectionModel().getSelectedItem().attributes) 
+				DBMPPlus.attributesDisplay.getChildren().add(a.dataHBox);
+
+			//add attribute
+			HBox addAttribute = new HBox();
+			var newAttName = new TextField();
+			newAttName.setPromptText("New attribute...");
+			var newAttType = new ComboBox<String>();
+			newAttType.getItems().add("AttributeString");
+			newAttType.getItems().add("AttributeTwoString");
+			newAttType.getItems().add("AttributeInteger");
+			newAttType.getItems().add("AttributeBoolean");
+			newAttType.getItems().add("AttributeKey");
+			newAttType.getItems().add("AttributeColor");
+			newAttType.getItems().add("AttributeCarPartID");
+			newAttType.setOnAction(e -> {
+				if (newAttName.getText().isBlank()) return;
+				
+				switch(newAttType.getValue()) {
+				case "AttributeString":
+					partsDisplay.getSelectionModel().getSelectedItem().addAttribute(new AttributeString(newAttName.getText()));
+					break;
+				case "AttributeTwoString":
+					partsDisplay.getSelectionModel().getSelectedItem().addAttribute(new AttributeTwoString(newAttName.getText()));
+					break;
+				case "AttributeInteger":
+					partsDisplay.getSelectionModel().getSelectedItem().addAttribute(new AttributeInteger(newAttName.getText()));
+					break;
+				case "AttributeBoolean":
+					partsDisplay.getSelectionModel().getSelectedItem().addAttribute(new AttributeBoolean(newAttName.getText()));
+					break;
+				case "AttributeKey":
+					partsDisplay.getSelectionModel().getSelectedItem().addAttribute(new AttributeKey(newAttName.getText()));
+					break;
+				case "AttributeColor":
+					partsDisplay.getSelectionModel().getSelectedItem().addAttribute(new AttributeColor(newAttName.getText()));
+					break;
+				case "AttributeCarPartID":
+					partsDisplay.getSelectionModel().getSelectedItem().addAttribute(new AttributeCarPartID(newAttName.getText()));
+					break;
+				}
+				updateAttributesDisplay();
+			});
+			newAttName.setOnAction(newAttType.getOnAction());
+			addAttribute.getChildren().add(newAttName);
+			addAttribute.getChildren().add(newAttType);
+			
+			DBMPPlus.attributesDisplay.getChildren().add(addAttribute);
+		}
+		
+	}
+
     @SuppressWarnings("unused")
 	public static void deleteSelectedParts() {
 		DBMPPart[] toDelete =  partsDisplay.getSelectionModel().getSelectedItems().toArray(new DBMPPart[0]);

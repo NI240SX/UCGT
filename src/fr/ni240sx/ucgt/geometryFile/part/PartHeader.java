@@ -7,6 +7,7 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.BlockType;
+import fr.ni240sx.ucgt.geometryFile.Platform;
 
 public class PartHeader extends Block {
 
@@ -28,7 +29,15 @@ public class PartHeader extends Block {
 								{0,		0,		1.0f,	0},
 								{0,		0,		0,		1.0f}};
 	
-	public int const02 = 947208;
+	public int game = 947208; //game not platform
+	
+	public static final int UNDERCOVER = 947208;
+	public static final int PROSTREET = 947640;
+	public static final int CARBON = 963280;
+	public static final int WORLD = 0;
+	public static final int MOSTWANTED = 959824;
+	public static final int UNDERGROUND2 = 976256;
+	public static final int UNDERGROUND = 1243136;
 
 	public float const11 = 0;
 	public float const12 = 0;
@@ -72,18 +81,26 @@ public class PartHeader extends Block {
 		}
 		in.getInt(); //0
 		in.getInt(); //0
-		const02 = in.getInt(); //0x08740E00
-		const02 = in.getInt(); //0x08740E00
+		game = in.getInt(); //0x08740E00
+		game = in.getInt(); //0x08740E00
 
 		in.getInt(); //0
 		in.getInt(); //0
 		const11 = in.getFloat(); //might be a float
 		const12 = in.getFloat(); //might be a float
 		
-		if (const02 == 947640) in.position(in.position()+24); //PS model
-		else in.position(in.position()+40); //UC model
+		if (game == UNDERCOVER) in.position(in.position()+40); //UC model
+		else if (game == PROSTREET) in.position(in.position()+24); //PS model
+		else if (game == CARBON) {} //carbon model, do nothing
+		else if (game == WORLD) {}
+		else if (game == MOSTWANTED) {}
+		else if (game == UNDERGROUND2) in.position(in.position()+4);
+		else if (game == UNDERGROUND) in.position(in.position()-12);
+		else System.out.println("Unknown part header magic! ("+game+")");
+//		System.out.println("Part header magic "+const02);
+		
 		partName = Block.readString(in);
-		if (partName.isEmpty()) throw new Exception("Part name cannot be empty !");
+//		if (partName.isEmpty()) throw new Exception("Part name cannot be empty !");
 		
 //		System.out.println("part header data for "+partName+": const01="+String.format("0x%08X", Integer.reverseBytes(const01)) + ", const11="+const11+", const12="+const12);
 		
@@ -92,9 +109,24 @@ public class PartHeader extends Block {
 		in.position(blockStart+blockLength); //anyways it's that
 	}
 
-	public PartHeader(String name) {
+	public PartHeader(String name, Platform plat) {
 		this.partName = name;
 		this.binKey = Hash.findBIN(name);
+		switch(plat) {
+		case PC:
+		case X360:
+			game = UNDERCOVER;
+			break;
+		case Prostreet_PC:
+		case Prostreet_X360:
+			game = PROSTREET;
+			break;
+		case Carbon_PC:
+			game = CARBON;
+			break;
+		default:
+			break;
+		}
 	}
 
 	public PartHeader(PartHeader header, String name) {
@@ -110,6 +142,22 @@ public class PartHeader extends Block {
 		this.shadersCount = header.shadersCount;
 		this.texturesCount = header.texturesCount;
 		this.trianglesCount = header.trianglesCount;
+		this.game = header.game;
+	}
+	
+	public void setPlatform(Platform plat) {
+		game = switch(plat) {
+		case PC:
+		case X360:
+			yield UNDERCOVER;
+		case Carbon_PC:
+			yield CARBON;
+		case Prostreet_PC:
+		case Prostreet_X360:
+			yield PROSTREET;
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + plat);
+		};
 	}
 
 	@Override
@@ -118,7 +166,8 @@ public class PartHeader extends Block {
 		//process size
 		var alignment = Block.findAlignment(currentPosition+8, 16);
 		var blockLength = usualLengthWithoutName + partName.length() + 1 + alignment;
-		if (const02 == 947640) blockLength -=16;
+		if (game == PROSTREET) blockLength -=16;
+		if (game == CARBON) blockLength -=40;
 		if ((partName.length()+1) % 4 != 0) blockLength += 4 - (partName.length()+1)%4;
 
 		var out = ByteBuffer.wrap(new byte[blockLength + 8]);
@@ -158,16 +207,16 @@ public class PartHeader extends Block {
 		}
 		out.putInt(0);
 		out.putInt(0);
-		out.putInt(const02);
-		out.putInt(const02);
+		out.putInt(game);
+		out.putInt(game);
 		
 		out.putInt(0);
 		out.putInt(0);
 		out.putFloat(const11); //const11
 		out.putFloat(const12); //const12
 		
-		if (const02 == 947640) out.position(out.position()+24);
-		else out.position(out.position()+40);
+		if (game == UNDERCOVER) out.position(out.position()+40); //UC
+		else if (game == PROSTREET) out.position(out.position()+24); //PS
 		Block.putString(out, partName);
 
 		return out.array();	

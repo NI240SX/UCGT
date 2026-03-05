@@ -23,6 +23,10 @@ public class Padding extends Block {
 		in.position(blockStart+length);
 	}
 	
+	public Padding(int length) {
+		this.length = length;
+	}
+	
 	@Override
 	public byte[] save(int currentPosition) throws IOException {
 		
@@ -37,14 +41,15 @@ public class Padding extends Block {
 	}
 
 	public static void makePadding(ByteArrayOutputStream out) throws IOException {
-		int paddingLength = (PaddingModulo - ((out.size() + 8) % PaddingModulo))%PaddingModulo;
-		
-		var buf = ByteBuffer.wrap(new byte[paddingLength + 8]);
-		buf.order(ByteOrder.LITTLE_ENDIAN);
-		buf.putInt(BlockType.Padding.getKey());
-		buf.putInt(paddingLength);
+//		int paddingLength = (PaddingModulo - ((out.size() + 8) % PaddingModulo))%PaddingModulo;
+//		
+//		var buf = ByteBuffer.wrap(new byte[paddingLength + 8]);
+//		buf.order(ByteOrder.LITTLE_ENDIAN);
+//		buf.putInt(BlockType.Padding.getKey());
+//		buf.putInt(paddingLength);
 
-		out.write(buf.array());
+//		out.write(buf.array());
+		out.write(makePadding(out.size(), PaddingModulo));
 	}
 	
 	public static byte[] makePadding(long pos, int modulo) {
@@ -54,7 +59,8 @@ public class Padding extends Block {
 		buf.order(ByteOrder.LITTLE_ENDIAN);
 		buf.putInt(BlockType.Padding.getKey());
 		buf.putInt(paddingLength);
-		if (paddingLength>36) Block.putString(buf, "Edited with UCGT v"+GeometryEditorCLI.programVersion+" | needeka", paddingLength);		
+		if (paddingLength>36) Block.putString(buf, "Edited with UCGT v"+GeometryEditorCLI.programVersion+" | needeka", paddingLength);
+		else if (paddingLength>15) Block.putString(buf, "UCGT | needeka", paddingLength);
 		return buf.array();
 	}
 }

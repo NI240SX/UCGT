@@ -11,6 +11,13 @@ public abstract class Triangles extends Block {
 	public static final int triangleLength = 6;
 	public ArrayList<Triangle> triangles = new ArrayList<>();
 	
+	public Triangles() {
+	}
+	
+	public Triangles(Triangles t) {
+		this.triangles = t.triangles;
+	}
+
 	@Override
 	public abstract BlockType getBlockID();
 

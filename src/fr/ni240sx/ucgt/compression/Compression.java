@@ -6,7 +6,31 @@ import java.util.Arrays;
 
 public class Compression {
 
+	static boolean pluginLoaded = false;
+	
+	static {
+		try {
+			System.loadLibrary("UCGTPlugin");
+			pluginLoaded = pluginInit();
+			if (pluginLoaded) System.out.println("UCGT Compression Plugin loaded successfully.");
+		} catch (@SuppressWarnings("unused") Error e) {
+//			e.printStackTrace();
+		}
+	}
+
+	private static native boolean pluginInit();
+	
+	private static native byte[] decompressPlugin(byte[] arr);
+	
 	public static byte[] decompress(byte[] arr){
+		if (pluginLoaded) {
+			try {
+				var d = decompressPlugin(arr);
+				if (d != null) return d;
+			} catch (Error e) {
+				e.printStackTrace();
+			}
+		}
 		ByteBuffer in = ByteBuffer.wrap(arr);
 		CompressionType compressionType = CompressionType.get(String.valueOf(new char[] {(char)(in.get()), (char)(in.get()), (char)(in.get()), (char)(in.get())}));
 //		System.out.println("Compression type : "+compressionType);
@@ -54,4 +78,5 @@ public class Compression {
 			return null;
 		}
 	}
+	
 }

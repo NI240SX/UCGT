@@ -4,17 +4,18 @@ import java.nio.ByteBuffer;
 
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 
 public class AttributeCarPartID extends Attribute{
 //	public static String AttributeIdentifier = "CarPartID";
 	public PartUndercover ID = PartUndercover.INVALID;
 	public byte level = 0;
-	TextField IDgui;
+	ComboBox<PartUndercover> IDgui;
 	TextField levelgui;
 	public AttributeCarPartID(String key) {
 		super(key);
-		IDgui = new TextField();
+		IDgui = new ComboBox<>();
 		levelgui = new TextField();
 		initGUI();
 	}
@@ -22,7 +23,7 @@ public class AttributeCarPartID extends Attribute{
 		super(key);
 		this.ID = ID;
 		this.level = (byte)level;
-		IDgui = new TextField();
+		IDgui = new ComboBox<>();
 		levelgui = new TextField();
 		initGUI();
 	}
@@ -31,7 +32,7 @@ public class AttributeCarPartID extends Attribute{
 		level = bb.get();
 		ID = PartUndercover.get(bb.get());
 		if (useGUI) {
-			IDgui = new TextField();
+			IDgui = new ComboBox<>();
 			levelgui = new TextField();
 			initGUI();
 		}
@@ -40,25 +41,27 @@ public class AttributeCarPartID extends Attribute{
 		super(copyFrom);
 		this.ID = copyFrom.ID;
 		this.level = copyFrom.level;
-		IDgui = new TextField();
+		IDgui = new ComboBox<>();
 		levelgui = new TextField();
 		initGUI();
 	}
 	@SuppressWarnings("unused")
 	public void initGUI() {
-		IDgui.setText(ID.getText());
+		IDgui.getItems().addAll(PartUndercover.values());
+		IDgui.getSelectionModel().select(ID);
 		levelgui.setPrefWidth(40);
 		levelgui.setText(Integer.toString(level));
 		dataHBox.getChildren().addAll(levelgui, IDgui);
 
 		IDgui.setOnAction(e -> {
-			int caretB4Save = IDgui.getCaretPosition();
+			ID = IDgui.getValue();
+//			int caretB4Save = IDgui.getCaretPosition();
 			new UndoAttributeChange(this);
-			if(PartUndercover.get(IDgui.getText().strip())!=null) {
-				ID = PartUndercover.get(IDgui.getText().strip());
-			} else new Alert(Alert.AlertType.ERROR, "Invalid slot", ButtonType.OK).show();
-			IDgui.setText(ID.getText());
-			IDgui.positionCaret(caretB4Save);
+//			if(PartUndercover.get(IDgui.getText().strip())!=null) {
+//				ID = PartUndercover.get(IDgui.getText().strip());
+//			} else new Alert(Alert.AlertType.ERROR, "Invalid slot", ButtonType.OK).show();
+//			IDgui.setText(ID.getText());
+//			IDgui.positionCaret(caretB4Save);
 			e.consume();
 		});
 		levelgui.setOnKeyTyped(e -> {
@@ -77,7 +80,8 @@ public class AttributeCarPartID extends Attribute{
 	}
 	@Override
 	public void update() {
-		IDgui.setText(ID.getText());
+//		IDgui.setText(ID.getText());
+		IDgui.getSelectionModel().select(ID);
 		levelgui.setText(Integer.toString(level));
 	}
 	@Override
@@ -90,7 +94,8 @@ public class AttributeCarPartID extends Attribute{
 	public void revertFrom(Attribute a) {
 		this.ID = ((AttributeCarPartID)a).ID;
 		this.level = ((AttributeCarPartID)a).level;
-		IDgui.setText(ID.getText());
+//		IDgui.setText(ID.getText());
+		IDgui.getSelectionModel().select(ID);
 		levelgui.setText(Integer.toString(level));
 	}
 	@Override

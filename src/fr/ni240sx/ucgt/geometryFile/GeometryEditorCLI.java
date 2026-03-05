@@ -2,22 +2,28 @@ package fr.ni240sx.ucgt.geometryFile;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.compression.CompressionType;
+import fr.ni240sx.ucgt.geometryFile.io.GLTF;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
 import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
+import fr.ni240sx.ucgt.geometryFile.textures.TPK;
+import javafx.util.Pair;
 
+@SuppressWarnings("unused")
 public class GeometryEditorCLI {
 
-	public static final String programVersion = "1.2.5";
-	public static final String programBuild = "2025.03.22";
+	public static final String programVersion = "1.3.0";
+	public static final String programBuild = "2026.03.05";
 	
 	public static Geometry geom = null;
 //	public static ArrayList<String> commandsHistory = new ArrayList<>();
@@ -58,7 +64,6 @@ public class GeometryEditorCLI {
 
 	}
 
-	@SuppressWarnings("unused")
 	public static void parseCommand(String l) {
 		try{
 			String src, dst;
@@ -103,6 +108,10 @@ public class GeometryEditorCLI {
 				changeComp(l,CompressionType.RawDecompressed);
 				break;
 				
+			case "platform":
+				platform(l);
+				break;
+				
 			case "trol":
 				System.out.println("The Grand Syndicate of Trolling agrees with your decision. Therefore I shall NOT nuke your coputer !");
 				break;
@@ -140,9 +149,9 @@ public class GeometryEditorCLI {
 			
 			
 			boolean useBackup = false;
-			if (!new File(src.replace(".BIN", "-BACKUP.BIN")).isFile() && new File(src).isFile()) {
+			if (!new File(src.replace(".BIN", "-BACKUP.BIN").replace(".bin", "-BACKUP.bin")).isFile() && new File(src).isFile()) {
 				//create vanilla backup if not existing
-				new File(src).renameTo(new File(src.replace(".BIN", "-BACKUP.BIN")));
+				new File(src).renameTo(new File(src.replace(".BIN", "-BACKUP.BIN").replace(".bin", "-BACKUP.bin")));
 				useBackup = true;
 			}
 			try {
@@ -154,7 +163,7 @@ public class GeometryEditorCLI {
 				
 				long t = System.currentTimeMillis();
 				System.out.println("Loading geometry...");
-				if (useBackup) geom = Geometry.load(new File(src.replace(".BIN", "-BACKUP.BIN")));
+				if (useBackup) geom = Geometry.load(new File(src.replace(".BIN", "-BACKUP.BIN").replace(".bin", "-BACKUP.bin")));
 				else geom = Geometry.load(new File(src));
 				System.out.println("Geometry read in "+(System.currentTimeMillis()-t)+" ms.");
 				
@@ -223,29 +232,57 @@ public class GeometryEditorCLI {
 				dst = src.replace(".BIN", ".both").replace(".bin", ".both");
 			}
 			
+			new File(dst).getParentFile().mkdirs();
+			
 			try {
 				long t = System.currentTimeMillis();
 				System.out.println("Loading geometry...");
 				geom = Geometry.load(new File(src));
-				System.out.println("Geometry read in "+(System.currentTimeMillis()-t)+" ms."
-						+ "\nSaving 3D model...");
+				System.out.println("Geometry read in "+(System.currentTimeMillis()-t)+" ms.");
+				
+				TPK tpk = null;
+				var tpkfile = new File(new File(src).getAbsolutePath().replace(new File(src).getName(), "TEXTURES.BIN"));
+				if (tpkfile.isFile() && tpkfile.length()>0) {
+					t = System.currentTimeMillis();
+					System.out.println("Loading textures...");
+					FileInputStream fis = new FileInputStream(tpkfile);
+					byte [] arr = new byte[(int)tpkfile.length()-4];
+					fis.skipNBytes(4); //if this method is called on a file, we assume that the file is a geometry, therefore the first blockid can be skipped
+					fis.read(arr);
+					fis.close();
+					tpk = new TPK(ByteBuffer.wrap(arr));
+					System.out.println("Textures read in "+(System.currentTimeMillis()-t)+" ms.");
+				}
+				
+				
+				System.out.println("Saving 3D model...");
 				t = System.currentTimeMillis();
 				try {
 					if (dst.toLowerCase().endsWith(".z3d")) {
 						ZModelerZ3D.save(geom, dst);
 						System.out.println("ZModeler scene saved in "+(System.currentTimeMillis()-t)+" ms.");
-				        geom.writeConfig(new File(dst.replace(".z3d", "")+".ini"));
+				        geom.writeConfig(new File(dst.replace(".z3d", "").replace(".Z3D", "")+".ini"));
 					} else if (dst.toLowerCase().endsWith(".obj")){
 						WavefrontOBJ.save(geom, dst);
 						System.out.println("Wavefront saved in "+(System.currentTimeMillis()-t)+" ms.");
-				        geom.writeConfig(new File(dst.replace(".obj", "")+".ini"));
+				        geom.writeConfig(new File(dst.replace(".obj", "").replace(".OBJ", "")+".ini"));
+					} else if (dst.toLowerCase().endsWith(".gltf")){
+						GLTF.save(geom, dst,false);
+						System.out.println("glTF saved in "+(System.currentTimeMillis()-t)+" ms.");
+				        geom.writeConfig(new File(dst.replace(".obj", "").replace(".OBJ", "")+".ini"));
 					} else {
 						dst = dst.replace("."+dst.split("\\.")[dst.split("\\.").length-1], "");
 						WavefrontOBJ.save(geom, dst+".obj");
-						System.out.println("Wavefront saved after "+(System.currentTimeMillis()-t)+" ms.");
+						System.out.println("Wavefront saved in "+(System.currentTimeMillis()-t)+" ms.");
 						ZModelerZ3D.save(geom, dst+".z3d");
-						System.out.println("ZModeler scene saved after "+(System.currentTimeMillis()-t)+" ms.");
+						System.out.println("ZModeler scene saved in "+(System.currentTimeMillis()-t)+" ms.");
 				        geom.writeConfig(new File(dst+".ini"));
+					}
+					if (tpk != null) {
+						System.out.println("Saving textures...");
+						t = System.currentTimeMillis();
+						tpk.exportToFolder(new File(dst).getParent(), geom.carname);
+						System.out.println("Textures saved in "+(System.currentTimeMillis()-t)+" ms.");
 					}
 					System.out.println("Operation successful !");
 					
@@ -258,7 +295,7 @@ public class GeometryEditorCLI {
 				e.printStackTrace();
 			}
 			
-		}catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : decompile <BIN source> [OBJ/Z3D output]");}
+		}catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : decompile <BIN source> [glTF/OBJ/Z3D output]");}
 	}
 
 	private static void script(String l) {
@@ -491,15 +528,36 @@ public class GeometryEditorCLI {
 //					l = l.substring(dst.length()+1);
 			}
 			
-			if (!new File(dst.replace(".BIN", "-BACKUP.BIN")).isFile() && new File(dst).isFile()) {
+			if (!new File(dst.replace(".BIN", "-BACKUP.BIN").replace(".bin", "-BACKUP.bin")).isFile() && new File(dst).isFile()) {
 				//create vanilla backup if not existing
-				new File(dst).renameTo(new File(dst.replace(".BIN", "-BACKUP.BIN")));
+				new File(dst).renameTo(new File(dst.replace(".BIN", "-BACKUP.BIN").replace(".bin", "-BACKUP.bin")));
 			}
-
+			new File(dst).getParentFile().mkdirs();
+			
 			try {
 				if ( !new File(src).isDirectory()) {
 					//regular geometry
 					geom = Geometry.importFromFile(new File(src));
+					
+					TPK tpk = null;
+					try {
+						long t = System.currentTimeMillis();
+						System.out.println("Saving textures...");
+						tpk = new TPK(new File(src).getParentFile(), geom);
+						if (tpk.textures.size() == 0) tpk = null;
+						else {
+							String texdst = new File(dst).getParent()+File.separator+"TEXTURES.BIN";
+							if (!new File(texdst.replace(".BIN", "-BACKUP.BIN").replace(".bin", "-BACKUP.bin")).isFile() && new File(texdst).isFile()) {
+								//create vanilla backup if not existing
+								new File(texdst).renameTo(new File(texdst.replace(".BIN", "-BACKUP.BIN").replace(".bin", "-BACKUP.bin")));
+							}
+							tpk.save(new File(texdst));
+							System.out.println("\nTextures saved in "+(System.currentTimeMillis()-t)+" ms.");
+						}
+					} catch (Exception e) {
+						System.out.println("Error saving the texture pack: "+e.getMessage());
+					}
+					
 					try {
 						geom.save(new File(dst));
 						System.out.println("Operation successful !");
@@ -546,25 +604,90 @@ public class GeometryEditorCLI {
 		} catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : compile <OBJ/Z3D source> <BIN output>");}
 	}
 
+	private static void platform(String l) {
+		String src;
+		Platform plat;
+		try {
+			l = l.substring(9);
+			
+			//read first path
+			if (l.startsWith("\"")) {
+				l = l.substring(1);
+				src = l.split("\"")[0];
+				l = l.substring(src.length()+1);
+			} else {
+				src = l.split(" ")[0];
+				l = l.substring(src.length());
+			}
+			
+			l = l.substring(1);
+			
+			//read platform
+			plat = Platform.get(l);
+			
+			try {
+				long t = System.currentTimeMillis();
+				System.out.println("Loading geometry...");
+				geom = Geometry.load(new File(src));
+				System.out.println("Geometry read in "+(System.currentTimeMillis()-t)+" ms.");				
+
+				if (!new File(src.replace(".BIN", "-BACKUP.BIN").replace(".bin", "-BACKUP.bin")).isFile() && new File(src).isFile()) {
+					//create vanilla backup if not existing
+					new File(src).renameTo(new File(src.replace(".BIN", "-BACKUP.BIN").replace(".bin", "-BACKUP.bin")));
+				}
+				
+				System.out.println("Changing geometry platform...");
+				t = System.currentTimeMillis();
+				try {
+					geom.changePlatform(plat);
+					System.out.println("Platform changed in "+(System.currentTimeMillis()-t)+" ms.");				
+					t = System.currentTimeMillis();
+
+					geom.save(new File(src));
+					System.out.println("Geometry converted and saved in "+(System.currentTimeMillis()-t)+" ms.");				
+
+					System.out.println("Operation successful !");
+					
+				} catch (Exception e) {
+					System.out.printf("Error changing platfrom and saving Geometry : %s\n", e.getMessage());
+					e.printStackTrace();
+				}
+			} catch (Exception e) {
+				System.out.printf("Error loading Geometry : %s\n", e.getMessage());
+				e.printStackTrace();
+			}
+			
+		}catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : platform <BIN source> <platform>");}
+	}
+
 	public static void showHelp() {
 		System.out.printf("""
 				 ===   UCGT by ni240sx   === 
 				Geometry Editor Command-Line
 				Version %s - %s
 				
-				Supported files :
+				Supported files:
 					NFS Undercover .BIN and .BUN files
 					Wavefront .OBJ 3D models
 					ZModeler 2 .Z3D 3D scenes
 					UCGT .INI configuration files
 					CTK .TXT configuration files
 				
-				Commands :
-					compile <OBJ/Z3D source> <BIN output>
+				Command syntax:
+					<something> means MANDATORY
+					[something] means OPTIONAL
+					write commands without brackets
+					if a file path contains spaces, wrap the path in quotes ""
+					eg for compress <BIN source> -> compress "D:\\Games\\NFS UC\\CARS\\SOME_CAR\\GEOMETRY.BIN"
+				
+				Commands:
+					compile <glTF/OBJ/Z3D source> <BIN output>
 					    - compile a 3D model and its corresponding config to a BIN file containing a single geometry
+					      also compiles a corresponding TEXTURES.BIN if DDS textures are found in the source folder
 					    
-					decompile <BIN source> [OBJ/Z3D output]
+					decompile <BIN source> [glTF/OBJ/Z3D output]
 					    - extract a BIN file containing a single geometry to a 3D model and a configuration file
+					      also extracts textures if a corresponding TEXTURES.BIN is found
 					    
 					compress <BIN source>
 					    - compress an existing geometry using RefPack Maximum
@@ -572,15 +695,19 @@ public class GeometryEditorCLI {
 					decompress <BIN source>
 					    - decompress an existing geometry
 					    
+					platform <BIN source> <platform>
+						- change platform of an existing geometry
+						  supports X360 to PC or vice versa + experimental Prostreet_X360 and Prostreet_PC support
+					    
 					dump <source> <destination folder> [file type] [filter]
-					    - extract all geometries contained into the source BIN/BUN file to the output folder
-					      file type is whether to export OBJ or Z3D, if left blank both will be exported
+					    - extract all geometries and textures contained into the source BIN/BUN file to the output folder
+					      file type is whether to export glTF, OBJ or Z3D
 					      filter will allow to export only matching blocks and names (X0, Road, Chop, XBu, etc)
 					    
 					replace <source folder> <destination> [blocks definitions]
-					    - compile and replace all geometries in the destination with 3D models from the source folder
-					      if needed, it can also update blocks definitions offsets (eg edit the map without unpacking)
-					      in that case, [blocks definitions] will be the path to the L8R_MW2.BUN file
+					    - compile and replace geometries and textures in the destination with 3D models from the source folder
+					      if needed, it can also update blocks definitions offsets, this will be automatically recognized
+					      if you're using this tool in a very custom environment, fill in the [blocks definitions]
 					    
 					convert <TXT CTK config> [INI UCGT config]
 					    - convert a CTK .txt config to an UCGT .ini config

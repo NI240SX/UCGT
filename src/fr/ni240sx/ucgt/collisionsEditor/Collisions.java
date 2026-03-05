@@ -114,9 +114,11 @@ public class Collisions {
 			}
 			for(int i =0; i<NumberOfLocalFixUps; i++) {
 				this.LocalFixUps.add(new LocalFixUp(bb));
+				System.out.println(this.LocalFixUps.get(i));
 			}
 			for(int i =0; i<NumberOfVirtualFixUps; i++) {
 				this.VirtualFixUps.add(new VirtualFixUp(bb));
+				System.out.println(this.VirtualFixUps.get(i));
 			}
 			
 			

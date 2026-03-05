@@ -311,7 +311,6 @@ public class ZMaterial extends ZModBlock {
 				ztex.UID = ZModelerZ3D.createUID();
 			}
 			if (binMat.textureUsages.get(t) == TextureUsage.DIFFUSE ||
-					binMat.textureUsages.get(t) == TextureUsage.ALPHA ||
 					binMat.textureUsages.get(t) == TextureUsage.OPACITY ||
 					binMat.textureUsages.get(t) == TextureUsage.DIFFUSE2 ||
 					binMat.textureUsages.get(t) == TextureUsage.MISCMAP1 ||

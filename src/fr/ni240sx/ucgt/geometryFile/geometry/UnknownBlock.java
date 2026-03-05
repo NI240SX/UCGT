@@ -10,7 +10,7 @@ import fr.ni240sx.ucgt.geometryFile.BlockType;
 public class UnknownBlock extends Block {
 
 	@Override
-	public BlockType getBlockID() {return BlockType.INVALID;}
+	public BlockType getBlockID() {return BlockType.get(ID);}
 	
 	public int ID;
 	

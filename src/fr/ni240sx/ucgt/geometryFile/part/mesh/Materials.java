@@ -8,6 +8,13 @@ import fr.ni240sx.ucgt.geometryFile.BlockType;
 
 public abstract class Materials extends Block {
 
+	public Materials() {
+	}
+	
+	public Materials(Materials m) {
+		this.materials = m.materials;
+	}
+
 	@Override
 	public abstract BlockType getBlockID();
 

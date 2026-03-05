@@ -1,10 +1,37 @@
 # UCGT Geometry Editor
 ## Introduction
-UCGT Geometry Editor is a model compiling and decompiling tool. It supports the following:
+UCGT Geometry Editor is a model compiling and decompiling tool. 
 
-- Car models, including racers, traffic, cops, wheels, generic parts: UC PC/X360 from/to Z3D and OBJ
-- World models, including props, buildings, streamed chops: UC PC from/to Z3D (full support) and OBJ (partial support due to OBJ file format limits)
-- NIS models, including perps, cars: UC PC from/to Z3D and OBJ (partial support)
+It currently supports the following file formats:
+- glTF: recommended file format for full support
+- Wavefront OBJ: works fine for cars, do not use for models with more than one UV channel
+- ZModeler 2 Z3D
+Please note that some specific features of these formats may not always function as expected, due to custom implementations and optimizations.
+
+It currently supports the following game models:
+- NFSUC cars and generic parts: PC and X360 full support
+- NFSUC world models: PC full support (some elements such as road and tunnels use several UV channels, do not export as OBJ)
+- NFSUC generic models: PC full support
+- NFSUC NIS models: PC partial support (no bones)
+- NFSUC textures: PC full support
+- NFSPS cars and generic parts: PC and X360 full support (EXPERIMENTAL)
+- NFSPS world models: PC partial support (EXPERIMENTAL, REPLACEMENT UNTESTED)
+- NFSPS generic models: PC partial support (EXPERIMENTAL, REPLACEMENT UNTESTED)
+- NFSPS textures: PC full support (EXPERIMENTAL)
+- NFSC cars and generic parts: PC partial read (EXPERIMENTAL)
+
+Reading NFS PS and C models requires an external dependency for decompression of certain car parts: LZCompressLib.dll (64-bit version found in Binary v2.9.0 for instance). 
+UCGT is not bundled with this file; if you wish to read these models, please put this DLL in the bin folder where indicated by a placeholder file.
+
+## Model preparation
+UCGT takes models in the orientation of the game: +X front, +Z top. Extract existing models to give you templates!
+Textures always have to be in DDS format right next to the model to be exported as TEXTURES.BIN.
+It's best practice to apply all modifiers and triangulate the model upon export.
+
+## GUI version usage
+The GUI editor covers most of the tool's use cases. For very specific use cases, please turn to the CLI editor.
+
+Configuration files are still mandatory for materials and position markers, but you may change settings such as car name or compression type upon file load.
 
 ## Command-line version usage
 ### Basics
@@ -12,16 +39,17 @@ The program runs in a loop, in which you can directly type commands. A reminder 
 The loop will continue indefinitely until you type `exit`, which closes the editor (and the command prompt window, if you ran it from a batch file).
 
 The supported commands are the following :
-- `compile <OBJ/Z3D/folder> <BIN output>` - compile a single 3D model or a folder and its/their corresponding config(s) to a BIN file containing one geometry per 3D model.
-- `decompile <BIN source> [OBJ/Z3D output]` - extract a BIN file containing a single geometry to a 3D model and a configuration file.
+- `compile <OBJ/Z3D/folder> <BIN output>` - compile a single 3D model or a folder and its/their corresponding config(s) to a BIN file containing one geometry per 3D model. If DDS textures are found in the folder, also compiles the TEXTURES.BIN.
+- `decompile <BIN source> [OBJ/Z3D output]` - extract a BIN file containing a single geometry to a 3D model and a configuration file. If an associated TEXTURES.BIN exists, also extracts the textures.
 - `compress <BIN file>` - compress an existing geometry file by parts using RefPack Maximum.
 - `decompress <BIN file>` - decompress an existing geometry file. Useful for advanced hex editing and debugging.
-- `dump <source> <destination folder> [file type] [filter]` - extract all geometries contained into the source BIN/BUN file to the output folder. File type is whether to export OBJ or Z3D, if left blank both will be exported, and filter will allow to export only matching blocks and names (X0, Road, Chop, XBu, etc).
-- `replace <source folder> <destination> [blocks definitions]` - compile and replace all geometries in the destination with 3D models from the source folder. If needed, it can also update blocks definitions offsets (eg edit the map without unpacking), in that case, [blocks definitions] will be the path to the L8R_MW2.BUN file
+- `platform <BIN source> <platform>` - change the platform of an existing geometry file. Supported platforms: PC <=> X360, Prostreet_PC <=> Prostreet_X360. As of 02.2026 Prostreet <=> Undercover yields a file that's readable by the tool, but not by either game.
+- `dump <source> <destination folder> [file type] [filter]` - extract all geometries and texture packs contained into the source BIN/BUN file to the output folder. File type is whether to export models as OBJ or Z3D, if left blank both will be exported, and filter will allow to export only matching blocks and names (X0, Road, Chop, XBu, etc).
+- `replace <source folder> <destination> [blocks definitions]` - compile and replace all geometries and texture packs in the destination with 3D models and texture folders from the source folder. If needed, it can also update blocks definitions offsets (eg edit the map without unpacking), in that case, [blocks definitions] will be the path to the L8R_MW2.BUN file
 - `convert <TXT CTK config> [INI UCGT config]` - convert a CTK .txt config to an UCGT .ini config
 - `script <file>` - load a script containing multiple of these commands
 
-To compile from an OBJ, you need a configuration file, just like NFS-CarToolkit. These are covered later in this Readme.
+To compile from a 3D model, you need a configuration file, just like NFS-CarToolkit. These are covered later in this Readme.
 
 Decompiling a Geometry will generate a Wavefront OBJ, an associated MTL material library and an INI configuration file to compile it back.
 
@@ -223,13 +251,13 @@ To compile a racer car, cop car or general car meshes such as SPOILER, the follo
 
 `UseOffsetsTable=true`
 
-`CompressionType=RefPack`, `CompressionLevel=Maximum` or `CompressionType=RawDecompressed` (other compression types such as JDLZ and HUFF may work but are currently unsupported by UCGT)
+`CompressionType=RefPack`, `CompressionLevel=Maximum` or `CompressionType=RawDecompressed` (other compression types such as HUFF and COMP are currently unsupported by UCGT)
 
 `SortAllByName=true`
 
 Materials to be used must have one of the following shader usages: `car`, `car_a`, etc.
 
-For the sake of convenience, UCGT also accepts alternative names detailed in Materials below.
+For the sake of convenience, UCGT also accepts alternative names detailed in the Materials section.
 
 To compile wheels, use the same as above without the CarName.
 
@@ -246,7 +274,7 @@ To compile traffic cars, these settings have to be used:
 
 Materials to be used must have one of the following shader usages: `car_t`, `car_t_a` and `car_t_nm`.
 
-For the sake of convenience, UCGT also accepts alternative names detailed in Materials below.
+For the sake of convenience, UCGT also accepts alternative names detailed in the Materials section.
 
 ### Stream and NIS models
 To compile other meshes such as NIS models (partial support) and stream models, use these settings:

@@ -96,7 +96,7 @@ public class MPoint {
 	    return result;
 	}
 	
-	public float[][] eulerAnglesToMatrixCalculation(double u, double v, double w) {
+	public static float[][] eulerAnglesToMatrixCalculation(double u, double v, double w) {
 	    u = Math.toRadians(u);
 	    v = Math.toRadians(v);
 	    w = Math.toRadians(w);

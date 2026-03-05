@@ -21,7 +21,22 @@ public class PartsOffsets extends Block {
 	
 	public PartsOffsets(ByteBuffer in) {
 		var blockLength = in.getInt();
-//		var blockStart = in.position();
+		var blockStart = in.position();
+		
+		if (blockLength > 32 && in.getInt(in.position()+32) == 0) {
+			//nfs world is cursed
+			while (in.position() < blockStart+blockLength){				
+				var po = new PartOffset(in.getInt(), in.getInt(), in.getInt(), in.getInt(), 0);
+				in.getInt();
+				po.isCompressed = in.getInt();
+				in.getInt();
+				in.getInt();
+				in.getInt();
+				partOffsets.add(po);
+			}
+			in.position(blockStart+blockLength);
+			return;
+		}
 		
 		for(int i=0; i<blockLength/24; i++) {
 			var po = new PartOffset(in.getInt(), in.getInt(), in.getInt(), in.getInt(), in.getInt());

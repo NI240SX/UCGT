@@ -29,6 +29,7 @@ public class Vertices_X360 extends Vertices {
 	
 	@Override
 	public void readVertices() {
+		if (verticesData == null) return;
 		var bb = ByteBuffer.wrap(verticesData);
 		bb.order(ByteOrder.LITTLE_ENDIAN);
 //		System.out.println("Vertex format to use "+vertexFormat.getName());
@@ -42,6 +43,10 @@ public class Vertices_X360 extends Vertices {
 	public Vertices_X360() {
 	}
 
+
+	public Vertices_X360(Vertices vertices) {
+		super(vertices);
+	}
 
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {

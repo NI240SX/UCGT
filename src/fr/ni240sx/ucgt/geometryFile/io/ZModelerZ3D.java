@@ -19,6 +19,9 @@ import fr.ni240sx.ucgt.geometryFile.sorters.PartSorterKitNameLod;
 
 public class ZModelerZ3D {
 
+	public final static int ZM2S = 1395805530;
+	public final static int Z3DM = 1296315226;
+
 	public static ArrayList<ZModInfo> info = new ArrayList<>();
 	public static HashMap<Integer, ZModBlock> blocks = new HashMap<>();
 	
@@ -33,6 +36,8 @@ public class ZModelerZ3D {
 		System.out.println("Note : Z3D support is complex to implement because of the lack of documentation, and therefore still in beta. If you face issues, please report them !");
 		long time = System.currentTimeMillis();
 
+		geom.isImported = true;
+		
 		info.clear();
 		blocks.clear();
 		FileInputStream fis = new FileInputStream(f);
@@ -80,6 +85,7 @@ public class ZModelerZ3D {
 		
 	}
 	
+	@SuppressWarnings("unused")
 	public static void save(Geometry geom, String f) throws IOException{
 
 		System.out.println("Note : Z3D support is complex to implement because of the lack of documentation, and therefore still in beta. If you face issues, please report them !");
@@ -210,7 +216,7 @@ public class ZModelerZ3D {
 		}
 		
 		//save all blocks one after the other to the file
-		FileOutputStream fos = new FileOutputStream(new File(f.replace(".z3d", "")+".z3d"));
+		FileOutputStream fos = new FileOutputStream(new File(f.replace(".z3d", "").replace(".Z3D", "")+".z3d"));
 		ByteBuffer header = ByteBuffer.wrap(new byte[12]);
 		header.order(ByteOrder.LITTLE_ENDIAN);
 		header.put(new byte[] {0x5A, 0x4D, 0x32, 0x53, 0x02, 0x00, 0x06, 0x00});

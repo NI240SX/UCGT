@@ -7,9 +7,9 @@ import java.util.Objects;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.HalfPrecisionFloat;
 
 public class Vertex {
-	public float posX=0x0CCD/posFactor; //position
-	public float posY=0x0CCD/posFactor;
-	public float posZ=0x0CCD/posFactor;
+	public float posX=0.0f; //position
+	public float posY=0.0f;
+	public float posZ=0.0f;
 //	public float posW=0x0CCD/posFactor;
 	
 	public float tex0U=0.0f; //texcoord
@@ -35,103 +35,103 @@ public class Vertex {
 	public float tanZ=0.0f;
 	public float tanW=0.0f;
 
-	public static final float posFactor = 32767.0f/10f;
-	public static final float UVFactor = 1024.0f; //32767.0f/32f;
+//	public static final float posFactor = 32767.0f/10f;
+//	public static final float UVFactor = 1024.0f; //32767.0f/32f;
 	public static final float vecFactor = 32767.0f;
 
-	public static final float short4n_10x_min = Short.MIN_VALUE/posFactor;
-	public static final float short4n_10x_max = Short.MAX_VALUE/posFactor;
-	public static final float short2n_32x_min = Short.MIN_VALUE/UVFactor;
-	public static final float short2n_32x_max = Short.MAX_VALUE/UVFactor;
+//	public static final float short4n_10x_min = Short.MIN_VALUE/posFactor;
+//	public static final float short4n_10x_max = Short.MAX_VALUE/posFactor;
+//	public static final float short2n_32x_min = Short.MIN_VALUE/UVFactor;
+//	public static final float short2n_32x_max = Short.MAX_VALUE/UVFactor;
 	
 	public Vertex(ByteBuffer in, VertexFormat vf) {
 		switch(vf) {
 		case Pos0_Col0_Tex0s32:
-			pos0_in(in);
+			pos0f4_in(in);
 			col0_in(in);
-			tex0s32_in(in);
+			tex0s_in(in, vf.texcoordFactor);
 			break;
 		case Pos0_Col0_Tex0s32_Norm0s:
-			pos0_in(in);
+			pos0f4_in(in);
 			col0_in(in);
-			tex0s32_in(in);
+			tex0s_in(in, vf.texcoordFactor);
 			norm0s_in(in);
 			break;
 		case Pos0_Col0_Tex0s32_Norm0s_Tan0s:
-			pos0_in(in);
+			pos0f4_in(in);
 			col0_in(in);
-			tex0s32_in(in);
+			tex0s_in(in, vf.texcoordFactor);
 			norm0s_in(in);
 			tan0s_in(in);
 			break;
 		case Pos0_Col0_Tex0s32_Tex1s32:
-			pos0_in(in);
+			pos0f4_in(in);
 			col0_in(in);
-			tex0s32_in(in);
-			tex1s32_in(in);
+			tex0s_in(in, vf.texcoordFactor);
+			tex1s_in(in, vf.texcoordFactor);
 			break;
 		case Pos0_Col0_Tex0s32_Tex1s32_Norm0s:
-			pos0_in(in);
+			pos0f4_in(in);
 			col0_in(in);
-			tex0s32_in(in);
-			tex1s32_in(in);
+			tex0s_in(in, vf.texcoordFactor);
+			tex1s_in(in, vf.texcoordFactor);
 			norm0s_in(in);
 			break;
 		case Pos0_Col0_Tex0s32_Tex1s32_Norm0s_Tan0s:
-			pos0_in(in);
+			pos0f4_in(in);
 			col0_in(in);
-			tex0s32_in(in);
-			tex1s32_in(in);
+			tex0s_in(in, vf.texcoordFactor);
+			tex1s_in(in, vf.texcoordFactor);
 			norm0s_in(in);
 			tan0s_in(in);
 			break;
 		case Pos0_Col0_Tex0s32_Tex1s32_Tex2s32_Norm0s_Tan0s:
-			pos0_in(in);
+			pos0f4_in(in);
 			col0_in(in);
-			tex0s32_in(in);
-			tex1s32_in(in);
-			tex2s32_in(in);
+			tex0s_in(in, vf.texcoordFactor);
+			tex1s_in(in, vf.texcoordFactor);
+			tex2s_in(in, vf.texcoordFactor);
 			norm0s_in(in);
 			tan0s_in(in);
 			break;
 		case Pos0_Col0f4_Tex0:
-			pos0_in(in);
+			pos0f4_in(in);
 			col0f4_in(in);
 			tex0_in(in);
 			break;
 		case Pos0_Col0f4_Tex0_Norm0s:
-			pos0_in(in);
+			pos0f4_in(in);
 			col0f4_in(in);
 			tex0_in(in);
 			norm0s_in(in);
 			break;
 		case Pos0_Tex0:
-			pos0_in(in);
+			pos0f4_in(in);
 			tex0_in(in);
 			break;
 		case Pos0_Tex0_Norm0_Tan0:
-			pos0_in(in);
+			pos0f4_in(in);
 			tex0_in(in);
-			norm0_in(in);
-			tan0_in(in);
+			norm0f4_in(in);
+			tan0f4_in(in);
 			break;
 		case Pos0_Tex0_Tex1:
-			pos0_in(in);
+			pos0f4_in(in);
 			tex0_in(in);
 			tex1_in(in);
 			break;
 		case Pos0_Tex0s32:
-			pos0_in(in);
-			tex0s32_in(in);
+			pos0f4_in(in);
+			tex0s_in(in, vf.texcoordFactor);
 			break;
 		case Pos0_Tex0s32_Norm0s:
-			pos0_in(in);
-			tex0s32_in(in);
+			pos0f4_in(in);
+			tex0s_in(in, vf.texcoordFactor);
 			norm0s_in(in);
 			break;
 		case Pos0f3_Tex0s32_Norm0s:
 			pos0f3_in(in);
-			tex0s32_in(in);
+			tex0s_in(in, vf.texcoordFactor);
 			norm0s_in(in);
 			break;
 		case Pos0f3_Norm0s:
@@ -139,16 +139,19 @@ public class Vertex {
 			norm0s_in(in);
 			break;
 		case Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s:
-			pos0_in(in);
-			tex0s32_in(in);
+			pos0f4_in(in);
+			tex0s_in(in, vf.texcoordFactor);
 			col0_in(in);
 			in.getInt(); //skips blendindices
 			norm0s_in(in);
 			tan0s_in(in);
 			break;
+
 		case Pos0s10_Tex0s32_Col0_Norm0s_Tan0s: //car
-			pos0s10_in(in);
-			tex0s32_in(in);
+		case Pos0s10_Tex0s1_Col0_Norm0s_Tan0s:
+		case Pos0s10_Tex0s8_Col0_Norm0s_Tan0s:
+			pos0s_in(in, vf.positionFactor);
+			tex0s_in(in, vf.texcoordFactor);
 			col0_in(in);
 			norm0s_in(in);
 			tan0s_in(in);
@@ -161,10 +164,65 @@ public class Vertex {
 			col0ARGB_in(in);
 			tex0h2_in(in);
 			break;
+			
+//		case Proshit:
+//			pos0s_in(in, vf.positionFactor);
+//			tex0s_in(in, vf.texcoordFactor);
+//			col0_in(in);
+//			norm0s_in(in);
+//			tan0s_in(in);
+//			break;
+			
+		case Pos0f3_Norm0f3_Col0_Tex0_Tan0f3:
+			//Pos0f3_Norm0f3_Col0_Tex0_Tan0f3
+			pos0f3_in(in);
+			norm0f3_in(in);
+			col0_in(in);
+			tex0_in(in);
+			tan0f3_in(in);
+			break;
+
+		case Pos0f3_Col0_Norm0f4_Tan0f3_Tex0:
+			pos0f3_in(in);
+			col0_in(in);
+			norm0f3_in(in);
+			in.getFloat();
+			tan0f3_in(in);
+			tex0_in(in);
+			break;
+		case Pos0f3_Norm0f3_Col0_Tex0_Tex1:
+			pos0f3_in(in);
+			norm0f3_in(in);
+			col0_in(in);
+			tex0_in(in);
+			tex1_in(in);
+			break;
+		case Pos0f3_Norm0f3_Col0_Tex0_Tex1_xf4_xb8:
+			pos0f3_in(in);
+			norm0f3_in(in);
+			col0_in(in);
+			tex0_in(in);
+			tex1_in(in);
+			in.position(in.position()+24);
+			break;
+		case Pos0f3_Col0_Tex0_Tex1_Tan0s_Norm0s:
+			pos0f3_in(in);
+			col0_in(in);
+			tex0_in(in);
+			tex1_in(in);
+			tan0s_in(in);
+			norm0s_in(in);
+			break;
+		case Pos0f3_Norm0f3_Col0_Tex0:
+			pos0f3_in(in);
+			norm0f3_in(in);
+			col0_in(in);
+			tex0_in(in);
+			break;
 		}	
 	}
 	
-	private void pos0_in(ByteBuffer in) {
+	public void pos0f4_in(ByteBuffer in) {
 		posX = in.getFloat();
 		posY = in.getFloat();
 		posZ = in.getFloat();
@@ -175,10 +233,10 @@ public class Vertex {
 		posY = in.getFloat();
 		posZ = in.getFloat();
 	}
-	private void pos0s10_in(ByteBuffer in) {
-		posX = (in.getShort())/posFactor; //short4n_10x
-		posY = (in.getShort())/posFactor;
-		posZ = (in.getShort())/posFactor;
+	private void pos0s_in(ByteBuffer in, float factor) {
+		posX = (in.getShort())/factor; //short4n_10x
+		posY = (in.getShort())/factor;
+		posZ = (in.getShort())/factor;
 		in.getShort();
 	}
 	private void pos0h4_in(ByteBuffer in) {
@@ -217,17 +275,17 @@ public class Vertex {
 		tex1U = in.getFloat();
 		tex1V = 1-in.getFloat();
 	}
-	private void tex0s32_in(ByteBuffer in) {
-		tex0U = (in.getShort())/UVFactor;	//short2n_32x
-		tex0V = 1-(in.getShort())/UVFactor;
+	private void tex0s_in(ByteBuffer in, float factor) {
+		tex0U = (in.getShort())/factor;
+		tex0V = 1-(in.getShort())/factor;
 	}
-	private void tex1s32_in(ByteBuffer in) {
-		tex1U = (in.getShort())/UVFactor;	//short2n_32x
-		tex1V = 1-(in.getShort())/UVFactor;
+	private void tex1s_in(ByteBuffer in, float factor) {
+		tex1U = (in.getShort())/factor;
+		tex1V = 1-(in.getShort())/factor;
 	}
-	private void tex2s32_in(ByteBuffer in) {
-		tex2U = (in.getShort())/UVFactor;	//short2n_32x
-		tex2V = 1-(in.getShort())/UVFactor;
+	private void tex2s_in(ByteBuffer in, float factor) {
+		tex2U = (in.getShort())/factor;
+		tex2V = 1-(in.getShort())/factor;
 	}
 	private void tex0h2_in(ByteBuffer in) {
 		in.order(ByteOrder.BIG_ENDIAN);
@@ -236,11 +294,16 @@ public class Vertex {
 		in.order(ByteOrder.LITTLE_ENDIAN);
 	}
 	
-	private void norm0_in(ByteBuffer in) {
+	private void norm0f4_in(ByteBuffer in) {
 		normX = in.getFloat();
 		normY = in.getFloat();
 		normZ = in.getFloat();
 		normW = in.getFloat();
+	}
+	private void norm0f3_in(ByteBuffer in) {
+		normX = in.getFloat();
+		normY = in.getFloat();
+		normZ = in.getFloat();
 	}
 	private void norm0s_in(ByteBuffer in) {
 		normX = (in.getShort())/vecFactor; //short4n
@@ -275,11 +338,16 @@ public class Vertex {
 		 */
 	}
 
-	private void tan0_in(ByteBuffer in) {
+	private void tan0f4_in(ByteBuffer in) {
 		tanX = in.getFloat();
 		tanY = in.getFloat();
 		tanZ = in.getFloat();
 		in.getFloat();
+	}
+	private void tan0f3_in(ByteBuffer in) {
+		tanX = in.getFloat();
+		tanY = in.getFloat();
+		tanZ = in.getFloat();
 	}
 	private void tan0s_in(ByteBuffer in) {
 		tanX = (in.getShort())/vecFactor; //short4n
@@ -331,48 +399,48 @@ public class Vertex {
 		case Pos0_Col0_Tex0s32:
 			pos0_out(out);
 			col0_out(out);
-			tex0s32_out(out);
+			tex0s_out(out, vf.texcoordFactor);
 			break;
 		case Pos0_Col0_Tex0s32_Norm0s:
 			pos0_out(out);
 			col0_out(out);
-			tex0s32_out(out);
+			tex0s_out(out, vf.texcoordFactor);
 			norm0s_out(out);
 			break;
 		case Pos0_Col0_Tex0s32_Norm0s_Tan0s:
 			pos0_out(out);
 			col0_out(out);
-			tex0s32_out(out);
+			tex0s_out(out, vf.texcoordFactor);
 			norm0s_out(out);
 			tan0s_out(out);
 			break;
 		case Pos0_Col0_Tex0s32_Tex1s32:
 			pos0_out(out);
 			col0_out(out);
-			tex0s32_out(out);
-			tex1s32_out(out);
+			tex0s_out(out, vf.texcoordFactor);
+			tex1s_out(out, vf.texcoordFactor);
 			break;
 		case Pos0_Col0_Tex0s32_Tex1s32_Norm0s:
 			pos0_out(out);
 			col0_out(out);
-			tex0s32_out(out);
-			tex1s32_out(out);
+			tex0s_out(out, vf.texcoordFactor);
+			tex1s_out(out, vf.texcoordFactor);
 			norm0s_out(out);
 			break;
 		case Pos0_Col0_Tex0s32_Tex1s32_Norm0s_Tan0s:
 			pos0_out(out);
 			col0_out(out);
-			tex0s32_out(out);
-			tex1s32_out(out);
+			tex0s_out(out, vf.texcoordFactor);
+			tex1s_out(out, vf.texcoordFactor);
 			norm0s_out(out);
 			tan0s_out(out);
 			break;
 		case Pos0_Col0_Tex0s32_Tex1s32_Tex2s32_Norm0s_Tan0s:
 			pos0_out(out);
 			col0_out(out);
-			tex0s32_out(out);
-			tex1s32_out(out);
-			tex2s32_out(out);
+			tex0s_out(out, vf.texcoordFactor);
+			tex1s_out(out, vf.texcoordFactor);
+			tex2s_out(out, vf.texcoordFactor);
 			norm0s_out(out);
 			tan0s_out(out);
 			break;
@@ -404,16 +472,16 @@ public class Vertex {
 			break;
 		case Pos0_Tex0s32:
 			pos0_out(out);
-			tex0s32_out(out);
+			tex0s_out(out, vf.texcoordFactor);
 			break;
 		case Pos0_Tex0s32_Norm0s:
 			pos0_out(out);
-			tex0s32_out(out);
+			tex0s_out(out, vf.texcoordFactor);
 			norm0s_out(out);
 			break;
 		case Pos0f3_Tex0s32_Norm0s:
 			pos0f3_out(out);
-			tex0s32_out(out);
+			tex0s_out(out, vf.texcoordFactor);
 			norm0s_out(out);
 			break;
 		case Pos0f3_Norm0s:
@@ -422,15 +490,18 @@ public class Vertex {
 			break;
 		case Pos0_Tex0s32_BlendWeight0_BlendIndices0_Norm0s_Tan0s:
 			pos0_out(out);
-			tex0s32_out(out);
+			tex0s_out(out, vf.texcoordFactor);
 			col0_out(out);
 			out.putInt(0); //skip blendindices
 			norm0s_out(out);
 			tan0s_out(out);
 			break;
+
 		case Pos0s10_Tex0s32_Col0_Norm0s_Tan0s: //car
-			pos0s10_out(out);
-			tex0s32_out(out);
+		case Pos0s10_Tex0s1_Col0_Norm0s_Tan0s:
+		case Pos0s10_Tex0s8_Col0_Norm0s_Tan0s:
+			pos0s_out(out, vf.positionFactor);
+			tex0s_out(out, vf.texcoordFactor);
 			col0_out(out);
 			norm0s_out(out);
 			tan0s_out(out);
@@ -443,24 +514,80 @@ public class Vertex {
 			col0ARGB_out(out);
 			tex0h2_out(out);
 			break;
+			
+//		case Proshit:
+//			pos0s_out(out, vf.positionFactor);
+//			tex0s_out(out, vf.texcoordFactor);
+//			col0_out(out);
+//			norm0s_out(out);
+//			tan0s_out(out);
+//			break;
+			
+		case Pos0f3_Norm0f3_Col0_Tex0_Tan0f3:
+			//Pos0f3_Norm0f3_Col0_Tex0_Tan0f3
+			pos0f3_out(out);
+			norm0f3_out(out);
+			col0_out(out);
+			tex0_out(out);
+			tan0f3_out(out);
+			break;
+
+		case Pos0f3_Col0_Norm0f4_Tan0f3_Tex0:
+			pos0f3_out(out);
+			col0_out(out);
+			norm0f3_out(out);
+			out.putFloat(0.0f);
+			tan0f3_out(out);
+			tex0_out(out);
+			break;
+		case Pos0f3_Norm0f3_Col0_Tex0_Tex1:
+			pos0f3_out(out);
+			norm0f3_out(out);
+			col0_out(out);
+			tex0_out(out);
+			tex1_out(out);
+			break;
+		case Pos0f3_Norm0f3_Col0_Tex0_Tex1_xf4_xb8:
+			pos0f3_out(out);
+			norm0f3_out(out);
+			col0_out(out);
+			tex0_out(out);
+			tex1_out(out);
+			out.position(out.position()+24);
+			break;
+		case Pos0f3_Col0_Tex0_Tex1_Tan0s_Norm0s:
+			pos0f3_out(out);
+			col0_out(out);
+			tex0_out(out);
+			tex1_out(out);
+			tan0s_out(out);
+			norm0s_out(out);
+			break;
+		case Pos0f3_Norm0f3_Col0_Tex0:
+			pos0f3_out(out);
+			norm0f3_out(out);
+			col0_out(out);
+			tex0_out(out);
+			break;
+
 		}	
 	}
 
 	private void pos0_out(ByteBuffer out) {
-		out.putFloat((float) posX);
-		out.putFloat((float) posY);
-		out.putFloat((float) posZ);
+		out.putFloat(posX);
+		out.putFloat(posY);
+		out.putFloat(posZ);
 		out.putFloat(1.0f);
 	}
 	private void pos0f3_out(ByteBuffer out) {
-		out.putFloat((float) posX);
-		out.putFloat((float) posY);
-		out.putFloat((float) posZ);
+		out.putFloat(posX);
+		out.putFloat(posY);
+		out.putFloat(posZ);
 	}
-	private void pos0s10_out(ByteBuffer out) {
-		out.putShort((short) (posX*posFactor)); //short4n_10x
-		out.putShort((short) (posY*posFactor));
-		out.putShort((short) (posZ*posFactor));
+	private void pos0s_out(ByteBuffer out, float factor) {
+		out.putShort((short) (posX*factor)); //short4n_10x
+		out.putShort((short) (posY*factor));
+		out.putShort((short) (posZ*factor));
 		out.putShort((short) (0x0CCD));
 	}
 	private void pos0h4_out(ByteBuffer out) {
@@ -492,24 +619,24 @@ public class Vertex {
 	}
 
 	private void tex0_out(ByteBuffer out) {
-		out.putFloat((float) tex0U);
-		out.putFloat((float) (1-tex0V));
+		out.putFloat(tex0U);
+		out.putFloat(1-tex0V);
 	}
 	private void tex1_out(ByteBuffer out) {
-		out.putFloat((float) tex1U);
-		out.putFloat((float) (1-tex1V));
+		out.putFloat(tex1U);
+		out.putFloat(1-tex1V);
 	}
-	private void tex0s32_out(ByteBuffer out) {
-		out.putShort((short) (tex0U*UVFactor));	//short2n_32x
-		out.putShort((short) ((1-tex0V)*UVFactor));
+	private void tex0s_out(ByteBuffer out, float factor) {
+		out.putShort((short) (tex0U*factor));	//short2n_32x
+		out.putShort((short) ((1-tex0V)*factor));
 	}
-	private void tex1s32_out(ByteBuffer out) {
-		out.putShort((short) (tex1U*UVFactor));	//short2n_32x
-		out.putShort((short) ((1-tex1V)*UVFactor));
+	private void tex1s_out(ByteBuffer out, float factor) {
+		out.putShort((short) (tex1U*factor));	//short2n_32x
+		out.putShort((short) ((1-tex1V)*factor));
 	}
-	private void tex2s32_out(ByteBuffer out) {
-		out.putShort((short) (tex2U*UVFactor));	//short2n_32x
-		out.putShort((short) ((1-tex2V)*UVFactor));
+	private void tex2s_out(ByteBuffer out, float factor) {
+		out.putShort((short) (tex2U*factor));	//short2n_32x
+		out.putShort((short) ((1-tex2V)*factor));
 	}
 	private void tex0h2_out(ByteBuffer out) {
 		out.order(ByteOrder.BIG_ENDIAN);
@@ -519,10 +646,15 @@ public class Vertex {
 	}
 
 	private void norm0_out(ByteBuffer out) {
-		out.putFloat((float) normX);
-		out.putFloat((float) normY);
-		out.putFloat((float) normZ);
-		out.putFloat((float) normW);
+		out.putFloat(normX);
+		out.putFloat(normY);
+		out.putFloat(normZ);
+		out.putFloat(normW);
+	}
+	private void norm0f3_out(ByteBuffer out) {
+		out.putFloat(normX);
+		out.putFloat(normY);
+		out.putFloat(normZ);
 	}
 	private void norm0s_out(ByteBuffer out) {
 		out.putShort((short) (normX*vecFactor)); //short4n
@@ -541,12 +673,17 @@ public class Vertex {
         int bits = (1 << 30) | (z << 20) | (y << 10) | x;
 		out.putInt(Integer.reverseBytes(bits));
 	}
-	
+
 	private void tan0_out(ByteBuffer out) {
-		out.putFloat((float) tanX);
-		out.putFloat((float) tanY);
-		out.putFloat((float) tanZ);
+		out.putFloat(tanX);
+		out.putFloat(tanY);
+		out.putFloat(tanZ);
 		out.putFloat(1.0f);
+	}
+	private void tan0f3_out(ByteBuffer out) {
+		out.putFloat(tanX);
+		out.putFloat(tanY);
+		out.putFloat(tanZ);
 	}
 	private void tan0s_out(ByteBuffer out) {
 		out.putShort((short) (tanX*vecFactor)); //short4n

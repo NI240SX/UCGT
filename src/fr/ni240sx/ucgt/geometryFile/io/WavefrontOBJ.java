@@ -10,6 +10,7 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.Geometry;
+import fr.ni240sx.ucgt.geometryFile.GeometryEditorCLI;
 import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.geometryFile.part.MPoint;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
@@ -17,10 +18,12 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangle;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.Vertices_PC;
 
 public class WavefrontOBJ {
-	
+
+	public static final int OBJ_blender = 1816272931;
+	public static final int OBJ_UCGT = 1245859619;
+
 	public static void load(Geometry geom, File f) throws IOException {
 //		boolean verticesPerPart = false;
 		
@@ -35,6 +38,8 @@ public class WavefrontOBJ {
         ArrayList<TexcoordData2> tex = new ArrayList<>(); //WARNING obj index = list index + 1
         
 		long time = System.currentTimeMillis();
+		
+		geom.isImported = true;
 		
         while ((line = br.readLine()) != null) {
         	lineheader: if (line.startsWith("o ") || line.startsWith("g ")) {
@@ -53,11 +58,11 @@ public class WavefrontOBJ {
         		} else {
         			// marker
         			nextIsMarker = true;
-        			for (var mp : geom.mpointsAll) if (mp.uniqueName.equals(line.substring(2).toUpperCase())) {
+        			for (var mp : geom.mpointsAll) if (mp.uniqueName.equals(line.substring(2))) {
 	    				curMarker = mp;
 	    				break lineheader;
 	        		}
-        			System.out.println("[OBJLoader] Marker "+line.substring(2).toUpperCase()+" not found in config !");
+        			System.out.println("[OBJLoader] Marker "+line.substring(2)+" not found in config !");
         			curMarker = new MPoint();
         		}
         	}
@@ -91,14 +96,14 @@ public class WavefrontOBJ {
         			assert (curPart != null);
         			for (var m : geom.materials) if (m.uniqueName.equals(line.substring(7))) {
         				curMat = new Material(m); //copies the material the mesh uses to make it part specific
-        				curMat.verticesBlock = new Vertices_PC();
+        				curMat.createVerticesBlock(geom.platform);
         				curPart.mesh.materials.materials.add(curMat);
         				break lineheader;
         			}
         			// if no material data is found give a warning and create a fallback material
         			System.out.println("[OBJLoader] Warning : material "+line.substring(7)+" not found in config !");
         			curMat = Material.getFallbackMaterial(geom);
-    				curMat.verticesBlock = new Vertices_PC();
+    				curMat.createVerticesBlock(geom.platform);
     				curPart.mesh.materials.materials.add(curMat);
         			
         		} //no material data to process for markers
@@ -141,15 +146,16 @@ public class WavefrontOBJ {
 	        			triVerts[i-1] = v;
 	        		}
         			
-        			curMat.triangles.add(new Triangle(	(short)(curMat.verticesBlock.vertices.indexOf(triVerts[0])), 
-        										(short)(curMat.verticesBlock.vertices.indexOf(triVerts[1])),
-        										(short)(curMat.verticesBlock.vertices.indexOf(triVerts[2])) ));
+        			curMat.triangles.add(new Triangle(	(curMat.verticesBlock.vertices.indexOf(triVerts[0])), 
+        										(curMat.verticesBlock.vertices.indexOf(triVerts[1])),
+        										(curMat.verticesBlock.vertices.indexOf(triVerts[2])) ));
 					
         			if (numVerts == 4) { //
-        				curMat.triangles.add(new Triangle(	(short)(curMat.verticesBlock.vertices.indexOf(triVerts[0])), 
-								(short)(curMat.verticesBlock.vertices.indexOf(triVerts[2])),
-								(short)(curMat.verticesBlock.vertices.indexOf(triVerts[3])) ));
+        				curMat.triangles.add(new Triangle(	(curMat.verticesBlock.vertices.indexOf(triVerts[0])), 
+								(curMat.verticesBlock.vertices.indexOf(triVerts[2])),
+								(curMat.verticesBlock.vertices.indexOf(triVerts[3])) ));
         			} if (numVerts > 4) { //
+        				assert (curPart != null);
         				System.out.println("[OBJLoader] Please triangulate the mesh for "+curPart.name);
         			}
         			
@@ -206,9 +212,9 @@ public class WavefrontOBJ {
 
 
 	public static void save(Geometry geom, String f) throws IOException {
-		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(f.replace(".obj", "")+".obj")));
-		bw.write("#OBJ file exported with UCGT - needeka 2025\n"
-				+ "mtllib "+f.split("\\\\")[f.split("\\\\").length-1].replace(".obj", "")+".mtl\n");
+		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(f.replace(".obj", "").replace(".OBJ", "")+".obj")));
+		bw.write("#OBJ file exported with UCGT v"+GeometryEditorCLI.programVersion+" - needeka 2026\n"
+				+ "mtllib "+f.split("\\\\")[f.split("\\\\").length-1].replace(".obj", "").replace(".OBJ", "")+".mtl\n");
 //		long iterator = 1;
 		long vl = 1;
         for (var p : geom.parts) {
@@ -216,7 +222,7 @@ public class WavefrontOBJ {
         			+ "o "+p.name+"\n"
         			+ "g "+p.name+"\n");
         	//vrite material data one after the other
-        	for (var m : p.mesh.materials.materials) {
+        	for (var m : p.mesh.materials.materials) if (m.verticesBlock != null) {
         		for (var v : m.verticesBlock.vertices) {
         			// vertex + vertex color
         			bw.write("v "+v.posX+" "+v.posY+" "+v.posZ+" "
@@ -312,7 +318,7 @@ public class WavefrontOBJ {
         }
         bw.close();
         bw = new BufferedWriter(new FileWriter(new File(f.replace(".obj", "")+".mtl")));
-        bw.write("#MTL file exported with UCGT - NI240SX 2024\n");
+        bw.write("#MTL file exported with UCGT - needeka 2026\n");
         for (var m : geom.materials) {
         	bw.write("\nnewmtl "+m.uniqueName+"\n"
         			+ "Ns 200.0\r\n"

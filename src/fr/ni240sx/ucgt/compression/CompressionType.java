@@ -19,6 +19,10 @@ public enum CompressionType {
     public String getName() {
         return name;
     }
+    @Override
+	public String toString() {
+    	return name;
+    }
 
     public static CompressionType get(String name) {
         for (CompressionType c : values()) for (String n : c.possibleNames) {

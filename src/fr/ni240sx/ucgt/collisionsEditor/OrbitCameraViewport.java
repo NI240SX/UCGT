@@ -1,5 +1,7 @@
 package fr.ni240sx.ucgt.collisionsEditor;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.SceneAntialiasing;
@@ -15,10 +17,10 @@ public class OrbitCameraViewport extends SubScene {
 	public Group viewportGroup;
     
 
-    private double anchorX, anchorY;
-    private double angleX = -15, angleY = 30;
+    private double anchorX, anchorY;// posX, posY;
+    private double angleX = -15, angleY = 30;//, x=0, y=0;
     private double radius = 10; // Distance of the camera from the object
-    private final double minRadius = 0.1, maxRadius = 100;
+    private final double minRadius = 0.1, maxRadius = 1000;
     private final double sensitivity = 0.5; // Mouse sensitivity
     private final double zoomFactor = 1.1;
 
@@ -26,8 +28,11 @@ public class OrbitCameraViewport extends SubScene {
     private final Group cameraPivot = new Group();
     private final Rotate rotateX = new Rotate(180, Rotate.X_AXIS);
     private final Rotate rotateY = new Rotate(0, Rotate.Y_AXIS);
+    private final Translate cameraPivotOffset = new Translate(0, 0, 0);
+    private final Translate cameraPivotPosition = new Translate(0, 0, 0);
     private final Translate cameraDistance = new Translate(0, 0, -radius);
     
+    public BooleanProperty trackpadMode = new SimpleBooleanProperty();
 	/**
 	 * @param viewportGroup
 	 * @param width
@@ -37,20 +42,23 @@ public class OrbitCameraViewport extends SubScene {
 		super(viewportGroup, width, height, true, SceneAntialiasing.BALANCED);
 
 		this.viewportGroup = viewportGroup;
-        this.buildAxes();
+//        this.buildAxes();
 //        if (CollisionsEditor.debug) this.viewportGroup.getChildren().add(new Box(0.1,0.1,0.1));
         
         
      // Set up a camera
         camera.setNearClip(0.01);
-        camera.setFarClip(10000);
+        camera.setFarClip(100000);
 //        updateCameraPosition();
 
         camera.getTransforms().add(cameraDistance);
 
         // Create pivot for the camera
         cameraPivot.getChildren().add(camera);
-        cameraPivot.getTransforms().addAll(rotateY, rotateX);
+        cameraPivot.getTransforms().addAll(rotateY, rotateX, cameraPivotOffset);
+        var pivot2 = new Group();
+        pivot2.getChildren().add(cameraPivot);
+		pivot2.getTransforms().add(cameraPivotPosition);
         rotateY.setAngle(angleY);
         rotateX.setAngle(180 + angleX);
         
@@ -61,18 +69,29 @@ public class OrbitCameraViewport extends SubScene {
         setOnMousePressed(e -> {
             anchorX = e.getSceneX();
             anchorY = e.getSceneY();
+//            posX = e.getSceneX()+cameraPivotPosition.getX()/sensitivity*100;
+//            posY = e.getSceneY()+cameraPivotPosition.getY()/sensitivity*100;
         });
         setOnMouseDragged(event -> {
-            double deltaX = (event.getSceneX() - anchorX) * sensitivity;
-            double deltaY = (event.getSceneY() - anchorY) * sensitivity;
-            anchorX = event.getSceneX();
-            anchorY = event.getSceneY();
+        	if (event.isSecondaryButtonDown()) {
+	            double deltaX = (event.getSceneX() - anchorX) * sensitivity/100*radius/10;
+	            double deltaY = (event.getSceneY() - anchorY) * sensitivity/100*radius/10;
 
-            angleY -= deltaX;
-            angleX -= deltaY;
-
-            rotateY.setAngle(angleY);
-            rotateX.setAngle(180 + angleX);
+	            cameraPivotOffset.setX(-deltaX);
+	            cameraPivotOffset.setY(-deltaY);
+        		
+        	} else {
+	            double deltaX = (event.getSceneX() - anchorX) * sensitivity;
+	            double deltaY = (event.getSceneY() - anchorY) * sensitivity;
+	            anchorX = event.getSceneX();
+	            anchorY = event.getSceneY();
+	
+	            angleY -= deltaX;
+	            angleX -= deltaY;
+	
+	            rotateY.setAngle(angleY);
+	            rotateX.setAngle(180 + angleX);
+        	}
         });
         setOnZoom(e -> {
         	radius *= e.getTotalZoomFactor();
@@ -80,7 +99,8 @@ public class OrbitCameraViewport extends SubScene {
 //            updateCameraPosition();
         });
         setOnScroll(e ->{
-//        	if (e.isDirect() || e.isControlDown()) {
+        	if (e.isControlDown() || !trackpadMode.get()) {
+        		//zoom
 	            if (e.getDeltaY() > 0) {
 	                radius /= zoomFactor;
 	            } else {
@@ -88,19 +108,47 @@ public class OrbitCameraViewport extends SubScene {
 	            }
 	            radius = Math.max(minRadius, Math.min(maxRadius, radius));
 	            cameraDistance.setZ(-radius);
-//        	} else {
-//
-//                double deltaX = e.getDeltaX() * sensitivity;
-//                double deltaY = e.getDeltaY() * sensitivity;
-//
-//                angleY -= deltaX;
-//                angleX -= deltaY;
-//
-//                rotateY.setAngle(angleY);
-//                rotateX.setAngle(180 + angleX);
-//        	}
+	            
+        	} else {
+        		angleY -= e.getDeltaX() * sensitivity;
+        		rotateY.setAngle(angleY);
+
+        		angleX -= e.getDeltaY() * sensitivity;
+        		rotateX.setAngle(180 + angleX);
+        	}
         });
         
+	}
+	
+	public void resetCamera() {
+		rotateX.setAngle(180);
+		rotateX.setAxis(Rotate.X_AXIS);
+		rotateY.setAngle(0);
+		rotateY.setAxis(Rotate.Y_AXIS);
+	    cameraDistance.setX(0);
+	    cameraDistance.setY(0);
+	    cameraDistance.setZ(-10);
+
+	    cameraPivotOffset.setX(0);
+	    cameraPivotOffset.setY(0);
+	    cameraPivotOffset.setZ(0);
+
+	    cameraPivotPosition.setX(0);
+	    cameraPivotPosition.setY(0);
+	    cameraPivotPosition.setZ(0);
+	    
+        rotateY.setAngle(30);
+        rotateX.setAngle(180 + -15);
+
+        angleX = -15;
+        angleY = 30;
+        radius = 10;
+	}
+	
+	public void moveCamera(double x, double y, double z) {
+		cameraPivotPosition.setX(x);
+		cameraPivotPosition.setY(y);
+		cameraPivotPosition.setZ(z);
 	}
 	
 	public void buildAxes() {

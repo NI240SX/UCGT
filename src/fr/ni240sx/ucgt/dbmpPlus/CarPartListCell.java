@@ -39,8 +39,7 @@ public class CarPartListCell extends ListCell<DBMPPart> {
             	//Attributes display
 //            	DBMPPlus.attributesDisplay.getItems().clear();
 //            	for (Attribute a: this.getItem().attributes) DBMPPlus.attributesDisplay.getItems().add(a);
-            	DBMPPlus.attributesDisplay.getChildren().clear();
-            	for (Attribute a: this.getItem().attributes) DBMPPlus.attributesDisplay.getChildren().add(a.dataHBox);
+            	DBMPPlus.updateAttributesDisplay();
             	
 				for (CarPartListCell c : DBMPPlus.carPartListCells) if(c!=null && c.getItem()!=null) c.checkBox.setSelected(DBMPPlus.partsDisplay.getSelectionModel().getSelectedItems().contains(c.getItem()));
 				e.consume();
@@ -55,8 +54,8 @@ public class CarPartListCell extends ListCell<DBMPPart> {
         });
         
         autosculptMorph.setOnAction(e -> {
-        	getItem().getAttributeInteger("MORPHTARGET_NUM").value = Integer.valueOf(autosculptMorph.getText());
-        	if (DBMPPlus.debug) System.out.println("Part " + getItem() + " morphtarget number changed to " + getItem().getAttributeInteger("MORPHTARGET_NUM").value);
+        	getItem().<AttributeInteger>getAttribute("MORPHTARGET_NUM").value = Integer.valueOf(autosculptMorph.getText());
+        	if (DBMPPlus.debug) System.out.println("Part " + getItem() + " morphtarget number changed to " + getItem().<AttributeInteger>getAttribute("MORPHTARGET_NUM").value);
         	e.consume();
         });
         
@@ -70,12 +69,12 @@ public class CarPartListCell extends ListCell<DBMPPart> {
             setGraphic(null);
         } else {
             partDisplayName.setText(item.displayName);
-            if (item.getAttributeInteger("MORPHTARGET_NUM") == null) {
+            if (item.<AttributeInteger>getAttribute("MORPHTARGET_NUM") == null) {
             	autosculptMorph.setText("0");
             	autosculptMorph.setDisable(true);
             } else {
             	autosculptMorph.setDisable(false);
-            	autosculptMorph.setText(Integer.toString(item.getAttributeInteger("MORPHTARGET_NUM").value));
+            	autosculptMorph.setText(Integer.toString(item.<AttributeInteger>getAttribute("MORPHTARGET_NUM").value));
             }
             setGraphic(cellPane);
         }
@@ -86,12 +85,12 @@ public class CarPartListCell extends ListCell<DBMPPart> {
             setGraphic(null);
         } else {
             partDisplayName.setText(getItem().displayName);
-//            if (getItem().getAttributeInteger("MORPHTARGET_NUM") == null) {
+//            if (getItem().<AttributeInteger>getAttribute("MORPHTARGET_NUM") == null) {
 //            	autosculptMorph.setText("0");
 //            	autosculptMorph.setDisable(true);
 //            } else {
 //            	autosculptMorph.setDisable(false);
-//            	autosculptMorph.setText(Integer.toString(getItem().getAttributeInteger("MORPHTARGET_NUM").value));
+//            	autosculptMorph.setText(Integer.toString(getItem().<AttributeInteger>getAttribute("MORPHTARGET_NUM").value));
 //            }
             setGraphic(cellPane);
         }
