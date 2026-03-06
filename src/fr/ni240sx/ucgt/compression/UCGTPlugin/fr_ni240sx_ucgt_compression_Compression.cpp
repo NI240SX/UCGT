@@ -8,7 +8,7 @@ extern "C" {
 
     JNIEXPORT jboolean JNICALL Java_fr_ni240sx_ucgt_compression_Compression_pluginInit() {
 
-        auto lzcLib = LoadLibrary(L"C:\\Users\\gaupp\\git\\UCGT\\bin\\LZCompressLib.dll");
+        auto lzcLib = LoadLibraryA("LZCompressLib.dll");
 
         if (lzcLib == NULL) return false;
 
