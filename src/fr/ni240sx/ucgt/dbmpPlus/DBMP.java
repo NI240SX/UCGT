@@ -12,7 +12,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
+import fr.ni240sx.ucgt.shared.Hash;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 

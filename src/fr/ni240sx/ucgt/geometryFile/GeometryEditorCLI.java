@@ -10,20 +10,21 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import fr.ni240sx.ucgt.binstuff.Block;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.compression.CompressionType;
 import fr.ni240sx.ucgt.geometryFile.io.GLTF;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
 import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
 import fr.ni240sx.ucgt.geometryFile.textures.TPK;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
 import javafx.util.Pair;
 
 @SuppressWarnings("unused")
 public class GeometryEditorCLI {
 
-	public static final String programVersion = "1.3.0";
-	public static final String programBuild = "2026.03.05";
+	public static final String programVersion = "1.3.2";
+	public static final String programBuild = "2026.06.14";
 	
 	public static Geometry geom = null;
 //	public static ArrayList<String> commandsHistory = new ArrayList<>();

@@ -3,10 +3,11 @@ package fr.ni240sx.ucgt.geometryFile.part.mesh.PC;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.BlockType;
+
 import fr.ni240sx.ucgt.geometryFile.Platform;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Mesh_Info;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
 
 public class Mesh_Info_PC extends Mesh_Info {
 
@@ -143,6 +144,7 @@ public class Mesh_Info_PC extends Mesh_Info {
 		case Carbon_PC:
 			yield 18;
 		case X360:
+		case PS3:
 			yield -1; //not applicable
 		};
 	}

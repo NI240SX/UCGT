@@ -7,9 +7,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.compression.Compression;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.Hash;
 
 public class NFSTexture {
 
@@ -31,7 +31,8 @@ public class NFSTexture {
 	short const43 = 256, const44 = 256;
 	
 	public String name;
-	public String format;
+//	public String format;
+	private int format;
 	
 	public byte[] DDSImage;
 
@@ -39,6 +40,8 @@ public class NFSTexture {
 	public int compressedLength;
 	public byte[] compressedData;
 
+	static final int DXT1 = 827611204;
+	
 	public NFSTexture() {
 		
 	}
@@ -98,7 +101,8 @@ public class NFSTexture {
 			height = Short.toUnsignedInt(in.getShort(in.limit()-86));
 
 			in.position(in.limit()-12);
-			format = Block.readStringAligned(in); 
+//			format = Block.readStringAligned(in); 
+			format = in.getInt();
 
 			in.position(fileStart);
 			
@@ -126,8 +130,10 @@ public class NFSTexture {
 		writer.position(writer.position()+44);
 		writer.putInt(32);//pixel format size
 		writer.putInt(4); //flags
-		Block.putString(writer, format);
-		writer.position(writer.position()+16); //not 20 because Block.putString overshoots
+//		Block.putString(writer, format);
+//		writer.position(writer.position()+16); //not 20 because Block.putString overshoots
+		writer.putInt(format);
+		writer.position(writer.position()+20);
 		writer.putInt(4096);//idk
 		writer.position(writer.position()+16);
 		
@@ -146,8 +152,12 @@ public class NFSTexture {
 		in.getInt(); //0
 		in.getInt(); //0
 		in.getInt(); //0
-		format = Block.readStringAligned(in); // should be always 4 bytes!
+//		format = Block.readStringAligned(in); // should be always 4 bytes!
+		format = in.getInt();
+		in.getInt();
+
 		in.getInt(); //0
+		
 	}
 
 	public void readHeaderPart1(ByteBuffer in) {
@@ -255,7 +265,11 @@ public class NFSTexture {
 		out.putInt(0);
 		out.putInt(0);
 		out.putInt(0);
-		Block.putString(out, format);
+		
+//		Block.putString(out, format);
+		out.putInt(format);
+		out.putInt(0);
+		
 		out.putInt(0);
 	}
 
@@ -329,9 +343,12 @@ public class NFSTexture {
 		for (int i=0; i < mipMapCount; i++) {
 			this.imageDataLength += this.firstMipMapDataLength/Math.pow(4, i);
 		}
-		this.format = String.valueOf(new char[] {(char) DDSImage[84], (char) DDSImage[85], (char) DDSImage[86], (char) DDSImage[87]});
-		this.const32 = format.equals("DXT1") ? 0 : 1280;
-		this.const33 = format.equals("DXT1") ? 0x01000000 : 0x00010201;
+//		this.format = String.valueOf(new char[] {(char) DDSImage[84], (char) DDSImage[85], (char) DDSImage[86], (char) DDSImage[87]});
+		this.format = getIntAt(DDSImage, 84);
+//		this.const32 = format.equals("DXT1") ? 0 : 1280;
+//		this.const33 = format.equals("DXT1") ? 0x01000000 : 0x00010201;
+		this.const32 = format == DXT1 ? 0 : 1280;
+		this.const33 = format == DXT1 ? 0x01000000 : 0x00010201;
 	}
 	
 	@SuppressWarnings("unused")
@@ -375,7 +392,8 @@ public class NFSTexture {
 		const44 = copyFrom.const44;
 
 		name = new String(copyFrom.name);
-		format = new String(copyFrom.format);
+//		format = new String(copyFrom.format);
+		format = copyFrom.format;
 		
 		DDSImage = copyFrom.DDSImage.clone();
 	}

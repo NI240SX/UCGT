@@ -22,8 +22,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.compression.Compression;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.compression.CompressionType;
@@ -43,6 +41,7 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangle;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
+import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 import fr.ni240sx.ucgt.geometryFile.sorters.MPointPosSorterName;
 import fr.ni240sx.ucgt.geometryFile.sorters.MPointSorterName;
 import fr.ni240sx.ucgt.geometryFile.sorters.MaterialsSorterGlobalList;
@@ -50,6 +49,9 @@ import fr.ni240sx.ucgt.geometryFile.sorters.MaterialsSorterName;
 import fr.ni240sx.ucgt.geometryFile.sorters.PartSorterBinKey;
 import fr.ni240sx.ucgt.geometryFile.sorters.PartSorterLodKitName;
 import fr.ni240sx.ucgt.geometryFile.textures.TPK;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Hash;
 import javafx.util.Pair;
 import fr.ni240sx.ucgt.geometryFile.settings.*;
 
@@ -95,6 +97,15 @@ public class Geometry extends Block {
 	public boolean SAVE_checkModel = false;
 	public boolean SAVE_autoReplaceWorldLODs = true;
 	public boolean SAVE_makeDataBlock = false;
+
+	public int VertexColorBrightnessMin = 0;
+	public int VertexColorBrightnessMax = 255;
+	public int VertexColorBrightnessFactor = 150;
+	public float VertexColorBrightnessNormalOffset = 0.8f;
+	public int VertexColorBrightnessMinWheel = 20;
+	public int VertexColorBrightnessMaxWheel = 255;
+	public int VertexColorBrightnessFactorWheel = 150;
+	public float VertexColorBrightnessNormalOffsetWheel = 0.8f;
 
 	public boolean IMPORT_importVertexColors = true;
 	public boolean IMPORT_calculateVertexColors = false;
@@ -149,9 +160,9 @@ public class Geometry extends Block {
 						byte[] partData = new byte[o.sizeDecompressed];
 						dataWriter = ByteBuffer.wrap(partData);
 						
-						in.position(o.offset -4); //-4 because we don't have the full file header here
+						in.position(o.offset -8+blockStart); //-4 because we don't have the full file header here
 						//loops on the one or multiple compressed blocks
-						while (in.position() < o.offset -4 + o.sizeCompressed) {
+						while (in.position() < o.offset -8+blockStart + o.sizeCompressed) {
 							CompressedData d = (CompressedData) Block.read(in);
 							var decomp = Compression.decompress(d.data);
 							if (decomp==null) continue offsets;
@@ -162,7 +173,7 @@ public class Geometry extends Block {
 						dataWriter.position(4);
 						parts.add(new Part(dataWriter));	
 					} else {
-						in.position(o.offset -4);
+						in.position(o.offset -8+blockStart);
 						in.getInt();
 						parts.add(new Part(in));
 						if (defaultCompressionType == null) defaultCompressionType = CompressionType.RawDecompressed;
@@ -688,61 +699,62 @@ public class Geometry extends Block {
 		if (new File (modelsDirectory).isDirectory()) {
 			var filesInDir = new File (modelsDirectory).list();
 			for (var s : filesInDir) {
-				s = s.toLowerCase();
 				try {
-					// decompiled 3D models
-					if (s.endsWith(".ini")) {
-						Geometry g;
-						if (new File(modelsDirectory + s.replace(".ini", ".z3d")).exists()) {
-							//check the INI for chunk and file name
-							System.out.println("INI and Z3D found : "+s);
-							g = Geometry.importFromFile(new File(modelsDirectory + s.replace(".ini", ".z3d")));
-							binBlocksToReplace.put(
-									new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename),
-									g
-									);
-						} else if (new File(modelsDirectory + s.replace(".ini", ".obj")).exists()) {
-							System.out.println("INI and OBJ found : "+s);
-							g = Geometry.importFromFile(new File(modelsDirectory + s.replace(".ini", ".obj")));
-							binBlocksToReplace.put(
-									new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename),
-									g
-									);
-						}
-					}
-					
-					// compiled Geometries and TPKs
-					if (s.endsWith(".bin") || s.endsWith(".bun") || s.endsWith(".tpk") || s.endsWith(".mpk")) {
-						var binFile = new File(modelsDirectory + s);
-						var fis = new FileInputStream(binFile);
-						var binFileToBytes = new byte[(int)binFile.length()];
-						fis.read(binFileToBytes);
-						fis.close();
-						var bb = ByteBuffer.wrap(binFileToBytes);
-						bb.order(ByteOrder.LITTLE_ENDIAN);
-
-						Block b;
-						while (bb.hasRemaining()) {
-							b = Block.read(bb);
-							if (b.getClass() == Geometry.class) {
-								Geometry g = (Geometry) b;
+					if (new File(modelsDirectory + s).isFile()) {
+						// decompiled 3D models
+						if (s.toLowerCase().endsWith(".ini")) {
+							Geometry g;
+							if (new File(modelsDirectory + s.toLowerCase().replace(".ini", ".z3d")).exists()) {
+								//check the INI for chunk and file name
+								System.out.println("INI and Z3D found : "+s);
+								g = Geometry.importFromFile(new File(modelsDirectory + s.toLowerCase().replace(".ini", ".z3d")));
 								binBlocksToReplace.put(
 										new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename),
 										g
 										);
-							} 
-							if (b.getClass() == TPK.class) {
-								var tpk = (TPK) b;
+							} else if (new File(modelsDirectory + s.toLowerCase().replace(".ini", ".obj")).exists()) {
+								System.out.println("INI and OBJ found : "+s);
+								g = Geometry.importFromFile(new File(modelsDirectory + s.toLowerCase().replace(".ini", ".obj")));
 								binBlocksToReplace.put(
-										new Pair<>(tpk.header.info.blockname.replace("STREAMINGTEXTUREPACK", ""), tpk.header.info.filename.split("\\.")[0].toUpperCase()), //getting around binary's xml
-										tpk);
+										new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename),
+										g
+										);
 							}
-						}	
+						}
+						
+						// compiled Geometries and TPKs
+						if (s.toLowerCase().endsWith(".bin") || s.toLowerCase().endsWith(".bun") || s.toLowerCase().endsWith(".tpk") || s.toLowerCase().endsWith(".mpk")) {
+							var binFile = new File(modelsDirectory + s.toLowerCase());
+							var fis = new FileInputStream(binFile);
+							var binFileToBytes = new byte[(int)binFile.length()];
+							fis.read(binFileToBytes);
+							fis.close();
+							var bb = ByteBuffer.wrap(binFileToBytes);
+							bb.order(ByteOrder.LITTLE_ENDIAN);
+
+							Block b;
+							while (bb.hasRemaining()) {
+								b = Block.read(bb);
+								if (b.getClass() == Geometry.class) {
+									Geometry g = (Geometry) b;
+									binBlocksToReplace.put(
+											new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename),
+											g
+											);
+								} 
+								if (b.getClass() == TPK.class) {
+									var tpk = (TPK) b;
+									binBlocksToReplace.put(
+											new Pair<>(tpk.header.info.blockname.replace("STREAMINGTEXTUREPACK", ""), tpk.header.info.filename.split("\\.")[0].toUpperCase()), //getting around binary's xml
+											tpk);
+								}
+							}	
+						}
 					}
 					
 					//TPKs as folders (using UC support)
-					if (new File(s).isDirectory()) {
-						var tpk = new TPK(new File(s), 9);
+					if (s.contains("-") && new File(modelsDirectory + s).isDirectory()) {
+						var tpk = new TPK(new File(modelsDirectory + s), 9);
 						if (tpk.textures.size() > 0)
 						binBlocksToReplace.put(
 								new Pair<>(tpk.header.info.blockname.replace("STREAMINGTEXTUREPACK", ""), tpk.header.info.filename.split("\\.")[0].toUpperCase()),
@@ -801,7 +813,7 @@ public class Geometry extends Block {
 		
 		File outputL8rFile = null;
 		ArrayList<Block> l8rBlocks = null;
-		StreamBlocksOffsets offsets = null;
+		StreamChunksOffsets offsets = null;
 		if (l8rFile != null) {
 			File inputL8rFile = new File(l8rFile.replace(".BUN", "").replace(".BIN", "")+".OLD");
 			outputL8rFile = new File(l8rFile);
@@ -816,8 +828,8 @@ public class Geometry extends Block {
 			while (l8rBB.remaining()>8) {
 				var b = Block.read(l8rBB);
 				l8rBlocks.add(b);
-				if (b.getBlockID() == BlockType.StreamBlocksOffsets) {
-					offsets = (StreamBlocksOffsets) b;
+				if (b.getBlockID() == BlockType.ChunksOffsets) {
+					offsets = (StreamChunksOffsets) b;
 				}
 			}
 			l8rBB = null;
@@ -859,9 +871,9 @@ public class Geometry extends Block {
 				System.out.println("Editing chunk "+chunk.name
 //						+" at "+currentPositionIn+" in, length "+chunk.length1
 						);
-				byte[] chunkBytes = new byte[chunk.length1];
+				byte[] chunkBytes = new byte[chunk.size];
 				fisStream.read(chunkBytes);
-				currentPositionIn += chunk.length1;
+				currentPositionIn += chunk.size;
 				int posInChunk = 0;
 //				boolean hasPadding = false;
 //				int previousPaddingLength = 0;
@@ -982,11 +994,6 @@ public class Geometry extends Block {
 							newTPK= (TPK)replacementBlock;
 							newTPK.header.info.blockname = tpk.header.info.blockname;
 							newTPK.header.info.filename = tpk.header.info.filename;
-							
-							// copy over unknown data
-							for (var newPart : newTPK.textures) for (var oldPart : tpk.textures) if (newPart.binKey == oldPart.binKey) {
-								//TODO necessary?
-							}
 
 							outTPK = newTPK.save(posInChunk);
 						} else {
@@ -1011,9 +1018,9 @@ public class Geometry extends Block {
 						posInChunk += outBlock.length;
 					}
 
-					chunk.length1 = (int) (currentPositionOut - chunk.offset);
-					chunk.length2 = chunk.length1;
 				}
+				chunk.size = (int) (currentPositionOut - chunk.offset);
+				chunk.sizeCompressed = chunk.size;
 				
 				byte[] padding = Padding.makePadding(posInChunk,2048);
 				fosStream.write(padding);
@@ -1023,16 +1030,16 @@ public class Geometry extends Block {
 			} else { //no need to edit this block, just pump and update offsets
 				
 //				System.out.println("Chunk "+chunk.name+" at "+currentPositionIn+ " length "+chunk.length1);
-				var arr = new byte[chunk.length1];
-				if (fisStream.read(arr) < chunk.length1) {
+				var arr = new byte[chunk.size];
+				if (fisStream.read(arr) < chunk.size) {
 					System.out.println("something went wrong at "+currentPositionIn+" in chunk "+chunk.name);
 					chunk = null;
 				}
 				assert(chunk != null); //remove compiler whining for a willingly executed crash
-				currentPositionIn += chunk.length1;
+				currentPositionIn += chunk.size;
 				fosStream.write(arr); 
 				fosStream.flush();
-				currentPositionOut += chunk.length1;
+				currentPositionOut += chunk.size;
 				arr = null;
 				
 			}
@@ -1066,6 +1073,26 @@ public class Geometry extends Block {
 					fosStream.write(outGeom);
 					currentPositionOut += outGeom.length;
 					posInChunk += outGeom.length;
+				} else if (b.getClass() == TPK.class) {
+					TPK tpk = (TPK) b;
+					byte[] outTPK;
+
+					var replacementBlock = binBlocksToReplace.get(new Pair<>(tpk.header.info.blockname, tpk.header.info.filename.split("\\.")[0].toUpperCase()));
+					TPK newTPK;
+					if (replacementBlock != null && replacementBlock.getClass() == TPK.class) {
+						newTPK= (TPK)replacementBlock;
+						newTPK.header.info.blockname = tpk.header.info.blockname;
+						newTPK.header.info.filename = tpk.header.info.filename;
+
+						outTPK = newTPK.save(posInChunk);
+					} else {
+						outTPK = tpk.save(posInChunk);
+					}
+						
+					fosStream.write(outTPK);
+					currentPositionOut += outTPK.length;
+					posInChunk += outTPK.length;
+					
 				} else if (b.getClass() == Padding.class){
 					// do nothing, TODO padding is still not it (or is it geometry ???)
 				} else {
@@ -1097,23 +1124,64 @@ public class Geometry extends Block {
 	}
 
 	
-	public void readConfig(File f) throws IOException {
+	public ArrayList<Pair<String,String>> readConfig(File f) throws IOException {
+		var settings = new ArrayList<Pair<String,String>>();
 		var br = new BufferedReader(new FileReader(f));
 		String l;
 		int lineNbr=0;
 		while ((l=br.readLine())!=null) {
 			lineNbr++;
-			readConfigLine(l, lineNbr);
+			readConfigLine(l, lineNbr, settings);
 		}//loop on config file lines
 		br.close();
+		return settings;
 	}
 
-	public void readConfigLine(String l, int lineNbr) {
+	public static final String[] ALL_VALID_CONFIG_SETTINGS = {
+			 "UseMultithreading",
+			 "CompressionType",
+			 "CompressionLevel",
+			 "CarName",
+			 "FileName",
+			 "BlockName",
+			 "RemoveUselessAutosculpt",
+			 "OptimizeMaterials",
+			 "VertexColors",
+			 "Tangents",
+			 "FlipV",
+			 "ForceAsFix",
+			 "FixAutosculptNormals",
+			 "SortAllByName",
+			 "CopyMissingLODs",
+			 "CopyLodD",
+			 "CopyLastLod",
+			 "UseOffsetsTable",
+			 "AutoReplaceWorldLODs",
+			 "RemoveInvalid",
+			 "ProtectModel",
+			 "CheckModel",
+			 "MakeDataBlock",
+			 "VertexColorBrightnessMin",
+			 "VertexColorBrightnessMax",
+			 "VertexColorBrightnessFactor",
+			 "VertexColorBrightnessNormalOffset",
+			 "VertexColorBrightnessMinWheel",
+			 "VertexColorBrightnessMaxWheel",
+			 "VertexColorBrightnessFactorWheel",
+			 "VertexColorBrightnessNormalOffsetWheel",
+			 "Platform"
+	};
+	
+	public boolean readConfigLine(String l, int lineNbr) {
+		return readConfigLine(l, lineNbr, null);
+	}
+	public boolean readConfigLine(String l, int lineNbr, ArrayList<Pair<String,String>> settings) {
 		try {
 			int iterator;
 			switch (l.split("	")[0].split(" ")[0]) { // support for both space and tab separators
 			case "SETTING": {
 				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (s2.contains("=")) {
+					if (settings != null) settings.add(new Pair<>(s2.split("=")[0],s2.split("=")[1]));
 					if (SAVE_makeDataBlock) this.geomHeader.geomData.datas.put("SETTING",s2);
 					switch (s2.split("=")[0]) {
 					case "UseMultithreading":
@@ -1206,8 +1274,10 @@ public class Geometry extends Block {
 						if (SAVE_copyMissingLODs) System.out.println("Copying missing LODs.");
 						break;
 					case "MakeLodD":
+					case "CopyLodD":
+					case "CopyLastLod":
 						SAVE_copyLOD_D = Boolean.parseBoolean(s2.split("=")[1]);
-						if (SAVE_copyLOD_D) System.out.println("Copying lod D from lod C.");
+						if (SAVE_copyLOD_D) System.out.println("Copying parts to the lowest lod. This shouldn't be used.");
 						break;
 
 					case "AutoReplaceWorldLODs":
@@ -1236,15 +1306,55 @@ public class Geometry extends Block {
 							geomHeader.subBlocks.add(geomHeader.geomData);
 						}
 						break;
+
+					case "VertexColorBrightnessMin":
+						VertexColorBrightnessMin = Integer.parseInt(s2.split("=")[1]);
+						break;
+					case "VertexColorBrightnessMax":
+						VertexColorBrightnessMax = Integer.parseInt(s2.split("=")[1]);
+						break;
+					case "VertexColorBrightnessFactor":
+						VertexColorBrightnessFactor = Integer.parseInt(s2.split("=")[1]);
+						break;
+					case "VertexColorBrightnessNormalOffset":
+						VertexColorBrightnessNormalOffset = Float.parseFloat(s2.split("=")[1]);
+						break;
+
+					case "VertexColorBrightnessMinWheel":
+						VertexColorBrightnessMinWheel = Integer.parseInt(s2.split("=")[1]);
+						break;
+					case "VertexColorBrightnessMaxWheel":
+						VertexColorBrightnessMaxWheel = Integer.parseInt(s2.split("=")[1]);
+						break;
+					case "VertexColorBrightnessFactorWheel":
+						VertexColorBrightnessFactorWheel = Integer.parseInt(s2.split("=")[1]);
+						break;
+					case "VertexColorBrightnessNormalOffsetWheel":
+						VertexColorBrightnessNormalOffsetWheel = Float.parseFloat(s2.split("=")[1]);
+						break;
 						
 					case "Platform":
 						platform = Platform.get(s2.split("=")[1]);
-						System.out.println("Using "+platform.getName()+" support.");
+						System.out.println("Using "+platform.getName()+" platform.");
 						this.changePlatform(platform);
+						switch (platform) {
+						case PC:
+							break;
+						case X360:
+							System.out.println("X360 support is experimental!");
+							break;
+						case Prostreet_PC:
+						case Prostreet_X360:
+							System.out.println("ProStreet support is experimental!");
+							break;
+						default:
+							System.out.println("Compiling not supported!");
+						}
 						break;
 						
 					default:
 						System.out.println("Setting not supported : "+s2);
+						return false;
 					}
 				}
 				break;}
@@ -1404,11 +1514,13 @@ public class Geometry extends Block {
 				ShaderUsage.parseUsage(l.substring(12));
 				break;
 			}
+			return true;
 		} catch (Exception e) {
 			System.out.println("WARNING : Error reading configuration file, line "+lineNbr+". Trying to compile nonetheless.");
 			System.out.println("> "+l);
 			e.printStackTrace();
 		}
+		return false;
 	}
 
 
@@ -1417,6 +1529,23 @@ public class Geometry extends Block {
 	}
 	public static void ctkConfigToUCGTConfig(File ctkConfig, File config, String carname) throws IOException {
 		var br = new BufferedReader(new FileReader(ctkConfig));
+
+		String l;
+		Platform plat = Platform.PC;
+		while ((l=br.readLine())!=null) {
+			if (l.startsWith("MATERIAL") && l.contains("UC_PAINT")) {
+				plat = Platform.PC;
+				break;
+			}
+			if (l.startsWith("MATERIAL") && l.contains("PS_PAINT")) {
+				plat = Platform.Prostreet_PC;
+				break;
+			}
+		}
+		br.close();
+		
+		
+		br = new BufferedReader(new FileReader(ctkConfig));
 		
 		var bw = new BufferedWriter(new FileWriter(config));
 		
@@ -1432,14 +1561,14 @@ public class Geometry extends Block {
 				+ "SETTING	Tangents=High\n"
 				+ "SETTING	FlipV=true\n"
 				+ "SETTING	RemoveUselessAutosculpt=true\n"
-				+ "SETTING	OptimizeMaterials=true\n"
+				+ "SETTING	OptimizeMaterials=false\n"
 				+ "SETTING	FixAutosculptNormals=true\n"
 				+ "SETTING	RemoveInvalid=true\n"
-				+ "SETTING	CopyMissingLODs=true\n"
+				+ "SETTING	CopyMissingLODs=false\n"
 				+ "SETTING	CheckModel=true\n"
+				+ (plat != Platform.PC ? "SETTING	Platform="+plat.getName()+"\n" : "")
 				+ "\n--- Converted data from CTK config ---\n" );
 		
-		String l;
 		int iterator;
 		while ((l=br.readLine())!=null) {
 			switch (l.split("	")[0].split(" ")[0]) { // support for both space and tab separators
@@ -1471,11 +1600,11 @@ public class Geometry extends Block {
 				ShaderUsage usage = ShaderUsage.get("Diffuse");
 				String mat = "MISSING";
 				String shader = "UC_PAINT";
-				String texture = null;
-				String normal = null;
+				String diffuse = null;
+				String normalmap = null;
 
-				String glow = null;
-				String swatch = null;
+				String selfillumination = null;
+				String ambient = null;
 				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isEmpty()) {
 					switch(iterator) {
 					case 2:
@@ -1488,11 +1617,11 @@ public class Geometry extends Block {
 						break;
 					case 4:
 						//material texture
-						texture = s2;
+						diffuse = s2;
 						break;
 					case 5:
 						//material normalmap
-						normal = s2;
+						normalmap = s2;
 						break;
 					}
 					iterator++;
@@ -1504,122 +1633,178 @@ public class Geometry extends Block {
 					case "UC_BADGING_UNIVERSAL":
 						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "DECAL";
-						texture = "BADGING_UNIVERSAL";
+						diffuse = "BADGING_UNIVERSAL";
 						break;
 					case "UC_BRAKELIGHT":
 						usage = ShaderUsage.get("DiffuseGlow");
 						shader = "BRAKELIGHT";
-						texture = "%_KIT00_BRAKELIGHT_OFF";
-						glow = "%_KIT00_BRAKELIGHT_ON";
+						diffuse = "%_KIT00_BRAKELIGHT_OFF";
+						selfillumination = "%_KIT00_BRAKELIGHT_ON";
 						break;
 					case "UC_BRAKELIGHTGLASS":
 						usage = ShaderUsage.get("DiffuseGlowAlpha");
 						shader = "BRAKELIGHTGLASS";
-						texture = "%_KIT00_BRAKELIGHT_GLASS_OFF";
-						glow = "%_KIT00_BRAKELIGHT_GLASS_ON";
+						diffuse = "%_KIT00_BRAKELIGHT_GLASS_OFF";
+						selfillumination = "%_KIT00_BRAKELIGHT_GLASS_ON";
 						break;
 					case "UC_BRAKELIGHTGLASSRED":
 						usage = ShaderUsage.get("DiffuseGlowAlpha");
 						shader = "BRAKELIGHTGLASSRED";
-						texture = "%_KIT00_BRAKELIGHT_GLASS_OFF";
-						glow = "%_KIT00_BRAKELIGHT_GLASS_ON";
+						diffuse = "%_KIT00_BRAKELIGHT_GLASS_OFF";
+						selfillumination = "%_KIT00_BRAKELIGHT_GLASS_ON";
 						break;
 					case "UC_DECAL":
 						usage = ShaderUsage.get("DiffuseNormalAlpha");
 						shader = "DECAL";
-						texture = "%_BADGING";
-						normal = "%_BADGING_N";
+						diffuse = "%_BADGING";
+						normalmap = "%_BADGING_N";
 						break;
 					case "UC_DEFROSTER":
 						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "DEFROSTER";
-						texture = "REAR_DEFROSTER";
+						diffuse = "REAR_DEFROSTER";
 						break;			
 					case "UC_HEADLIGHTGLASS":
 						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "HEADLIGHTGLASS";
-						texture = "%_KIT00_HEADLIGHT_GLASS_ON";
+						diffuse = "%_KIT00_HEADLIGHT_GLASS_ON";
 						break;		
 					case "UC_PAINT":
 						usage = ShaderUsage.get("DiffuseNormalSwatch");
 						shader = "CARSKIN";
-						if ("METAL_SWATCH".equals(texture)) swatch = "METAL_SWATCH"; else swatch = "%_SKIN1";
-						texture = "CARBONFIBRE_PLACEHOLDER";
-						normal = "DAMAGE_N";
+						if ("METAL_SWATCH".equals(diffuse)) ambient = "METAL_SWATCH"; else ambient = "%_SKIN1";
+						diffuse = "CARBONFIBRE_PLACEHOLDER";
+						normalmap = "DAMAGE_N";
 						break;
 					case "UC_WHEEL":
 						usage = ShaderUsage.get("Diffuse");
 						shader = "MAGSILVER";
-						texture = "%_WHEEL";
+						diffuse = "%_WHEEL";
 						break;
 					case "UC_WHEEL_RUBBER":
 						usage = ShaderUsage.get("DiffuseNormalAlpha");
 						shader = "RUBBER";
-						texture = "TIRE_STYLE01";
-						normal = "TIRE_STYLE01_N";
+						diffuse = "TIRE_STYLE01";
+						normalmap = "TIRE_STYLE01_N";
 						break;
 					case "UC_WINDOW_FRONT":
 						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
-						texture = "WINDOW_FRONT";
-						swatch = "%_SKIN1";
+						diffuse = "WINDOW_FRONT";
+						ambient = "%_SKIN1";
 						break;
 					case "UC_WINDOW_LEFT_FRONT":
 						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
-						texture = "WINDOW_LEFT_FRONT";
-						swatch = "%_SKIN1";
+						diffuse = "WINDOW_LEFT_FRONT";
+						ambient = "%_SKIN1";
 						break;
 					case "UC_WINDOW_RIGHT_FRONT":
 						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
-						texture = "WINDOW_RIGHT_FRONT";
-						swatch = "%_SKIN1";
+						diffuse = "WINDOW_RIGHT_FRONT";
+						ambient = "%_SKIN1";
 						break;
 					case "UC_WINDOW_REAR":
 						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
-						texture = "WINDOW_REAR";
-						swatch = "%_SKIN1";
+						diffuse = "WINDOW_REAR";
+						ambient = "%_SKIN1";
 						break;
 					case "UC_WINDOW_LEFT_REAR":
 						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
-						texture = "WINDOW_LEFT_REAR";
-						swatch = "%_SKIN1";
+						diffuse = "WINDOW_LEFT_REAR";
+						ambient = "%_SKIN1";
 						break;
 					case "UC_WINDOW_RIGHT_REAR":
 						usage = ShaderUsage.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
-						texture = "WINDOW_RIGHT_REAR";
-						swatch = "%_SKIN1";
+						diffuse = "WINDOW_RIGHT_REAR";
+						ambient = "%_SKIN1";
 						break;
 					}
-				} else {
+				} else if (shader.startsWith("PS_")) {
+					switch(shader) {
+					case "PS_PAINT":
+						usage = ShaderUsage.findLegacyUsage("DiffuseNormalSwatchAlpha", Platform.Prostreet_PC);
+						shader = "CARSKIN";
+						if ("METAL_SWATCH".equals(diffuse)) ambient = "METAL_SWATCH"; else ambient = "%_SKIN1";
+						diffuse = "CARBONFIBRE_PLACEHOLDER";
+						normalmap = "DAMAGE_N";
+						break;
+					case "PS_WINDOW_FRONT":
+						usage = ShaderUsage.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
+						shader = "WINDSHIELD";
+						diffuse = "WINDOW_FRONT";
+						ambient = "%_SKIN1";
+						break;
+					case "PS_WINDOW_LEFT_FRONT":
+						usage = ShaderUsage.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
+						shader = "WINDSHIELD";
+						diffuse = "WINDOW_LEFT_FRONT";
+						ambient = "%_SKIN1";
+						break;
+					case "PS_WINDOW_RIGHT_FRONT":
+						usage = ShaderUsage.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
+						shader = "WINDSHIELD";
+						diffuse = "WINDOW_RIGHT_FRONT";
+						ambient = "%_SKIN1";
+						break;
+					case "PS_WINDOW_REAR":
+						usage = ShaderUsage.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
+						shader = "WINDSHIELD";
+						diffuse = "WINDOW_REAR";
+						ambient = "%_SKIN1";
+						break;
+					case "PS_WINDOW_LEFT_REAR":
+						usage = ShaderUsage.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
+						shader = "WINDSHIELD";
+						diffuse = "WINDOW_LEFT_REAR";
+						ambient = "%_SKIN1";
+						break;
+					case "PS_WINDOW_RIGHT_REAR":
+						usage = ShaderUsage.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
+						shader = "WINDSHIELD";
+						diffuse = "WINDOW_RIGHT_REAR";
+						ambient = "%_SKIN1";
+						break;
+
+
+					}
+				} else if (plat == Platform.PC) {
 					//real shader compiled with Diffuse
-					if (normal != null) usage = ShaderUsage.get("DiffuseNormal");
+					if (normalmap != null) usage = ShaderUsage.get("DiffuseNormal");
 					if (shader.equals("BRAKEDISC")) usage = ShaderUsage.get("DiffuseAlpha");
-					if (shader.equals("DOORLINE") && normal != null) usage = ShaderUsage.get("DiffuseNormalAlpha");
+					if (shader.equals("DOORLINE") && normalmap != null) usage = ShaderUsage.get("DiffuseNormalAlpha");
 					if (shader.equals("HEADLIGHTREFLECTOR")) {
 						usage = ShaderUsage.get("DiffuseGlow");
-						glow = texture;
+						selfillumination = diffuse;
 					}
 //					if (texture.equals("TIRE_STYLE01")) usage = ShaderUsage.DiffuseNormalAlpha;
-					if ("%_BADGING".equals(texture) && normal != null) usage = ShaderUsage.get("DiffuseNormalAlpha");
-					if ("DAMAGE_N".equals(normal)) usage = ShaderUsage.get("DiffuseNormalSwatch");
+					if ("%_BADGING".equals(diffuse) && normalmap != null) usage = ShaderUsage.get("DiffuseNormalAlpha");
+					if ("DAMAGE_N".equals(normalmap)) usage = ShaderUsage.get("DiffuseNormalSwatch");
 					//vanilla plus
 //					if (texture.equals("GRILL_02")) usage = ShaderUsage.DiffuseAlpha; 
 //					if (texture.equals("%_ENGINE")) {
 //						usage = ShaderUsage.DiffuseNormal;
 //						normal = "%_ENGINE_N";
 //					}
+				} else if (plat == Platform.Prostreet_PC) {
+					usage = ShaderUsage.findLegacyUsage("DiffuseAlpha", Platform.Prostreet_PC);
+					if (normalmap != null) usage = ShaderUsage.findLegacyUsage("DiffuseNormalSwatchAlpha", Platform.Prostreet_PC);
+					if ("DOORSEAM".equals(diffuse)) {
+						usage = ShaderUsage.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
+						ambient = "DOORSEAM";
+					}
+
 				}
 				
-				bw.write("MATERIAL	"+mat+"	"+shader+"="+usage.getName()+"	"+texture+"=DIFFUSE");
+				bw.write("MATERIAL	"+mat+"	"+shader+"="+usage.getName()+"	"+diffuse+"=DIFFUSE");
 				//normal, glow, swatch
-				if (normal != null) bw.write("	"+normal+"=NORMAL");
-				if (glow != null) bw.write("	"+glow+"=SELFILLUMINATION");
-				if (swatch != null) bw.write("	"+swatch+"=SWATCH");
+				if (normalmap != null) bw.write("	"+normalmap+"=NORMALMAP");
+				if (selfillumination != null) bw.write("	"+selfillumination+"=SELFILLUMINATION");
+				if (ambient != null) bw.write("	"+ambient+"=AMBIENT");
 				bw.write("\n");
 				break;
 				
@@ -1704,7 +1889,7 @@ public class Geometry extends Block {
 			}
 		}//loop on config file lines
 		br.close();
-		bw.write("\nPlease indicate necessary Autosculpt links - these cannot be deducted from a CTK config or model. Sample (remove the # to enable) :\n"
+		if (plat == Platform.PC) bw.write("\nPlease indicate necessary Autosculpt links - these cannot be deducted from a CTK config or model. Sample (remove the # to enable) :\n"
 				+ "#ASLINK	KITW01_BUMPER_FRONT_A	KITW01_FENDER_FRONT_LEFT_A,1,1,1,1	KITW01_FENDER_FRONT_RIGHT_A,1,1,1,1	KITW01_BUMPER_REAR_A,1,1,1,1	KITW01_SKIRT_LEFT_A,1,1,1,1	KITW01_SKIRT_RIGHT_A,1,1,1,1\r\n");
 		bw.close();
 	}
@@ -1778,7 +1963,7 @@ public class Geometry extends Block {
 			    	try {
 				    	computeMatsList(p); // IMPORTANT TO KEEP HERE
 	//					globalizePartMarkers(p);
-						if (SAVE_optimizeMaterials && p.strings != null && (platform == Platform.PC || platform == Platform.X360)) { //these optimizations only work for UC
+						if (SAVE_optimizeMaterials && p.strings != null && isUC()) { //these optimizations only work for UC
 							p.subBlocks.remove(p.strings);
 							p.strings = null;
 						}	
@@ -1980,15 +2165,19 @@ public class Geometry extends Block {
 		
 		for (var part : toAdd) if (part.kit.equals(p.kit) && part.part.equals(p.part)) return;
 		
+		@SuppressWarnings("hiding")
 		Part A=null;
+		@SuppressWarnings("hiding")
 		Part B=null;
 		Part C=null;
 		Part D=null;
+		Part E=null;
 		for (var p2 : parts) if (p2.kit.equals(p.kit) && p2.part.equals(p.part)) {
 			if (p2.lod.equals("A")) A = p2;
 			if (p2.lod.equals("B")) B = p2;
 			if (p2.lod.equals("C")) C = p2;
 			if (p2.lod.equals("D")) D = p2;
+			if (p2.lod.equals("E")) E = p2;
 		}
 		if (D != null && A == null && B == null && C == null) return; //ignore copying lod D to A, B and C
 		
@@ -1999,10 +2188,19 @@ public class Geometry extends Block {
 		if (B == null && A != null) toAdd.add(B = new Part(A, carname, A.kit+"_"+A.part+"_B"));
 		assert B!=null; //B cannot be null since there's at least one part that isn't (the one from which the method got called)
 		if (C == null) toAdd.add(C = new Part(B, carname, B.kit+"_"+B.part+"_C"));
-		
-		if (SAVE_copyLOD_D && D == null && p.kit.equals("KIT00")) {
-			toAdd.add(D = new Part(C, carname, C.kit+"_"+C.part+"_D"));
+		if (isUC()) {
+			//UC goes up to LOD D
+			if (SAVE_copyLOD_D && D == null && p.kit.equals("KIT00")) {
+				toAdd.add(D = new Part(C, carname, C.kit+"_"+C.part+"_D"));
+			}
+		} else {
+			//up to LOD E
+			if (D == null) toAdd.add(D = new Part(C, carname, C.kit+"_"+C.part+"_D"));
+			if (SAVE_copyLOD_D && E == null && p.kit.equals("KIT00")) {
+				toAdd.add(E = new Part(D, carname, D.kit+"_"+D.part+"_E"));
+			}
 		}
+		
 		
 	}
 
@@ -2013,6 +2211,7 @@ public class Geometry extends Block {
 		Part potentialUselessT0 = null;
 		//link autosculpt zones
 		for (var p2 : parts) if (p2 != p) {
+//			System.out.println(p2.kit+" "+p2.part+" "+p2.lod);
 			if ((p2.part.substring(0, p2.part.length()-1).equals(p.part+"_T") || p2.part.substring(0, p2.part.length()-2).equals(p.part+"_T"))
 					&& p2.kit.equals(p.kit) && p2.lod.equals(p.lod)) { // as zone found
 				potentialUselessT0 = p2;
@@ -2120,7 +2319,12 @@ public class Geometry extends Block {
 			ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 			for (final var p : parts){
 			    pool.execute(() -> {
-		        	rebuildPart(p);
+			    	try {
+			        	rebuildPart(p);
+			    	} catch (Exception e) {
+			    		System.out.println("Error rebuilding part "+p.name+": "+e.getMessage());
+			    		e.printStackTrace();
+			    	}
 			    });
 			}
 			pool.shutdown();
@@ -2220,6 +2424,9 @@ public class Geometry extends Block {
 			case X360:
 				m.verticesBlock.vertexFormat = m.shaderUsage.vertexFormat_X360;
 				break;
+			case PS3:
+				m.verticesBlock.vertexFormat = m.shaderUsage.vertexFormat_PS3;
+				break;
 			}
 			
 			p.mesh.verticesBlocks.add(m.verticesBlock);
@@ -2229,25 +2436,27 @@ public class Geometry extends Block {
 			numTrianglesEXTRA += m.trianglesExtra.size();
 			
 			
-			if (	(IMPORT_Tangents == SettingsImport_Tangents.LOW && m.needsTangentsLow()) || 
+			if ((	(IMPORT_Tangents == SettingsImport_Tangents.LOW && m.needsTangentsLow()) || 
 					(IMPORT_Tangents == SettingsImport_Tangents.HIGH && m.needsTangentsHigh()) || 
 					(IMPORT_Tangents == SettingsImport_Tangents.MANUAL && m.useTangents == true) ||
-					IMPORT_Tangents == SettingsImport_Tangents.ON ) {
+					IMPORT_Tangents == SettingsImport_Tangents.ON )
+					
+					&& m.verticesBlock.vertexFormat.hasTangents() && m.verticesBlock.vertexFormat.hasNormals()) {
 				
 				addToTangents(m);
 				normalizeTangents(m.verticesBlock.vertices);
 			}
 			
-			if (IMPORT_calculateVertexColors) {
+			if (IMPORT_calculateVertexColors && m.verticesBlock.vertexFormat.hasColor() && m.verticesBlock.vertexFormat.hasNormals()) {
 				for (var v : m.verticesBlock.vertices) {
 					// -1 to 1 -> 20 to 255
 					int color;
 					if (!p.header.partName.contains("WHEEL") && !p.header.partName.contains("BRAKE_") && !p.header.partName.contains("BRAKEROTOR"))
-						color = Math.max(0, Math.min(255, (int)((v.normZ+0.8)*150)));
-					else color = Math.max(20, Math.min(255, (int)((-v.normY+0.8)*150)));
-					v.colorR = (byte) color;
-					v.colorG = (byte) color;
-					v.colorB = (byte) color;
+						color = Math.max(VertexColorBrightnessMin, Math.min(VertexColorBrightnessMax, (int)((v.norm[Z]+VertexColorBrightnessNormalOffset)*VertexColorBrightnessFactor)));
+					else color = Math.max(VertexColorBrightnessMinWheel, Math.min(VertexColorBrightnessMaxWheel, (int)((-v.norm[Y]+VertexColorBrightnessNormalOffsetWheel)*VertexColorBrightnessFactorWheel)));
+					v.color[R] = color/255.0f;
+					v.color[G] = color/255.0f;
+					v.color[B] = color/255.0f;
 				}
 			}
 			
@@ -2276,7 +2485,15 @@ public class Geometry extends Block {
 						texturesIDs.put(new Pair<>(m.TextureHashes.get(i), 0), texi);
 						texi++;
 					}
-				if (!allTextureUsages.contains(m.textureUsages.get(i))) allTextureUsages.add(m.textureUsages.get(i)); //for the strings block
+				if (i > m.textureUsages.size() && !allTextureUsages.contains(m.textureUsages.get(i))) allTextureUsages.add(m.textureUsages.get(i)); //for the strings block
+			}
+			if (legacy && m.textureUsages.size() < m.TextureHashes.size()) {
+				System.out.print("WARNING : missing texture usages on shader "+m.shaderUsage.getName()+", shaderusages_legacy needs tweaking!"
+						+ "\nINFO : material textures : ");
+				for (int i=0; i<m.TextureHashes.size(); i++) System.out.print(Hash.getBIN(m.TextureHashes.get(i))+" ");
+				System.out.print("/ usages : ");
+				for (int i=0; i<m.textureUsages.size(); i++) System.out.print(m.textureUsages.get(i).getName()+" ");
+				System.out.println();
 			}
 		}
 		
@@ -2368,101 +2585,102 @@ public class Geometry extends Block {
 	}
 	
 	private static void addToTangents(Material m) {
+		var verts = m.verticesBlock.vertices;
 		for (var t : m.triangles) {
-		    m.verticesBlock.vertices.get(t.vert0).tanX += 
-		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).posX-m.verticesBlock.vertices.get(t.vert0).posX) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).posX-m.verticesBlock.vertices.get(t.vert0).posX)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
-		    m.verticesBlock.vertices.get(t.vert0).tanY += 
-		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).posY-m.verticesBlock.vertices.get(t.vert0).posY) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).posY-m.verticesBlock.vertices.get(t.vert0).posY)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
-		    m.verticesBlock.vertices.get(t.vert0).tanZ += 
-		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).posZ-m.verticesBlock.vertices.get(t.vert0).posZ) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).posZ-m.verticesBlock.vertices.get(t.vert0).posZ)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
-		    m.verticesBlock.vertices.get(t.vert1).tanX += 
-		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).posX-m.verticesBlock.vertices.get(t.vert0).posX) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).posX-m.verticesBlock.vertices.get(t.vert0).posX)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
-		    m.verticesBlock.vertices.get(t.vert1).tanY += 
-		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).posY-m.verticesBlock.vertices.get(t.vert0).posY) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).posY-m.verticesBlock.vertices.get(t.vert0).posY)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
-		    m.verticesBlock.vertices.get(t.vert1).tanZ += 
-		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).posZ-m.verticesBlock.vertices.get(t.vert0).posZ) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).posZ-m.verticesBlock.vertices.get(t.vert0).posZ)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
-		    m.verticesBlock.vertices.get(t.vert2).tanX += 
-		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).posX-m.verticesBlock.vertices.get(t.vert0).posX) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).posX-m.verticesBlock.vertices.get(t.vert0).posX)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
-		    m.verticesBlock.vertices.get(t.vert2).tanY += 
-		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).posY-m.verticesBlock.vertices.get(t.vert0).posY) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).posY-m.verticesBlock.vertices.get(t.vert0).posY)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
-		    m.verticesBlock.vertices.get(t.vert2).tanZ += 
-		    		((m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).posZ-m.verticesBlock.vertices.get(t.vert0).posZ) - 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).posZ-m.verticesBlock.vertices.get(t.vert0).posZ)) / 
-		    		((m.verticesBlock.vertices.get(t.vert1).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V) - 
-		    				(m.verticesBlock.vertices.get(t.vert2).tex0U-m.verticesBlock.vertices.get(t.vert0).tex0U) * 
-		    				(m.verticesBlock.vertices.get(t.vert1).tex0V-m.verticesBlock.vertices.get(t.vert0).tex0V));
+		    verts.get(t.vert0).tan[X] += 
+		    		((verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert1).pos[X]-verts.get(t.vert0).pos[X]) - 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert2).pos[X]-verts.get(t.vert0).pos[X])) / 
+		    		((verts.get(t.vert1).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) - 
+		    				(verts.get(t.vert2).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]));
+		    verts.get(t.vert0).tan[Y] += 
+		    		((verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert1).pos[Y]-verts.get(t.vert0).pos[Y]) - 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert2).pos[Y]-verts.get(t.vert0).pos[Y])) / 
+		    		((verts.get(t.vert1).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) - 
+		    				(verts.get(t.vert2).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]));
+		    verts.get(t.vert0).tan[Z] += 
+		    		((verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert1).pos[Z]-verts.get(t.vert0).pos[Z]) - 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert2).pos[Z]-verts.get(t.vert0).pos[Z])) / 
+		    		((verts.get(t.vert1).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) - 
+		    				(verts.get(t.vert2).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]));
+		    verts.get(t.vert1).tan[X] += 
+		    		((verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert1).pos[X]-verts.get(t.vert0).pos[X]) - 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert2).pos[X]-verts.get(t.vert0).pos[X])) / 
+		    		((verts.get(t.vert1).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) - 
+		    				(verts.get(t.vert2).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]));
+		    verts.get(t.vert1).tan[Y] += 
+		    		((verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert1).pos[Y]-verts.get(t.vert0).pos[Y]) - 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert2).pos[Y]-verts.get(t.vert0).pos[Y])) / 
+		    		((verts.get(t.vert1).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) - 
+		    				(verts.get(t.vert2).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]));
+		    verts.get(t.vert1).tan[Z] += 
+		    		((verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert1).pos[Z]-verts.get(t.vert0).pos[Z]) - 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert2).pos[Z]-verts.get(t.vert0).pos[Z])) / 
+		    		((verts.get(t.vert1).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) - 
+		    				(verts.get(t.vert2).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]));
+		    verts.get(t.vert2).tan[X] += 
+		    		((verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert1).pos[X]-verts.get(t.vert0).pos[X]) - 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert2).pos[X]-verts.get(t.vert0).pos[X])) / 
+		    		((verts.get(t.vert1).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) - 
+		    				(verts.get(t.vert2).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]));
+		    verts.get(t.vert2).tan[Y] += 
+		    		((verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert1).pos[Y]-verts.get(t.vert0).pos[Y]) - 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert2).pos[Y]-verts.get(t.vert0).pos[Y])) / 
+		    		((verts.get(t.vert1).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) - 
+		    				(verts.get(t.vert2).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]));
+		    verts.get(t.vert2).tan[Z] += 
+		    		((verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert1).pos[Z]-verts.get(t.vert0).pos[Z]) - 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]) * 
+		    				(verts.get(t.vert2).pos[Z]-verts.get(t.vert0).pos[Z])) / 
+		    		((verts.get(t.vert1).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert2).tex[0][V]-verts.get(t.vert0).tex[0][V]) - 
+		    				(verts.get(t.vert2).tex[0][U]-verts.get(t.vert0).tex[0][U]) * 
+		    				(verts.get(t.vert1).tex[0][V]-verts.get(t.vert0).tex[0][V]));
 		}
 	}
 	
 	private static void normalizeTangents(List<Vertex> vertices) {
 		// Normalize tangents
 	    for (var v : vertices) {
-	        double nx = v.normX;
-	        double ny = v.normY;
-	        double nz = v.normZ;
+	        double nx = v.norm[X];
+	        double ny = v.norm[Y];
+	        double nz = v.norm[Z];
 
-	        double tx = v.tanX;
-	        double ty = v.tanY;
-	        double tz = v.tanZ;
+	        double tx = v.tan[X];
+	        double ty = v.tan[Y];
+	        double tz = v.tan[Z];
 
 	        // Gram-Schmidt orthogonalize
 	        double dot = nx * tx + ny * ty + nz * tz;
@@ -2472,10 +2690,10 @@ public class Geometry extends Block {
 
 	        // Normalize the tangent
 	        double length = Math.sqrt(tx * tx + ty * ty + tz * tz);
-	        v.tanX = (float) (tx / length);
-	        v.tanY = (float) (ty / length);
-	        v.tanZ = (float) (tz / length);
-	        v.tanW = 1.0f;
+	        v.tan[X] = (float) (tx / length);
+	        v.tan[Y] = (float) (ty / length);
+	        v.tan[Z] = (float) (tz / length);
+	        v.tan[W] = 1.0f;
 	    }
 	}
 
@@ -2743,18 +2961,24 @@ public class Geometry extends Block {
 			}//loop on materials
 			
 			for (var pair : swapNormals) {
-				pair.getKey().colorR = pair.getValue().colorR;
-				pair.getKey().colorG = pair.getValue().colorG;
-				pair.getKey().colorB = pair.getValue().colorB;
-				pair.getKey().colorA = pair.getValue().colorA;
-				pair.getKey().normX = pair.getValue().normX;
-				pair.getKey().normY = pair.getValue().normY;
-				pair.getKey().normZ = pair.getValue().normZ;
-//				pair.getKey().normW = pair.getValue().normW;
-				pair.getKey().tanX = pair.getValue().tanX;
-				pair.getKey().tanY = pair.getValue().tanY;
-				pair.getKey().tanZ = pair.getValue().tanZ;
-				pair.getKey().tanW = pair.getValue().tanW;
+				if (pair.getKey().hasColor()) {
+					pair.getKey().color[R] = pair.getValue().color[R];
+					pair.getKey().color[G] = pair.getValue().color[G];
+					pair.getKey().color[B] = pair.getValue().color[B];
+					pair.getKey().color[A] = pair.getValue().color[A];
+				}
+				if (pair.getKey().hasNormals()) {
+					pair.getKey().norm[X] = pair.getValue().norm[X];
+					pair.getKey().norm[Y] = pair.getValue().norm[Y];
+					pair.getKey().norm[Z] = pair.getValue().norm[Z];
+//					pair.getKey().norm[W] = pair.getValue().norm[W];
+				}
+				if (pair.getKey().hasTangents()) {
+					pair.getKey().tan[X] = pair.getValue().tan[X];
+					pair.getKey().tan[Y] = pair.getValue().tan[Y];
+					pair.getKey().tan[Z] = pair.getValue().tan[Z];
+					pair.getKey().tan[W] = pair.getValue().tan[W];
+				}
 			}
 			
 			if (invalidateVertsGlobal) {
@@ -2807,177 +3031,208 @@ public class Geometry extends Block {
 		   nothing trying to be transparent on wheels
 		 * 
 		 */
-		System.out.println("Checking model...");
-		int lodDPartsFound = 0;
-		int lodDTris = 0;
-		boolean hasFrontBrakes = false;
-		boolean hasRearBrakes = false;
-		boolean hasFrontDiscs = false;
-		boolean hasRearDiscs = false;
-		boolean hasDriver = false;
-		boolean brakeMarker = false;
-		HashMap<String,Integer> lodATris = new HashMap<>();
-		for (var p : parts) {
-			char char0 = p.part.charAt(p.part.length()-2);
-			char char1 = p.part.charAt(p.part.length()-1);
-			checkVertexBounds(p);
-			if (char0 != 'T' && "E".equals(p.lod)) System.out.println("Useless lod E part: "+p.name+"; lod E is unused in Undercover!");
-			if (char0 != 'T' && "D".equals(p.lod)) {
-				if (!"KIT00".equals(p.kit)) System.out.println("Useless non-KIT00 lod D part: "+p.name+"; UC only loads KIT00 lod D.");
-				else {
-					if (((char0 != '0' && char0 != '1' && char0 != '2' && char0 != '3' && char0 != '4' && //numbered parts such as exhausts except _00
+		try {
+			System.out.println("Checking model...");
+			int lodDPartsFound = 0;
+			int lodDTris = 0;
+			boolean hasFrontBrakes = false;
+			boolean hasRearBrakes = false;
+			boolean hasFrontDiscs = false;
+			boolean hasRearDiscs = false;
+			boolean hasDriver = false;
+			boolean brakeMarker = false;
+			HashMap<String,Integer> lodATris = new HashMap<>();
+			for (var p : parts) {
+				char char0 = p.part.charAt(p.part.length()-2);
+				char char1 = p.part.charAt(p.part.length()-1);
+				checkVertexBounds(p);
+				if (isUC()) {
+					//UC
+					if (char0 != 'T' && "E".equals(p.lod)) System.out.println("Useless lod E part: "+p.name+"; lod E is unused in Undercover!");
+					if (char0 != 'T' && "D".equals(p.lod)) {
+						if (!"KIT00".equals(p.kit)) System.out.println("Useless non-KIT00 lod D part: "+p.name+"; UC only loads KIT00 lod D.");
+						else {
+							if (((char0 != '0' && char0 != '1' && char0 != '2' && char0 != '3' && char0 != '4' && //numbered parts such as exhausts except _00
+								char0 != '5' && char0 != '6' && char0 != '7' && char0 != '8' && char0 != '9') ||
+								(char0 == '0' && char1 == '0')) && 
+								!p.part.equals("SPOILER_LIP") && !p.part.equals("SPOILER_DRAG") && !p.part.equals("SPOILER_EVO") ){
+								lodDPartsFound++;
+								lodDTris += p.header.trianglesCount;
+							}
+						}
+					}
+				} else {
+					//other games
+					if (char0 != 'T' && "E".equals(p.lod)) {
+						if (!"KIT00".equals(p.kit)) {} 
+						else if (((char0 != '0' && char0 != '1' && char0 != '2' && char0 != '3' && char0 != '4' && //numbered parts such as exhausts except _00
+							char0 != '5' && char0 != '6' && char0 != '7' && char0 != '8' && char0 != '9') ||
+							(char0 == '0' && char1 == '0')) && 
+							!p.part.equals("SPOILER_LIP") && !p.part.equals("SPOILER_DRAG") && !p.part.equals("SPOILER_EVO") ){
+							lodDPartsFound++;
+							lodDTris += p.header.trianglesCount;
+						}
+					}
+				}
+				if ("A".equals(p.lod)) {
+					if ( char0 != 'T' && //AS morph target
+						((char0 != '0' && char0 != '1' && char0 != '2' && char0 != '3' && char0 != '4' && //numbered parts such as exhausts except _00
 						char0 != '5' && char0 != '6' && char0 != '7' && char0 != '8' && char0 != '9') ||
 						(char0 == '0' && char1 == '0')) && 
-						!p.part.equals("SPOILER_LIP") && !p.part.equals("SPOILER_DRAG") && !p.part.equals("SPOILER_EVO") ){
-						lodDPartsFound++;
-						lodDTris += p.header.trianglesCount;
+						!p.part.equals("SPOILER_LIP") && !p.part.equals("SPOILER_DRAG") && !p.part.equals("SPOILER_EVO") && !p.part.contains("WHEEL")) {
+						if (lodATris.get(p.kit) != null) {
+							lodATris.put(p.kit, lodATris.get(p.kit)+p.header.trianglesCount);
+						} else {
+							lodATris.put(p.kit, p.header.trianglesCount);
+						}
 					}
 				}
-			}
-			if ("A".equals(p.lod)) {
-				if ( char0 != 'T' && //AS morph target
-					((char0 != '0' && char0 != '1' && char0 != '2' && char0 != '3' && char0 != '4' && //numbered parts such as exhausts except _00
-					char0 != '5' && char0 != '6' && char0 != '7' && char0 != '8' && char0 != '9') ||
-					(char0 == '0' && char1 == '0')) && 
-					!p.part.equals("SPOILER_LIP") && !p.part.equals("SPOILER_DRAG") && !p.part.equals("SPOILER_EVO") && !p.part.contains("WHEEL")) {
-					if (lodATris.get(p.kit) != null) {
-						lodATris.put(p.kit, lodATris.get(p.kit)+p.header.trianglesCount);
-					} else {
-						lodATris.put(p.kit, p.header.trianglesCount);
+				if ("BUMPER_REAR".equals(p.part) && char0 != 'T') {
+					boolean plate = false;
+					if (p.mpoints != null) for (var mp : p.mpoints.mpoints) {
+						if (mp.nameHash == Hash.findBIN("LICENSE_PLATE_REAR")) plate = true;
+					}
+					if (!plate) System.out.println("Missing license plate marker on "+p.name+".");
+				}
+				if (("MUFFLER".equals(p.part) || "EXHAUST".equals(p.part)) && char0 != 'T') {
+					Part ETL = null, ETR = null, ETC = null;
+					for (var p2 : parts) {
+						if ((p.kit+"_EXHAUST_TIPS_LEFT_"+p.lod).equals(p2.name)) ETL = p2;
+						if ((p.kit+"_EXHAUST_TIPS_RIGHT_"+p.lod).equals(p2.name)) ETR = p2;
+						if ((p.kit+"_EXHAUST_TIPS_CENTER_"+p.lod).equals(p2.name)) ETC = p2;
+					}
+					if (isUC() && (p.mpoints == null ||
+						(ETL != null && ETR != null && (ETR.mpoints == null || ETL.mpoints == null)) ||
+						(ETC != null && ETC.mpoints == null) ||
+						(ETL != null && ETL.mpoints == null) ||
+						(ETR != null && ETR.mpoints == null)) ) 
+						System.out.println("Missing EXHAUST_FX marker(s) on "+p.name+" or associated tips.");
+				}
+				if ("BRAKE_FRONT".equals(p.part)) hasFrontBrakes = true;
+				if ("BRAKE_REAR".equals(p.part)) hasRearBrakes = true;
+				if ("BRAKEROTOR_FRONT".equals(p.part)) hasFrontDiscs = true;
+				if ("BRAKEROTOR_REAR".equals(p.part)) hasRearDiscs = true;
+				if ("DRIVER".equals(p.part)) hasDriver = true;
+				if (p.part.contains("WHEEL") && p.mpoints != null) brakeMarker = true;
+				if ("BASE".equals(p.part)) {
+					boolean hasDriverMP = false;
+					boolean hasSpoiler = false;
+					boolean hasEngineFX = false;
+					if (p.mpoints != null) for (var mp : p.mpoints.mpoints) {
+						if (mp.nameHash == Hash.findBIN("DRIVER_POSITION")) hasDriverMP = true;
+						if (mp.nameHash == Hash.findBIN("SPOILER")) hasSpoiler = true;
+						if (mp.nameHash == Hash.findBIN("ENGINE_FX")) hasEngineFX = true;
+					}
+					if (!hasDriverMP) System.out.println("No DRIVER_POSITION marker found on "+p.name+".");
+					if (!hasSpoiler) System.out.println("No SPOILER marker found on "+p.name+".");
+					if (!hasEngineFX) System.out.println("No ENGINE_FX marker found on "+p.name+".");
+				}
+				
+				boolean hasWindowF = false;
+				boolean hasWindowFL = false;
+				boolean hasWindowFR = false;
+				boolean hasWindowR = false;
+				boolean hasWindowRL = false;
+				boolean hasWindowRR = false;
+				boolean hasDefroster = false;
+				if (char0 != 'T') for (var m : p.mesh.materials.materials) {
+					if (m.TextureHashes.contains(Hash.findBIN("WINDOW_FRONT"))) hasWindowF = true;
+					if (m.TextureHashes.contains(Hash.findBIN("WINDOW_LEFT_FRONT"))) hasWindowFL = true;
+					if (m.TextureHashes.contains(Hash.findBIN("WINDOW_RIGHT_FRONT"))) hasWindowFR = true;
+					if (m.TextureHashes.contains(Hash.findBIN("WINDOW_REAR"))) hasWindowR = true;
+					if (m.TextureHashes.contains(Hash.findBIN("WINDOW_LEFT_REAR"))) hasWindowRL = true;
+					if (m.TextureHashes.contains(Hash.findBIN("WINDOW_RIGHT_REAR"))) hasWindowRR = true;
+					if (m.TextureHashes.contains(Hash.findBIN("REAR_DEFROSTER"))) hasDefroster = true;
+					
+					if (m.ShaderHash == Hash.findBIN("CARSKIN") && m.shaderUsage.equals(ShaderUsage.get("DiffuseSwatch"))) 
+						System.out.printf("Wrong carskin material found on %s! Please use DiffuseNormalSwatch (car_nm_v_s) instead of DiffuseSwatch (car_v).\n",p.name);
+	
+					if (m.ShaderHash == Hash.findBIN("BRAKEDISC") && m.shaderUsage.equals(ShaderUsage.get("Diffuse")))
+						System.out.println("Opaque brake disc "+p.name+"; use DiffuseAlpha to fix.");
+					
+					if ((("D".equals(p.lod) && isUC()) //|| "E".equals(p.lod) && !isUC()
+							) && (m.ShaderHash == Hash.findBIN("MAGSILVER") ||
+							m.ShaderHash == Hash.findBIN("BRAKELIGHTGLASS") ||
+							m.ShaderHash == Hash.findBIN("BRAKELIGHTGLASSRED") ||
+							m.ShaderHash == Hash.findBIN("DECAL") ||
+							m.ShaderHash == Hash.findBIN("DOORLINE") ||
+							m.ShaderHash == Hash.findBIN("MAGCHROME") ||
+							m.ShaderHash == Hash.findBIN("MAGLIP") ||
+							m.ShaderHash == Hash.findBIN("REGPAINTBLACK"))) {
+							System.out.printf("%s found on %s; please use 'simple' materials for lowest LOD parts.\n", Hash.getBIN(m.ShaderHash), p.name);
+					}
+					
+					if (p.part.contains("WHEEL") && (m.shaderUsage.equals(ShaderUsage.get("DiffuseAlpha")) || 
+							m.shaderUsage.equals(ShaderUsage.get("DiffuseNormalAlpha")))) {
+						System.out.printf("Transparent shader usage found on %s; wheels do not support transparency!\n", p.name);
 					}
 				}
-			}
-			if ("BUMPER_REAR".equals(p.part) && char0 != 'T') {
-				boolean plate = false;
-				if (p.mpoints != null) for (var mp : p.mpoints.mpoints) {
-					if (mp.nameHash == Hash.findBIN("LICENSE_PLATE_REAR")) plate = true;
+				if (char0 != 'T' && !"D".equals(p.lod) && !"E".equals(p.lod) && p.name.contains("WINDOW")) {
+					switch (p.part) {
+					case "WINDOW_FRONT":
+						if (!hasWindowF) System.out.println("No/wrong window texture on "+p.name+"; should be WINDOW_FRONT.");
+						break;
+					case "WINDOW_FRONT_LEFT":
+						if (!hasWindowFL) System.out.println("No/wrong window texture on "+p.name+"; should be WINDOW_LEFT_FRONT.");
+						break;
+					case "WINDOW_FRONT_RIGHT":
+						if (!hasWindowFR) System.out.println("No/wrong window texture on "+p.name+"; should be WINDOW_RIGHT_FRONT.");
+						break;
+					case "WINDOW_REAR":
+						if (!hasWindowR) System.out.println("No/wrong window texture on "+p.name+"; should be WINDOW_REAR.");
+						if (!hasDefroster) System.out.println("Missing defroster on "+p.name+".");
+						break;
+					case "WINDOW_REAR_LEFT":
+						if (!hasWindowRL) System.out.println("No/wrong window texture on "+p.name+"; should be WINDOW_LEFT_REAR.");
+						break;
+					case "WINDOW_REAR_RIGHT":
+						if (!hasWindowRR) System.out.println("No/wrong window texture on "+p.name+"; should be WINDOW_RIGHT_REAR.");
+						break;
+					}
 				}
-				if (!plate) System.out.println("Missing license plate marker on "+p.name+".");
+	
 			}
-			if (("MUFFLER".equals(p.part) || "EXHAUST".equals(p.part)) && char0 != 'T') {
-				Part ETL = null, ETR = null, ETC = null;
-				for (var p2 : parts) {
-					if ((p.kit+"_EXHAUST_TIPS_LEFT_"+p.lod).equals(p2.name)) ETL = p2;
-					if ((p.kit+"_EXHAUST_TIPS_RIGHT_"+p.lod).equals(p2.name)) ETR = p2;
-					if ((p.kit+"_EXHAUST_TIPS_CENTER_"+p.lod).equals(p2.name)) ETC = p2;
-				}
-				if (p.mpoints == null ||
-					(ETL != null && ETR != null && (ETR.mpoints == null || ETL.mpoints == null)) ||
-					(ETC != null && ETC.mpoints == null) ||
-					(ETL != null && ETL.mpoints == null) ||
-					(ETR != null && ETR.mpoints == null) ) 
-					System.out.println("Missing EXHAUST_FX marker(s) on "+p.name+" or associated tips.");
+	
+			if (!brakeMarker) System.out.println("Your car doesn't have the BRAKE_FRONT marker to position brakes relatively to wheels!");
+			if (!hasFrontBrakes) System.out.println("Your car doesn't have front brakes!");
+			if (!hasFrontDiscs) System.out.println("Your car doesn't have front brake rotors!");
+			if (!hasRearBrakes) System.out.println("Your car doesn't have rear brakes!");
+			if (!hasRearDiscs) System.out.println("Your car doesn't have rear brake rotors!");
+			if (!hasDriver) System.out.println("Your car doesn't have a driver!");
+			if (lodDPartsFound == 0) System.out.println(isUC() ? "No lod D found!" : "No lod E found!");
+			if (lodDPartsFound > 1) System.out.println("Several lod "+(isUC()?"D":"E")+" parts found, please check how your model's LOD looks ingame!");
+			if (lodDTris > 3000) System.out.println("High lod "+(isUC()?"D":"E")+" polycount ("+lodDTris+" triangles), please reduce it! Vanilla models are around 1500 triangles.");
+			for (var e : lodATris.entrySet()) {
+				if (e.getKey() != null && e.getKey().equals("KIT00") && e.getValue() < 16000) System.out.println("Your model is low-poly for the game's standards.");
+				if (e.getValue() != null && e.getValue() > 50000) System.out.printf("Your model is high-poly (%s triangles on %s), make sure no customization combination crashes the game.\n",e.getValue().toString(), e.getKey());
+				// quite inaccurate as it doesn't take into account the parts loaded by default from other kits, this would need a cross check from dbmodelparts.
 			}
-			if ("BRAKE_FRONT".equals(p.part)) hasFrontBrakes = true;
-			if ("BRAKE_REAR".equals(p.part)) hasRearBrakes = true;
-			if ("BRAKEROTOR_FRONT".equals(p.part)) hasFrontDiscs = true;
-			if ("BRAKEROTOR_REAR".equals(p.part)) hasRearDiscs = true;
-			if ("DRIVER".equals(p.part)) hasDriver = true;
-			if (p.part.contains("WHEEL") && p.mpoints != null) brakeMarker = true;
-			if ("BASE".equals(p.part)) {
-				boolean hasDriverMP = false;
-				boolean hasSpoiler = false;
-				boolean hasEngineFX = false;
-				if (p.mpoints != null) for (var mp : p.mpoints.mpoints) {
-					if (mp.nameHash == Hash.findBIN("DRIVER_POSITION")) hasDriverMP = true;
-					if (mp.nameHash == Hash.findBIN("SPOILER")) hasSpoiler = true;
-					if (mp.nameHash == Hash.findBIN("ENGINE_FX")) hasEngineFX = true;
-				}
-				if (!hasDriverMP) System.out.println("No DRIVER_POSITION marker found on "+p.name+".");
-				if (!hasSpoiler) System.out.println("No SPOILER marker found on "+p.name+".");
-				if (!hasEngineFX) System.out.println("No ENGINE_FX marker found on "+p.name+".");
-			}
-			
-			boolean hasWindowF = false;
-			boolean hasWindowFL = false;
-			boolean hasWindowFR = false;
-			boolean hasWindowR = false;
-			boolean hasWindowRL = false;
-			boolean hasWindowRR = false;
-			boolean hasDefroster = false;
-			if (char0 != 'T') for (var m : p.mesh.materials.materials) {
-				if (m.TextureHashes.contains(Hash.findBIN("WINDOW_FRONT"))) hasWindowF = true;
-				if (m.TextureHashes.contains(Hash.findBIN("WINDOW_LEFT_FRONT"))) hasWindowFL = true;
-				if (m.TextureHashes.contains(Hash.findBIN("WINDOW_RIGHT_FRONT"))) hasWindowFR = true;
-				if (m.TextureHashes.contains(Hash.findBIN("WINDOW_REAR"))) hasWindowR = true;
-				if (m.TextureHashes.contains(Hash.findBIN("WINDOW_LEFT_REAR"))) hasWindowRL = true;
-				if (m.TextureHashes.contains(Hash.findBIN("WINDOW_RIGHT_REAR"))) hasWindowRR = true;
-				if (m.TextureHashes.contains(Hash.findBIN("REAR_DEFROSTER"))) hasDefroster = true;
-				
-				if (m.ShaderHash == Hash.findBIN("CARSKIN") && m.shaderUsage.equals(ShaderUsage.get("DiffuseSwatch"))) 
-					System.out.printf("Wrong carskin material found on %s! Please use DiffuseNormalSwatch (car_nm_v_s) instead of DiffuseSwatch (car_v).\n",p.name);
-
-				if (m.ShaderHash == Hash.findBIN("BRAKEDISC") && m.shaderUsage.equals(ShaderUsage.get("Diffuse")))
-					System.out.println("Opaque brake disc "+p.name+"; use DiffuseAlpha to fix.");
-				
-				if ("D".equals(p.lod) && (m.ShaderHash == Hash.findBIN("MAGSILVER") ||
-						m.ShaderHash == Hash.findBIN("BRAKELIGHTGLASS") ||
-						m.ShaderHash == Hash.findBIN("BRAKELIGHTGLASSRED") ||
-						m.ShaderHash == Hash.findBIN("DECAL") ||
-						m.ShaderHash == Hash.findBIN("DOORLINE") ||
-						m.ShaderHash == Hash.findBIN("MAGCHROME") ||
-						m.ShaderHash == Hash.findBIN("MAGLIP") ||
-						m.ShaderHash == Hash.findBIN("REGPAINTBLACK"))) {
-						System.out.printf("%s found on %s; please use 'simple' materials for LOD D parts.\n", Hash.getBIN(m.ShaderHash), p.name);
-				}
-				
-				if (p.part.contains("WHEEL") && (m.shaderUsage.equals(ShaderUsage.get("DiffuseAlpha")) || 
-						m.shaderUsage.equals(ShaderUsage.get("DiffuseNormalAlpha")))) {
-					System.out.printf("Transparent shader usage found on %s; wheels do not support transparency!\n", p.name);
-				}
-			}
-			if (char0 != 'T' && !"D".equals(p.lod) && p.name.contains("WINDOW")) {
-				switch (p.part) {
-				case "WINDOW_FRONT":
-					if (!hasWindowF) System.out.println("No/wrong window texture on "+p.name+"; should be WINDOW_FRONT.");
-					break;
-				case "WINDOW_FRONT_LEFT":
-					if (!hasWindowFL) System.out.println("No/wrong window texture on "+p.name+"; should be WINDOW_LEFT_FRONT.");
-					break;
-				case "WINDOW_FRONT_RIGHT":
-					if (!hasWindowFR) System.out.println("No/wrong window texture on "+p.name+"; should be WINDOW_RIGHT_FRONT.");
-					break;
-				case "WINDOW_REAR":
-					if (!hasWindowR) System.out.println("No/wrong window texture on "+p.name+"; should be WINDOW_REAR.");
-					if (!hasDefroster) System.out.println("Missing defroster on "+p.name+".");
-					break;
-				case "WINDOW_REAR_LEFT":
-					if (!hasWindowRL) System.out.println("No/wrong window texture on "+p.name+"; should be WINDOW_LEFT_REAR.");
-					break;
-				case "WINDOW_REAR_RIGHT":
-					if (!hasWindowRR) System.out.println("No/wrong window texture on "+p.name+"; should be WINDOW_RIGHT_REAR.");
-					break;
-				}
-			}
-
-		}
-
-		if (!brakeMarker) System.out.println("Your car doesn't have the BRAKE_FRONT marker to position brakes relatively to wheels!");
-		if (!hasFrontBrakes) System.out.println("Your car doesn't have front brakes!");
-		if (!hasFrontDiscs) System.out.println("Your car doesn't have front brake rotors!");
-		if (!hasRearBrakes) System.out.println("Your car doesn't have rear brakes!");
-		if (!hasRearDiscs) System.out.println("Your car doesn't have rear brake rotors!");
-		if (!hasDriver) System.out.println("Your car doesn't have a driver!");
-		if (lodDPartsFound == 0) System.out.println("No lod D found!");
-		if (lodDPartsFound > 1) System.out.println("Several lod D parts found, please check how your model's LOD looks ingame!");
-		if (lodDTris > 3000) System.out.println("High lod D polycount ("+lodDTris+" triangles), please reduce it! Vanilla models are around 1500 triangles.");
-		for (var e : lodATris.entrySet()) {
-			if (e.getKey().equals("KIT00") && e.getValue() < 16000) System.out.println("Your model is low-poly for the game's standards.");
-			if (e.getValue() > 50000) System.out.printf("Your model is high-poly (%s triangles on %s), make sure no customization combination crashes the game.\n",e.getValue().toString(), e.getKey());
-			// quite inaccurate as it doesn't take into account the parts loaded by default from other kits, this would need a cross check from dbmodelparts.
+		} catch (Exception e) {
+			System.out.println("Error checking model: "+e.getMessage());
+			e.printStackTrace();
 		}
 	}
-	
 
+	public boolean isUC() {
+		return isUC(platform);
+	}
+	public static boolean isUC(Platform platform) {
+		return platform == Platform.PC || platform == Platform.X360 || platform == Platform.PS3;
+	}
+	
 	public static void checkVertexBounds(Part p) {
 		boolean posOOB = false;
 		boolean UVOOB = false;
 		for (var m : p.mesh.materials.materials) {
-			for (var v : m.verticesBlock.vertices) {
-				var vf = m.verticesBlock.vertexFormat;
-				if (v.posX > vf.positionMax || v.posY > vf.positionMax || v.posZ > vf.positionMax || 
-					v.posX < vf.positionMin || v.posX < vf.positionMin || v.posX < vf.positionMin) posOOB = true;
-				if (v.tex0U > vf.texcoordMax || v.tex0V > vf.texcoordMax || v.tex0U < vf.texcoordMin || v.tex0V < vf.texcoordMin) UVOOB = true;
+			var vf = m.verticesBlock.vertexFormat;
+			if (vf != null) for (var v : m.verticesBlock.vertices) {
+				if (v.pos[X] > vf.positionMax || v.pos[Y] > vf.positionMax || v.pos[Z] > vf.positionMax || 
+					v.pos[X] < vf.positionMin || v.pos[X] < vf.positionMin || v.pos[X] < vf.positionMin) posOOB = true;
+				for (int i=0; i<v.numTexChannels(); i++) {
+					if (v.tex[i][U] > vf.texcoordMax || v.tex[i][V] > vf.texcoordMax || v.tex[i][U] < vf.texcoordMin || v.tex[i][V] < vf.texcoordMin) UVOOB = true;
+				}
+			} else {
+//				System.out.println("Warning : null vertex format on part "+p.name+" material "+m.uniqueName+" ! This shouldn't happen, something may be wrong with the material config !");
 			}
 		}
 		if (posOOB) System.out.println("Warning : one or multiple vertices are too far away from the origin on part "+p.name+" ! Please keep X, Y and Z between -10 and +10.");
@@ -3034,6 +3289,8 @@ public class Geometry extends Block {
 	}
 
 	public void changePlatform(Platform plat) {
+		if (plat == Platform.PS3) throw new RuntimeException("PS3 saving not implemented.");
+
 		platform = plat;
 		geomHeader.geomInfo.setPlatform(plat);
 		for (var p : parts) {

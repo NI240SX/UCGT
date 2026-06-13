@@ -1,4 +1,4 @@
-package fr.ni240sx.ucgt.geometryFile.part.mesh.X360;
+package fr.ni240sx.ucgt.geometryFile.part.mesh.PS3;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -9,12 +9,12 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangles;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class Triangles_X360 extends Triangles {
+public class Triangles_PS3 extends Triangles {
 
 	@Override
-	public BlockType getBlockID() {return BlockType.Part_Mesh_Triangles_X360;}
+	public BlockType getBlockID() {return BlockType.Part_Mesh_Triangles_PS3;}
 
-	public Triangles_X360(ByteBuffer in) {
+	public Triangles_PS3(ByteBuffer in) {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
 
@@ -35,10 +35,10 @@ public class Triangles_X360 extends Triangles {
 		in.position(blockStart+blockLength);
 	}
 	
-	public Triangles_X360() {
+	public Triangles_PS3() {
 	}
 
-	public Triangles_X360(Triangles triangles) {
+	public Triangles_PS3(Triangles triangles) {
 		super(triangles);
 	}
 

@@ -6,9 +6,9 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.Platform;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
+import fr.ni240sx.ucgt.shared.Hash;
 
 public class ShaderUsage {
 	
@@ -59,6 +59,7 @@ public class ShaderUsage {
 
     public final VertexFormat vertexFormat_PC;
     public final VertexFormat vertexFormat_X360;
+    public final VertexFormat vertexFormat_PS3;
 
     public static List<ShaderUsage> values = new ArrayList<>();
     public static List<ShaderUsage> legacyValues = new ArrayList<>();
@@ -69,23 +70,29 @@ public class ShaderUsage {
     }
 
     ShaderUsage(String name, String[] possibleNames) {
-    	this(-2, name, possibleNames, VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s);
+//    	this(-2, name, possibleNames, VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s);
+    	this(-2, name, possibleNames, null);
     }
     
-    ShaderUsage(String name, String[] possibleNames, VertexFormat vf_PC, VertexFormat vf_X360) {
-    	this(-2, name, possibleNames, vf_PC, vf_X360);
+    ShaderUsage(String name, String[] possibleNames, VertexFormat vf_PC, VertexFormat vf_X360, VertexFormat vf_PS3) {
+    	this(-2, name, possibleNames, vf_PC, vf_X360, vf_PS3);
     }
     
     ShaderUsage(int key, String name, String[] possibleNames) {
-    	this(key, name, possibleNames, VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s);
+//    	this(key, name, possibleNames, VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s);
+    	this(key, name, possibleNames, null);
     }
     
 
     ShaderUsage(int key, String name, String[] possibleNames, VertexFormat vf_PC) {
     	this(key, name, possibleNames, vf_PC, null);
     }
+
+    ShaderUsage(int key, String name, String[] possibleNames, VertexFormat vf_PC, VertexFormat vf_X360){
+    	this(key,name,possibleNames,vf_PC,vf_X360, null);
+    }
     
-    ShaderUsage(int key, String name, String[] possibleNames, VertexFormat vf_PC, VertexFormat vf_X360) {
+    ShaderUsage(int key, String name, String[] possibleNames, VertexFormat vf_PC, VertexFormat vf_X360, VertexFormat vf_PS3) {
     	if (key == -2) {
     		// compute vlt from name
     		this.key = Hash.findVLT(name);
@@ -95,6 +102,7 @@ public class ShaderUsage {
 		this.possibleNames = possibleNames;
 		this.vertexFormat_PC = vf_PC;
 		this.vertexFormat_X360 = vf_X360;
+		this.vertexFormat_PS3 = vf_PS3;
 //		values.add(this);
     }
 
@@ -209,23 +217,30 @@ public class ShaderUsage {
 
 	public static void parseUsage(String l) {
 		ArrayList<String> names = new ArrayList<>();
-		VertexFormat vf_PC = VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s;
+//		VertexFormat vf_PC = VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s;
+		VertexFormat vf_PC = null;
 		VertexFormat vf_X360 = null;
+		VertexFormat vf_PS3 = null;
 		if (!l.startsWith("#") && !l.startsWith("//")) {
 			for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (!s2.isBlank()) {
 				if (s2.contains("VertexFormatPC=")) {
-					vf_PC = VertexFormat.get(s2.split("=")[1]);
+//					vf_PC = VertexFormat.get(s2.split("=")[1]);
+					vf_PC = new VertexFormat(s2.split("=")[1]);
 				} else if (s2.contains("VertexFormatX360=")) {
-					vf_X360 = VertexFormat.get(s2.split("=")[1]);
+//					vf_X360 = VertexFormat.get(s2.split("=")[1]);
+					vf_X360 = new VertexFormat(s2.split("=")[1]);
+				} else if (s2.contains("VertexFormatPS3=")) {
+//					vf_PS3 = VertexFormat.get(s2.split("=")[1]);
+					vf_PS3 = new VertexFormat(s2.split("=")[1]);
 				} else if (s2.startsWith("#") || s2.startsWith("//")) {
 					break;
 				} else names.add(s2);
 			}
 		}
 		if (names.size() == 1) {
-			values.add(new ShaderUsage(names.get(0), names.toArray(String[]::new), vf_PC, vf_X360));
+			values.add(new ShaderUsage(names.get(0), names.toArray(String[]::new), vf_PC, vf_X360, vf_PS3));
 		} else if (names.size() != 0) { //>1
-			values.add(new ShaderUsage(Hash.findVLT(names.get(0)), names.get(1), names.toArray(String[]::new), vf_PC, vf_X360));
+			values.add(new ShaderUsage(Hash.findVLT(names.get(0)), names.get(1), names.toArray(String[]::new), vf_PC, vf_X360, vf_PS3));
 		}
 	}
 
@@ -242,7 +257,8 @@ public class ShaderUsage {
 				if (i == 0) platform = Platform.get(s2);
 				else if (i == 1) shaderIndex = Integer.valueOf(s2);
 				else if (s2.contains("VertexFormat=")) {
-					vf = VertexFormat.get(s2.split("=")[1]);
+//					vf = VertexFormat.get(s2.split("=")[1]);
+					vf = new VertexFormat(s2.split("=")[1]);
 				} else if (s2.contains("TextureUsages=")) {
 					for (var split : s2.split("=")[1].split(",")) texusages.add(TextureUsage.get(split));
 				} else if (s2.equals("default")) {

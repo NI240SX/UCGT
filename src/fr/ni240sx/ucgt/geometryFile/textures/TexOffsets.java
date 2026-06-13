@@ -5,10 +5,11 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Comparator;
-import fr.ni240sx.ucgt.binstuff.Block;
+
 import fr.ni240sx.ucgt.compression.CompressionType;
-import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.geometry.PartOffset;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
 
 public class TexOffsets extends Block{
 	

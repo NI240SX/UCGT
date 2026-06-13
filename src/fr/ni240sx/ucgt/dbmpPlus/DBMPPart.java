@@ -2,7 +2,7 @@ package fr.ni240sx.ucgt.dbmpPlus;
 
 import java.util.ArrayList;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
+import fr.ni240sx.ucgt.shared.Hash;
 
 public class DBMPPart {
 	public ArrayList<Attribute> attributes = new ArrayList<>();

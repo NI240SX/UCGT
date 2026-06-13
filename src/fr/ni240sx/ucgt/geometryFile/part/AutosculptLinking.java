@@ -5,11 +5,11 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 
-import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.binstuff.Hash;
-import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.Part;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Hash;
 
 public class AutosculptLinking extends Block {
 
@@ -31,10 +31,10 @@ public class AutosculptLinking extends Block {
 			var l = new AutosculptLink();
 			links.add(l);
 			l.partKey = in.getInt();
-			l.passZone1 = in.getShort(); //usually the same as zone 4 times, not sure what this means exactly
-			l.passZone2 = in.getShort(); //perhaps one is origin zone and the other is destination zone
-			l.passZone3 = in.getShort();
-			l.passZone4 = in.getShort();
+			l.fromZone1 = in.getShort(); //usually the same as zone 4 times, not sure what this means exactly
+			l.fromZone2 = in.getShort(); //perhaps one is origin zone and the other is destination zone
+			l.toZone3 = in.getShort();
+			l.toZone4 = in.getShort();
 			in.getInt(); //0
 		}
 	}
@@ -53,10 +53,10 @@ public class AutosculptLinking extends Block {
 		
 		for (var l : links) {
 			out.putInt(l.partKey);
-			out.putShort(l.passZone1);
-			out.putShort(l.passZone2);
-			out.putShort(l.passZone3);
-			out.putShort(l.passZone4);
+			out.putShort(l.fromZone1);
+			out.putShort(l.fromZone2);
+			out.putShort(l.toZone3);
+			out.putShort(l.toZone4);
 			out.putInt(0);
 		}
 		
@@ -67,7 +67,7 @@ public class AutosculptLinking extends Block {
 		//Hash.guess(partKey, g.hashlist, String.format("0x%08X", partKey), "BIN");
 		String s = "ASLINK	"+p.header.partName.replace(g.carname+"_", "");
 		for (var l : links) s += "	" + Hash.getBIN(l.partKey).replace(g.carname+"_", "")
-				+","+l.passZone1+","+l.passZone2+","+l.passZone3+","+l.passZone4;
+				+","+l.fromZone1+","+l.fromZone2+","+l.toZone3+","+l.toZone4;
 		return s;
 	}
 }

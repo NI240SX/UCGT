@@ -54,10 +54,10 @@ public class CollisionSphereShape extends CollisionShape {
 	}
 
 	@Override
-	public CollisionShape deepCopy(CollisionBound bound) {
+	public CollisionShape deepCopy(CollisionBound b) {
 		var copy = new CollisionSphereShape();
 		copy.radius = this.radius;
-		copy.bound = bound;
+		copy.bound = b;
 		return copy;
 	}
 }

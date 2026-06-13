@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.binstuff.Hash;
-import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.Platform;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Hash;
 
 public class PartHeader extends Block {
 
@@ -115,6 +115,7 @@ public class PartHeader extends Block {
 		switch(plat) {
 		case PC:
 		case X360:
+		case PS3:
 			game = UNDERCOVER;
 			break;
 		case Prostreet_PC:
@@ -123,8 +124,6 @@ public class PartHeader extends Block {
 			break;
 		case Carbon_PC:
 			game = CARBON;
-			break;
-		default:
 			break;
 		}
 	}
@@ -149,14 +148,13 @@ public class PartHeader extends Block {
 		game = switch(plat) {
 		case PC:
 		case X360:
+		case PS3:
 			yield UNDERCOVER;
 		case Carbon_PC:
 			yield CARBON;
 		case Prostreet_PC:
 		case Prostreet_X360:
 			yield PROSTREET;
-		default:
-			throw new IllegalArgumentException("Unexpected value: " + plat);
 		};
 	}
 

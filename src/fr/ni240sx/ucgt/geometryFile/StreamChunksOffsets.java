@@ -5,20 +5,20 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 
-import fr.ni240sx.ucgt.binstuff.Block;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
 
-public class StreamBlocksOffsets extends Block {
+public class StreamChunksOffsets extends Block {
 
 	public static final int infoLength = 92;
 	public ArrayList<ChunkInfo> chunkInfos = new ArrayList<>();
 	
 	@Override
 	public BlockType getBlockID() {
-		// TODO Auto-generated method stub
-		return BlockType.StreamBlocksOffsets;
+		return BlockType.ChunksOffsets;
 	}
 
-	public StreamBlocksOffsets(ByteBuffer in) {
+	public StreamChunksOffsets(ByteBuffer in) {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
 		while (in.position()<blockStart+blockLength) {
@@ -31,8 +31,8 @@ public class StreamBlocksOffsets extends Block {
 		int i = 0;
 		for (i = 0; i < chunkInfos.size(); i++) {
 			if (chunkInfos.get(i).name.equals(blockID)) {
-				chunkInfos.get(i).length1 += deltaLength;
-				chunkInfos.get(i).length2 += deltaLength;
+				chunkInfos.get(i).size += deltaLength;
+				chunkInfos.get(i).sizeCompressed += deltaLength;
 				break;
 			}
 		}
@@ -69,27 +69,62 @@ public class StreamBlocksOffsets extends Block {
 	 */
 	public class ChunkInfo{
 		
+		/*
+		 * long SectionName
+		 * short SectionNumber (25000 Z, 24000 Y, 23000 X, 22000 W, 20000 U, 0 A, 1000 B, 2000 C, 3000 D, 4000 E, 5000 F) - eg E458 = 4458
+		 * byte WasRendered = 0
+		 * byte CurrentlyVisible = 0
+		 * int Status = 0
+		 * int FileType = 1
+		 * int FileOffset
+		 * int Size
+		 * int CompressedSize
+		 * int PermanentSize
+		 * int SectionPriority = indexOf(section this)
+		 * float CenterX (if applicable, 0 for ZYXWU)
+		 * float CenterY
+		 * float Radius
+		 * int Checksum
+		 * other data always 0 (36 bytes)
+		 * 
+		 */
+		
 		String name; //eg X0, on 8 bytes
-		int ID; //23000
-		int const01; //0
-		int const02; //1
+		short ID; //23000
+		int const01 = 0; //0
+		int const02 = 1; //1
 		int offset; //whatever
 		int oldOffset;
-		int length1;
-		int length2;
-		byte[] otherData = new byte[60];
+		int size;
+		int sizeCompressed;
+		int sizePermanent;
+		int index;
+		float centerX = 0;
+		float centerY = 0;
+		float radius = 0;
+		int checksum;
+		
+		byte[] otherData = new byte[36];
 		
 		public ChunkInfo(ByteBuffer in) {
 			var beginning = in.position();
 			name = Block.readString(in);
 			in.position(beginning+8);
-			ID = in.getInt();
+			ID = in.getShort();
+			in.get();
+			in.get();
 			const01 = in.getInt();
 			const02 = in.getInt();
 			offset = in.getInt();
 			oldOffset = offset;
-			length1 = in.getInt();
-			length2 = in.getInt();
+			size = in.getInt();
+			sizeCompressed = in.getInt();
+			sizePermanent = in.getInt();
+			index = in.getInt();
+			centerX = in.getFloat();
+			centerY = in.getFloat();
+			radius = in.getFloat();
+			checksum = in.getInt();
 			in.get(otherData);
 		}
 
@@ -97,12 +132,20 @@ public class StreamBlocksOffsets extends Block {
 			var beginning = bb.position();
 			Block.putString(bb, name, 8);
 			bb.position(beginning+8);
-			bb.putInt(ID);
+			bb.putShort(ID);
+			bb.put((byte)0);
+			bb.put((byte)0);
 			bb.putInt(const01);
 			bb.putInt(const02);
 			bb.putInt(offset);
-			bb.putInt(length1);
-			bb.putInt(length2);
+			bb.putInt(size);
+			bb.putInt(sizeCompressed);
+			bb.putInt(sizePermanent);
+			bb.putInt(index);
+			bb.putFloat(centerX);
+			bb.putFloat(centerY);
+			bb.putFloat(radius);
+			bb.putInt(checksum);
 			bb.put(otherData);
 		}
 	}

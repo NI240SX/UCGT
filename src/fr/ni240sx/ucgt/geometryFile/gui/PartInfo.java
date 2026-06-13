@@ -1,8 +1,11 @@
 package fr.ni240sx.ucgt.geometryFile.gui;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
+import java.util.ArrayList;
+
 import fr.ni240sx.ucgt.geometryFile.GeometryEditorGUI;
 import fr.ni240sx.ucgt.geometryFile.part.MPoint;
+import fr.ni240sx.ucgt.shared.Hash;
+import javafx.beans.value.ChangeListener;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
@@ -47,6 +50,8 @@ public class PartInfo extends TreeView<String>{
 
 	}
 	
+	ArrayList<ChangeListener<? super TreeItem<String>>> oldTextureListeners = new ArrayList<>();
+	
 	public void update(PartController controller) {
 		root.getChildren().clear();
 		
@@ -59,11 +64,15 @@ public class PartInfo extends TreeView<String>{
 		
 		var p = controller == null ? null : controller.part;
 		
+		oldTextureListeners.forEach(l -> this.getSelectionModel().selectedItemProperty().removeListener(l));
+		oldTextureListeners.clear();
+		
 		try {
 			if (p == null) {		
 				root.setValue(GeometryEditorGUI.mainGeometry == null ? "" : GeometryEditorGUI.mainGeometry.carname);
 			} else {
 				root.setValue(p.name);
+				if (p.header != null) root.getChildren().add(new TreeItem<>("BIN key "+String.format("0x%08X", p.header.binKey)));
 				if (p.header != null) root.getChildren().add(counts);
 				if (p.header != null) root.getChildren().add(bounds);
 				if (p.mpoints != null) root.getChildren().add(mpoints);
@@ -141,13 +150,35 @@ public class PartInfo extends TreeView<String>{
 							mat.getChildren().add(tex);
 							tex.setExpanded(true);
 							for (int i=0; i< m.TextureHashes.size(); i++) {
+								TreeItem<String> it;
+								var textureHash = m.TextureHashes.get(i);
 								if (m.textureUsages.size() > i && m.TextureHashes.size() > i) {
-									var it = new TreeItem<>(Hash.getBIN(m.TextureHashes.get(i))+" as "+m.textureUsages.get(i).getName());
-									tex.getChildren().add(it);
-								} else if (m.TextureHashes.size() > i) {
-									var it = new TreeItem<>(Hash.getBIN(m.TextureHashes.get(i)));
-									tex.getChildren().add(it);
+									it = new TreeItem<>(Hash.getBIN(textureHash)+" as "+m.textureUsages.get(i).getName());
+								} else {
+									it = new TreeItem<>(Hash.getBIN(textureHash));
 								}
+								tex.getChildren().add(it);
+								ChangeListener<? super TreeItem<String>> list = (obs, was, is) -> {
+									if (is != null && is.equals(it)) {
+										for (var t : GeometryEditorGUI.tpkImagesList.getItems()) {
+											if (t.binKey == textureHash) GeometryEditorGUI.tpkImagesList.getSelectionModel().select(t);
+										}
+									}
+								};
+								oldTextureListeners.add(list);
+								this.getSelectionModel().selectedItemProperty().addListener(list);
+							}
+							
+							if (m.TextureHashes.size() > 0) {
+								ChangeListener<? super TreeItem<String>> list = (obs, was, is) -> {
+									if (is != null && is.equals(mat)) {
+										for (var t : GeometryEditorGUI.tpkImagesList.getItems()) {
+											if (t.binKey == m.TextureHashes.get(0)) GeometryEditorGUI.tpkImagesList.getSelectionModel().select(t);
+										}
+									}
+								};
+								oldTextureListeners.add(list);
+								this.getSelectionModel().selectedItemProperty().addListener(list);
 							}
 
 							var flags = new TreeItem<>("Flags: "+String.format("0x%08X", 
@@ -213,10 +244,10 @@ public class PartInfo extends TreeView<String>{
 					for (var l : p.asLinking.links) {
 						var link = new TreeItem<>(Hash.getBIN(l.partKey));
 						asL.getChildren().add(link);
-						link.getChildren().add(new TreeItem<>("From Zone "+l.passZone1));
-						link.getChildren().add(new TreeItem<>("From Zone "+l.passZone2));
-						link.getChildren().add(new TreeItem<>("To Zone "+l.passZone3));
-						link.getChildren().add(new TreeItem<>("To Zone "+l.passZone4));
+						link.getChildren().add(new TreeItem<>("From Zone "+l.fromZone1));
+						link.getChildren().add(new TreeItem<>("From Zone "+l.fromZone2));
+						link.getChildren().add(new TreeItem<>("To Zone "+l.toZone3));
+						link.getChildren().add(new TreeItem<>("To Zone "+l.toZone4));
 
 					}
 				}

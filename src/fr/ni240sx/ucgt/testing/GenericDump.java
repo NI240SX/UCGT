@@ -10,10 +10,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
-import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
+import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Hash;
 import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
@@ -33,15 +33,15 @@ public class GenericDump extends Application {
 	String hexSearch = "";
 	String dmpSearch = "";
 
-	static String car = "AUD_RS4_STK_08";
-	static int[] art = new int[]{0, 1, 2, 3, 4, 5, 6, 11, 12};
-	static int[] wart = new int[]{1, 2, 3, 4, 5};
+	static String car = "MAZ_RX7_STK_95";
+	static int[] art = new int[]{};
+	static int[] wart = new int[]{};
 	
 	
 	static int startFrom = 0; //63400
 	static int length = 8192;//8192 recommended
 	
-	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\UCGT\\binary skinregiondb\\SkinRegionDB-1.18.bin");
+	File f = new File("C:\\Users\\gaupp\\OneDrive\\Documents\\z NFS MODDING\\UCGT\\class 43c");
 		
 	@Override
 	public void start(Stage primaryStage) {
@@ -144,8 +144,8 @@ public class GenericDump extends Application {
 			ByteBuffer bb = ByteBuffer.wrap(arr);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
 			
-//			generateHashes(car, art, wart);
-			generateHashes(null,null,null);
+			generateHashes(car, art, wart);
+//			generateHashes(null,null,null);
 			
 //			Hashlist.add(new Hash(car + "_KIT00_TRIANGLE_A"));
 //			Hashlist.add(new Hash(car + "_KIT00_CUBE_A"));
@@ -321,6 +321,8 @@ public class GenericDump extends Application {
 		// Hash lookup
 		if (!Hash.getBIN(in).startsWith("0x")) return Hash.getBIN(in);
 		if (!Hash.getVLT(in).startsWith("0x")) return Hash.getVLT(in);
+		if (!Hash.getBIN(Integer.reverseBytes(in)).startsWith("0x")) return Hash.getBIN(Integer.reverseBytes(in));
+		if (!Hash.getVLT(Integer.reverseBytes(in)).startsWith("0x")) return Hash.getVLT(Integer.reverseBytes(in));
 
 		// Plain string lookup
 		boolean valString = true;

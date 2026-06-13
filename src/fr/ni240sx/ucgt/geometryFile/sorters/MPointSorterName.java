@@ -2,8 +2,8 @@ package fr.ni240sx.ucgt.geometryFile.sorters;
 
 import java.util.Comparator;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.part.MPoint;
+import fr.ni240sx.ucgt.shared.Hash;
 
 public class MPointSorterName implements Comparator<MPoint>{
 	@Override

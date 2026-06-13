@@ -15,6 +15,7 @@ import fr.ni240sx.ucgt.geometryFile.part.MPoint;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangle;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
+import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
 public class Scene extends ZModBlock {
 	
@@ -180,27 +181,27 @@ public class Scene extends ZModBlock {
 		        				var nz = mesh.verts.get(poly.vertIDs[i]).nz;
 		        				
 		        				//apply transforms
-		        				triVerts[i].posX = -M[0][0]*x+		-M[1][0]*y+		-M[2][0]*z+		-M[3][0];
-		        				triVerts[i].posY = -M[0][2]*x+		-M[1][2]*y+		-M[2][2]*z+		-M[3][2];
-		        				triVerts[i].posZ = M[0][1]*x+		M[1][1]*y+		M[2][1]*z+		M[3][1];
-		        				triVerts[i].normX = -M[0][0]*nx +	-M[1][0]*ny +	-M[2][0]*nz;
-		        				triVerts[i].normY = -M[0][2]*nx +	-M[1][2]*ny +	-M[2][2]*nz;
-		        				triVerts[i].normZ = M[0][1]*nx +	M[1][1]*ny +	M[2][1]*nz;
+		        				triVerts[i].pos[X] = -M[0][0]*x+		-M[1][0]*y+		-M[2][0]*z+		-M[3][0];
+		        				triVerts[i].pos[Y] = -M[0][2]*x+		-M[1][2]*y+		-M[2][2]*z+		-M[3][2];
+		        				triVerts[i].pos[Z] = M[0][1]*x+		M[1][1]*y+		M[2][1]*z+		M[3][1];
+		        				triVerts[i].norm[X] = -M[0][0]*nx +	-M[1][0]*ny +	-M[2][0]*nz;
+		        				triVerts[i].norm[Y] = -M[0][2]*nx +	-M[1][2]*ny +	-M[2][2]*nz;
+		        				triVerts[i].norm[Z] = M[0][1]*nx +	M[1][1]*ny +	M[2][1]*nz;
 
-		        				triVerts[i].tex0U = mesh.verts.get(poly.vertIDs[i]).u0;
-		        				triVerts[i].tex0V = 1-mesh.verts.get(poly.vertIDs[i]).v0;
+		        				triVerts[i].tex[0][U] = mesh.verts.get(poly.vertIDs[i]).u0;
+		        				triVerts[i].tex[0][V] = 1-mesh.verts.get(poly.vertIDs[i]).v0;
 
-		        				triVerts[i].tex1U = mesh.verts.get(poly.vertIDs[i]).u1;
-		        				triVerts[i].tex1V = 1-mesh.verts.get(poly.vertIDs[i]).v1;
+		        				triVerts[i].tex[1][U] = mesh.verts.get(poly.vertIDs[i]).u1;
+		        				triVerts[i].tex[1][V] = 1-mesh.verts.get(poly.vertIDs[i]).v1;
 
-		        				triVerts[i].tex2U = mesh.verts.get(poly.vertIDs[i]).u2;
-		        				triVerts[i].tex2V = 1-mesh.verts.get(poly.vertIDs[i]).v2;
+		        				triVerts[i].tex[2][U] = mesh.verts.get(poly.vertIDs[i]).u2;
+		        				triVerts[i].tex[2][V] = 1-mesh.verts.get(poly.vertIDs[i]).v2;
 		        				
 		        				if (geom.IMPORT_importVertexColors) {
-			        				triVerts[i].colorR = mesh.verts.get(poly.vertIDs[i]).r;
-			        				triVerts[i].colorG = mesh.verts.get(poly.vertIDs[i]).g;
-			        				triVerts[i].colorB = mesh.verts.get(poly.vertIDs[i]).b;
-			        				triVerts[i].colorA = mesh.verts.get(poly.vertIDs[i]).a;
+			        				triVerts[i].color[R] = Byte.toUnsignedInt(mesh.verts.get(poly.vertIDs[i]).r)/255.0f;
+			        				triVerts[i].color[G] = Byte.toUnsignedInt(mesh.verts.get(poly.vertIDs[i]).g)/255.0f;
+			        				triVerts[i].color[B] = Byte.toUnsignedInt(mesh.verts.get(poly.vertIDs[i]).b)/255.0f;
+			        				triVerts[i].color[A] = Byte.toUnsignedInt(mesh.verts.get(poly.vertIDs[i]).a)/255.0f;
 		        				}
 	
 		        				if (!ZMMatsToBINMats.get(poly.materialUID).verticesBlock.vertices.contains(triVerts[i])) 
@@ -238,12 +239,12 @@ public class Scene extends ZModBlock {
 		        				var z = mesh.verts.get(poly.vertIDs[i]).z;
 		        				
 		        				//apply transforms
-		        				v.posX = -M[0][0]*x+		-M[1][0]*y+		-M[2][0]*z+		-M[3][0];
-		        				v.posY = -M[0][2]*x+		-M[1][2]*y+		-M[2][2]*z+		-M[3][2];
-		        				v.posZ = M[0][1]*x+		M[1][1]*y+		M[2][1]*z+		M[3][1];
+		        				v.pos[X] = -M[0][0]*x+		-M[1][0]*y+		-M[2][0]*z+		-M[3][0];
+		        				v.pos[Y] = -M[0][2]*x+		-M[1][2]*y+		-M[2][2]*z+		-M[3][2];
+		        				v.pos[Z] = M[0][1]*x+		M[1][1]*y+		M[2][1]*z+		M[3][1];
 		        				
-		        				v.tex0U = mesh.verts.get(poly.vertIDs[i]).u0;
-		        				v.tex0V = 1-mesh.verts.get(poly.vertIDs[i]).v0;
+		        				v.tex[0][U] = mesh.verts.get(poly.vertIDs[i]).u0;
+		        				v.tex[0][V] = 1-mesh.verts.get(poly.vertIDs[i]).v0;
 	
 		        				triVerts[i] = -1;
 		        				for (int j=0; j<ZMMatsToBINMatsEXTRA.get(poly.materialUID).verticesBlock.vertices.size(); j++) {

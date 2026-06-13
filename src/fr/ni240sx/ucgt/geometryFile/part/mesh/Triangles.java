@@ -3,8 +3,8 @@ package fr.ni240sx.ucgt.geometryFile.part.mesh;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.BlockType;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
 
 public abstract class Triangles extends Block {
 

@@ -459,7 +459,7 @@ public class CollisionConvexVertice extends CollisionShape {
 	}
 
 	@Override
-	public CollisionShape deepCopy(CollisionBound bound) {
+	public CollisionShape deepCopy(CollisionBound b) {
 		var copy = new CollisionConvexVertice();
 		copy.boundDistance = this.boundDistance;
 		copy.HalfExtentsX  = this.HalfExtentsX;
@@ -470,7 +470,7 @@ public class CollisionConvexVertice extends CollisionShape {
 		copy.CenterY = this.CenterY;
 		copy.CenterZ = this.CenterZ;
 		copy.CenterW = this.CenterW;
-		copy.bound = bound;
+		copy.bound = b;
 		this.PlaneEquations.forEach(pe -> copy.PlaneEquations.add(pe.deepCopy(copy)));
 		copy.updateShape();
 		return copy;

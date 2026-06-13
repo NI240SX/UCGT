@@ -11,12 +11,12 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionBoxShape;
 import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionConvexTransform;
 import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionConvexTranslate;
 import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionSphereShape;
 import fr.ni240sx.ucgt.collisionsEditor.CollisionMesh.CollisionConvexVertice;
+import fr.ni240sx.ucgt.shared.Hash;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 
@@ -195,11 +195,11 @@ public class Collisions {
 			
 			
 			
-		} catch (FileNotFoundException e) {
+		} catch (@SuppressWarnings("unused") FileNotFoundException e) {
 			//dbmp to load not found
 			try {
 				new Alert(Alert.AlertType.ERROR, "File not found", ButtonType.OK).show();
-			} catch (Exception e2) {
+			} catch (@SuppressWarnings("unused") Exception e2) {
 				System.out.println("File not found.");
 			}
 //			e.printStackTrace();
@@ -210,7 +210,7 @@ public class Collisions {
 			e.printStackTrace();
 			try {
 				new Alert(Alert.AlertType.ERROR, "Error while loading file", ButtonType.OK).show();
-			} catch (Exception e2) {
+			} catch (@SuppressWarnings("unused") Exception e2) {
 				System.out.println("Error while loading file.");
 			}
 		}

@@ -5,14 +5,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.geometryFile.Platform;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.LegacyPC.LegacyVertices;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.Vertices_PC;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.PS3.Vertices_PS3;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.Vertices_X360;
+import fr.ni240sx.ucgt.shared.Hash;
 
 public class Material {
 	
@@ -76,7 +77,7 @@ public class Material {
 	}
 
 	public static Material getFallbackMaterial(Geometry g) {
-		if (g.platform == Platform.PC || g.platform == Platform.X360) {
+		if (g.isUC()) {
 			if (g.SAVE_useOffsetsTable) {
 				Material m = new Material();
 				m.ShaderHash = Hash.findBIN("DULLPLASTIC");
@@ -233,7 +234,7 @@ public class Material {
 		for (int i=0; i<TextureHashes.size(); i++) {
 			s += "	" + Hash.getBIN(TextureHashes.get(i)).replace(carname, "%");
 			if (shaderUsage.getClass() != ShaderUsage.Legacy.class && textureUsages.size() > i) s +=  "=" + textureUsages.get(i).getName();
-			if (texturePriorities.size() > i && texturePriorities.get(i) != i && texturePriorities.get(i) != -1) s += "," + texturePriorities.get(i);
+//			if (texturePriorities.size() > i && texturePriorities.get(i) != i && texturePriorities.get(i) != -1) s += "," + texturePriorities.get(i);
 		}
 		return s;
 	}
@@ -338,14 +339,14 @@ public class Material {
 				return false;
 			}
 		}
-		if (other.texturePriorities.size() != texturePriorities.size()) return false;
-		for (int i=0; i< texturePriorities.size(); i++) {
-			int prio1 = texturePriorities.get(i);
-			int prio2 = other.texturePriorities.get(i);
-			if (prio1 != prio2) {
-				return false;
-			}
-		}
+//		if (other.texturePriorities.size() != texturePriorities.size()) return false;
+//		for (int i=0; i< texturePriorities.size(); i++) {
+//			int prio1 = texturePriorities.get(i);
+//			int prio2 = other.texturePriorities.get(i);
+//			if (prio1 != prio2) {
+//				return false;
+//			}
+//		}
 		if (other.textureUsages.size() != textureUsages.size()) return false;
 		for (int i=0; i< textureUsages.size(); i++) if (textureUsages.get(i) != other.textureUsages.get(i)) return false;
 		if (ShaderHash == 0) {
@@ -365,6 +366,9 @@ public class Material {
 		case X360:
 			verticesBlock = new Vertices_X360();
 			break;
+		case PS3:
+			verticesBlock = new Vertices_PS3();
+			break;
 		case Prostreet_PC:
 		case Prostreet_X360:
 		case Carbon_PC:
@@ -372,6 +376,24 @@ public class Material {
 			break;
 		
 		}
+	}
+
+	public boolean isOpaque() {
+		return !hasTransparency();
+	}
+	public boolean hasTransparency() {
+		return 
+				//shaderUsage == ShaderUsage.get("car_a") ||
+				//shaderUsage == ShaderUsage.get("car_a_nzw") ||
+				//shaderUsage == ShaderUsage.get("car_nm_a") ||
+				//shaderUsage == ShaderUsage.get("car_nm_v_s_a") ||
+				//shaderUsage == ShaderUsage.get("car_si_a") ||
+				//shaderUsage == ShaderUsage.get("car_t_a") ||
+				//shaderUsage.getClass() == ShaderUsage.Legacy.class ||
+				shaderUsage.name.contains("Alpha") ||
+				shaderUsage.name.contains("opacity") ||
+				shaderUsage.name.contains("org_") ||
+				shaderUsage.name.contains("overlay");
 	}
 
 	

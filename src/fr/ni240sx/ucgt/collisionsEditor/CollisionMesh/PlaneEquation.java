@@ -45,7 +45,7 @@ public class PlaneEquation {
 		this.convexVerticeShape = load;
 	}
 	
-	@SuppressWarnings("hiding")
+//	@SuppressWarnings("hiding")
 //	public LineEquation intersect(PlaneEquation p) {
 //		float a = this.a*p.c - p.a*this.c;
 //		float b = this.b*p.c - p.b*this.c;

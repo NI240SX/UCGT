@@ -1,4 +1,4 @@
-package fr.ni240sx.ucgt.binstuff;
+package fr.ni240sx.ucgt.shared;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -149,6 +149,11 @@ public abstract class Hash {
 	    };
 	}
 
+	public static void addHashes(File f) {
+		addBinHashes(f);
+		addVltHashes(f);
+	}
+	
 	public static void addBinHashes(File f) {
 		addBinHashes(f, Hash.BIN);
 	}
@@ -195,19 +200,19 @@ public abstract class Hash {
 	public static String get(int hash, HashMap<Integer, String> m, String defaultName) {
 		if (hash==0) return "";
 		if (m.containsKey(hash)) return m.get(hash);
-		m.put(hash, defaultName);
+//		m.put(hash, defaultName);
 		return defaultName;
 	}
 	public static String getBIN(int hash, String defaultName) {
 		if (hash==0) return "";
 		if (BIN.containsKey(hash)) return BIN.get(hash);
-		BIN.put(hash, defaultName);
+//		BIN.put(hash, defaultName);
 		return defaultName;
 	}
 	public static String getVLT(int hash, String defaultName) {
 		if (hash==0) return "";
 		if (VLT.containsKey(hash)) return VLT.get(hash);
-		VLT.put(hash, defaultName);
+//		VLT.put(hash, defaultName);
 		return defaultName;
 	}
 	

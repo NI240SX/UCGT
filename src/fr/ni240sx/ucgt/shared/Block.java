@@ -1,4 +1,4 @@
-package fr.ni240sx.ucgt.binstuff;
+package fr.ni240sx.ucgt.shared;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,6 +14,7 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.*;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.LegacyPC.*;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.*;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.*;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.PS3.*;
 import fr.ni240sx.ucgt.geometryFile.textures.*;
 
 public abstract class Block {
@@ -107,6 +108,15 @@ public abstract class Block {
 		case Part_Mesh_Triangles_X360:
 			return new Triangles_X360(in);
 
+		case Part_Mesh_Info_PS3:
+			return new Mesh_Info_PS3(in);
+		case Part_Mesh_Materials_PS3:
+			return new Materials_PS3(in);
+		case Part_Mesh_Vertices_PS3:
+			return new Vertices_PS3(in);
+		case Part_Mesh_Triangles_PS3:
+			return new Triangles_PS3(in);
+
 		case Part_Mesh_LegacyMaterials:
 			return new LegacyMaterials(in);
 		case Part_Mesh_LegacyVertices:
@@ -127,8 +137,8 @@ public abstract class Block {
 			System.out.println("NIS Skeleton block");
 			return new UnknownBlock(in, chunkToInt);
 			
-		case StreamBlocksOffsets:
-			return new StreamBlocksOffsets(in);
+		case ChunksOffsets:
+			return new StreamChunksOffsets(in);
 			
 		case INVALID:
 		default:

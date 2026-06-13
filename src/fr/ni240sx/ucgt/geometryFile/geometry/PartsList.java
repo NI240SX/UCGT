@@ -7,9 +7,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.Part;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
 
 public class PartsList extends Block {
 

@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Materials;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
 
 public class Materials_PC extends Materials {
 

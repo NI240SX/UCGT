@@ -1,19 +1,29 @@
 package fr.ni240sx.ucgt.geometryFile.gui;
 
-import java.util.ArrayList;
+import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 import fr.ni240sx.ucgt.geometryFile.GeometryEditorGUI;
 import fr.ni240sx.ucgt.geometryFile.Part;
+import fr.ni240sx.ucgt.geometryFile.part.MPoint;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
+import fr.ni240sx.ucgt.shared.Hash;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Point3D;
+import javafx.scene.DepthTest;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.control.Tooltip;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
+import javafx.scene.shape.CullFace;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
 import javafx.scene.shape.VertexFormat;
@@ -24,9 +34,22 @@ public class PartController{
 	public Group mpMesh;
 	public Group mesh;
 	public Group mesh2;
+	public List<Node> vertexColorMeshes;
 	public String name;
 	
 	public static final PhongMaterial mpMaterial = new PhongMaterial(Color.rgb(255, 255, 255, 0.3));
+	
+	public static PhongMaterial vertexColorMaterial = new PhongMaterial();
+	public static WritableImage vertexColorImage;
+	
+	static{
+		vertexColorImage = new WritableImage(256, 1);
+		for (int i=0; i<vertexColorImage.getWidth(); i++) {
+			vertexColorImage.getPixelWriter().setColor(i,0, Color.rgb(0, 0, 0, (255-i)/255.0));
+		}
+		vertexColorMaterial.setDiffuseMap(vertexColorImage);
+//		vertexColorMaterial.setSpecularPower(0);
+	}
 	
 	public PartController(Part p) {
 		this.part = p;
@@ -92,13 +115,12 @@ public class PartController{
 			
 			updateWheelsPos();
 
+			//TODO manage markers also when part.mpoints != null
 			
 			if (part.part.contains("DRIVER")) {
 				partsSearch: for (var p : GeometryEditorGUI.parts) if (p.display.get() && p.part != null && p.part.mpoints != null) {
 					for (var mp : p.part.mpoints.mpoints) if (mp.nameHash == Hash.findBIN("DRIVER_POSITION")) {
-						mesh.setTranslateX(mp.positionY);
-						mesh.setTranslateY(mp.positionZ);
-						mesh.setTranslateZ(mp.positionX);
+						setPosition(mp);
 						break partsSearch;
 					}
 				}
@@ -106,9 +128,7 @@ public class PartController{
 			if (part.part.equals("SEAT_LEFT")) {
 				partsSearch: for (var p : GeometryEditorGUI.parts) if (p.display.get() && p.part != null && p.part.mpoints != null) {
 					for (var mp : p.part.mpoints.mpoints) if (mp.nameHash == Hash.findBIN("SEAT_LEFT")) {
-						mesh.setTranslateX(mp.positionY);
-						mesh.setTranslateY(mp.positionZ);
-						mesh.setTranslateZ(mp.positionX);
+						setPosition(mp);
 						break partsSearch;
 					}
 				}
@@ -116,9 +136,7 @@ public class PartController{
 			if (part.part.equals("SEAT_RIGHT")) {
 				partsSearch: for (var p : GeometryEditorGUI.parts) if (p.display.get() && p.part != null && p.part.mpoints != null) {
 					for (var mp : p.part.mpoints.mpoints) if (mp.nameHash == Hash.findBIN("SEAT_RIGHT")) {
-						mesh.setTranslateX(mp.positionY);
-						mesh.setTranslateY(mp.positionZ);
-						mesh.setTranslateZ(mp.positionX);
+						setPosition(mp);
 						break partsSearch;
 					}
 				}
@@ -129,9 +147,7 @@ public class PartController{
 				boolean already = false;
 				partsSearch: for (var p : GeometryEditorGUI.parts) if (p.display.get() && p.part != null && p.part.mpoints != null) {
 					for (var mp : p.part.mpoints.mpoints) if (mp.nameHash == Hash.findBIN("EXHAUST_LEFT")) {
-						mesh.setTranslateX(mp.positionY);
-						mesh.setTranslateY(mp.positionZ);
-						mesh.setTranslateZ(mp.positionX);
+						setPosition(mp);
 						already = true;
 						break partsSearch;
 					}
@@ -148,9 +164,7 @@ public class PartController{
 							mesh2.setTranslateZ(mp.positionX);
 
 						} else {
-							mesh.setTranslateX(mp.positionY);
-							mesh.setTranslateY(mp.positionZ);
-							mesh.setTranslateZ(mp.positionX);
+							setPosition(mp);
 						}
 						break partsSearch;
 					}
@@ -158,52 +172,18 @@ public class PartController{
 			}
 			
 			
-			if (part.mesh.materials != null) for (var m : part.mesh.materials.materials) {
-				TriangleMesh matMesh = new TriangleMesh();
-				
-				matMesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
-				
-				if (m.verticesBlock != null) for (var v : m.verticesBlock.vertices) {
-					matMesh.getPoints().addAll(v.posY, v.posZ, v.posX);
-					matMesh.getNormals().addAll(v.normY, v.normZ, v.normX);
-					matMesh.getTexCoords().addAll(v.tex0U, 1-v.tex0V);
+			if (part.mesh.materials != null) {
+				for (var m : part.mesh.materials.materials) 
+					if (m.isOpaque()) {
+					drawMaterial(m); //opaque pass
 				}
-				
-				for (var tr : m.triangles) {
-					matMesh.getFaces().addAll(
-							// points normals   texcoords
-							tr.vert0, tr.vert0, tr.vert0, //v1
-							tr.vert1, tr.vert1, tr.vert1, //v2
-							tr.vert2, tr.vert2, tr.vert2);//v3
-				}
-				
-				var mv = new MeshView(matMesh);
-	
-				try {
-					mv.setMaterial(GeometryEditorGUI.visualModelMaterials.get(GeometryEditorGUI.mainGeometry.materials.indexOf(m)));
-				} catch (Exception e) {
-					System.out.println("Cannot display material on part "+this.toString()+": "+e.getMessage());
-				}
-				mv.setOnMouseClicked(e -> {
-					selectPart(e);
-					for (var itm : GeometryEditorGUI.partInfo.materials.getChildren()) {
-						if (itm.getValue().equals(m.generateName())) {
-							GeometryEditorGUI.partInfo.getSelectionModel().select(itm);
-							itm.setExpanded(true);
-						}
-					}
-				});
-								
-				mesh.getChildren().add(mv);
-				if (mesh2 != null) {
-					var mv2 = new MeshView(matMesh);
-					try {
-						mv2.setMaterial(GeometryEditorGUI.visualModelMaterials.get(GeometryEditorGUI.mainGeometry.materials.indexOf(m)));
-					} catch (@SuppressWarnings("unused") Exception e) {}
-					mv2.setOnMouseClicked(mv.getOnMouseClicked());
-					mesh2.getChildren().add(mv2);
+				for (var m : part.mesh.materials.materials) 
+					if (m.hasTransparency()) {
+					drawMaterial(m); //alpha pass
 				}
 			}
+			
+			
 			if (!GeometryEditorGUI.modelGroup.getChildren().contains(mesh)) {
 				GeometryEditorGUI.modelGroup.getChildren().add(mesh);
 				if (mesh2 != null) GeometryEditorGUI.modelGroup.getChildren().add(mesh2);
@@ -248,6 +228,141 @@ public class PartController{
 				GeometryEditorGUI.modelGroup.getChildren().remove(mpMesh);
 				mpMesh = null;
 			}
+		}
+	}
+
+	private void setPosition(MPoint mp) {
+		mesh.setTranslateX(mp.positionY);
+		mesh.setTranslateY(mp.positionZ);
+		mesh.setTranslateZ(mp.positionX);
+	}
+
+	public boolean isOpaque() {
+		return !hasTransparency() || (part.mpoints != null);
+	}
+	public boolean hasTransparency() {
+		if (part.mesh != null && part.mesh.materials != null) {
+			for (var m : part.mesh.materials.materials) 
+				if (m.hasTransparency()) return true;
+		}
+		return false;
+	}
+	
+	private void drawMaterial(Material m) {
+		TriangleMesh matMesh = new TriangleMesh();
+		
+		if (m.verticesBlock.vertexFormat.hasNormals()) matMesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
+		
+		if (m.verticesBlock != null) {
+			for (var v : m.verticesBlock.vertices) {
+				matMesh.getPoints().addAll(v.pos[Y], v.pos[Z], v.pos[X]);
+			}
+			if (m.verticesBlock.vertexFormat.hasNormals()) for (var v : m.verticesBlock.vertices) {
+				matMesh.getNormals().addAll(v.norm[Y], v.norm[Z], v.norm[X]);
+			}
+			if (m.verticesBlock.vertexFormat.getNumTexChannels() > 0) for (var v : m.verticesBlock.vertices) {
+				matMesh.getTexCoords().addAll(v.tex[0][U], 1-v.tex[0][V]);
+			}
+		}
+		
+		if (m.verticesBlock.vertexFormat.hasNormals()) for (var tr : m.triangles) {
+			matMesh.getFaces().addAll(
+					// points normals   texcoords
+					tr.vert0, tr.vert0, tr.vert0, //v1
+					tr.vert1, tr.vert1, tr.vert1, //v2
+					tr.vert2, tr.vert2, tr.vert2);//v3
+		} else for (var tr : m.triangles) {
+			matMesh.getFaces().addAll(
+					// points texcoords
+					tr.vert0, tr.vert0, //v1
+					tr.vert1, tr.vert1, //v2
+					tr.vert2, tr.vert2);//v3
+		}
+		
+		var mv = new MeshView(matMesh);
+
+		try {
+			mv.setMaterial(GeometryEditorGUI.visualModelMaterials.get(GeometryEditorGUI.mainGeometry.materials.indexOf(m)));
+		} catch (Exception e) {
+			System.out.println("Cannot display material on part "+this.toString()+": "+e.getMessage());
+		}
+		mv.setOnMouseClicked(e -> {
+			selectPart(e);
+			for (var itm : GeometryEditorGUI.partInfo.materials.getChildren()) {
+				if (itm.getValue().equals(m.generateName())) {
+					GeometryEditorGUI.partInfo.getSelectionModel().select(itm);
+					itm.setExpanded(true);
+				}
+			}
+		});
+						
+		mv.setDepthTest(DepthTest.ENABLE);
+		if (m.hasTransparency()) {
+			mv.setViewOrder(-1);
+			mv.setCullFace(CullFace.NONE);
+		}
+
+		mesh.getChildren().add(mv);
+		
+		
+				
+		
+		
+		if (m.verticesBlock.vertexFormat.hasColor()) {
+			if (vertexColorMeshes == null) vertexColorMeshes = new ArrayList<>();
+			var vcolMesh = new TriangleMesh();
+			
+			if (m.verticesBlock.vertexFormat.hasNormals()) vcolMesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
+			
+			if (m.verticesBlock != null) {
+				for (var v : m.verticesBlock.vertices) {
+					vcolMesh.getPoints().addAll(v.pos[Y], v.pos[Z], v.pos[X]);
+				}
+				for (var v : m.verticesBlock.vertices) {
+					vcolMesh.getTexCoords().addAll(v.color[R]*255.0f/256.0f/3.0f
+							+v.color[G]*255.0f/256.0f/3.0f
+							+v.color[B]*255.0f/256.0f/3.0f, 0);
+				}
+				if (m.verticesBlock.vertexFormat.hasNormals()) for (var v : m.verticesBlock.vertices) {
+					vcolMesh.getNormals().addAll(v.norm[Y], v.norm[Z], v.norm[X]);
+				}
+			}
+			
+			if (m.verticesBlock.vertexFormat.hasNormals()) for (var tr : m.triangles) {
+				vcolMesh.getFaces().addAll(
+						// points normals   texcoords
+						tr.vert0, tr.vert0, tr.vert0, //v1
+						tr.vert1, tr.vert1, tr.vert1, //v2
+						tr.vert2, tr.vert2, tr.vert2);//v3
+			} else for (var tr : m.triangles) {
+				vcolMesh.getFaces().addAll(
+						// points texcoords
+						tr.vert0, tr.vert0, //v1
+						tr.vert1, tr.vert1, //v2
+						tr.vert2, tr.vert2);//v3
+			}
+			var mvCol = new MeshView(vcolMesh);
+			mvCol.setDepthTest(DepthTest.ENABLE);
+			mvCol.setMaterial(vertexColorMaterial);
+//			mvCol.setBlendMode(BlendMode.MULTIPLY);
+			mvCol.setOnMouseClicked(mv.getOnMouseClicked());
+			if (GeometryEditorGUI.doVertexColors.isSelected()) mesh.getChildren().add(mvCol);
+			vertexColorMeshes.add(mvCol);
+		}
+		
+		if (mesh2 != null) {
+			var mv2 = new MeshView(matMesh);
+			try {
+				mv2.setMaterial(GeometryEditorGUI.visualModelMaterials.get(GeometryEditorGUI.mainGeometry.materials.indexOf(m)));
+			} catch (@SuppressWarnings("unused") Exception e) {}
+			mv2.setOnMouseClicked(mv.getOnMouseClicked());
+			
+			mv2.setDepthTest(DepthTest.ENABLE);
+			if (m.hasTransparency()) {
+				mv2.setViewOrder(-1);
+				mv2.setCullFace(CullFace.NONE);
+			}
+			mesh2.getChildren().add(mv2);
 		}
 	}
 
@@ -328,13 +443,7 @@ public class PartController{
 				if (part.mpoints != null) {
 					for (var p : GeometryEditorGUI.parts) if (p.display.get() && p.part != null && p.part.part.contains("BRAKE") && p.part.part.contains("FRONT")) {
 						for (var mp : part.mpoints.mpoints) if (mp.nameHash == Hash.findBIN("BRAKE_FRONT")) {
-							p.mesh.setTranslateZ(GeometryEditorGUI.wheelPosFrontX.getValue()+mp.positionX);
-							p.mesh.setTranslateX(-GeometryEditorGUI.wheelPosFrontY.getValue()+mp.positionY);
-							p.mesh.setTranslateY(GeometryEditorGUI.wheelPosHeight.getValue()+mp.positionZ);
-
-							p.mesh2.setTranslateZ(GeometryEditorGUI.wheelPosFrontX.getValue()+mp.positionX);
-							p.mesh2.setTranslateX(GeometryEditorGUI.wheelPosFrontY.getValue()-p.part.header.boundsYmax-mp.positionY);
-							p.mesh2.setTranslateY(GeometryEditorGUI.wheelPosHeight.getValue()+mp.positionZ);
+							setBrakePos(this, p, mp);
 						}
 					}
 				}
@@ -357,13 +466,7 @@ public class PartController{
 				if (part.mpoints != null) {
 					for (var p : GeometryEditorGUI.parts) if (p.display.get() && p.part != null && p.part.part.contains("BRAKE") && p.part.part.contains("REAR")) {
 						for (var mp : part.mpoints.mpoints) if (mp.nameHash == Hash.findBIN("BRAKE_FRONT")) {
-							p.mesh.setTranslateZ(GeometryEditorGUI.wheelPosRearX.getValue()+mp.positionX);
-							p.mesh.setTranslateX(-GeometryEditorGUI.wheelPosRearY.getValue()+mp.positionY);
-							p.mesh.setTranslateY(GeometryEditorGUI.wheelPosHeight.getValue()+mp.positionZ);
-
-							p.mesh2.setTranslateZ(GeometryEditorGUI.wheelPosRearX.getValue()+mp.positionX);
-							p.mesh2.setTranslateX(GeometryEditorGUI.wheelPosRearY.getValue()-p.part.header.boundsYmax-mp.positionY);
-							p.mesh2.setTranslateY(GeometryEditorGUI.wheelPosHeight.getValue()+mp.positionZ);
+							setBrakePos(this, p, mp);
 						}
 					}
 				}
@@ -375,10 +478,37 @@ public class PartController{
 //				mesh2.setOnMouseClicked(mesh.getOnMouseClicked());
 			}
 			mesh2.setScaleX(-1);
+			if (part.part.contains("FRONT")) {
+				partsSearch: for (var p : GeometryEditorGUI.parts) if (p.display.get() && p.part != null && p.part.mpoints != null && p.part.part.contains("WHEEL_TIRE_FRONT")) {
+					for (var mp : p.part.mpoints.mpoints) if (mp.nameHash == Hash.findBIN("BRAKE_FRONT")) {
+						setBrakePos(p, this, mp);
+						break partsSearch;
+					}
+				}
+			} else {
+				partsSearch: for (var p : GeometryEditorGUI.parts) if (p.display.get() && p.part != null && p.part.mpoints != null && p.part.part.contains("WHEEL_TIRE_REAR")) {
+					for (var mp : p.part.mpoints.mpoints) if (mp.nameHash == Hash.findBIN("BRAKE_FRONT")) {
+						setBrakePos(p, this, mp);
+						break partsSearch;
+					}
+				}
+			}
 		}
 	}
 
-	public void updateAutosculpt(AutosculptControls autosculpt) {
+	private static void setBrakePos(PartController wheel, PartController brake, MPoint mp) {
+		brake.mesh.setTranslateZ(wheel.mesh.getTranslateZ() +mp.positionX);
+		brake.mesh.setTranslateX(wheel.mesh.getTranslateX()+mp.positionY);
+		brake.mesh.setTranslateY(wheel.mesh.getTranslateY()+mp.positionZ);
+
+		brake.mesh2.setTranslateZ(wheel.mesh2.getTranslateZ()+mp.positionX);
+		brake.mesh2.setTranslateX(-wheel.mesh.getTranslateX()-brake.part.header.boundsYmax-mp.positionY);
+		brake.mesh2.setTranslateY(wheel.mesh2.getTranslateY()+mp.positionZ);
+	}
+
+	public void updateAutosculpt(//AutosculptControls autosculpt
+			ArrayList<Double> sliders
+			) {
 		
 		if (part.asZones.zones == null) return;
 		
@@ -435,7 +565,7 @@ public class PartController{
 							(float) (((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().get(pointIndex) +
 							(	((TriangleMesh)((MeshView)zones.get(zoneIndex).mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().get(pointIndex) -				
 								((TriangleMesh)((MeshView)zones.get(0).mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().get(pointIndex)
-									) * autosculpt.autosculptSliders.get(zoneIndex).slider.getValue()));
+									) * sliders.get(zoneIndex))); //autosculpt.autosculptSliders.get(zoneIndex).slider.getValue()
 				}
 				
 				for (int normalsIndex = 0; normalsIndex < ((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().size(); normalsIndex++) {
@@ -443,7 +573,7 @@ public class PartController{
 							(float) (((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().get(normalsIndex) +
 							(	((TriangleMesh)((MeshView)zones.get(zoneIndex).mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().get(normalsIndex) -				
 								((TriangleMesh)((MeshView)zones.get(0).mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().get(normalsIndex)
-									) * autosculpt.autosculptSliders.get(zoneIndex).slider.getValue()));
+									) * sliders.get(zoneIndex))); //autosculpt.autosculptSliders.get(zoneIndex).slider.getValue()
 				}
 				
 				for (int texcoordsIndex = 0; texcoordsIndex < ((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().size(); texcoordsIndex++) {
@@ -451,7 +581,7 @@ public class PartController{
 							(float) (((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().get(texcoordsIndex) +
 							(	((TriangleMesh)((MeshView)zones.get(zoneIndex).mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().get(texcoordsIndex) -				
 								((TriangleMesh)((MeshView)zones.get(0).mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().get(texcoordsIndex)
-									) * autosculpt.autosculptSliders.get(zoneIndex).slider.getValue()));
+									) * sliders.get(zoneIndex))); //autosculpt.autosculptSliders.get(zoneIndex).slider.getValue()
 				}
 			}
 			
@@ -466,16 +596,25 @@ public class PartController{
 			if (z != null) z.display.set(false);
 		}
 		
-		//TODO proper use of part linking
 		if (part.asLinking != null) {
+			var partZones = new HashMap<PartController, ArrayList<Double>>();
+			
 			for (var l : part.asLinking.links) {
 				for (var pc : GeometryEditorGUI.parts) {
 					if (pc.part != null && pc.part.header.binKey == l.partKey) {
-						pc.updateAutosculpt(autosculpt);
+						if (partZones.get(pc) == null) {
+							var linkedZones = new ArrayList<Double>();
+							for (int i=0; i< pc.part.asZones.zones.size(); i++) linkedZones.add(0.0);
+							partZones.put(pc, linkedZones);
+						}
+						
+						partZones.get(pc).set(l.toZone3, sliders.get(l.fromZone1));
 						break;
 					}
 				}
-				
+			}
+			for (var pc : partZones.keySet()) {
+				pc.updateAutosculpt(partZones.get(pc));
 			}
 		}
 	}

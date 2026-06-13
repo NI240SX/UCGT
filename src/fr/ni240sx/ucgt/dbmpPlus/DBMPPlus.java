@@ -18,7 +18,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
+import fr.ni240sx.ucgt.shared.Hash;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.geometry.Orientation;

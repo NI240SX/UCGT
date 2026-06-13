@@ -6,9 +6,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.*;
 import fr.ni240sx.ucgt.collisionsEditor.CollisionMesh.CollisionConvexVertice;
+import fr.ni240sx.ucgt.shared.Hash;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Point3D;

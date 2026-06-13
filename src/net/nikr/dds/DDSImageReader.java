@@ -125,11 +125,36 @@ public class DDSImageReader extends ImageReader {
 	
 	@Override
 	public BufferedImage read(int imageIndex, ImageReadParam param) throws IOException {
+		return read_o(null, imageIndex, param);
+	}
+
+	public BufferedImage read_o(DDSImageReader opacityReader, int imageIndex) throws IOException {
+		return read_o(opacityReader,imageIndex,null);
+	}
+	
+	public BufferedImage read_o(DDSImageReader opacityDDS, int imageIndex, ImageReadParam param) throws IOException {
 		readHeader();
 		checkIndex(imageIndex);
 		DDSLineReader ddsLineReader = new DDSLineReader();
 		stream.reset();
 		stream.setByteOrder(ByteOrder.LITTLE_ENDIAN);
+
+		DDSLineReader opacityReader = null;
+		if (opacityDDS != null) {
+			opacityDDS.readHeader();
+			opacityDDS.checkIndex(imageIndex);
+			opacityReader = new DDSLineReader();
+			opacityDDS.stream.reset();
+			opacityDDS.stream.setByteOrder(ByteOrder.LITTLE_ENDIAN);
+			if (	ddsHeader.getMipMapCount() != opacityDDS.ddsHeader.getMipMapCount() ||
+					ddsHeader.getWidth(imageIndex) != opacityDDS.ddsHeader.getWidth(imageIndex) || 
+					ddsHeader.getHeight(imageIndex) != opacityDDS.ddsHeader.getHeight(imageIndex)) {
+				System.out.println("Mismatched diffuse and opacity texture sizes, unable to display opacity.");
+				opacityDDS = null;
+				opacityReader = null;
+			}
+		}
+
 		
 		//Skips bytes to the selected imageIndex (MipMap)
 		long skipsBytes = 0;
@@ -138,6 +163,7 @@ public class DDSImageReader extends ImageReader {
 		}
 		if (skipsBytes > 0) {
 			stream.skipBytes(skipsBytes);
+			if (opacityDDS != null) opacityDDS.stream.skipBytes(skipsBytes);
 		}
 		int width = (int)ddsHeader.getWidth(imageIndex);
 		int height = (int)ddsHeader.getHeight(imageIndex);
@@ -259,6 +285,10 @@ public class DDSImageReader extends ImageReader {
 
 		//Read all bytes for the selected imageIndex (More Memory, Less Time)
 		byte[] bytes = ddsLineReader.readAll(stream, ddsHeader.getFormat(), (int)ddsHeader.getPixelFormat().getRgbBitCount(), width, height);
+		byte[] opacityBytes = null;
+		
+		assert(opacityReader != null); //not true but in sync with opacityDDS being not null
+		if (opacityDDS != null) opacityBytes = opacityReader.readAll(opacityDDS.stream, opacityDDS.ddsHeader.getFormat(), (int)opacityDDS.ddsHeader.getPixelFormat().getRgbBitCount(), width, height);
 		
 		int srcY = 0;
 		try {
@@ -267,8 +297,9 @@ public class DDSImageReader extends ImageReader {
 			for (srcY = 0; srcY < height; srcY++) {
 				// Decode the next row from the DDS file.
 				// TODO Can be moved down past the continue/breaks...
-				ddsLineReader.decodeLine(bytes, ddsHeader, banks, width, srcY, ignoreAlpha);
-
+				if (opacityDDS == null) ddsLineReader.decodeLine(bytes, ddsHeader, banks, width, srcY, ignoreAlpha);
+				else ddsLineReader.decodeLine_o(bytes, ddsHeader, opacityReader, opacityBytes, opacityDDS.ddsHeader, banks, width, srcY);
+				
 				// Reject rows that lie outside the source region, or which are
 				// not part of the subsampling.
 

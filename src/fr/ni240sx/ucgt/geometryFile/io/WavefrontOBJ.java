@@ -8,7 +8,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.GeometryEditorCLI;
 import fr.ni240sx.ucgt.geometryFile.Part;
@@ -18,6 +17,9 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangle;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
+import fr.ni240sx.ucgt.shared.Hash;
+
+import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
 public class WavefrontOBJ {
 
@@ -123,23 +125,23 @@ public class WavefrontOBJ {
 	        			var OBJtex = tex.get(Integer.parseInt(vertdata.split("/")[1])-1);
 	        			var OBJnorm = normals.get(Integer.parseInt(vertdata.split("/")[2])-1);
 	        			
-	        			v.posX = OBJvert.x;
-	        			v.posY = OBJvert.y;
-	        			v.posZ = OBJvert.z;
+	        			v.pos[X] = OBJvert.x;
+	        			v.pos[Y] = OBJvert.y;
+	        			v.pos[Z] = OBJvert.z;
 	        			
 	        			if (OBJvert.getClass() == VertexData6.class) {
-	        				v.colorR = (byte)(int)(((VertexData6)(OBJvert)).a*255);
-	        				v.colorG = (byte)(int)(((VertexData6)(OBJvert)).b*255);
-	        				v.colorB = (byte)(int)(((VertexData6)(OBJvert)).c*255);
+	        				v.color[R] = (float) (((VertexData6)(OBJvert)).a);
+	        				v.color[G] = (float) (((VertexData6)(OBJvert)).b);
+	        				v.color[B] = (float) (((VertexData6)(OBJvert)).c);
 	        			}
 	
-	        			v.tex0U = OBJtex.u;
-	        			if (geom.IMPORT_flipV) v.tex0V = 1-OBJtex.v;
-	        			else v.tex0V = OBJtex.v;
+	        			v.tex[0][U] = OBJtex.u;
+	        			if (geom.IMPORT_flipV) v.tex[0][V] = 1-OBJtex.v;
+	        			else v.tex[0][V] = OBJtex.v;
 	        			
-	        			v.normX = OBJnorm.x;
-	        			v.normY = OBJnorm.y;
-	        			v.normZ = OBJnorm.z;
+	        			v.norm[X] = OBJnorm.x;
+	        			v.norm[Y] = OBJnorm.y;
+	        			v.norm[Z] = OBJnorm.z;
 	        			
 	        			if (!curMat.verticesBlock.vertices.contains(v)) 
 	        				curMat.verticesBlock.vertices.add(v);
@@ -225,12 +227,12 @@ public class WavefrontOBJ {
         	for (var m : p.mesh.materials.materials) if (m.verticesBlock != null) {
         		for (var v : m.verticesBlock.vertices) {
         			// vertex + vertex color
-        			bw.write("v "+v.posX+" "+v.posY+" "+v.posZ+" "
-        			+((double)Byte.toUnsignedInt(v.colorR)/255)+" "+((double)Byte.toUnsignedInt(v.colorG)/255)+" "+((double)Byte.toUnsignedInt(v.colorB)/255)+"\n");
+        			bw.write("v "+v.pos[X]+" "+v.pos[Y]+" "+v.pos[Z]+" "
+        			+v.color[R]+" "+v.color[G]+" "+v.color[B]+"\n");
         			//vertex texcoord
-        			bw.write("vt "+v.tex0U+" "+v.tex0V+"\n");
+        			bw.write("vt "+v.tex[0][U]+" "+v.tex[0][V]+"\n");
         			//vertex normal
-        			bw.write("vn "+v.normX+" "+v.normY+" "+v.normZ+"\n");
+        			bw.write("vn "+v.norm[X]+" "+v.norm[Y]+" "+v.norm[Z]+"\n");
         		}
         		//material
         		bw.write("usemtl "+m.uniqueName+"\n");

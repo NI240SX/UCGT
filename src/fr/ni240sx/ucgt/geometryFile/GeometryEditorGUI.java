@@ -25,10 +25,7 @@ import java.util.concurrent.TimeUnit;
 import javax.imageio.stream.FileImageInputStream;
 import javax.imageio.stream.MemoryCacheImageInputStream;
 
-import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.collisionsEditor.CollisionsEditor;
-import fr.ni240sx.ucgt.collisionsEditor.OrbitCameraViewport;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.compression.CompressionType;
 import fr.ni240sx.ucgt.dbmpPlus.DBMPPlus;
@@ -49,6 +46,10 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
 import fr.ni240sx.ucgt.geometryFile.textures.NFSTexture;
 import fr.ni240sx.ucgt.geometryFile.textures.TPK;
 import fr.ni240sx.ucgt.geometryFile.textures.TPKHeader;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Hash;
+import fr.ni240sx.ucgt.shared.OrbitCameraViewport;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.embed.swing.SwingFXUtils;
@@ -57,13 +58,16 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
+import javafx.geometry.Side;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldListCell;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -87,7 +91,7 @@ public class GeometryEditorGUI extends Application {
 //	public static boolean widebodyAutoCorrect = true;
 	
 	public static final String programName = "UCGT Geometry Editor";
-	public static final String programGUIVersion = "1.0.0";
+	public static final String programGUIVersion = "1.0.3";
 	public static final String settingsFolder = "settings";
 	public static final String settingsFile = "settings/geomGUI.dat";
 	
@@ -97,6 +101,10 @@ public class GeometryEditorGUI extends Application {
 	public static Geometry mainGeometry = null;
 	public static TPK mainTPK = null;
 	public static ArrayList<PhongMaterial> visualModelMaterials = null;
+	public static ArrayList<Image> diffuseMaps = null;
+	public static ArrayList<Image> specularMaps = null;
+	public static ArrayList<Image> normalMaps = null;
+	public static ArrayList<Image> selfIlluminationMaps = null;
 	public static Group modelGroup = new Group();
 	
     public static StageSizer stageSizer = new StageSizer();
@@ -125,13 +133,23 @@ public class GeometryEditorGUI extends Application {
     public static CheckMenuItem trackpadMode = new CheckMenuItem("Trackpad mode");
     public static CheckMenuItem centerOnPart = new CheckMenuItem("Center camera on selected part");
     public static CheckMenuItem importExportTextures = new CheckMenuItem("Import and export textures along with geometry");
-    
+
+    public static CheckMenuItem doDiffuse = new CheckMenuItem("Show Diffuse");
+    public static CheckMenuItem doSpecular = new CheckMenuItem("Show Specular");
+    public static CheckMenuItem doNormal = new CheckMenuItem("Show Normal");
+    public static CheckMenuItem doSelfIllum = new CheckMenuItem("Show Self Illumination");
+    public static CheckMenuItem doVertexColors = new CheckMenuItem("Show Vertex Colors");
+
     public static ArrayList<String> textureLookupFolders = new ArrayList<>();
+    public static ArrayList<String> recentFiles = new ArrayList<>();
+    public static final int maxRecentFiles = 24;
     public static ArrayList<Stage> openWindows = new ArrayList<>();
     
     public static CustomProgressBar status = new CustomProgressBar();
     
     public static CheckMenuItem showImportSettingsOnReload = new CheckMenuItem("Show import settings on reload");
+    
+    public static ArrayList<Pair<String,String>> currentConfig;
 
     public static boolean unsavedChanges = false;
     public static boolean firstBoot = true;
@@ -173,14 +191,15 @@ public class GeometryEditorGUI extends Application {
 				+ Boolean.toString(strictKitDisplay.isSelected()) + "\n"
 				+ Boolean.toString(simplifiedPartsList.isSelected()) + "\n"
 				+ Boolean.toString(loadTextures.isSelected()) + "\n");
-		for (var f : textureLookupFolders) {
-			bw.write(f+">");
-		}
+		for (var f : textureLookupFolders) bw.write(f+">");		
 		bw.write("\n"
 				+ Boolean.toString(trackpadMode.isSelected()) + "\n"
 				+ Boolean.toString(centerOnPart.isSelected()) + "\n"
 				+ Boolean.toString(importExportTextures.isSelected()) + "\n"
 				+ Boolean.toString(firstBoot) + "\n");
+		for (var f : (recentFiles.size() > maxRecentFiles ? recentFiles.subList(0, maxRecentFiles) : recentFiles)) bw.write(f+">");
+		bw.write("\n"
+				+ Boolean.toString(showImportSettingsOnReload.isSelected()) + "\n");
 		
 		bw.close();
 	}
@@ -207,6 +226,8 @@ public class GeometryEditorGUI extends Application {
 		centerOnPart.setSelected(Boolean.valueOf(br.readLine()));
 		importExportTextures.setSelected(Boolean.valueOf(br.readLine()));
 		firstBoot = Boolean.valueOf(br.readLine());
+		for (var s : br.readLine().split(">")) if (s != null && !s.isBlank()) recentFiles.add(s);
+		showImportSettingsOnReload.setSelected(Boolean.valueOf(br.readLine()));
 		//String s;
 		//if(!(s=br.readLine()).isBlank())
 		br.close();
@@ -228,12 +249,13 @@ public class GeometryEditorGUI extends Application {
         MenuItem fileNew = new MenuItem("New");
         MenuItem fileLoad = new MenuItem("Load");
         MenuItem fileReload = new MenuItem("Reload");
+        Menu fileLoadRecent = new Menu("Load recent...");
         MenuItem fileSave = new MenuItem("Save");
         MenuItem fileExit = new MenuItem("Exit");
         MenuItem fileConvert = new MenuItem("Convert CTK config...");
         MenuItem fileChangeComp = new MenuItem("Change compression of an existing Geometry...");
 
-        menuFile.getItems().addAll(fileNew, fileLoad, fileReload, fileSave, new SeparatorMenuItem(), fileConvert, fileChangeComp, new SeparatorMenuItem(), fileExit);
+        menuFile.getItems().addAll(fileNew, fileLoad, fileReload, fileLoadRecent, fileSave, new SeparatorMenuItem(), fileConvert, fileChangeComp, new SeparatorMenuItem(), fileExit);
         menuFile.setAccelerator(KeyCombination.keyCombination("Alt+F"));
 
         fileNew.setOnAction(e -> {
@@ -251,9 +273,35 @@ public class GeometryEditorGUI extends Application {
         
         fileLoad.setOnAction(handleFileLoad(primaryStage));
         fileLoad.setAccelerator(KeyCombination.keyCombination("Ctrl+O"));
-        
         fileReload.setOnAction(handleFileReload(primaryStage));
         fileReload.setAccelerator(KeyCombination.keyCombination("Ctrl+R"));
+        menuFile.setOnShowing(e -> {
+        	fileLoadRecent.getItems().clear();
+        	for (var f : recentFiles) {
+        		var i = new MenuItem(f);
+        		i.setOnAction(evt ->{
+        	        ButtonType sure = ButtonType.YES;
+        	        if (!disableWarnings.isSelected() && unsavedChanges) sure = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to load a new model ? Any unsaved changes will be lost.", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
+        			if (ButtonType.YES.equals(sure)) {
+
+        				File selected = new File(f);
+        				if (selected.isFile()) {
+        					try {
+        						loadByFileType(primaryStage, selected, true);
+        						
+        					} catch (Exception ex) {
+        						new Alert(Alert.AlertType.ERROR, "Error loading the model:\n"+ex.getMessage(), ButtonType.OK).show();
+        						ex.printStackTrace();
+        			        	System.gc();
+        					}
+        				}
+        	        	System.gc();
+        			}
+
+        		});
+        		fileLoadRecent.getItems().add(i);
+        	}
+        });
         fileSave.setOnAction(handleFileSave());
         fileSave.setAccelerator(KeyCombination.keyCombination("Ctrl+S"));
         fileExit.setOnAction(handleFileExit(primaryStage));
@@ -265,13 +313,37 @@ public class GeometryEditorGUI extends Application {
         
         Menu menuDisplay = new Menu("Display");
         MenuItem textureFolders = new MenuItem("Texture folders...");
-        menuDisplay.getItems().addAll(allowConflictingParts, strictKitDisplay, simplifiedPartsList, centerOnPart, displayMarkers, loadTextures, textureFolders);
+        menuDisplay.getItems().addAll(allowConflictingParts, strictKitDisplay, simplifiedPartsList, centerOnPart);
         menuDisplay.setAccelerator(KeyCombination.keyCombination("Alt+D"));
         allowConflictingParts.setAccelerator(KeyCombination.keyCombination("Alt+C"));
         strictKitDisplay.setAccelerator(KeyCombination.keyCombination("Alt+K"));
         simplifiedPartsList.setAccelerator(KeyCombination.keyCombination("Alt+L"));
         displayMarkers.setAccelerator(KeyCombination.keyCombination("Alt+M"));
-        
+
+        Menu menuRendering = new Menu("Rendering");
+        menuRendering.getItems().addAll(displayMarkers, loadTextures, textureFolders, new SeparatorMenuItem(), doDiffuse, doSpecular, doNormal, doSelfIllum, doVertexColors);
+        menuRendering.setAccelerator(KeyCombination.keyCombination("Alt+R"));
+        doDiffuse.setSelected(true);
+        doSpecular.setSelected(true);
+        doNormal.setSelected(true);
+        doSelfIllum.setSelected(true);
+        doDiffuse.setAccelerator(KeyCombination.keyCombination("Alt+D"));
+        doSpecular.setAccelerator(KeyCombination.keyCombination("Alt+S"));
+        doNormal.setAccelerator(KeyCombination.keyCombination("Alt+N"));
+        doSelfIllum.setAccelerator(KeyCombination.keyCombination("Alt+I"));
+        doVertexColors.setAccelerator(KeyCombination.keyCombination("Alt+V"));
+        doDiffuse.setOnAction(e -> updateMaterialsRendering());
+        doSpecular.setOnAction(e -> updateMaterialsRendering());
+        doNormal.setOnAction(e -> updateMaterialsRendering());
+        doSelfIllum.setOnAction(e -> updateMaterialsRendering());
+        doVertexColors.setOnAction(e -> {
+        	for (var p : parts) if (p.vertexColorMeshes != null) {
+        		if (doVertexColors.isSelected()) p.mesh.getChildren().addAll(p.vertexColorMeshes);
+        		else p.mesh.getChildren().removeAll(p.vertexColorMeshes);
+        	}
+        });
+        doVertexColors.setSelected(true);
+
         allowConflictingParts.setOnAction(e ->{
         	if (!allowConflictingParts.isSelected()) updateRender();
         });
@@ -297,7 +369,7 @@ public class GeometryEditorGUI extends Application {
         toolPlatform.setOnAction(handleToolPlatform(primaryStage));
         toolSaving.setOnAction(e -> new Thread(() -> {
 			try {
-	        	showGeometrySettings(true);
+	        	showGeometrySettings(new File(lastDirectoryLoaded+File.separator+lastFileLoaded.replace(lastFileLoaded.split("\\.")[lastFileLoaded.split("\\.").length-1], "ini")));
 				postLoadUpdate(primaryStage);
 			} catch (InterruptedException e1) {
 				e1.printStackTrace();
@@ -323,7 +395,7 @@ public class GeometryEditorGUI extends Application {
 					+ "- DBModelParts Editor v"+DBMPPlus.programVersion +"\n- Collisions Editor v"+CollisionsEditor.programVersion, ButtonType.OK).showAndWait();
         });
                 
-        menuBar.getMenus().addAll(menuFile, menuDisplay, menuTools, menuSettings);
+        menuBar.getMenus().addAll(menuFile, menuDisplay, menuRendering, menuTools, menuSettings);
         		
         
         //
@@ -514,6 +586,7 @@ public class GeometryEditorGUI extends Application {
     		default:
         	}        	
         });
+        
 		viewport.widthProperty().bind(sp.widthProperty());
 		viewport.heightProperty().bind(sp.heightProperty());
 		
@@ -534,6 +607,21 @@ public class GeometryEditorGUI extends Application {
 			}
         });
 
+        scene.setOnDragOver(e -> {
+        	if (e.getDragboard().hasFiles()) e.acceptTransferModes(TransferMode.ANY);
+        	e.consume();
+        });
+    	scene.setOnDragDropped(e -> {
+    		try {
+	    		if (e.getDragboard().hasFiles()) {
+	    			loadByFileType(primaryStage, e.getDragboard().getFiles().get(0), true);
+	    		}
+	    		e.consume();
+    		} catch (Exception ex) {
+    			ex.printStackTrace();
+    		}
+    	});
+    	
         if (useDarkMode.isSelected()) scene.getRoot().setStyle("-fx-base:black");
         useDarkMode.selectedProperty().addListener((obs, wasSelected, isSelected) -> {
             if (isSelected) scene.getRoot().setStyle("-fx-base:black");
@@ -571,6 +659,15 @@ public class GeometryEditorGUI extends Application {
 		}
 //		TestingFunctions.collisionDisplayTest(viewportGroup);
     }
+
+	private static void updateMaterialsRendering() {
+		for (int i=0; i< visualModelMaterials.size(); i++) if (visualModelMaterials.get(i) != null) {
+			visualModelMaterials.get(i).setDiffuseMap(doDiffuse.isSelected() ? diffuseMaps.get(i) : null);
+			visualModelMaterials.get(i).setSpecularMap(doSpecular.isSelected() ? specularMaps.get(i) : null);
+			visualModelMaterials.get(i).setBumpMap(doNormal.isSelected() ? normalMaps.get(i) : null);
+			visualModelMaterials.get(i).setSelfIlluminationMap(doSelfIllum.isSelected() ? selfIlluminationMaps.get(i) : null);
+		}
+	}
 
     public void showInfoWindow() {
     	Stage st = new Stage();
@@ -657,6 +754,7 @@ public class GeometryEditorGUI extends Application {
 				mainTPK.version = switch(plat) {
 				case PC:
 				case X360:
+				case PS3:
 					yield 9;
 				default:
 					yield 8;
@@ -859,7 +957,7 @@ public class GeometryEditorGUI extends Application {
 							try {
 								if (fc.getSelectedExtensionFilter() == TYPE_GEOM) {
 									mainGeometry.save(f, status);
-									if (importExportTextures.isSelected()) { // && mainGeometry.isImported
+									if (mainTPK != null && importExportTextures.isSelected()) { // && mainGeometry.isImported
 										var fTex = new File(f.getParent()+File.separator+"TEXTURES.BIN");
 										if (fTex.isFile()) {
 											fTex.renameTo(new File(fTex.getAbsolutePath() + ".bak_" + new SimpleDateFormat("yyMMdd-HHmmss").format(new Date(fTex.lastModified()))));
@@ -1203,6 +1301,8 @@ public class GeometryEditorGUI extends Application {
 					if (loadTextures.isSelected()) loadTPK(new File(selected.getAbsolutePath().replace(selected.getName(), "TEXTURES.BIN")));
 					lastFileLoaded = selected.getName();
 					lastDirectoryLoaded = selected.getAbsolutePath().replace(selected.getName(), "");
+					if (recentFiles.contains(selected.getAbsolutePath())) recentFiles.remove(selected.getAbsolutePath());
+					recentFiles.add(0, selected.getAbsolutePath());
 					postLoadUpdate(primaryStage);
 //					if (!disableWarnings.isSelected()) new Alert(Alert.AlertType.INFORMATION, "Model loaded successfully.", ButtonType.OK).show();
 
@@ -1322,6 +1422,9 @@ public class GeometryEditorGUI extends Application {
 								loadGeometry(selected);
 								lastFileLoaded = selected.getName();
 								lastDirectoryLoaded = selected.getAbsolutePath().replace(selected.getName(), "");
+								if (recentFiles.contains(selected.getAbsolutePath())) recentFiles.remove(selected.getAbsolutePath());
+								recentFiles.add(0, selected.getAbsolutePath());
+								
 								postLoadUpdate(primaryStage);
 //								if (!disableWarnings.isSelected()) new Alert(Alert.AlertType.INFORMATION, "Model loaded successfully.", ButtonType.OK).show();
 								return;
@@ -1424,7 +1527,9 @@ public class GeometryEditorGUI extends Application {
 				
 				lastFileLoaded = selected.getName();
 				lastDirectoryLoaded = selected.getAbsolutePath().replace(selected.getName(), "");
-
+				if (recentFiles.contains(selected.getAbsolutePath())) recentFiles.remove(selected.getAbsolutePath());
+				recentFiles.add(0, selected.getAbsolutePath());
+				
 				postLoadUpdate(primaryStage);
 			}
 
@@ -1441,9 +1546,9 @@ public class GeometryEditorGUI extends Application {
 
 				var oldGeom = mainGeometry;
 				mainGeometry = new Geometry();
-				mainGeometry.readConfig(new File(selected.getParent()+File.separator+selected.getName().replace(selected.getName().split("\\.")[selected.getName().split("\\.").length-1], "ini")));
+				currentConfig = mainGeometry.readConfig(new File(selected.getParent()+File.separator+selected.getName().replace(selected.getName().split("\\.")[selected.getName().split("\\.").length-1], "ini")));
 
-				if (showSetup) valid = showGeometrySettings(false);
+				if (showSetup) valid = showGeometrySettings(new File(selected.getParent()+File.separator+selected.getName().replace(selected.getName().split("\\.")[selected.getName().split("\\.").length-1], "ini")));
 				if (!valid) {
 					mainGeometry = oldGeom;
 					javafx.application.Platform.runLater(() -> {
@@ -1511,10 +1616,9 @@ public class GeometryEditorGUI extends Application {
 	}
 		
 	static boolean nextReturn = false;
-	public static boolean showGeometrySettings(boolean restrictOptions) {
+	public static boolean showGeometrySettings(File configFileToUpdate) {
 		final CountDownLatch latch = new CountDownLatch(1);
 		nextReturn = false;
-		unsavedChanges = true;
 		
 		javafx.application.Platform.runLater(() -> {
 			if (mainGeometry == null) {
@@ -1523,101 +1627,187 @@ public class GeometryEditorGUI extends Application {
 				return;
 			}
 			
-			var initialPlatform = mainGeometry.platform;
-			var previousCarName = mainGeometry.carname;
+//			var initialPlatform = mainGeometry.platform;
+//			var previousCarName = mainGeometry.carname;
+
+			Stage st = new Stage();
 			
-			var hb = new VBox();
+			var vb = new VBox();
+						
+//			var platform 						= new ConfigSetting.Platform("Platform ", mainGeometry.platform);
+//			var carname 						= new ConfigSetting.Text("Car name ", mainGeometry.carname); 
+//			var compType 						= new ConfigSetting.CompType("Compression type ", mainGeometry.defaultCompressionType);
+//			var compLevel 						= new ConfigSetting.CompLevel("Compression level ", mainGeometry.defaultCompressionLevel);
+//			var tangents 						= new ConfigSetting.Tangents("Tangents ", mainGeometry.IMPORT_Tangents);
+//			var vcolImport 						= new ConfigSetting.Boolean("Import vertex colors ", mainGeometry.IMPORT_importVertexColors);
+//			var vcolCalculate 					= new ConfigSetting.Boolean("Calculate vertex colors ", mainGeometry.IMPORT_calculateVertexColors);
+//			var copyMissingLods 				= new ConfigSetting.Boolean("Copy missing LODs ", mainGeometry.SAVE_copyMissingLODs);
+//			var makeLodD						= new ConfigSetting.Boolean("Copy LOD D ", mainGeometry.SAVE_copyLOD_D);
+//			var removeUselessAutosculptParts 	= new ConfigSetting.Boolean("Remove useless Autosculpt parts ", mainGeometry.SAVE_removeUselessAutosculptParts);
+//			var checkModel 						= new ConfigSetting.Boolean("Check model (see console output) ", mainGeometry.SAVE_checkModel);
+//			var fixAutosculptNormals 			= new ConfigSetting.Boolean("Attempt to fix Autosculpt normals ", mainGeometry.SAVE_fixAutosculptNormals);
+//			var removeInvalid 					= new ConfigSetting.Boolean("Remove invalid parts ", mainGeometry.SAVE_removeInvalid);
 			
-			var platform 						= new ConfigSetting.Platform("Platform ", mainGeometry.platform);
-			var carname 						= new ConfigSetting.Text("Car name ", mainGeometry.carname); 
-			var compType 						= new ConfigSetting.CompType("Compression type ", mainGeometry.defaultCompressionType);
-			var compLevel 						= new ConfigSetting.CompLevel("Compression level ", mainGeometry.defaultCompressionLevel);
-			var tangents 						= new ConfigSetting.Tangents("Tangents ", mainGeometry.IMPORT_Tangents);
-			var vcolImport 						= new ConfigSetting.Boolean("Import vertex colors ", mainGeometry.IMPORT_importVertexColors);
-			var vcolCalculate 					= new ConfigSetting.Boolean("Calculate vertex colors ", mainGeometry.IMPORT_calculateVertexColors);
-			var copyMissingLods 				= new ConfigSetting.Boolean("Copy missing LODs ", mainGeometry.SAVE_copyMissingLODs);
-			var makeLodD						= new ConfigSetting.Boolean("Copy LOD D ", mainGeometry.SAVE_copyLOD_D);
-			var removeUselessAutosculptParts 	= new ConfigSetting.Boolean("Remove useless Autosculpt parts ", mainGeometry.SAVE_removeUselessAutosculptParts);
-			var checkModel 						= new ConfigSetting.Boolean("Check model (see console output) ", mainGeometry.SAVE_checkModel);
-			var fixAutosculptNormals 			= new ConfigSetting.Boolean("Attempt to fix Autosculpt normals ", mainGeometry.SAVE_fixAutosculptNormals);
-			var removeInvalid 					= new ConfigSetting.Boolean("Remove invalid parts ", mainGeometry.SAVE_removeInvalid);
+			var settings = new ArrayList<ConfigSetting>();
+			for (var set : currentConfig) {
+				if (set.getValue().equals("true") || set.getValue().equals("false")) {
+					settings.add(new ConfigSetting.Boolean(set.getKey(), Boolean.parseBoolean(set.getValue())));
+				} else {
+					settings.add(new ConfigSetting.Text(set.getKey(), set.getValue()));
+				}
+			}
+			vb.getChildren().addAll(settings);
 			
+			for (var set : settings) {
+				set.delete.setOnAction(evt -> {
+					vb.getChildren().remove(set);
+					currentConfig.remove(settings.indexOf(set));
+					settings.remove(set);
+				});
+			}
+
+			var addSetting= new TextField("");
+			addSetting.setPromptText("Add a setting...");
+			var cm = new ContextMenu();
 			
-			// TODO continue...
+			addSetting.textProperty().addListener((txt, was, is) -> {
+				if (!is.isBlank() && is.length() > 2) {
+					cm.show(addSetting, Side.BOTTOM, 0, 0);
+					cm.getItems().clear();
+					for (var set : Geometry.ALL_VALID_CONFIG_SETTINGS) if (set.startsWith(is)) {
+						var mi = new MenuItem(set);
+						mi.setOnAction(evt -> addSetting.setText(set));
+						cm.getItems().add(mi);
+					}
+				} else cm.hide();
+			});
+			addSetting.setOnAction(evt -> {
+				for (var set : settings) if (set.name.equals(addSetting.getText().strip()) && !set.name.equals("ForceAsFix")) return;
+				var set = new ConfigSetting.Text(addSetting.getText().strip(),"");
+				settings.add(set);
+				currentConfig.add(new Pair<>(addSetting.getText().strip(),""));
+				vb.getChildren().add(vb.getChildren().size()-3, set);
+				set.delete.setOnAction(ev -> {
+					vb.getChildren().remove(set);
+					currentConfig.remove(settings.indexOf(set));
+					settings.remove(set);
+				});
+
+				st.sizeToScene();
+			});
+			vb.getChildren().add(addSetting);
+			
 			var show = new CheckBox("Show this menu on file reload");		
 			var ok = new Button("OK");
 			ok.setCenterShape(true);
 			show.setSelected(showImportSettingsOnReload.isSelected());
 			
-			if (restrictOptions) //when a geom is already loaded
-				hb.getChildren().addAll(platform,
-						carname, 
-						compType, compLevel, 
-//						tangents, vcolImport, vcolCalculate, 
-//						copyMissingLods, makeLodD, 
-//						removeUselessAutosculptParts,
-//						checkModel,
-//						fixAutosculptNormals,
-//						removeInvalid,
-						
-						show, ok);
-			else  //when a geom is being imported
-				hb.getChildren().addAll(platform,
-					carname, 
-					compType, compLevel, 
-					tangents, vcolImport, vcolCalculate, 
-					copyMissingLods, makeLodD, 
-					removeUselessAutosculptParts,
-					checkModel,
-					fixAutosculptNormals,
-					removeInvalid,
-					
-					show, ok);
+//			if (restrictOptions) //when a geom is already loaded
+//				hb.getChildren().addAll(platform,
+//						carname, 
+//						compType, compLevel, 
+////						tangents, vcolImport, vcolCalculate, 
+////						copyMissingLods, makeLodD, 
+////						removeUselessAutosculptParts,
+////						checkModel,
+////						fixAutosculptNormals,
+////						removeInvalid,
+//						
+//						show, ok);
+//			else  //when a geom is being imported
+//				hb.getChildren().addAll(platform,
+//					carname, 
+//					compType, compLevel, 
+//					tangents, vcolImport, vcolCalculate, 
+//					copyMissingLods, makeLodD, 
+//					removeUselessAutosculptParts,
+//					checkModel,
+//					fixAutosculptNormals,
+//					removeInvalid,
+//					
+//					show, ok);
 			
-			hb.setAlignment(Pos.CENTER);
+			vb.getChildren().addAll(show, ok);
+			vb.setAlignment(Pos.CENTER);
 
-			if (mainGeometry.defaultCompressionType != CompressionType.RefPack) hb.getChildren().remove(compLevel);
+//			if (mainGeometry.defaultCompressionType != CompressionType.RefPack) hb.getChildren().remove(compLevel);
 			
 			//carname not bound or bugging out
-			compType.setting.valueProperty().addListener((obs, o, n) -> {
-				mainGeometry.defaultCompressionType = n;
-				if (n == CompressionType.RefPack && !hb.getChildren().contains(compLevel)) {
-					hb.getChildren().add(3, compLevel);
-				} else if (hb.getChildren().contains(compLevel)){
-					hb.getChildren().remove(compLevel);
-				}
-			});
-			compLevel.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.defaultCompressionLevel = n);
-			tangents.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.IMPORT_Tangents = n);
-			vcolImport.setting.valueProperty().addListener((obs, o, n) -> {
-				mainGeometry.IMPORT_importVertexColors = n;
-				if (n) vcolCalculate.setting.setValue(false);
-			});
-			vcolCalculate.setting.valueProperty().addListener((obs, o, n) -> {
-				mainGeometry.IMPORT_calculateVertexColors = n;
-				if (n) vcolImport.setting.setValue(false);
-			});
-			copyMissingLods.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_copyMissingLODs = n);
-			makeLodD.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_copyLOD_D = n);
-			removeUselessAutosculptParts.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_removeUselessAutosculptParts = n);
-			checkModel.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_checkModel = n);
-			fixAutosculptNormals.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_fixAutosculptNormals = n);
-			removeInvalid.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_removeInvalid = n);
-
+//			compType.setting.valueProperty().addListener((obs, o, n) -> {
+//				mainGeometry.defaultCompressionType = n;
+//				if (n == CompressionType.RefPack && !hb.getChildren().contains(compLevel)) {
+//					hb.getChildren().add(3, compLevel);
+//				} else if (hb.getChildren().contains(compLevel)){
+//					hb.getChildren().remove(compLevel);
+//				}
+//			});
+//			compLevel.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.defaultCompressionLevel = n);
+//			tangents.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.IMPORT_Tangents = n);
+//			vcolImport.setting.valueProperty().addListener((obs, o, n) -> {
+//				mainGeometry.IMPORT_importVertexColors = n;
+//				if (n) vcolCalculate.setting.setValue(false);
+//			});
+//			vcolCalculate.setting.valueProperty().addListener((obs, o, n) -> {
+//				mainGeometry.IMPORT_calculateVertexColors = n;
+//				if (n) vcolImport.setting.setValue(false);
+//			});
+//			copyMissingLods.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_copyMissingLODs = n);
+//			makeLodD.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_copyLOD_D = n);
+//			removeUselessAutosculptParts.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_removeUselessAutosculptParts = n);
+//			checkModel.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_checkModel = n);
+//			fixAutosculptNormals.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_fixAutosculptNormals = n);
+//			removeInvalid.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_removeInvalid = n);
+//
 			show.selectedProperty().addListener((obs, o, n) -> showImportSettingsOnReload.setSelected(n));
 			
 			
-			Stage st = new Stage();
 			openWindows.add(st);
 			st.setTitle("Geometry settings");
-			Scene sc = new Scene(hb);
+			Scene sc = new Scene(vb);
 			if (useDarkMode.isSelected()) sc.getRoot().setStyle("-fx-base:black");
 			st.setScene(sc);
 			st.show();
+			ok.requestFocus();
+
 			
 			ok.setOnAction(e -> {
-				if (platform.setting.getValue() != initialPlatform) changePlatform(platform.setting.getValue());
-				if (!previousCarName.equals(carname.setting.getText())) changeCarName(mainGeometry.carname, carname.setting.getText().strip());
+				for (var s : settings) if (s.isChanged) {
+					unsavedChanges = true;
+					if (s.getName().equals("Platform")) changePlatform(Platform.valueOf(s.getStringValue()));
+					else if (s.getName().equals("CarName")) changeCarName(mainGeometry.carname, s.getStringValue());
+					else {
+						if (!mainGeometry.readConfigLine("SETTING\t"+s.getName()+"="+s.getStringValue(), 0))
+							if (!disableWarnings.isSelected()) new Alert(Alert.AlertType.WARNING, "Could not parse setting "+s.getName()+"!", ButtonType.OK).show();
+					}
+					currentConfig.set(settings.indexOf(s), new Pair<>(s.getName(),s.getStringValue()));
+				}
+				if (configFileToUpdate != null) new Thread(() -> {
+					try {
+						var tmp = new File(configFileToUpdate.getAbsolutePath()+".tmp");
+						var br = new BufferedReader(new FileReader(configFileToUpdate));
+						var bw = new BufferedWriter(new FileWriter(tmp));
+						String l;
+						boolean firstSetting = true;
+						while ((l=br.readLine())!=null) {
+							if (l.startsWith("SETTING")) {
+								if (firstSetting) {
+									for (var s : currentConfig) {
+										bw.write("SETTING\t"+s.getKey()+"="+s.getValue()+"\n");
+									}
+									firstSetting = false;
+								}
+							} else bw.write(l+"\n");
+						}//loop on config file lines
+						br.close();
+						bw.close();
+						configFileToUpdate.delete();
+						tmp.renameTo(configFileToUpdate);
+					} catch(Exception ex) {
+						ex.printStackTrace();
+					}
+				}).start();
+//				if (platform.setting.getValue() != initialPlatform) changePlatform(platform.setting.getValue());
+//				if (!previousCarName.equals(carname.setting.getText())) changeCarName(mainGeometry.carname, carname.setting.getText().strip());
 				nextReturn = true;
 				st.close();
 
@@ -1703,14 +1893,24 @@ public class GeometryEditorGUI extends Application {
 		});
 		
 		visualModelMaterials = new ArrayList<>();
-
+		diffuseMaps = new ArrayList<>();
+		specularMaps = new ArrayList<>();
+		normalMaps = new ArrayList<>();
+		selfIlluminationMaps = new ArrayList<>();
+		
 		partsRoot.getChildren().clear();
 		parts.clear();
 		if (mainGeometry == null) partsRoot.setValue(null);
 		else {
 			partsRoot.setValue(new PartController(mainGeometry.carname));
 		
-			mainGeometry.materials.forEach(m -> visualModelMaterials.add(null));
+			mainGeometry.materials.forEach(m -> {
+				visualModelMaterials.add(null);
+				diffuseMaps.add(null);
+				specularMaps.add(null);
+				normalMaps.add(null);
+				selfIlluminationMaps.add(null);
+				});
 	
 			textureLookupFolders.add(lastDirectoryLoaded);
 			
@@ -1746,22 +1946,12 @@ public class GeometryEditorGUI extends Application {
 													var r = new DDSImageReader(null);
 													var iis = new FileImageInputStream(f);
 													r.setInput(iis);
-													if (! (//m.shaderUsage == ShaderUsage.get("car_a") ||
-															//m.shaderUsage == ShaderUsage.get("car_a_nzw") ||
-															//m.shaderUsage == ShaderUsage.get("car_nm_a") ||
-															//m.shaderUsage == ShaderUsage.get("car_nm_v_s_a") ||
-															//m.shaderUsage == ShaderUsage.get("car_si_a") ||
-															//m.shaderUsage == ShaderUsage.get("car_t_a") ||
-															//m.shaderUsage.getClass() == ShaderUsage.Legacy.class ||
-															m.shaderUsage.name.contains("Alpha") ||
-															m.shaderUsage.name.contains("opacity") ||
-															m.shaderUsage.name.contains("org_") ||
-															m.shaderUsage.name.contains("overlay"))) {
+													if (m.isOpaque()) {
 														r.ignoreAlpha = true;										
 													}
 													image = r.read(0);
 													
-													mat.setDiffuseMap(SwingFXUtils.toFXImage(image, null));
+													diffuseMaps.set(mainGeometry.materials.indexOf(m), SwingFXUtils.toFXImage(image, null));
 													iis.close();
 	//												break diffuse;
 											}
@@ -1773,18 +1963,12 @@ public class GeometryEditorGUI extends Application {
 											var r = new DDSImageReader(null);
 											var iis = new MemoryCacheImageInputStream(new ByteArrayInputStream(t.DDSImage));
 											r.setInput(iis);
-											if (! (m.shaderUsage == ShaderUsage.get("car_a") ||
-													m.shaderUsage == ShaderUsage.get("car_a_nzw") ||
-													m.shaderUsage == ShaderUsage.get("car_nm_a") ||
-													m.shaderUsage == ShaderUsage.get("car_nm_v_s_a") ||
-													m.shaderUsage == ShaderUsage.get("car_si_a") ||
-													m.shaderUsage == ShaderUsage.get("car_t_a") ||
-													m.shaderUsage.getClass() == ShaderUsage.Legacy.class)) {
+											if (m.isOpaque()) {
 												r.ignoreAlpha = true;										
 											}
 											image = r.read(0);
 											
-											mat.setDiffuseMap(SwingFXUtils.toFXImage(image, null));
+											diffuseMaps.set(mainGeometry.materials.indexOf(m), SwingFXUtils.toFXImage(image, null));
 											iis.close();
 	//										break diffuse;
 										}
@@ -1795,7 +1979,7 @@ public class GeometryEditorGUI extends Application {
 								}
 							}//diffuse color search
 							
-							if (mat.getDiffuseMap() == null) {
+							if (diffuseMaps.get(mainGeometry.materials.indexOf(m)) == null) {
 								if (Hash.getBIN(m.ShaderHash).contains("WINDSHIELD") || Hash.getBIN(m.ShaderHash).contains("GLASS")) {
 									mat.setDiffuseColor(Color.color(0.2, 0.2, 0.2, 0.3));
 								} else {
@@ -1822,7 +2006,7 @@ public class GeometryEditorGUI extends Application {
 											r.setInput(iis);
 											image = r.read(0);
 											
-											mat.setBumpMap(SwingFXUtils.toFXImage(image, null));
+											normalMaps.set(mainGeometry.materials.indexOf(m), SwingFXUtils.toFXImage(image, null));
 											iis.close();
 											break bump;
 										}
@@ -1836,7 +2020,7 @@ public class GeometryEditorGUI extends Application {
 													r.setInput(iis);
 													image = r.read(0);
 													
-													mat.setBumpMap(SwingFXUtils.toFXImage(image, null));
+													normalMaps.set(mainGeometry.materials.indexOf(m), SwingFXUtils.toFXImage(image, null));
 													iis.close();
 													break bump;
 											}
@@ -1861,7 +2045,7 @@ public class GeometryEditorGUI extends Application {
 											r.setInput(iis);
 											image = r.read(0);
 											
-											mat.setSelfIlluminationMap(SwingFXUtils.toFXImage(image, null));
+											selfIlluminationMaps.set(mainGeometry.materials.indexOf(m), SwingFXUtils.toFXImage(image, null));
 											iis.close();
 											break si;
 										}
@@ -1876,7 +2060,7 @@ public class GeometryEditorGUI extends Application {
 													r.setInput(iis);
 													image = r.read(0);
 													
-													mat.setSelfIlluminationMap(SwingFXUtils.toFXImage(image, null));
+													selfIlluminationMaps.set(mainGeometry.materials.indexOf(m), SwingFXUtils.toFXImage(image, null));
 													iis.close();
 													break si;
 											}
@@ -1900,7 +2084,7 @@ public class GeometryEditorGUI extends Application {
 											r.setInput(iis);
 											image = r.read(0);
 											
-											mat.setSpecularMap(SwingFXUtils.toFXImage(image, null));
+											specularMaps.set(mainGeometry.materials.indexOf(m), SwingFXUtils.toFXImage(image, null));
 											iis.close();
 											break spec;
 										}
@@ -1914,7 +2098,7 @@ public class GeometryEditorGUI extends Application {
 													r.setInput(iis);
 													image = r.read(0);
 													
-													mat.setSpecularMap(SwingFXUtils.toFXImage(image, null));
+													specularMaps.set(mainGeometry.materials.indexOf(m), SwingFXUtils.toFXImage(image, null));
 													iis.close();
 													break spec;
 											}
@@ -1997,6 +2181,8 @@ public class GeometryEditorGUI extends Application {
 			pool.shutdown();
 			pool.awaitTermination(10, TimeUnit.MINUTES);
 	
+			updateMaterialsRendering();
+
 			textureLookupFolders.remove(textureLookupFolders.size()-1);
 	
 			javafx.application.Platform.runLater(() -> {
@@ -2027,7 +2213,8 @@ public class GeometryEditorGUI extends Application {
 	public static void updateRender() {
 //    	viewport.viewportGroup.getChildren().clear();
     	
-    	for (var p : parts) p.updateRender();
+    	for (var p : parts) if (p.isOpaque()) p.updateRender();
+    	for (var p : parts) if (p.hasTransparency()) p.updateRender();
     	System.gc();
     	
     }
@@ -2074,7 +2261,16 @@ public class GeometryEditorGUI extends Application {
             		
             		kit.getChildren().add(t);
         		} else {
-        			//world models
+        			//world models / BASE on carbon and previous
+            		if (!displayLod.getItems().contains(p.part.lod)) {
+            			displayLod.getItems().add(p.part.lod);
+            		}
+            		if (simplifiedPartsList.isSelected() && p.part.part != null && p.part.part.length()>3) {
+        				if ((p.part.lod != null && !p.part.lod.equals(displayLod.getValue()))) {
+        					continue;
+        				}
+        			}
+            		
         			partsRoot.getChildren().add(t);
         		}
         		
@@ -2102,38 +2298,41 @@ public class GeometryEditorGUI extends Application {
     }
     
     public static void displaySelectedKit() {
-    	for (var p : parts) {
-    		if (p.part.kit == null && p.part.lod == null) {
-    			p.display.set(true);
-    			continue;
-    		}
-    		if (p.part.kit != null && p.part.kit.equals(displayKit.getValue()) && p.part.lod != null && p.part.lod.equals(displayLod.getValue())) {
-    			
-    			if (p.part.part != null && p.part.part.length()>3 && p.part.part.charAt(p.part.part.length() -3) == '_') {
-    				if (p.part.part.charAt(p.part.part.length() -2) == 'T') {					
-    					//autosculpt
-    	    			p.display.set(false);
-    					continue;
-    				}
-    				if (Character.isDigit(p.part.part.charAt(p.part.part.length() -2)) && Character.isDigit(p.part.part.charAt(p.part.part.length() -1))){
-    					//exhaust
-    					if (p.part.part.charAt(p.part.part.length() -2) == '0' && p.part.part.charAt(p.part.part.length() -1) == '0') {
-    		    			p.display.set(true);
-    					} else {
-    		    			p.display.set(false);
-    					}
-    					continue;
-    				}
-    			}
-    			p.display.set(true);
-    			
-    		} else {
-    			//uncomment to strictly display kits, comment to display kits with leftover parts from the previous
-    			if (strictKitDisplay.isSelected()) p.display.set(false);
-    		}
-    	}
+    	for (var p : parts) if (p.isOpaque()) displaySelectedKitPass(p);
+    	for (var p : parts) if (p.hasTransparency()) displaySelectedKitPass(p);
     	System.gc();
     }
+
+	private static void displaySelectedKitPass(PartController p) {
+		if (p.part.kit == null && p.part.lod == null) {
+			p.display.set(true);
+			return;
+		}
+		if (p.part.kit != null && p.part.kit.equals(displayKit.getValue()) && p.part.lod != null && p.part.lod.equals(displayLod.getValue())) {
+			
+			if (p.part.part != null && p.part.part.length()>3 && p.part.part.charAt(p.part.part.length() -3) == '_') {
+				if (p.part.part.charAt(p.part.part.length() -2) == 'T') {					
+					//autosculpt
+					p.display.set(false);
+					return;
+				}
+				if (Character.isDigit(p.part.part.charAt(p.part.part.length() -2)) && Character.isDigit(p.part.part.charAt(p.part.part.length() -1))){
+					//exhaust
+					if (p.part.part.charAt(p.part.part.length() -2) == '0' && p.part.part.charAt(p.part.part.length() -1) == '0') {
+		    			p.display.set(true);
+					} else {
+		    			p.display.set(false);
+					}
+					return;
+				}
+			}
+			p.display.set(true);
+			
+		} else {
+			//uncomment to strictly display kits, comment to display kits with leftover parts from the previous
+			if (strictKitDisplay.isSelected()) p.display.set(false);
+		}
+	}
     
     public static void displaySelectedLod() {
 		var selected = partsDisplay.getSelectionModel().getSelectedItem();
@@ -2141,37 +2340,40 @@ public class GeometryEditorGUI extends Application {
 		
     	if (simplifiedPartsList.isSelected()) updateAllPartsDisplay(); 
 		
-    	for (var p : parts) {
-    		if (p.part.lod == null || p.part.lod.equals("")) {
-    			p.display.set(true);
-    			continue;
-    		}
-    		
-    		if (p.display.get() && !p.part.lod.equals(displayLod.getValue())) {
-    			for (var p2 : parts) if (p2.part.part.equals(p.part.part) && p2.part.lod.equals(displayLod.getValue()) && ((p2.part.kit == null && p.part.kit == null) || p2.part.kit.equals(p.part.kit))) {
-    				if (selected != null && selected.getValue() == p) {
-    					reselect: for (var n : partsRoot.getChildren()) {
-    						if (n.getValue().name.equals(p.part.kit)) {
-    							for (var n2 : n.getChildren()) {
-    	    						if (n2.getValue() == p2) {
-    	    	    					partsDisplay.getSelectionModel().select(n2);
-    	    	    					break reselect;
-    	    						}
-    							}
-    						}
-    						
-    						if (n.getValue() == p2) {
-    	    					partsDisplay.getSelectionModel().select(n);
-    	    					break reselect;
-    						}
-    					}
-    				}
-    				p2.display.set(true);
-    				break;
-    			}
-    			p.display.set(false);    			
-    		}
-    	}
+    	for (var p : parts) if (p.isOpaque()) displaySelectedLodPass(selected, p);
+    	for (var p : parts) if (p.hasTransparency()) displaySelectedLodPass(selected, p);
     	System.gc();
     }
+
+	private static void displaySelectedLodPass(TreeItem<PartController> selected, PartController p) {
+		if (p.part.lod == null || p.part.lod.equals("")) {
+			p.display.set(true);
+//    			continue;
+		}
+		
+		if (p.display.get() && (p.part.lod == null || !p.part.lod.equals(displayLod.getValue()))) {
+			for (var p2 : parts) if (p2.part.part.equals(p.part.part) && (p2.part.lod == null || !p2.part.lod.equals(displayLod.getValue())) && ((p2.part.kit == null && p.part.kit == null) || p2.part.kit.equals(p.part.kit))) {
+				if (selected != null && selected.getValue() == p) {
+					reselect: for (var n : partsRoot.getChildren()) {
+						if (p.part.kit != null && p.part.kit.equals(n.getValue().name)) {
+							for (var n2 : n.getChildren()) {
+								if (n2.getValue() == p2) {
+			    					partsDisplay.getSelectionModel().select(n2);
+			    					break reselect;
+								}
+							}
+						}
+						
+						if (n.getValue() == p2) {
+							partsDisplay.getSelectionModel().select(n);
+							break reselect;
+						}
+					}
+				}
+				p2.display.set(true);
+				break;
+			}
+			p.display.set(false);    			
+		}
+	}
 }

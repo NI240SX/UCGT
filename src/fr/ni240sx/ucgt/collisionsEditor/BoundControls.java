@@ -2,7 +2,6 @@ package fr.ni240sx.ucgt.collisionsEditor;
 
 import java.util.ArrayList;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.collisionsEditor.CollisionBound.BoundConstraintType;
 import fr.ni240sx.ucgt.collisionsEditor.CollisionBound.BoundFlags;
 import fr.ni240sx.ucgt.collisionsEditor.CollisionBound.BoundJointType;
@@ -14,6 +13,7 @@ import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionConvexTransform;
 import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionConvexTranslate;
 import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionSphereShape;
 import fr.ni240sx.ucgt.collisionsEditor.CollisionMesh.CollisionConvexVertice;
+import fr.ni240sx.ucgt.shared.Hash;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
@@ -186,7 +186,7 @@ public class BoundControls extends GridPane {
 					bound.BoneOffsetZ = Float.parseFloat(boneOffZ.getText().strip());
 					
 				}
-				} catch (Exception shh) {} //fail to parse silently
+				} catch (@SuppressWarnings("unused") Exception shh) {} //fail to parse silently
 				
 				if (bound.Shape == BoundShape.KSHAPE_BOX || bound.Shape == BoundShape.KSHAPE_SPHERE) {
 					

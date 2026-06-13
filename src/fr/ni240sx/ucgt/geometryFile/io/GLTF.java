@@ -11,13 +11,12 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.GeometryEditorCLI;
 import fr.ni240sx.ucgt.geometryFile.Part;
@@ -26,6 +25,10 @@ import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangle;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.Hash;
+
+import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
 
 public class GLTF {
@@ -34,6 +37,8 @@ public class GLTF {
 	public final static int glTF_BINARY = 1179937895; //glb, actually
 	public final static int JSON = 1313821514;
 	public final static int BIN = 5130562;
+	
+	public static final String LOD_TRIANGLES_SUFFIX = "-ROADLOD";
 	
 	public static void load(Geometry geom, File f) throws IOException, JSONException {
 		/*
@@ -128,7 +133,7 @@ public class GLTF {
 		
 		for (int i=0; i<scene.getJSONArray("nodes").length(); i++){
 			var node = nodes.getJSONObject(scene.getJSONArray("nodes").getInt(i));
-			if (!node.getString("name").startsWith("_")) {
+			if (!node.getString("name").startsWith("_") && !node.getString("name").endsWith(LOD_TRIANGLES_SUFFIX)) {
 				Part curPart = new Part(geom, node.getString("name"));
 
 				meshes.getJSONObject(node.getInt("mesh")).getJSONArray("primitives").forEach(prim -> {
@@ -147,19 +152,69 @@ public class GLTF {
 	    				curPart.mesh.materials.materials.add(curMat);
 					}
 					
-					//TODO no welding!
 					accessAttribute(accessors, bufferViews, buffers, primitive, curMat, "POSITION");
 					accessAttribute(accessors, bufferViews, buffers, primitive, curMat, "NORMAL");
 					accessAttribute(accessors, bufferViews, buffers, primitive, curMat, "TEXCOORD_0");
 					accessAttribute(accessors, bufferViews, buffers, primitive, curMat, "TEXCOORD_1");
 					accessAttribute(accessors, bufferViews, buffers, primitive, curMat, "TEXCOORD_2");
-					if (geom.IMPORT_importVertexColors) accessAttribute(accessors, bufferViews, buffers, primitive, curMat, "COLOR_0"); //TODO do color
+					accessAttribute(accessors, bufferViews, buffers, primitive, curMat, "TEXCOORD_3");
+					if (geom.IMPORT_importVertexColors) accessAttribute(accessors, bufferViews, buffers, primitive, curMat, "COLOR_0");
 
 					accessData(accessors, bufferViews, buffers, curMat, "indices", primitive.getInt("indices"));
 				});
 				
+				for (int j=0; j<scene.getJSONArray("nodes").length(); j++) {
+					var node2 = nodes.getJSONObject(scene.getJSONArray("nodes").getInt(j));
+					if (node2.getString("name").equals(node.getString("name")+LOD_TRIANGLES_SUFFIX)) {
+						System.out.println("Linking low LOD road triangles for part "+node.getString("name"));
+						
+						meshes.getJSONObject(node2.getInt("mesh")).getJSONArray("primitives").forEach(prim -> {
+							JSONObject primitive = (JSONObject)prim;
+							Material curMat = null;
+							for (var m : curPart.mesh.materials.materials) if (m.uniqueName.equals(materials.getJSONObject(primitive.getInt("material")).getString("name"))) {
+								
+								System.out.println("Linking material "+m.generateName());
+								
+		        				curMat = new Material(m); //copies the material the mesh uses to make it part specific
+		        				curMat.createVerticesBlock(geom.platform);
+		        				
+								accessAttribute(accessors, bufferViews, buffers, primitive, curMat, "POSITION");
+								accessAttribute(accessors, bufferViews, buffers, primitive, curMat, "NORMAL");
+								accessAttribute(accessors, bufferViews, buffers, primitive, curMat, "TEXCOORD_0");
+								accessData(accessors, bufferViews, buffers, curMat, "indices", primitive.getInt("indices"));
+
+								//loop on triangles and find the correct vertices
+								for (var t : curMat.triangles) {
+									int i0 = -1, i1 = -1, i2 = -1;
+									for (var v : m.verticesBlock.vertices) {
+										if (v.positionNormalEquals(curMat.verticesBlock.vertices.get(t.vert0))) {
+											i0 = m.verticesBlock.vertices.indexOf(v);
+											break;
+										}
+									}
+									for (var v : m.verticesBlock.vertices) {
+										if (v.positionNormalEquals(curMat.verticesBlock.vertices.get(t.vert1))) {
+											i1 = m.verticesBlock.vertices.indexOf(v);
+											break;
+										}
+									}
+									for (var v : m.verticesBlock.vertices) {
+										if (v.positionNormalEquals(curMat.verticesBlock.vertices.get(t.vert2))) {
+											i2 = m.verticesBlock.vertices.indexOf(v);
+											break;
+										}
+									}
+									if (i1 == -1 || i2 == -1 || i0 == -1) System.out.println("problet");
+									m.trianglesExtra.add(new Triangle(i0, i1, i2));
+								}
+		        			}
+						});
+					}
+				}
 				
-			} else {
+				
+				
+			} else if (node.getString("name").startsWith("_")) {
 				MPoint curMarker = null;
     			for (var mp : geom.mpointsAll) if (mp.uniqueName.equals(node.getString("name"))) {
     				curMarker = mp;
@@ -245,41 +300,49 @@ public class GLTF {
 			if (componentType == ComponentType.FLOAT) while (in.position() < offset + length) {
 				Vertex v = new Vertex();
 				curMat.verticesBlock.vertices.add(v);
-				v.posY = -in.getFloat();
-				v.posZ = in.getFloat();
-				v.posX = -in.getFloat();
+				v.pos[Y] = -in.getFloat();
+				v.pos[Z] = in.getFloat();
+				v.pos[X] = -in.getFloat();
 			}
 			break;
 		case "NORMAL":
 			if (componentType == ComponentType.FLOAT) while (in.position() < offset + length) {
 				Vertex v = curMat.verticesBlock.vertices.get(vIndex);
-				v.normY = -in.getFloat();
-				v.normZ = in.getFloat();
-				v.normX = -in.getFloat();
+				v.norm[Y] = -in.getFloat();
+				v.norm[Z] = in.getFloat();
+				v.norm[X] = -in.getFloat();
 				vIndex++;
 			}
 			break;
 		case "TEXCOORD_0":
 			if (componentType == ComponentType.FLOAT) while (in.position() < offset + length) {
 				Vertex v = curMat.verticesBlock.vertices.get(vIndex);
-				v.tex0U = in.getFloat();
-				v.tex0V = (1-in.getFloat()); //flip V
+				v.tex[0][U] = in.getFloat();
+				v.tex[0][V] = (1-in.getFloat()); //flip V
 				vIndex++;
 			}
 			break;
 		case "TEXCOORD_1":
 			if (componentType == ComponentType.FLOAT) while (in.position() < offset + length) {
 				Vertex v = curMat.verticesBlock.vertices.get(vIndex);
-				v.tex1U = in.getFloat();
-				v.tex1V = (1-in.getFloat()); //flip V
+				v.tex[1][U] = in.getFloat();
+				v.tex[1][V] = (1-in.getFloat()); //flip V
 				vIndex++;
 			}
 			break;
 		case "TEXCOORD_2":
 			if (componentType == ComponentType.FLOAT) while (in.position() < offset + length) {
 				Vertex v = curMat.verticesBlock.vertices.get(vIndex);
-				v.tex2U = in.getFloat();
-				v.tex2V = (1-in.getFloat()); //flip V
+				v.tex[2][U] = in.getFloat();
+				v.tex[2][V] = (1-in.getFloat()); //flip V
+				vIndex++;
+			}
+			break;
+		case "TEXCOORD_3":
+			if (componentType == ComponentType.FLOAT) while (in.position() < offset + length) {
+				Vertex v = curMat.verticesBlock.vertices.get(vIndex);
+				v.tex[3][U] = in.getFloat();
+				v.tex[3][V] = (1-in.getFloat()); //flip V
 				vIndex++;
 			}
 			break;
@@ -287,28 +350,28 @@ public class GLTF {
 			if (componentType == ComponentType.UNSIGNED_BYTE) {
 				while (in.position() < offset + length) {
 					Vertex v = curMat.verticesBlock.vertices.get(vIndex);
-					v.colorR = in.get();
-					v.colorG = in.get();
-					v.colorB = in.get();
-					v.colorA = in.get();
+					v.color[R] = in.get()/255.0f;
+					v.color[G] = in.get()/255.0f;
+					v.color[B] = in.get()/255.0f;
+					v.color[A] = in.get()/255.0f;
 					vIndex++;
 				}				
 			} else if (componentType == ComponentType.UNSIGNED_SHORT) {
 				while (in.position() < offset + length) {
 					Vertex v = curMat.verticesBlock.vertices.get(vIndex);
-					v.colorR = (byte) (in.getShort()/256);
-					v.colorG = (byte) (in.getShort()/256);
-					v.colorB = (byte) (in.getShort()/256);
-					v.colorA = (byte) (in.getShort()/256);
+					v.color[R] = in.getShort()/65535.0f;
+					v.color[G] = in.getShort()/65535.0f;
+					v.color[B] = in.getShort()/65535.0f;
+					v.color[A] = in.getShort()/65535.0f;
 					vIndex++;
 				}
 			} else if (componentType == ComponentType.FLOAT) {
 				while (in.position() < offset + length) {
 					Vertex v = curMat.verticesBlock.vertices.get(vIndex);
-					v.colorR = (byte) (in.getFloat()*255);
-					v.colorG = (byte) (in.getFloat()*255);
-					v.colorB = (byte) (in.getFloat()*255);
-					v.colorA = (byte) (in.getFloat()*255);
+					v.color[R] = in.getFloat();
+					v.color[G] = in.getFloat();
+					v.color[B] = in.getFloat();
+					v.color[A] = in.getFloat();
 					vIndex++;
 				}
 			}
@@ -347,16 +410,18 @@ public class GLTF {
 		glTF.put("scene", 0);
 		var scene = new JSONObject();
 		scene.put("name", geom.carname);
-		for (int i=0; i<geom.parts.size() + geom.mpointsPositions.size(); i++) scene.append("nodes", i);
+		scene.append("nodes", null);
+		scene.getJSONArray("nodes").clear();
+//		for (int i=0; i<geom.parts.size() + geom.mpointsPositions.size(); i++) scene.append("nodes", i); //moved further
 		glTF.append("scenes", scene);
 				
-		for (var p : geom.parts) {
-			var node = new JSONObject();
-			node.put("mesh", geom.parts.indexOf(p));
-			node.put("name", p.name);
-			glTF.append("nodes", node);
-		}
-		
+//		for (var p : geom.parts) { //moved further
+//			var node = new JSONObject();
+//			node.put("mesh", geom.parts.indexOf(p));
+//			node.put("name", p.name);
+//			glTF.append("nodes", node);
+//		}
+//		
 		var tempTexStorage = new ArrayList<Integer>();
 		
 		for (var m : geom.materials) {
@@ -513,128 +578,53 @@ public class GLTF {
 		
 		var bos = new ByteArrayOutputStream();
 		
+		
+		var partsWithExtraTriangles = new ArrayList<Part>();
+		
 		for (var p : geom.parts) {
+			scene.append("nodes", scene.getJSONArray("nodes").length());
+			
+			var node = new JSONObject();
+			node.put("mesh", geom.parts.indexOf(p));
+			node.put("name", p.name);
+			glTF.append("nodes", node);
+			
 			var mesh = new JSONObject();
 			mesh.put("name", p.name);
 			
 			for	(var m : p.mesh.materials.materials) {
+				if (m.trianglesExtra.size() != 0 && !partsWithExtraTriangles.contains(p)) partsWithExtraTriangles.add(p);
 				var primitive = new JSONObject();
 				var attributes = new JSONObject();
 				
-				//POSITION
-				var bb = ByteBuffer.allocate(m.verticesBlock.vertices.size()*3*4);
-				bb.order(ByteOrder.LITTLE_ENDIAN);
-				for (var v : m.verticesBlock.vertices) {
-					bb.putFloat(-v.posY);
-					bb.putFloat(v.posZ);
-					bb.putFloat(-v.posX);
-				}
-				makeAccessor(glTF, bos.size(), m.verticesBlock.vertices.size()*3*4, Target.ARRAY_BUFFER, ComponentType.FLOAT, m.verticesBlock.vertices.size(), "VEC3");
-				attributes.put("POSITION", accessorID);
-				bos.write(bb.array());
-				
-				
-				if (m.shaderUsage.vertexFormat_PC.hasNormals()) {
-					bb = ByteBuffer.allocate(m.verticesBlock.vertices.size()*3*4);
-					bb.order(ByteOrder.LITTLE_ENDIAN);
-					for (var v : m.verticesBlock.vertices) {
-						bb.putFloat(-v.normY);
-						bb.putFloat(v.normZ);
-						bb.putFloat(-v.normX);
-					}
-					makeAccessor(glTF, bos.size(), m.verticesBlock.vertices.size()*3*4, Target.ARRAY_BUFFER, ComponentType.FLOAT, m.verticesBlock.vertices.size(), "VEC3");
-					attributes.put("NORMAL", accessorID);
-					bos.write(bb.array());
-				}
-				
-				
-				if (m.shaderUsage.vertexFormat_PC.getNumTexChannels()>0) {
-					bb = ByteBuffer.allocate(m.verticesBlock.vertices.size()*2*4);
-					bb.order(ByteOrder.LITTLE_ENDIAN);
-					for (var v : m.verticesBlock.vertices) {
-						bb.putFloat(v.tex0U);
-						bb.putFloat(1-v.tex0V);
-					}
-					makeAccessor(glTF, bos.size(), m.verticesBlock.vertices.size()*2*4, Target.ARRAY_BUFFER, ComponentType.FLOAT, m.verticesBlock.vertices.size(), "VEC2");
-					attributes.put("TEXCOORD_0", accessorID);
-					bos.write(bb.array());
-				}
-				
-				if (m.shaderUsage.vertexFormat_PC.getNumTexChannels()>1) {
-					bb = ByteBuffer.allocate(m.verticesBlock.vertices.size()*2*4);
-					bb.order(ByteOrder.LITTLE_ENDIAN);
-					for (var v : m.verticesBlock.vertices) {
-						bb.putFloat(v.tex1U);
-						bb.putFloat(1-v.tex1V);
-					}
-					makeAccessor(glTF, bos.size(), m.verticesBlock.vertices.size()*2*4, Target.ARRAY_BUFFER, ComponentType.FLOAT, m.verticesBlock.vertices.size(), "VEC2");
-					attributes.put("TEXCOORD_1", accessorID);
-					bos.write(bb.array());
-				}
-				
-				if (m.shaderUsage.vertexFormat_PC.getNumTexChannels()>2) {
-					bb = ByteBuffer.allocate(m.verticesBlock.vertices.size()*2*4);
-					bb.order(ByteOrder.LITTLE_ENDIAN);
-					for (var v : m.verticesBlock.vertices) {
-						bb.putFloat(v.tex2U);
-						bb.putFloat(1-v.tex2V);
-					}
-					makeAccessor(glTF, bos.size(), m.verticesBlock.vertices.size()*2*4, Target.ARRAY_BUFFER, ComponentType.FLOAT, m.verticesBlock.vertices.size(), "VEC2");
-					attributes.put("TEXCOORD_2", accessorID);
-					bos.write(bb.array());
-
-				}
-
-				if (m.shaderUsage.vertexFormat_PC.hasColor()) {
-					bb = ByteBuffer.allocate(m.verticesBlock.vertices.size()*4*4);
-					bb.order(ByteOrder.LITTLE_ENDIAN);
-					for (var v : m.verticesBlock.vertices) {
-						bb.putFloat(((float)Byte.toUnsignedInt(v.colorR)/255));
-						bb.putFloat(((float)Byte.toUnsignedInt(v.colorG)/255));
-						bb.putFloat(((float)Byte.toUnsignedInt(v.colorB)/255));
-						bb.putFloat(((float)Byte.toUnsignedInt(v.colorA)/255));
-					}
-					makeAccessor(glTF, bos.size(), m.verticesBlock.vertices.size()*4*4, Target.ARRAY_BUFFER, ComponentType.FLOAT, m.verticesBlock.vertices.size(), "VEC4");
-					attributes.put("COLOR_0", accessorID);
-					bos.write(bb.array());
-				}
-
+				exportPosition(glTF, bos, m, attributes);
+				if (m.shaderUsage.vertexFormat_PC.hasNormals()) exportNormals(glTF, bos, m, attributes);
+				for (int i=0; i<m.shaderUsage.vertexFormat_PC.getNumTexChannels(); i++) exportTexcoords(glTF, bos, m, attributes, i);				
+				if (m.shaderUsage.vertexFormat_PC.hasColor()) exportColors(glTF, bos, m, attributes);
 				primitive.put("attributes", attributes);
 				
-				//triangles
-				bb = ByteBuffer.allocate(m.triangles.size()*2*3);
-				bb.order(ByteOrder.LITTLE_ENDIAN);
-				for (var t : m.triangles) {
-					bb.putShort((short) t.vert0);
-					bb.putShort((short) t.vert1);
-					bb.putShort((short) t.vert2);
-				}
-				makeAccessor(glTF, bos.size(), m.triangles.size()*2*3, Target.ELEMENT_ARRAY_BUFFER, ComponentType.UNSIGNED_SHORT, m.triangles.size()*3, "SCALAR");
-				bos.write(bb.array());
+				exportTriangles(glTF, bos, m.triangles, primitive);
 
-				primitive.put("indices", accessorID);
 				primitive.put("material", geom.materials.indexOf(m));
-				
 				mesh.append("primitives", primitive);
 			}
-			
 			glTF.append("meshes", mesh);
 		}
 		
 		
-		int i=0;
+//		int i=0;
 		for (var mpc : geom.mpointsPositions) {
+			scene.append("nodes", scene.getJSONArray("nodes").length());
         	final float s = 0.05f; //cube half size 
         	
         	var mp = mpc.mpoints.get(0);
         	
 			var node = new JSONObject();
-			node.put("mesh", geom.parts.size() + i);
+//			node.put("mesh", geom.parts.size() + i);
+			node.put("mesh", geom.parts.size() + geom.mpointsPositions.indexOf(mpc));
 			node.put("name", mp.uniqueName);
-			i++;
+//			i++;
 			glTF.append("nodes", node);
-			
-			
 			
 			var mesh = new JSONObject();
 			mesh.put("name", mp.uniqueName);
@@ -642,58 +632,62 @@ public class GLTF {
 			var primitive = new JSONObject();
 			var attributes = new JSONObject();
 			
-			//POSITION
-			var bb = ByteBuffer.allocate(8*3*4);
-			bb.order(ByteOrder.LITTLE_ENDIAN);
-
-			bb.putFloat(-mp.positionY-s);	bb.putFloat(mp.positionZ+s);	bb.putFloat(-mp.positionX+s);
-			bb.putFloat(-mp.positionY-s);	bb.putFloat(mp.positionZ+s);	bb.putFloat(-mp.positionX-s);
-			bb.putFloat(-mp.positionY-s);	bb.putFloat(mp.positionZ-s);	bb.putFloat(-mp.positionX+s);
-			bb.putFloat(-mp.positionY-s);	bb.putFloat(mp.positionZ-s);	bb.putFloat(-mp.positionX-s);
-			bb.putFloat(-mp.positionY+s);	bb.putFloat(mp.positionZ+s);	bb.putFloat(-mp.positionX+s);
-			bb.putFloat(-mp.positionY+s);	bb.putFloat(mp.positionZ+s);	bb.putFloat(-mp.positionX-s);
-			bb.putFloat(-mp.positionY+s);	bb.putFloat(mp.positionZ-s);	bb.putFloat(-mp.positionX+s);
-			bb.putFloat(-mp.positionY+s);	bb.putFloat(mp.positionZ-s);	bb.putFloat(-mp.positionX-s);
-			
 			makeAccessor(glTF, bos.size(), 8*3*4, Target.ARRAY_BUFFER, ComponentType.FLOAT, 8, "VEC3");
 			attributes.put("POSITION", accessorID);
-			bos.write(bb.array());
-			
+			bos.write(makeMPointCubePositions(s, mp));
 			primitive.put("attributes", attributes);
 			
-			//triangles
-			bb = ByteBuffer.allocate(12*2*3);
-			bb.order(ByteOrder.LITTLE_ENDIAN);
-
-			bb.putShort((short) 0);	bb.putShort((short) 1);	bb.putShort((short) 2);
-			bb.putShort((short) 1);	bb.putShort((short) 2);	bb.putShort((short) 3);
-			
-			bb.putShort((short) 4);	bb.putShort((short) 5);	bb.putShort((short) 6);
-			bb.putShort((short) 5);	bb.putShort((short) 6);	bb.putShort((short) 7);
-
-			bb.putShort((short) 0);	bb.putShort((short) 1);	bb.putShort((short) 4);
-			bb.putShort((short) 1);	bb.putShort((short) 4);	bb.putShort((short) 5);
-			
-			bb.putShort((short) 2);	bb.putShort((short) 3);	bb.putShort((short) 6);
-			bb.putShort((short) 3);	bb.putShort((short) 6);	bb.putShort((short) 7);
-
-			bb.putShort((short) 0);	bb.putShort((short) 2);	bb.putShort((short) 4);
-			bb.putShort((short) 2);	bb.putShort((short) 4);	bb.putShort((short) 6);
-
-			bb.putShort((short) 1);	bb.putShort((short) 3);	bb.putShort((short) 5);
-			bb.putShort((short) 3);	bb.putShort((short) 5);	bb.putShort((short) 7);
-			
 			makeAccessor(glTF, bos.size(), 12*2*3, Target.ELEMENT_ARRAY_BUFFER, ComponentType.UNSIGNED_SHORT, 12*3, "SCALAR");
-			bos.write(bb.array());
+			bos.write(makeCubeIndices());
 
 			primitive.put("indices", accessorID);
-			
 			mesh.append("primitives", primitive);
-			
-			
 			glTF.append("meshes", mesh);
         }
 
+		
+		
+
+		for (var p : partsWithExtraTriangles) {
+			scene.append("nodes", scene.getJSONArray("nodes").length());
+			
+			var node = new JSONObject();
+			node.put("mesh", geom.parts.size() + geom.mpointsPositions.size() + partsWithExtraTriangles.indexOf(p));
+			node.put("name", p.name+LOD_TRIANGLES_SUFFIX);
+			glTF.append("nodes", node);
+
+			var mesh = new JSONObject();
+			mesh.put("name", p.name+LOD_TRIANGLES_SUFFIX);
+			
+			for	(var m : p.mesh.materials.materials) if (m.trianglesExtra.size() != 0) {
+				var primitive = new JSONObject();
+//				var attributes = new JSONObject();
+				
+//				exportPosition(glTF, bos, m, attributes);
+//				if (m.shaderUsage.vertexFormat_PC.hasNormals()) exportNormals(glTF, bos, m, attributes);
+//				for (int i=0; i<m.shaderUsage.vertexFormat_PC.getNumTexChannels(); i++) exportTexcoords(glTF, bos, m, attributes, i);				
+//				if (m.shaderUsage.vertexFormat_PC.hasColor()) exportColors(glTF, bos, m, attributes);
+				
+//				attributes.put("POSITION", );
+				
+//				primitive.put("attributes", attributes);
+				primitive.put("attributes", glTF.getJSONArray("meshes").getJSONObject(geom.parts.indexOf(p)).getJSONArray("primitives").getJSONObject(p.mesh.materials.materials.indexOf(m)).getJSONObject("attributes"));
+				
+				exportTriangles(glTF, bos, m.trianglesExtra, primitive);
+
+				primitive.put("material", geom.materials.indexOf(m));
+				mesh.append("primitives", primitive);
+			}
+			glTF.append("meshes", mesh);
+		}
+		
+		
+		
+		
+		
+		
+		
+		
 
 		var buffer = new JSONObject();
 		buffer.put("byteLength", bos.size());
@@ -724,7 +718,7 @@ public class GLTF {
 			var fos = new FileOutputStream(new File(f));
 			fos.write(bb.array());
 			fos.write(json);
-			for (i=0; i<suppl; i++) fos.write(0x20);
+			for (int i=0; i<suppl; i++) fos.write(0x20);
 			bb = ByteBuffer.allocate(8);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
 			bb.putInt(BIN);
@@ -737,6 +731,128 @@ public class GLTF {
 		}
 
 		
+	}
+
+
+
+	private static byte[] makeCubeIndices() {
+		var bb = ByteBuffer.allocate(12*2*3);
+		bb.order(ByteOrder.LITTLE_ENDIAN);
+
+		bb.putShort((short) 0);	bb.putShort((short) 1);	bb.putShort((short) 2);
+		bb.putShort((short) 1);	bb.putShort((short) 2);	bb.putShort((short) 3);
+		
+		bb.putShort((short) 4);	bb.putShort((short) 5);	bb.putShort((short) 6);
+		bb.putShort((short) 5);	bb.putShort((short) 6);	bb.putShort((short) 7);
+
+		bb.putShort((short) 0);	bb.putShort((short) 1);	bb.putShort((short) 4);
+		bb.putShort((short) 1);	bb.putShort((short) 4);	bb.putShort((short) 5);
+		
+		bb.putShort((short) 2);	bb.putShort((short) 3);	bb.putShort((short) 6);
+		bb.putShort((short) 3);	bb.putShort((short) 6);	bb.putShort((short) 7);
+
+		bb.putShort((short) 0);	bb.putShort((short) 2);	bb.putShort((short) 4);
+		bb.putShort((short) 2);	bb.putShort((short) 4);	bb.putShort((short) 6);
+
+		bb.putShort((short) 1);	bb.putShort((short) 3);	bb.putShort((short) 5);
+		bb.putShort((short) 3);	bb.putShort((short) 5);	bb.putShort((short) 7);
+		return bb.array();
+	}
+
+
+
+	private static byte[] makeMPointCubePositions(final float s, MPoint mp) {
+		var bb = ByteBuffer.allocate(8*3*4);
+		bb.order(ByteOrder.LITTLE_ENDIAN);
+
+		bb.putFloat(-mp.positionY-s);	bb.putFloat(mp.positionZ+s);	bb.putFloat(-mp.positionX+s);
+		bb.putFloat(-mp.positionY-s);	bb.putFloat(mp.positionZ+s);	bb.putFloat(-mp.positionX-s);
+		bb.putFloat(-mp.positionY-s);	bb.putFloat(mp.positionZ-s);	bb.putFloat(-mp.positionX+s);
+		bb.putFloat(-mp.positionY-s);	bb.putFloat(mp.positionZ-s);	bb.putFloat(-mp.positionX-s);
+		bb.putFloat(-mp.positionY+s);	bb.putFloat(mp.positionZ+s);	bb.putFloat(-mp.positionX+s);
+		bb.putFloat(-mp.positionY+s);	bb.putFloat(mp.positionZ+s);	bb.putFloat(-mp.positionX-s);
+		bb.putFloat(-mp.positionY+s);	bb.putFloat(mp.positionZ-s);	bb.putFloat(-mp.positionX+s);
+		bb.putFloat(-mp.positionY+s);	bb.putFloat(mp.positionZ-s);	bb.putFloat(-mp.positionX-s);
+		return bb.array();
+	}
+
+
+
+	private static void exportTriangles(JSONObject glTF, ByteArrayOutputStream bos, List<Triangle> triangles, JSONObject primitive) throws IOException {
+		var bb = ByteBuffer.allocate(triangles.size()*2*3);
+		bb.order(ByteOrder.LITTLE_ENDIAN);
+		for (var t : triangles) {
+			bb.putShort((short) t.vert0);
+			bb.putShort((short) t.vert1);
+			bb.putShort((short) t.vert2);
+		}
+		makeAccessor(glTF, bos.size(), triangles.size()*2*3, Target.ELEMENT_ARRAY_BUFFER, ComponentType.UNSIGNED_SHORT, triangles.size()*3, "SCALAR");
+		primitive.put("indices", accessorID);
+		bos.write(bb.array());
+	}
+
+
+
+	private static void exportColors(JSONObject glTF, ByteArrayOutputStream bos, Material m, JSONObject attributes)
+			throws IOException {
+		var bb = ByteBuffer.allocate(m.verticesBlock.vertices.size()*4*4);
+		bb.order(ByteOrder.LITTLE_ENDIAN);
+		for (var v : m.verticesBlock.vertices) {
+			bb.putFloat(v.color[R]);
+			bb.putFloat(v.color[G]);
+			bb.putFloat(v.color[B]);
+			bb.putFloat(v.color[A]);
+		}
+		makeAccessor(glTF, bos.size(), m.verticesBlock.vertices.size()*4*4, Target.ARRAY_BUFFER, ComponentType.FLOAT, m.verticesBlock.vertices.size(), "VEC4");
+		attributes.put("COLOR_0", accessorID);
+		bos.write(bb.array());
+	}
+
+
+
+	private static void exportTexcoords(JSONObject glTF, ByteArrayOutputStream bos, Material m, JSONObject attributes,
+			int i) throws IOException {
+		var bb = ByteBuffer.allocate(m.verticesBlock.vertices.size()*2*4);
+		bb.order(ByteOrder.LITTLE_ENDIAN);
+		for (var v : m.verticesBlock.vertices) {
+			bb.putFloat(v.tex[i][U]);
+			bb.putFloat(1-v.tex[i][V]);
+		}
+		makeAccessor(glTF, bos.size(), m.verticesBlock.vertices.size()*2*4, Target.ARRAY_BUFFER, ComponentType.FLOAT, m.verticesBlock.vertices.size(), "VEC2");
+		attributes.put("TEXCOORD_"+i, accessorID);
+		bos.write(bb.array());
+	}
+
+
+
+	private static void exportNormals(JSONObject glTF, ByteArrayOutputStream bos, Material m, JSONObject attributes)
+			throws IOException {
+		var bb = ByteBuffer.allocate(m.verticesBlock.vertices.size()*3*4);
+		bb.order(ByteOrder.LITTLE_ENDIAN);
+		for (var v : m.verticesBlock.vertices) {
+			bb.putFloat(-v.norm[Y]);
+			bb.putFloat(v.norm[Z]);
+			bb.putFloat(-v.norm[X]);
+		}
+		makeAccessor(glTF, bos.size(), m.verticesBlock.vertices.size()*3*4, Target.ARRAY_BUFFER, ComponentType.FLOAT, m.verticesBlock.vertices.size(), "VEC3");
+		attributes.put("NORMAL", accessorID);
+		bos.write(bb.array());
+	}
+
+
+
+	private static void exportPosition(JSONObject glTF, ByteArrayOutputStream bos, Material m, JSONObject attributes)
+			throws IOException {
+		var bb = ByteBuffer.allocate(m.verticesBlock.vertices.size()*3*4);
+		bb.order(ByteOrder.LITTLE_ENDIAN);
+		for (var v : m.verticesBlock.vertices) {
+			bb.putFloat(-v.pos[Y]);
+			bb.putFloat(v.pos[Z]);
+			bb.putFloat(-v.pos[X]);
+		}
+		makeAccessor(glTF, bos.size(), m.verticesBlock.vertices.size()*3*4, Target.ARRAY_BUFFER, ComponentType.FLOAT, m.verticesBlock.vertices.size(), "VEC3");
+		attributes.put("POSITION", accessorID);
+		bos.write(bb.array());
 	}
 
 

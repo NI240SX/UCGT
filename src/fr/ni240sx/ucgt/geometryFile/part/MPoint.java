@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.geometryFile.io.VertexData3;
+import fr.ni240sx.ucgt.shared.Hash;
 
 public class MPoint {
 	

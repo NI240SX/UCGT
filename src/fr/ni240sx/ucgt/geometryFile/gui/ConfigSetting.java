@@ -6,20 +6,33 @@ import fr.ni240sx.ucgt.geometryFile.settings.SettingsImport_Tangents;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 
 @SuppressWarnings({"unchecked","hiding"})
 public abstract class ConfigSetting extends HBox {
 
 	Label label;
+	public String name;
 	public Node setting;
+	public Button delete;
+	public boolean isChanged = false;
 	
 	public ConfigSetting(String name, Node set) {
-
+		this.name = name;
 		label = new Label(name);
 		setting = set;
-		this.getChildren().addAll(label, set);
-		
+		delete = new Button("X");
+		var sep = new Separator();
+		var sep2 = new Separator();
+        HBox.setHgrow(sep, Priority.SOMETIMES);
+		this.getChildren().addAll(label, sep, set, sep2, delete);
 	}
+	
+	public String getName() {
+		return name;
+	}
+	
+	public abstract String getStringValue();
 
 	public static class Text extends ConfigSetting{
 		public TextField setting;
@@ -27,6 +40,12 @@ public abstract class ConfigSetting extends HBox {
 		public Text(String name, String set) {
 			super(name, new TextField(set));
 			this.setting = (TextField) super.setting;
+			this.setting.textProperty().addListener(l -> isChanged = true);
+		}
+		
+		@Override
+		public String getStringValue() {
+			return setting.getText().strip();
 		}
 	}
 
@@ -38,6 +57,12 @@ public abstract class ConfigSetting extends HBox {
 			this.setting = (ComboBox<fr.ni240sx.ucgt.geometryFile.Platform>) super.setting;
 			this.setting.getItems().addAll(fr.ni240sx.ucgt.geometryFile.Platform.values());
 			this.setting.getSelectionModel().select(t);
+			this.setting.getSelectionModel().selectedItemProperty().addListener(l -> isChanged = true);
+		}
+
+		@Override
+		public String getStringValue() {
+			return setting.getValue().toString();
 		}
 	}
 	
@@ -49,8 +74,14 @@ public abstract class ConfigSetting extends HBox {
 			this.setting = (ComboBox<CompressionType>) super.setting;
 			this.setting.getItems().addAll(CompressionType.values());
 			this.setting.getSelectionModel().select(t);
+			this.setting.getSelectionModel().selectedItemProperty().addListener(l -> isChanged = true);
 		}
-	}
+
+		@Override
+		public String getStringValue() {
+			return setting.getValue().toString();
+		}
+}
 
 	public static class CompLevel extends ConfigSetting{
 		public ComboBox<CompressionLevel> setting;
@@ -60,6 +91,12 @@ public abstract class ConfigSetting extends HBox {
 			this.setting = (ComboBox<CompressionLevel>) super.setting;
 			this.setting.getItems().addAll(CompressionLevel.values());
 			this.setting.getSelectionModel().select(l);
+			this.setting.getSelectionModel().selectedItemProperty().addListener(ls -> isChanged = true);
+		}
+
+		@Override
+		public String getStringValue() {
+			return setting.getValue().toString();
 		}
 	}
 
@@ -71,6 +108,12 @@ public abstract class ConfigSetting extends HBox {
 			this.setting = (ComboBox<SettingsImport_Tangents>) super.setting;
 			this.setting.getItems().addAll(SettingsImport_Tangents.values());
 			this.setting.getSelectionModel().select(t);
+			this.setting.getSelectionModel().selectedItemProperty().addListener(l -> isChanged = true);
+		}
+
+		@Override
+		public String getStringValue() {
+			return setting.getValue().toString();
 		}
 	}
 
@@ -82,6 +125,12 @@ public abstract class ConfigSetting extends HBox {
 			this.setting = (ComboBox<java.lang.Boolean>) super.setting;
 			this.setting.getItems().addAll(true, false);
 			this.setting.getSelectionModel().select(b);
+			this.setting.getSelectionModel().selectedItemProperty().addListener(l -> isChanged = true);
+		}
+
+		@Override
+		public String getStringValue() {
+			return setting.getValue().toString();
 		}
 	}
 

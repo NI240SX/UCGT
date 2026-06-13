@@ -13,16 +13,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.compression.Compression;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.compression.CompressionType;
-import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.geometry.CompressedData;
 import fr.ni240sx.ucgt.geometryFile.geometry.Padding;
 import fr.ni240sx.ucgt.geometryFile.gui.CustomProgressBar;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Hash;
 
 public class TPK extends Block {
 

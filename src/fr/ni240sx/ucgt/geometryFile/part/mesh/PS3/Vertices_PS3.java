@@ -1,4 +1,4 @@
-package fr.ni240sx.ucgt.geometryFile.part.mesh.X360;
+package fr.ni240sx.ucgt.geometryFile.part.mesh.PS3;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -9,12 +9,12 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertices;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class Vertices_X360 extends Vertices {
+public class Vertices_PS3 extends Vertices {
 
 	@Override
-	public BlockType getBlockID() {return BlockType.Part_Mesh_Vertices_X360;}
+	public BlockType getBlockID() {return BlockType.Part_Mesh_Vertices_PS3;}
 
-	public Vertices_X360(ByteBuffer in) {
+	public Vertices_PS3(ByteBuffer in) {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
 
@@ -31,7 +31,7 @@ public class Vertices_X360 extends Vertices {
 	public void readVertices() {
 		if (verticesData == null) return;
 		var bb = ByteBuffer.wrap(verticesData);
-		bb.order(ByteOrder.LITTLE_ENDIAN);
+		bb.order(ByteOrder.BIG_ENDIAN);
 //		System.out.println("Vertex format to use "+vertexFormat.getName());
 		while (bb.position() < bb.capacity()) {
 			vertices.add(new Vertex(bb, vertexFormat));
@@ -40,11 +40,11 @@ public class Vertices_X360 extends Vertices {
 		verticesData = null; //remove the temporarily stored data from memory
 	}
 	
-	public Vertices_X360() {
+	public Vertices_PS3() {
 	}
 
 
-	public Vertices_X360(Vertices vertices) {
+	public Vertices_PS3(Vertices vertices) {
 		super(vertices);
 	}
 
@@ -60,6 +60,7 @@ public class Vertices_X360 extends Vertices {
 		
 		Block.makeAlignment(out, alignment, (byte) 0x11);
 		
+		out.order(ByteOrder.BIG_ENDIAN);
 		for (var v : vertices) {
 			v.save(out, vertexFormat);
 		}

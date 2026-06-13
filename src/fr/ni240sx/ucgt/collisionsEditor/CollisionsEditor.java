@@ -1,5 +1,11 @@
 package fr.ni240sx.ucgt.collisionsEditor;
 
+import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.U;
+import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.V;
+import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.X;
+import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.Y;
+import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.Z;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -10,27 +16,45 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import fr.ni240sx.ucgt.binstuff.Hash;
+
+import fr.ni240sx.ucgt.collisionsEditor.CollisionBound.BoundShape;
 import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionBoxShape;
 import fr.ni240sx.ucgt.collisionsEditor.BoundShapes.CollisionConvexTranslate;
-import fr.ni240sx.ucgt.collisionsEditor.CollisionBound.BoundShape;
 import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.Part;
+import fr.ni240sx.ucgt.shared.Hash;
+import fr.ni240sx.ucgt.shared.OrbitCameraViewport;
 import javafx.application.Application;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Group;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.Separator;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
-import javafx.scene.layout.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.TriangleMesh;
 import javafx.scene.shape.VertexFormat;
+import javafx.scene.transform.Rotate;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -478,7 +502,7 @@ public class CollisionsEditor extends Application {
 	private static void handleFileLoadVisual(MenuItem fileLoadVisual) {
 		fileLoadVisual.setOnAction(evt -> {
 				FileChooser fc = new FileChooser();
-				fc.setInitialDirectory(new File(lastGeomRepLoaded));
+				if (new File(lastGeomRepLoaded).isFile()) fc.setInitialDirectory(new File(lastGeomRepLoaded));
 				fc.setInitialFileName("GEOMETRY.BIN");
 				fc.getExtensionFilters().addAll(
 			        new FileChooser.ExtensionFilter("BIN Geometry file", "*.bin"),
@@ -518,9 +542,13 @@ public class CollisionsEditor extends Application {
 								matMesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
 								
 								for (var v : m.verticesBlock.vertices) {
-									matMesh.getPoints().addAll(v.posY, v.posZ, v.posX);
-									matMesh.getNormals().addAll(v.normY, v.normZ, v.normX);
-									matMesh.getTexCoords().addAll(v.tex0U, 1-v.tex0V);
+									matMesh.getPoints().addAll(v.pos[X], v.pos[Y], v.pos[Z]);
+								}
+								if (m.verticesBlock.vertexFormat.hasNormals()) for (var v : m.verticesBlock.vertices) {
+									matMesh.getNormals().addAll(v.norm[X], v.norm[Y], v.norm[Z]);
+								}
+								if (m.verticesBlock.vertexFormat.getNumTexChannels() > 0) for (var v : m.verticesBlock.vertices) {
+									matMesh.getTexCoords().addAll(v.tex[0][U], 1-v.tex[0][V]);
 								}
 								
 								for (var tr : m.triangles) {
@@ -551,10 +579,15 @@ public class CollisionsEditor extends Application {
 												((PhongMaterial) ((Shape3D) c).getMaterial()).getDiffuseColor().getBlue(), 1.0));
 							});
 						});
+						modelGroup.getTransforms().clear();
+						modelGroup.getTransforms().add(new Rotate(90, Rotate.X_AXIS));
+						modelGroup.getTransforms().add(new Rotate(180, Rotate.Y_AXIS));
+						modelGroup.getTransforms().add(new Rotate(90, Rotate.Z_AXIS));
 						
 			    		renderVisualModel.set(true);
 			    		updateVisualModel();
 //						updateRender();	
+
 						if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Visual model loaded successfully.", ButtonType.OK).show();
 					} catch (Exception e) {
 						new Alert(Alert.AlertType.ERROR, "Error loading the visual model:\n"+e.getMessage(), ButtonType.OK).show();
@@ -566,7 +599,7 @@ public class CollisionsEditor extends Application {
         });
         fileLoadVisual.setAccelerator(KeyCombination.keyCombination("Ctrl+Shift+O"));
 	}
-
+	
 	private static void handleFileExit(Stage primaryStage, MenuItem fileExit) {
 		fileExit.setOnAction(e -> {
 	        ButtonType sure = null;

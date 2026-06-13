@@ -6,13 +6,15 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 
-import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.BlockType;
+import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.Platform;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.*;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.LegacyPC.*;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.*;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.*;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.PS3.*;
 
 public class Mesh extends Block {
 
@@ -42,6 +44,7 @@ public class Mesh extends Block {
 //					if (platform == null) System.out.println("Error: unsupported mesh!");
 				}
 				if (block != null && block.getClass() == Mesh_Info_X360.class) platform = Platform.X360;
+				if (block != null && block.getClass() == Mesh_Info_PS3.class) platform = Platform.PS3;
 			} catch (Exception e) {
 				System.out.println("Unable to read mesh sub-block: "+e.getMessage());
 				if (block != null) System.out.println("Last successfully read mesh sub-block: "+block.getClass().getSimpleName());
@@ -72,7 +75,7 @@ public class Mesh extends Block {
 				break;
 				
 			case Part_Mesh_Info_X360:
-				platform = Platform.X360;
+//				platform = Platform.X360;
 				info = (Mesh_Info_X360) b;
 				break;
 			case Part_Mesh_Materials_X360:
@@ -83,6 +86,20 @@ public class Mesh extends Block {
 				break;
 			case Part_Mesh_Triangles_X360:
 				triangles = (Triangles_X360) b;
+				break;
+
+			case Part_Mesh_Info_PS3:
+//				platform = Platform.PS3;
+				info = (Mesh_Info_PS3) b;
+				break;
+			case Part_Mesh_Materials_PS3:
+				materials = (Materials_PS3) b;
+				break;
+			case Part_Mesh_Vertices_PS3:
+				verticesBlocks.add((Vertices_PS3) b);
+				break;
+			case Part_Mesh_Triangles_PS3:
+				triangles = (Triangles_PS3) b;
 				break;
 
 			case Part_Mesh_LegacyMaterials:
@@ -114,6 +131,9 @@ public class Mesh extends Block {
 				break;
 			case X360:
 				verticesBlocks.get(j).vertexFormat = materials.materials.get(i).shaderUsage.vertexFormat_X360;
+				break;
+			case PS3:
+				verticesBlocks.get(j).vertexFormat = materials.materials.get(i).shaderUsage.vertexFormat_PS3;
 				break;
 			}
 			verticesBlocks.get(j).readVertices();
@@ -174,6 +194,12 @@ public class Mesh extends Block {
 			this.shadersUsage = new ShadersUsage();
 			this.triangles = new Triangles_X360();
 			break;
+		case PS3:
+			this.info = new Mesh_Info_PS3();
+			this.materials = new Materials_PS3();
+			this.shadersUsage = new ShadersUsage();
+			this.triangles = new Triangles_PS3();
+			break;
 		case Prostreet_PC:
 		case Prostreet_X360:
 		case Carbon_PC:
@@ -189,7 +215,7 @@ public class Mesh extends Block {
 	public void rebuildSubBlocks() {
 		subBlocks.clear();
 		subBlocks.add(info);
-		if (platform == Platform.PC || platform == Platform.X360) subBlocks.add(shadersUsage);
+		if (Geometry.isUC(platform)) subBlocks.add(shadersUsage);
 		subBlocks.add(materials);
 		for (var v : verticesBlocks) {
 			subBlocks.add(new Mesh_VertsHeader());
@@ -230,6 +256,19 @@ public class Mesh extends Block {
 			for (int i=0; i< verticesBlocks.size(); i++) {
 				verticesBlocks.set(i, new Vertices_X360(verticesBlocks.get(i)));
 				verticesBlocks.get(i).vertexFormat = verticesBlocks.get(i).material.shaderUsage.vertexFormat_X360;
+			}
+			break;
+		case PS3:
+			this.info = new Mesh_Info_PS3(info);
+			this.materials = new Materials_PS3(materials);
+			this.shadersUsage = new ShadersUsage();
+			this.triangles = new Triangles_PS3(triangles);
+			for (var m : materials.materials) {
+				m.shaderUsage = ShaderUsage.getNGOrDefault(m.shaderUsage.getName(), ShaderUsage.get("Diffuse"));
+			}
+			for (int i=0; i< verticesBlocks.size(); i++) {
+				verticesBlocks.set(i, new Vertices_PS3(verticesBlocks.get(i)));
+				verticesBlocks.get(i).vertexFormat = verticesBlocks.get(i).material.shaderUsage.vertexFormat_PS3;
 			}
 			break;
 		case Prostreet_PC:

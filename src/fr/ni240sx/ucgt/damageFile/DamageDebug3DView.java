@@ -5,7 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import fr.ni240sx.ucgt.collisionsEditor.OrbitCameraViewport;
+import fr.ni240sx.ucgt.shared.OrbitCameraViewport;
 import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Scene;

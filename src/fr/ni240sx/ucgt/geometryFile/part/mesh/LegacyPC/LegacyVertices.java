@@ -3,9 +3,9 @@ package fr.ni240sx.ucgt.geometryFile.part.mesh.LegacyPC;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertices;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.Vertices_PC;
+import fr.ni240sx.ucgt.shared.BlockType;
 
 public class LegacyVertices extends Vertices_PC {
 

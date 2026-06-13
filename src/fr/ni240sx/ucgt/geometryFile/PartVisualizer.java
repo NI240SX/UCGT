@@ -4,8 +4,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import fr.ni240sx.ucgt.collisionsEditor.OrbitCameraViewport;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
+import fr.ni240sx.ucgt.shared.OrbitCameraViewport;
+
+import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 //import javafx.application.Application;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
@@ -46,9 +48,13 @@ public class PartVisualizer extends Stage{
 				matMesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
 				
 				for (var v : m.verticesBlock.vertices) {
-					matMesh.getPoints().addAll(v.posX, v.posY, v.posZ);
-					matMesh.getNormals().addAll(v.normX, v.normY, v.normZ);
-					matMesh.getTexCoords().addAll(v.tex0U, 1-v.tex0V);
+					matMesh.getPoints().addAll(v.pos[X], v.pos[Y], v.pos[Z]);
+				}
+				if (m.verticesBlock.vertexFormat.hasNormals()) for (var v : m.verticesBlock.vertices) {
+					matMesh.getNormals().addAll(v.norm[X], v.norm[Y], v.norm[Z]);
+				}
+				if (m.verticesBlock.vertexFormat.getNumTexChannels() > 0) for (var v : m.verticesBlock.vertices) {
+					matMesh.getTexCoords().addAll(v.tex[0][U], 1-v.tex[0][V]);
 				}
 				
 				for (var tr : m.triangles) {

@@ -80,14 +80,14 @@ public class CollisionBoxShape extends CollisionShape {
 
 
 	@Override
-	public CollisionShape deepCopy(CollisionBound bound) {
+	public CollisionShape deepCopy(CollisionBound b) {
 		var copy = new CollisionBoxShape();
 		copy.boundDistance = this.boundDistance;
 		copy.HalfExtentsX  = this.HalfExtentsX;
 		copy.HalfExtentsY  = this.HalfExtentsY;
 		copy.HalfExtentsZ  = this.HalfExtentsZ;
 		copy.HalfExtentsW  = this.HalfExtentsW;
-		copy.bound = bound;
+		copy.bound = b;
 		return copy;
 	}
 }

@@ -42,7 +42,11 @@ public class AutosculptControls extends VBox{
 	}
 
 	public void updateAutosculpt() {
-		if (part != null) part.updateAutosculpt(this);
+		if (part != null) {
+			var sliderValues = new ArrayList<Double>();
+			for (int i=0; i<11; i++) sliderValues.add(this.autosculptSliders.get(i).slider.getValue());
+			part.updateAutosculpt(sliderValues);
+		}
 		
 	}
 

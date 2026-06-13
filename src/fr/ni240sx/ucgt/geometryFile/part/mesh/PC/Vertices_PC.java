@@ -3,10 +3,11 @@ package fr.ni240sx.ucgt.geometryFile.part.mesh.PC;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.BlockType;
+
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertices;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
 
 public class Vertices_PC extends Vertices {
 

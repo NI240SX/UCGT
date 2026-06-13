@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.geometryFile.BlockType;
 import fr.ni240sx.ucgt.geometryFile.GeometryEditorCLI;
 import fr.ni240sx.ucgt.geometryFile.Platform;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
 
 public class GeomInfo extends Block {
 
@@ -59,6 +59,7 @@ public class GeomInfo extends Block {
 		switch(plat) {
 		case PC:
 		case X360:
+		case PS3:
 			platf = PLATF_UNDERCOVER;
 			const21 = CONST21_UNDERCOVER;
 			const22 = CONST21_UNDERCOVER;
@@ -80,8 +81,6 @@ public class GeomInfo extends Block {
 			const23 = CONST23_PROSTREET;
 			const24 = CONST23_PROSTREET;
 			break;
-		default:
-			throw new IllegalArgumentException("Unexpected value: " + plat);
 		}
 		
 	}

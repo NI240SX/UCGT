@@ -3,6 +3,7 @@ package fr.ni240sx.ucgt.geometryFile;
 public enum Platform {
 	PC("PC", "Undercover_PC"), //UC
 	X360("X360", "Undercover_X360", "Xenon", "Undercover_Xenon"),
+	PS3("PS3", "Undercover_PS3"),
 	Prostreet_PC("Prostreet_PC"),
 	Prostreet_X360("Prostreet_X360", "Prostreet_Xenon"),
 	Carbon_PC("Carbon_PC");

@@ -9,6 +9,7 @@ import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.VertexFormat;
+import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
 
 public class ZMesh extends ZModBlock {
@@ -451,31 +452,31 @@ public class ZMesh extends ZModBlock {
 			else if (vf.getNumTexChannels()==2) format = 55;
 			else if (vf.getNumTexChannels()>2) format = 119;
 			
-			x = v.posX;
-			y = v.posY;
-			z = v.posZ;
+			x = v.pos[X];
+			y = v.pos[Y];
+			z = v.pos[Z];
 			if (vf.hasNormals()) {
-				nx = v.normX;
-				ny = v.normY;
-				nz = v.normZ;
+				nx = v.norm[X];
+				ny = v.norm[Y];
+				nz = v.norm[Z];
 			}
 			if (vf.getNumTexChannels()>0) {
-				u0 = v.tex0U;
-				v0 = 1-v.tex0V;
+				u0 = v.tex[0][U];
+				v0 = 1-v.tex[0][V];
 			}
 			if (vf.getNumTexChannels()>1) {
-				u1 = v.tex1U;
-				v1 = 1-v.tex1V;
+				u1 = v.tex[1][U];
+				v1 = 1-v.tex[1][V];
 			}
 			if (vf.getNumTexChannels()>2) {
-				u2 = v.tex2U;
-				v2 = 1-v.tex2V;
+				u2 = v.tex[2][U];
+				v2 = 1-v.tex[2][V];
 			}
 			if (vf.hasColor()) {
-				r = v.colorR;
-				g = v.colorG;
-				b = v.colorB;
-				a = v.colorA;
+				r = (byte) (v.color[R]*255);
+				g = (byte) (v.color[G]*255);
+				b = (byte) (v.color[B]*255);
+				a = (byte) (v.color[A]*255);
 			}
 		}
 	

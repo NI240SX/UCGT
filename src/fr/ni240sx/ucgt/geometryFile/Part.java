@@ -5,10 +5,15 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import fr.ni240sx.ucgt.binstuff.Block;
-import fr.ni240sx.ucgt.binstuff.Hash;
+
 import fr.ni240sx.ucgt.compression.Compression;
 import fr.ni240sx.ucgt.geometryFile.part.*;
+import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Hash;
+
+import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
+
 
 public class Part extends Block {
 
@@ -121,7 +126,7 @@ public class Part extends Block {
 			else lod = "";
 			
 			part = header.partName.replaceFirst(carname+"_", "").replaceFirst(kit+"_", "").replaceFirst("(?s)(.*)_"+lod, "$1");
-			if (part.length() == 0) {
+			if (part.length() == lod.length()) {
 				part = kit;
 				kit = null;
 			}
@@ -294,12 +299,12 @@ public class Part extends Block {
 		this.header.boundsYmin = Float.POSITIVE_INFINITY;
 		this.header.boundsZmin = Float.POSITIVE_INFINITY;
 		for (var vb : this.mesh.verticesBlocks) for (var v : vb.vertices) {
-			if (v.posX > header.boundsXmax) header.boundsXmax = v.posX;
-			if (v.posY > header.boundsYmax) header.boundsYmax = v.posY;
-			if (v.posZ > header.boundsZmax) header.boundsZmax = v.posZ;
-			if (v.posX < header.boundsXmin) header.boundsXmin = v.posX;
-			if (v.posY < header.boundsYmin) header.boundsYmin = v.posY;
-			if (v.posZ < header.boundsZmin) header.boundsZmin = v.posZ;
+			if (v.pos[X] > header.boundsXmax) header.boundsXmax = v.pos[X];
+			if (v.pos[Y] > header.boundsYmax) header.boundsYmax = v.pos[Y];
+			if (v.pos[Z] > header.boundsZmax) header.boundsZmax = v.pos[Z];
+			if (v.pos[X] < header.boundsXmin) header.boundsXmin = v.pos[X];
+			if (v.pos[Y] < header.boundsYmin) header.boundsYmin = v.pos[Y];
+			if (v.pos[Z] < header.boundsZmin) header.boundsZmin = v.pos[Z];
 		}
 		header.boundsXmax += 0.01;
 		header.boundsYmax += 0.01;

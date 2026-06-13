@@ -2,8 +2,8 @@ package fr.ni240sx.ucgt.geometryFile.sorters;
 
 import java.util.Comparator;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
 import fr.ni240sx.ucgt.geometryFile.part.MPointPositionCube;
+import fr.ni240sx.ucgt.shared.Hash;
 
 public class MPointPosSorterName implements Comparator<MPointPositionCube>{
 	@Override

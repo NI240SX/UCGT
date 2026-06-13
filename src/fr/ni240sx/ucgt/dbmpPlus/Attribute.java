@@ -2,7 +2,7 @@ package fr.ni240sx.ucgt.dbmpPlus;
 
 import java.nio.ByteBuffer;
 
-import fr.ni240sx.ucgt.binstuff.Hash;
+import fr.ni240sx.ucgt.shared.Hash;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;

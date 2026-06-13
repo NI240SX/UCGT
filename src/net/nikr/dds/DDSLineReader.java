@@ -127,6 +127,33 @@ public class DDSLineReader {
 				throw new IOException(ddsHeader.getFormat().getName()+" is not a supported format!");
 		}
 	}
+	
+	public void decodeLine_o(byte[] bytes, DDSHeader ddsHeader, DDSLineReader reader_o, byte[] bytes_o, DDSHeader ddsHeader_o, byte [][] banks, int width, int y) throws IOException{
+		switch (ddsHeader.getFormat()){
+			case UNCOMPRESSED:
+				decodeUncompressed(bytes, ddsHeader, banks, width, y); //opacity not applied
+				break;
+			case RGBG:
+			case GRGB:
+			case UYVY:
+			case YUY2:
+				decodeYUV(bytes, ddsHeader.getFormat(), banks, width, y); //opacity not applied
+				break;
+			case DXT1:
+			case DXT3:
+			case DXT5:
+				decodeDXT_o(bytes, ddsHeader, reader_o, bytes_o, ddsHeader_o, banks, width, y);
+				break;
+			case ATI1:
+			case ATI2:
+				decodeATI(bytes, ddsHeader, banks, width, y); //opacity not applied
+				break;
+			case NOT_SUPPORTED:
+				throw new IOException("Not a supported format!");
+			default:
+				throw new IOException(ddsHeader.getFormat().getName()+" is not a supported format!");
+		}
+	}
 
 	private void decodeYUV(byte[] bytes, Format format, byte [][] banks, int width, int y) throws IOException{
 		long pixel, r = 0, g1 = 0, b = 0, g2 = 0, u = 0, y1 = 0, v = 0, y2 = 0;
@@ -312,6 +339,71 @@ public class DDSLineReader {
 		lineNumber++;
 	}
 
+	private void decodeDXT_o(byte[] bytes, DDSHeader ddsHeader, DDSLineReader reader_o, byte[] bytes_o, DDSHeader ddsHeader_o, byte [][] banks, int width, int y) throws IOException{
+		if (lineNumber >= LINES_PER_READ) {
+			lineNumber = 0;
+		}
+		if (lineNumber == 0){
+			//System.out.println("Read line: " + y);
+			int fixedWidth = fixSize(width); //Fix "Bad size"
+			
+			linesColor = new byte[LINES_PER_READ][(int)Math.max(fixedWidth, 8)][COLORS_PER_READ];
+			reader_o.linesColor = new byte[(int) (LINES_PER_READ)][(int)Math.max(fixedWidth, 8)][COLORS_PER_READ];
+			
+			if (ddsHeader.getFormat() == Format.DXT3){
+				for (int x = 0; x < fixedWidth; x = x + 4) {
+					decodeDXT3AlphaBlock(bytes, 16, 0, x, (16 * fixedWidth / 4 * y / 4));
+					decodeColorBlock(bytes, 16, 8, x, (16 * fixedWidth / 4 * y / 4), false);
+				}
+			} else if (ddsHeader.getFormat() == Format.DXT5){
+				for (int x = 0; x < fixedWidth; x = x + 4) {
+					decodeAtiAndDxt5AlphaBlock(bytes, 16, 0, x, (16 * fixedWidth / 4 * y / 4), BANK_ALPHA);
+					decodeColorBlock(bytes, 16, 8, x, (16 * fixedWidth / 4 * y / 4), false);
+				}
+			} else {
+				for (int x = 0; x < fixedWidth; x = x + 4) {
+					decodeColorBlock(bytes, 8, 0, x, (8 * fixedWidth / 4 * y / 4),  true);
+				}
+			}			
+			
+			if (ddsHeader_o.getFormat() == Format.DXT3){
+				if ((fixedWidth *y) < bytes_o.length) for (int x = 0; x < fixedWidth; x = x + 4) {
+					reader_o.decodeDXT3AlphaBlock(bytes_o, 16, 0, x, (16 * fixedWidth / 4 * y / 4));
+					reader_o.decodeColorBlock(bytes_o, 16, 8, x, (16 * fixedWidth / 4 * y / 4), false);
+				}
+			} else if (ddsHeader_o.getFormat() == Format.DXT5){
+				if ((fixedWidth *y) < bytes_o.length) for (int x = 0; x < fixedWidth; x = x + 4) {
+					reader_o.decodeAtiAndDxt5AlphaBlock(bytes_o, 16, 0, x, (16 * fixedWidth / 4 * y / 4), BANK_ALPHA);
+					reader_o.decodeColorBlock(bytes_o, 16, 8, x, (16 * fixedWidth / 4 * y / 4), false);
+				}
+			} else {
+				if ((fixedWidth *y/2) < bytes_o.length) for (int x = 0; x < fixedWidth; x = x + 4) {
+					reader_o.decodeColorBlock(bytes_o, 8, 0, x, (8 * fixedWidth / 4 * y / 4),  true);
+				}
+			}
+		}
+		if (ddsHeader.getPixelFormat().isNormal()) {
+			//no opacity for normal
+			for (int x = 0; x < width; x++) {
+				banks[BANK_RED][x] = linesColor[lineNumber][x][BANK_ALPHA];
+				banks[BANK_GREEN][x] = linesColor[lineNumber][x][BANK_GREEN];
+				banks[BANK_BLUE][x] = (byte)xyToBlue(
+						linesColor[lineNumber][x][BANK_ALPHA],
+						linesColor[lineNumber][x][BANK_GREEN]);
+				banks[BANK_ALPHA][x] = linesColor[lineNumber][x][BANK_RED];
+			}
+		} else {
+			for (int x = 0; x < width; x++) {
+				banks[BANK_RED][x] = linesColor[lineNumber][x][BANK_RED];
+				banks[BANK_GREEN][x] = linesColor[lineNumber][x][BANK_GREEN];
+				banks[BANK_BLUE][x] = linesColor[lineNumber][x][BANK_BLUE];
+				banks[BANK_ALPHA][x] = reader_o.linesColor[lineNumber][x][BANK_RED]; //opacity texture is grayscale so that should work
+				
+			}
+		}
+		lineNumber++;
+	}
+	
 	private void decodeATI(byte[] bytes, DDSHeader ddsHeader, byte[][] banks, int width, int y) throws IOException{
 		if (lineNumber >= LINES_PER_READ) {
 			lineNumber = 0;
