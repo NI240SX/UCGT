@@ -15,7 +15,7 @@ import fr.ni240sx.ucgt.shared.Hash;
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
 
-public class Part extends Block {
+public class Part implements Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Part;}
@@ -25,6 +25,7 @@ public class Part extends Block {
 	
 	public byte[] compressedData;
 	
+	public ArrayList<Block> subBlocks = new ArrayList<>();
 	
 	public PartHeader header;
 	public TexUsage texusage;

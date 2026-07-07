@@ -34,7 +34,7 @@ public abstract class Hash {
 		return 'ù';
 	}
 	
-	private static int findBinHash(String s) {
+	public static int calcBin(String s) {
 		s = s.strip();
 		if (!s.isBlank()) {
 			if (s.startsWith("0x") || s.startsWith("0X")) return Integer.parseUnsignedInt(s.substring(2,s.length() > 10 ? 10 : s.length()), 16);
@@ -50,7 +50,7 @@ public abstract class Hash {
 		return 0;	
 	}
 	
-	private static int findVltHash(String s) {
+	public static int calcVlt(String s) {
 		s = s.strip();
 		if (!s.isBlank()) {
 			if (s.startsWith("0x") || s.startsWith("0X")) return Integer.parseUnsignedInt(s.substring(2,s.length() > 10 ? 10 : s.length()), 16);
@@ -162,7 +162,7 @@ public abstract class Hash {
 			BufferedReader br = new BufferedReader(new FileReader(f));
 			String key;
 			while ((key = br.readLine())!=null) if (!key.isBlank() && !key.startsWith("#") && !key.startsWith("//")){
-				if (!key.isBlank()) m.put(findBinHash(key.strip()), key.strip());
+				if (!key.isBlank()) m.put(calcBin(key.strip()), key.strip());
 			}
 			br.close();
 		} catch (Exception e) {
@@ -178,7 +178,7 @@ public abstract class Hash {
 			BufferedReader br = new BufferedReader(new FileReader(f));
 			String key;
 			while ((key = br.readLine())!=null) if (!key.isBlank() && !key.startsWith("#") && !key.startsWith("//")){
-				if (!key.isBlank()) m.put(findVltHash(key.strip()), key.strip());
+				if (!key.isBlank()) m.put(calcVlt(key.strip()), key.strip());
 			}
 			br.close();
 		} catch (Exception e) {
@@ -186,13 +186,19 @@ public abstract class Hash {
 		}
 	}
 	
-	
 	public static String addBinHash(String label) {
-		if (!BIN.containsKey(findBinHash(label))) BIN.put(findBinHash(label), label);
+		return addBinHash(label, BIN);
+	}
+	public static String addBinHash(String label, HashMap<Integer, String> map) {
+		if (!map.containsKey(calcBin(label))) map.put(calcBin(label), label);
 		return label;
 	}
+
 	public static String addVltHash(String label) {
-		if (!VLT.containsKey(findVltHash(label))) VLT.put(findVltHash(label), label);
+		return addVltHash(label, VLT);
+	}
+	public static String addVltHash(String label, HashMap<Integer, String> map) {
+		if (!map.containsKey(calcVlt(label))) map.put(calcVlt(label), label);
 		return label;
 	}
 	
@@ -234,12 +240,12 @@ public abstract class Hash {
 	
 
 	public static int findBIN(String label) {
-		var h = findBinHash(label);
+		var h = calcBin(label);
 		if (!BIN.containsKey(h)) BIN.put(h, label);
 		return h;
 	}
 	public static int findVLT(String label) {
-		var h = findVltHash(label);
+		var h = calcVlt(label);
 		if (!VLT.containsKey(h)) VLT.put(h, label);
 		return h;
 	}	

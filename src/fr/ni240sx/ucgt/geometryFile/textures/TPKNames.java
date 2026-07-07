@@ -8,7 +8,7 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class TPKNames extends Block{
+public class TPKNames implements Block{
 	
 	TPK tpk;
 	

@@ -983,6 +983,9 @@ public class Vertex {
 	}
 
 	public boolean positionEquals(Object obj) {
+		return positionEquals(obj, 1000);
+	}
+	public boolean positionEquals(Object obj, int factor) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -990,11 +993,11 @@ public class Vertex {
 		if (getClass() != obj.getClass())
 			return false;
 		Vertex other = (Vertex) obj;
-		return doubleEquals(pos[X], other.pos[X], 1000)
-				&& doubleEquals(pos[Y], other.pos[Y], 1000)
-				&& doubleEquals(pos[Z], other.pos[Z], 1000)
-				&& (tex == null || (doubleEquals(tex[0][U], other.tex[0][U], 1000)
-						&& doubleEquals(tex[0][V], other.tex[0][V], 1000)));
+		return doubleEquals(pos[X], other.pos[X], factor)
+				&& doubleEquals(pos[Y], other.pos[Y], factor)
+				&& doubleEquals(pos[Z], other.pos[Z], factor)
+				&& (tex == null || (doubleEquals(tex[0][U], other.tex[0][U], factor)
+						&& doubleEquals(tex[0][V], other.tex[0][V], factor)));
 	}
 	public boolean positionNormalEquals(Object obj) {
 		if (this == obj)

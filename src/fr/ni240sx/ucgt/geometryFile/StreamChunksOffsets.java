@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class StreamChunksOffsets extends Block {
+public class StreamChunksOffsets implements Block {
 
 	public static final int infoLength = 92;
 	public ArrayList<ChunkInfo> chunkInfos = new ArrayList<>();
@@ -67,7 +67,7 @@ public class StreamChunksOffsets extends Block {
 	 * this can be kept in memory (list of UnknownBlock with byte array storage, except block 10410300 with objects)
 	 * more blocks follow, apparently we don't need to edit them
 	 */
-	public class ChunkInfo{
+	public static class ChunkInfo{
 		
 		/*
 		 * long SectionName
@@ -89,20 +89,20 @@ public class StreamChunksOffsets extends Block {
 		 * 
 		 */
 		
-		String name; //eg X0, on 8 bytes
-		short ID; //23000
-		int const01 = 0; //0
-		int const02 = 1; //1
-		int offset; //whatever
-		int oldOffset;
-		int size;
-		int sizeCompressed;
-		int sizePermanent;
-		int index;
-		float centerX = 0;
-		float centerY = 0;
-		float radius = 0;
-		int checksum;
+		public String name; //eg X0, on 8 bytes
+		public short ID; //23000
+		public int const01 = 0; //0
+		public int const02 = 1; //1
+		public int offset; //whatever
+		public int oldOffset;
+		public int size;
+		public int sizeCompressed;
+		public int sizePermanent;
+		public int index;
+		public float centerX = 0;
+		public float centerY = 0;
+		public float radius = 0;
+		public int checksum;
 		
 		byte[] otherData = new byte[36];
 		

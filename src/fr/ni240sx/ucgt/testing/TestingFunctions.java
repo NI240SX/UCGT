@@ -1,4 +1,4 @@
-package fr.ni240sx.ucgt.geometryFile;
+package fr.ni240sx.ucgt.testing;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
@@ -32,6 +32,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.imageio.stream.MemoryCacheImageInputStream;
 
 import fr.ni240sx.ucgt.compression.CompressionLevel;
+import fr.ni240sx.ucgt.geometryFile.Geometry;
+import fr.ni240sx.ucgt.geometryFile.Part;
+import fr.ni240sx.ucgt.geometryFile.StreamChunksOffsets;
 import fr.ni240sx.ucgt.geometryFile.StreamChunksOffsets.ChunkInfo;
 import fr.ni240sx.ucgt.geometryFile.geometry.GeomHeader;
 import fr.ni240sx.ucgt.geometryFile.gui.FileOffset;
@@ -458,7 +461,7 @@ public class TestingFunctions extends Application{
 		}
 	}
 	
-	private static void unhashFile(String f) throws FileNotFoundException, IOException {
+	public static void unhashFile(String f) throws FileNotFoundException, IOException {
 		var br = new BufferedReader(new FileReader(new File(f)));
 		var bw = new BufferedWriter(new FileWriter(new File(f.contains(".") ? f.replace(".", "-unhash.") : f + "-unhash")));
 		String l;
@@ -884,7 +887,7 @@ public class TestingFunctions extends Application{
 //				case ChunksZonesContainer:
 //					blockLength = 0; //to read the inside block next iteration
 //					break;
-				case ChunksZones1:
+				case ChunksTrackPathZones:
 					if (zones1_police) while (in.position() < blockStart+blockLength) {
 //						System.out.println("Reading block");
 						var type = in.getInt(); /*
@@ -1010,7 +1013,7 @@ public class TestingFunctions extends Application{
 //						viewportGroup.getChildren().add(poly);
 					}
 					break;
-				case ChunksMarkers: //NIS markers
+				case ChunksPositionMarkers: //NIS markers
 					while (in.getInt() == 0x11111111) {}
 					in.position(in.position()-4);
 					Hash.addHashes(new File("data/stuff"));
@@ -1055,7 +1058,7 @@ public class TestingFunctions extends Application{
 					}
 					break;
 					
-				case ChunksBoundaries:
+				case VisibleSections_Boundaries:
 					while (in.position() < blockStart+blockLength) {
 						var b = new ChunkBoundary(in);
 						boundaries.add(b);
@@ -1186,7 +1189,7 @@ public class TestingFunctions extends Application{
 					}
 					break;
 					
-				case ChunksPreculler:
+				case VisibleSections_Relations:
 					while (in.position() < blockStart+blockLength) {
 						chunksRelated.add(new ChunksRelated(in));
 						//connect with ChunksOffsets and load from a few chunks to see
@@ -1194,7 +1197,7 @@ public class TestingFunctions extends Application{
 					}
 					break;
 					
-				case BarrierSplines:
+				case TrackPathBarriers:
 					while (in.position() < blockStart+blockLength) {
 						var fromX = in.getFloat();
 						var fromY = in.getFloat();
@@ -2251,11 +2254,11 @@ public class TestingFunctions extends Application{
 					new TPK(chunkData).textures.forEach(tex -> textures.put(tex.binKey, tex));
 					break;
 					
-				case ChunkObjects:
+				case ChunkScenery:
 					length = 0; //skip block size to enter the container
 					break;
 					
-				case ChunkObjects_Positions:
+				case ChunkScenery_Instances:
 					while (chunkData.getInt() == 0x11111111) {}
 					chunkData.position(chunkData.position()-4);
 					positions.clear();
@@ -2264,7 +2267,7 @@ public class TestingFunctions extends Application{
 					}
 					break;
 					
-				case ChunkObjects_Objects:
+				case ChunkScenery_Objects:
 					while (chunkData.getInt() == 0x11111111) {}
 					chunkData.position(chunkData.position()-4);
 					int index=0;
@@ -2478,11 +2481,11 @@ public class TestingFunctions extends Application{
 					new Geometry(chunkData).parts.forEach(p -> models.put(p.header.binKey, p));
 					break;
 					
-				case ChunkObjects:
+				case ChunkScenery:
 					length = 0; //skip block size to enter the container
 					break;
 					
-				case ChunkObjects_Positions:
+				case ChunkScenery_Instances:
 					while (chunkData.getInt() == 0x11111111) {}
 					chunkData.position(chunkData.position()-4);
 					positions.clear();
@@ -2491,7 +2494,7 @@ public class TestingFunctions extends Application{
 					}
 					break;
 					
-				case ChunkObjects_Objects:
+				case ChunkScenery_Objects:
 					while (chunkData.getInt() == 0x11111111) {}
 					chunkData.position(chunkData.position()-4);
 					int index=0;
@@ -2588,13 +2591,13 @@ public class TestingFunctions extends Application{
 	static OrbitCameraViewport viewport = new OrbitCameraViewport(viewportGroup, 0, 0);
 	static Spinner<Integer> filter = new Spinner<>(0, 1000, 0);
 	
-	static final boolean zones1_police = false;
+	static final boolean zones1_police = true;
 	static final boolean data1_NISmarkers = false;
 	static final boolean zones2_chunkBoundaries = true;
 	static final boolean data2_meshes = false;
 	static final boolean chunkoffsets = false;
 	static final boolean barriersplines = false;
-	static final boolean cameraBasedStreaming = true;
+	static final boolean cameraBasedStreaming = false;
 	
 	@Override
 	public void start(Stage primaryStage) throws Exception {

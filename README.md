@@ -11,12 +11,12 @@ If you wish to support my stuff, you can [buy me a coffee](https://ko-fi.com/ni2
 
 Download the latest version in the [Releases](https://github.com/NI240SX/Releases) page. 
 
-All tools depend on shared dependencies, and as such are all bundled together.
+All tools rely on shared dependencies, and as such are all bundled together.
 
 ##Included tools
 ### Geometry Editor
 
-A model extractor/editor with a focus on NFS Undercover.
+A model extractor/editor with a focus on NFS Undercover. Also supports NFS Undercover X360 and NFS ProStreet.
 
 Works on game BINs and BUNs.
 
@@ -32,9 +32,9 @@ Works on exported data from Binary.
 
 ### Collisions Editor
 
-A viewer for Collisions data.
+An editor for Havok collision bounds data.
 
-Works on exported data from Binary (serialized).
+Works on game BUNs, decompressed LZCs, or exported data from Binary (note: use Binercover to avoid breaking joints).
 
 
 ## UCGT uses modified code from the following

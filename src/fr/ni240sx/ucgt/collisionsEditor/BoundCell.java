@@ -2,6 +2,7 @@ package fr.ni240sx.ucgt.collisionsEditor;
 
 import java.util.ArrayList;
 
+import fr.ni240sx.ucgt.collisionsEditor.Collisions.scgBounds;
 import fr.ni240sx.ucgt.shared.Hash;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ContentDisplay;
@@ -9,7 +10,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TreeCell;
 import javafx.scene.layout.HBox;
 
-public class BoundCell extends TreeCell<CollisionBound> {
+public class BoundCell extends TreeCell<scgBounds> {
     CheckBox checkBox = new CheckBox();
     Label partDisplayName = new Label();
     HBox partHBox = new HBox(10, checkBox, partDisplayName);
@@ -42,18 +43,18 @@ public class BoundCell extends TreeCell<CollisionBound> {
 ////        	this.requestFocus();
 //        });
         checkBox.setOnAction(e -> {
-        	getItem().render.set(checkBox.isSelected());
+        	getItem().renderSetRecursively (checkBox.isSelected());
         });
     }
 
     @Override
-    protected void updateItem(CollisionBound item, boolean empty) {
+    protected void updateItem(scgBounds item, boolean empty) {
         super.updateItem(item, empty);
 
         update(item, empty);
     }
 
-	public void update(CollisionBound item, boolean empty) {
+	public void update(scgBounds item, boolean empty) {
 		if (item == null || empty) {
             setGraphic(null);
         } else {

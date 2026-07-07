@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class ShadersUsage extends Block {
+public class ShadersUsage implements Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Part_Mesh_ShadersUsage;}

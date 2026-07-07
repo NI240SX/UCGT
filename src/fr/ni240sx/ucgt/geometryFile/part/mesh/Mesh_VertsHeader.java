@@ -7,11 +7,13 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class Mesh_VertsHeader extends Block {
+public class Mesh_VertsHeader implements Block {
 	//apparently always empty, stores a name in legacy games, still saves data in case it's not
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Part_Mesh_VertsHeader;}
+	
+	public byte[] data;
 	
 	public Mesh_VertsHeader(ByteBuffer in) {
 		var length = in.getInt();

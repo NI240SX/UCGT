@@ -1,9 +1,11 @@
-package fr.ni240sx.ucgt.geometryFile;
+package fr.ni240sx.ucgt.testing;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import fr.ni240sx.ucgt.geometryFile.Geometry;
+import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.shared.OrbitCameraViewport;
 

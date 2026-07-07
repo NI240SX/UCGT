@@ -17,10 +17,16 @@ public enum SettingsImport_Tangents {
 		this.desc = desc;
     }
     
+    
     public String getName() {
         return name;
     }
 
+    @Override
+	public String toString() {
+        return name;
+    }
+    
     public static SettingsImport_Tangents get(String name) {
         for (SettingsImport_Tangents c : values()) for (String n : c.possibleNames) {
             if (n.equals(name)) return c;

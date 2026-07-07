@@ -24,7 +24,7 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
 
-public class TPK extends Block {
+public class TPK implements Block {
 
 	public TPKHeader header;
 	public ArrayList<NFSTexture> textures = new ArrayList<>();

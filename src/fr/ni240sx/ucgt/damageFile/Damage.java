@@ -7,7 +7,7 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class Damage extends Block {
+public class Damage implements Block {
 
 	float[] floats1_0;
 	String carname;

@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public abstract class Materials extends Block {
+public abstract class Materials implements Block {
 
 	public Materials() {
 	}

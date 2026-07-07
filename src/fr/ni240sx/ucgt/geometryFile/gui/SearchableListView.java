@@ -1,5 +1,7 @@
 package fr.ni240sx.ucgt.geometryFile.gui;
 
+import java.util.Locale;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -30,12 +32,12 @@ public class SearchableListView<t extends Object> extends VBox {
 	            
 	            if (obj.getClass() == FileOffset.class) {
 	            	FileOffset off = (FileOffset) obj;
-		            if (off.chunk.toLowerCase().contains(newValue.toLowerCase())) return true;
-		            if (off.file.toLowerCase().contains(newValue.toLowerCase())) return true;	            
+		            if (off.chunk != null && off.chunk.toLowerCase(Locale.ROOT).contains(newValue.toLowerCase(Locale.ROOT))) return true;
+		            if (off.file != null && off.file.toLowerCase(Locale.ROOT).contains(newValue.toLowerCase(Locale.ROOT))) return true;	            
 		            return false;
 	            }
 	            
-	            if (obj.toString().toLowerCase().contains(newValue.toLowerCase())) return true;
+	            if (obj.toString().toLowerCase(Locale.ROOT).contains(newValue.toLowerCase(Locale.ROOT))) return true;
 	            
 	            return false;
 	        });

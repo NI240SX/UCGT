@@ -9,7 +9,7 @@ import java.util.HashMap;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class UCGTData extends Block {
+public class UCGTData implements Block {
 
 	public HashMap<String,String> datas = new HashMap<>();
 	@Override

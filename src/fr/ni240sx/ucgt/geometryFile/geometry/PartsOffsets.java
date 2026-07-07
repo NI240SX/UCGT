@@ -12,7 +12,7 @@ import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class PartsOffsets extends Block {
+public class PartsOffsets implements Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Geom_PartsOffsets;}

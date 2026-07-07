@@ -1,12 +1,15 @@
 package fr.ni240sx.ucgt.shared;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import fr.ni240sx.ucgt.collisionsEditor.Collisions;
 import fr.ni240sx.ucgt.geometryFile.*;
 import fr.ni240sx.ucgt.geometryFile.geometry.*;
 import fr.ni240sx.ucgt.geometryFile.part.*;
@@ -16,15 +19,17 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.*;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.*;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.PS3.*;
 import fr.ni240sx.ucgt.geometryFile.textures.*;
+import fr.ni240sx.ucgt.streamEditor.regionBlocks.*;
+import fr.ni240sx.ucgt.streamEditor.streamBlocks.*;
 
-public abstract class Block {
+public interface Block {
+	
+	public static final boolean debug = false;
+	public AtomicInteger debugDumpIndex = new AtomicInteger(0);
+	
 	public abstract BlockType getBlockID();
 	
 	public static HashMap<BlockType, Boolean> doNotRead = new HashMap<>(); //allows speeding up file loading by blocking unnecessary blocks from being read
-	
-	public ArrayList<Block> subBlocks = new ArrayList<>();
-
-	public byte[] data;
 	
 	public abstract byte[] save(int currentPosition) throws IOException, InterruptedException;
 	
@@ -33,6 +38,12 @@ public abstract class Block {
 		BlockType block = BlockType.get(chunkToInt = in.getInt());
 //		var pos = in.position();
 //		System.out.println("Block read : "+block.getName());
+		
+		if (debug) {
+			//if (block == BlockType.INVALID) 
+				System.out.println("0x%08X - %s - %s".formatted(chunkToInt, block, bChunkID.get(chunkToInt)));
+		}
+		
 		if (doNotRead.get(block) == null) //use the doNotRead with caution !
 		//try {
 		switch (block) {
@@ -84,16 +95,16 @@ public abstract class Block {
 			return new Vertices_PC(in);
 		case Part_Mesh_Triangles_PC:
 			return new Triangles_PC(in);
-		case Part_Padding:
-			in.position(in.getInt()+in.position()); //skips the block
-			return null;
-//			return new Part_Padding(in);
-		case Part_HashList:
-			in.position(in.getInt()+in.position()); //skips the block
-			return null;
-		case Part_HashAssign:
-			in.position(in.getInt()+in.position()); //skips the block
-			return null;
+//		case Part_Padding:
+//			in.position(in.getInt()+in.position()); //skips the block
+//			return null;
+////			return new Part_Padding(in);
+//		case Part_HashList:
+//			in.position(in.getInt()+in.position()); //skips the block
+//			return null;
+//		case Part_HashAssign:
+//			in.position(in.getInt()+in.position()); //skips the block
+//			return null;
 		case Part_AutosculptLinking:
 			return new AutosculptLinking(in);
 		case Part_AutosculptZones:
@@ -133,16 +144,75 @@ public abstract class Block {
 		case TPK_TexOffsets:
 			return new TexOffsets(in);
 			
-		case NIS_Skeleton:
-			System.out.println("NIS Skeleton block");
-			return new UnknownBlock(in, chunkToInt);
+		case CarCollisions:
+			return new Collisions(in);
 			
+//		case NIS_Skeleton:
+//			System.out.println("NIS Skeleton block");
+//			return new UnknownBlock(in, chunkToInt);
+			
+			
+			//region file
+		case ChunksTrackPathContainer:
+			return new ChunksZonesContainer(in);
+		case ChunksTrackPathZones:
+			return new ChunksTrackPathZones(in);
+		case ChunksPositionMarkers:
+			return new ChunksMarkers(in);
+		case VisibleSections:
+			return new ChunksStreamingContainer(in);
+		case VisibleSections_Boundaries:
+			return new ChunksBoundaries(in);
+		case ChunksElevationRules:
+			return new ChunksElevationRules(in);
+		case VisibleSections_Relations:
+			return new ChunksRelations(in);
 		case ChunksOffsets:
 			return new StreamChunksOffsets(in);
+		case ChunksSceneryHierarchies:
+			return new SceneryHierarchies(in);
+		case CarpWorldGrid:
+			return new CarpWorldGrid(in);
+		case BoundsPack:
+			return new BoundsPack(in);
+		case TrackPathBarriers:
+			return new BarrierSplines(in);
+			
+			//stream file
+		case ChunkScenery:
+			return new ChunkScenery(in);
+		case ChunkScenery_Header:
+			return new ChunkScenery_Header(in);
+		case ChunkScenery_Instances:
+			return new ChunkScenery_Instances(in);
+		case ChunkScenery_Objects:
+			return new ChunkScenery_Objects(in);
+		case CarpWGridIslandData:
+			return new CarpWGridIslandData(in);
+		case ChunkHeliSheet:
+			return new ChunkHeliSheet(in);
+		case ChunkSmokeSpawners:
+			return new ChunkSmokeSpawners(in);
+		case ChunkVisCurtains:
+			return new ChunkVisCurtains(in);
+		case ChunkCollisions:
+			return new ChunkCollisions(in);
 			
 		case INVALID:
 		default:
 //			System.out.println("Unknown block, ID="+String.format("0x%08X", chunkToInt)+" ("+BlockType.get(chunkToInt)+")");
+			if (debug) {
+				var b = new UnknownBlock(in, chunkToInt);
+				if (b.data.length > 0) {
+					new File("DEBUG_DUMPS").mkdirs();
+					var fos = new FileOutputStream(new File("DEBUG_DUMPS\\%s_0x%08X_%d".formatted(b.getBlockID().toString(), b.ID, debugDumpIndex.getAndIncrement())));
+					fos.write(b.data);
+					fos.close();
+					debugDumpIndex.getAndIncrement();
+				}
+				System.out.println("UNSUPPORTED, size %d".formatted(b.data.length));
+				return b;
+			}
 			return new UnknownBlock(in, chunkToInt);
 		}
 		//} catch (Exception e) {
@@ -152,7 +222,6 @@ public abstract class Block {
 		//}
 		return new SkippedBlock(in, chunkToInt);
 	}
-	
 
 	public static String readStringAligned(ByteBuffer bb) {
 		var s = readString(bb);
@@ -223,6 +292,11 @@ public abstract class Block {
 	public static void skipAlignment(ByteBuffer bb, int alignment) {
 		while (bb.position()%alignment != 0) {
 			bb.get();
+		}
+	}
+	public static void skipAlignment(ByteArrayOutputStream bos, int modulo, int pattern) {
+		while (bos.size()%modulo != 0) {
+			bos.write(pattern);
 		}
 	}
 	

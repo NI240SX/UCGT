@@ -16,10 +16,12 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.PS3.*;
 
-public class Mesh extends Block {
+public class Mesh implements Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Part_Mesh;}
+	
+	public ArrayList<Block> subBlocks = new ArrayList<>();
 	
 	public Platform platform;
 	public Mesh_Info info;

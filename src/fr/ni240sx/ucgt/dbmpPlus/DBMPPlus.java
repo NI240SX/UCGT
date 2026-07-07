@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.NoSuchElementException;
 
 import fr.ni240sx.ucgt.shared.Hash;
+import fr.ni240sx.ucgt.shared.Utils;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.geometry.Orientation;
@@ -67,10 +68,7 @@ public class DBMPPlus extends Application {
 	static boolean currentExhCenterTipEnabled = true;
 	static String currentExhASZones = "11";
 	
-	public static final String programName = "UCGT DBModelParts Editor";
-	public static final String programVersion = "1.1.4";
-	public static final String settingsFolder = "settings";
-	public static final String settingsFile = "settings/dbmpeditor.dat";
+	
 
 	//---------------------------------------------------------------------------------------------------
 	//
@@ -81,7 +79,7 @@ public class DBMPPlus extends Application {
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 		try {
-			BufferedReader br = new BufferedReader(new FileReader(new File(settingsFile)));
+			BufferedReader br = new BufferedReader(new FileReader(new File(Utils.settingsDbmpEd)));
 			br.readLine(); //="DO NOT MANUALLY EDIT THIS FILE"
 			lastDirectoryLoaded = br.readLine();
 			lastFileLoaded = br.readLine();
@@ -103,8 +101,8 @@ public class DBMPPlus extends Application {
 		
         launch(args);
         try {
-			Files.createDirectories(Paths.get(settingsFolder));
-			BufferedWriter bw = new BufferedWriter(new FileWriter(new File(settingsFile)));
+			Files.createDirectories(Paths.get(Utils.settingsFolder));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(new File(Utils.settingsDbmpEd)));
 			bw.write("DO NOT MANUALLY EDIT THIS FILE\n" 
 					+ lastDirectoryLoaded + "\n" 
 					+ lastFileLoaded + "\n" 
@@ -123,7 +121,7 @@ public class DBMPPlus extends Application {
 	
     @Override
 	public void start(Stage primaryStage) {
-        primaryStage.setTitle(programName + " - " + mainDBMP.carname);
+        primaryStage.setTitle(Utils.dbmp_Name + " - " + mainDBMP.carname);
 
         VBox windowTop = new VBox();
         
@@ -246,12 +244,12 @@ public class DBMPPlus extends Application {
         
         menuAttributes.getItems().addAll(attributeAddAS, attributeRemoveAS, attributeAddCV, attributeRemoveCV, attributeSort);
         
-        Menu menuSettings = new Menu(programName);
+        Menu menuSettings = new Menu(Utils.dbmp_Name);
         
         CheckMenuItem settingsDark = new CheckMenuItem("Dark mode");
         CheckMenuItem settingsWarnings = new CheckMenuItem("Disable warning pop-ups");
         CheckMenuItem settingsWidebodyAutoCorrect = new CheckMenuItem("Auto-correct widebody part names");
-        MenuItem settingsAbout = new MenuItem("About " + programName + "...");
+        MenuItem settingsAbout = new MenuItem("About " + Utils.dbmp_Name + "...");
         
         if (widebodyAutoCorrect) settingsWidebodyAutoCorrect.setSelected(true);
         settingsWidebodyAutoCorrect.selectedProperty().addListener((obs, wasSelected, isSelected) -> {
@@ -270,8 +268,8 @@ public class DBMPPlus extends Application {
         
         settingsAbout.setOnAction(e -> {
 			Stage st = new Stage();
-			st.setTitle("About " + programName);
-			Scene sc = new Scene(new Label(programName + " version " + programVersion + "\n\n"
+			st.setTitle("About " + Utils.dbmp_Name);
+			Scene sc = new Scene(new Label(Utils.dbmp_Name + " version " + Utils.dbmp_Version + "\n\n"
 					+ "Advanced DBModelParts editor for NFS Undercover.\n"
 					+ "Aims to make the creation of such data less of a hassle for modders.\n"
 					+ "This software has been originally created for the mod Undercover Exposed.\n\n"
@@ -1810,7 +1808,7 @@ public class DBMPPlus extends Application {
 				lastDirectoryLoaded = selected.getAbsolutePath().replace(lastFileLoaded, "");
 //						  System.out.println(mainDBMP);
 				updateAllPartsDisplay();
-				primaryStage.setTitle(programName + " - " + mainDBMP.carname);
+				primaryStage.setTitle(Utils.dbmp_Name + " - " + mainDBMP.carname);
 				menuDBMP.setText(mainDBMP.carname);
 				if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Database loaded successfully.", ButtonType.OK).show();
 			} else {

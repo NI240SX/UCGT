@@ -1,14 +1,20 @@
 package fr.ni240sx.ucgt.geometryFile;
 
+import java.awt.Desktop;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.compression.CompressionType;
@@ -18,14 +24,13 @@ import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
 import fr.ni240sx.ucgt.geometryFile.textures.TPK;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
+import javafx.scene.shape.Path;
 import javafx.util.Pair;
 
 @SuppressWarnings("unused")
 public class GeometryEditorCLI {
 
-	public static final String programVersion = "1.3.2";
-	public static final String programBuild = "2026.06.14";
-	
 	public static Geometry geom = null;
 //	public static ArrayList<String> commandsHistory = new ArrayList<>();
 	
@@ -45,6 +50,25 @@ public class GeometryEditorCLI {
 			//launching without arguments runs the command-line utility
 			
 			showHelp();
+			if (!new File(Utils.geomDefaultConfig).isFile()) {
+				System.out.print("""
+
+						No default configuration found. Would you like to generate one and open it for editing? (Y/Yes/N/No)""");
+				System.out.print("\n> ");
+				
+		        var in = new BufferedReader(new InputStreamReader(System.in));
+		        String l;
+		        try {
+		        	l = in.readLine();
+		        	if (l.toLowerCase(Locale.ROOT).equals("yes") || l.toLowerCase(Locale.ROOT).equals("y")) {
+		        		Geometry.writeDefaultConfig();
+		        		Desktop.getDesktop().open(new File(Utils.geomDefaultConfig));
+		        	}
+		        } catch (Exception e) {
+		        	e.printStackTrace();
+		        }
+			}
+			
 			System.out.print("\n> ");
 	
 	        var in = new BufferedReader(new InputStreamReader(System.in));
@@ -77,6 +101,10 @@ public class GeometryEditorCLI {
 				
 			case "compile":
 				compile(l);
+				break;
+				
+			case "compileall":
+				compileAll(l);
 				break;
 				
 			case "decompile":
@@ -127,7 +155,6 @@ public class GeometryEditorCLI {
 			e.printStackTrace();
 		}
 	}
-
 
 	private static void changeComp(String l, CompressionType ct) {
 		String src;
@@ -259,15 +286,15 @@ public class GeometryEditorCLI {
 				System.out.println("Saving 3D model...");
 				t = System.currentTimeMillis();
 				try {
-					if (dst.toLowerCase().endsWith(".z3d")) {
+					if (dst.toLowerCase(Locale.ROOT).endsWith(".z3d")) {
 						ZModelerZ3D.save(geom, dst);
 						System.out.println("ZModeler scene saved in "+(System.currentTimeMillis()-t)+" ms.");
 				        geom.writeConfig(new File(dst.replace(".z3d", "").replace(".Z3D", "")+".ini"));
-					} else if (dst.toLowerCase().endsWith(".obj")){
+					} else if (dst.toLowerCase(Locale.ROOT).endsWith(".obj")){
 						WavefrontOBJ.save(geom, dst);
 						System.out.println("Wavefront saved in "+(System.currentTimeMillis()-t)+" ms.");
 				        geom.writeConfig(new File(dst.replace(".obj", "").replace(".OBJ", "")+".ini"));
-					} else if (dst.toLowerCase().endsWith(".gltf")){
+					} else if (dst.toLowerCase(Locale.ROOT).endsWith(".gltf")){
 						GLTF.save(geom, dst,false);
 						System.out.println("glTF saved in "+(System.currentTimeMillis()-t)+" ms.");
 				        geom.writeConfig(new File(dst.replace(".obj", "").replace(".OBJ", "")+".ini"));
@@ -350,7 +377,8 @@ public class GeometryEditorCLI {
 				src = l.split(" ")[0];
 				l = l.substring(src.length()+1);
 			}
-			if (!src.endsWith("\\")) src += "\\";
+			sanitizeFolderEnd(src);
+			src += File.separator;
 			
 			//read second path
 			if (l.startsWith("\"")) {
@@ -416,7 +444,8 @@ public class GeometryEditorCLI {
 				dst = l.split(" ")[0];
 				l = l.substring(dst.length());
 			}
-			if (!dst.endsWith("\\")) dst += "\\";
+			sanitizeFolderEnd(src);
+			dst += File.separator;
 
 			//read type if existing
 			if (l.length() > 1) {
@@ -529,10 +558,7 @@ public class GeometryEditorCLI {
 //					l = l.substring(dst.length()+1);
 			}
 			
-			if (!new File(dst.replace(".BIN", "-BACKUP.BIN").replace(".bin", "-BACKUP.bin")).isFile() && new File(dst).isFile()) {
-				//create vanilla backup if not existing
-				new File(dst).renameTo(new File(dst.replace(".BIN", "-BACKUP.BIN").replace(".bin", "-BACKUP.bin")));
-			}
+			backUpFile(new File(dst));
 			new File(dst).getParentFile().mkdirs();
 			
 			try {
@@ -548,10 +574,7 @@ public class GeometryEditorCLI {
 						if (tpk.textures.size() == 0) tpk = null;
 						else {
 							String texdst = new File(dst).getParent()+File.separator+"TEXTURES.BIN";
-							if (!new File(texdst.replace(".BIN", "-BACKUP.BIN").replace(".bin", "-BACKUP.bin")).isFile() && new File(texdst).isFile()) {
-								//create vanilla backup if not existing
-								new File(texdst).renameTo(new File(texdst.replace(".BIN", "-BACKUP.BIN").replace(".bin", "-BACKUP.bin")));
-							}
+							backUpFile(new File(texdst));
 							tpk.save(new File(texdst));
 							System.out.println("\nTextures saved in "+(System.currentTimeMillis()-t)+" ms.");
 						}
@@ -569,14 +592,15 @@ public class GeometryEditorCLI {
 					}
 				} else {
 					try {
-						if (!src.endsWith("\\")) src += "\\";
+						sanitizeFolderEnd(src);
+						src += File.separator;
 						
 						//create a geometry bundle
 						var filesInDir = new File (src).list();
 						var fos = new FileOutputStream(dst);
 						
 						for (var s : filesInDir) {
-							s = s.toLowerCase();
+							s = s.toLowerCase(Locale.ROOT);
 							// decompiled 3D models
 							if (s.endsWith(".ini")) {
 								Geometry g;
@@ -603,6 +627,140 @@ public class GeometryEditorCLI {
 			}
 			
 		} catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : compile <OBJ/Z3D source> <BIN output>");}
+	}
+
+	private static void compileAll(String l) {
+		String src;
+		String dst;
+		String conf = null;
+		try {
+			l = l.substring(11);
+			
+			//read first path
+			if (l.startsWith("\"")) {
+				l = l.substring(1);
+				src = l.split("\"")[0];
+				l = l.substring(src.length()+2);
+			} else {
+				src = l.split(" ")[0];
+				l = l.substring(src.length()+1);
+			}
+			
+			//read second path
+			if (l.startsWith("\"")) {
+				l = l.substring(1);
+				dst = l.split("\"")[0];
+				l = l.substring(dst.length()+1);
+			} else {
+				dst = l.split(" ")[0];
+			}
+			
+			if (l.length() > 0) {
+				l = l.substring(1);
+				//read config path
+				if (l.startsWith("\"")) {
+					l = l.substring(1);
+					conf = l.split("\"")[0];
+				} else {
+					conf = l.split(" ")[0];
+				}
+			}
+			
+			sanitizeFolderEnd(src);
+			sanitizeFolderEnd(dst);
+			
+			if (conf == null) conf = src + File.separator + "settings.ini";
+			
+			if (!new File(conf).isFile()) {
+				System.out.print("""
+						No configuration found. Would you like to generate one and open it for editing? (Y/Yes/N/No)""");
+				System.out.print("\n> ");
+				
+		        var in = new BufferedReader(new InputStreamReader(System.in));
+		        try {
+		        	l = in.readLine();
+		        	if (l.toLowerCase(Locale.ROOT).equals("yes") || l.toLowerCase(Locale.ROOT).equals("y")) {
+		        		Geometry.writeDefaultConfig(new File(conf));
+		        		Desktop.getDesktop().open(new File(conf));
+			        	System.out.println("Press any key to continue with compiling...");
+						System.out.print("> ");
+						in.readLine();
+		        	}
+		        } catch (Exception e) {
+		        	e.printStackTrace();
+		        }
+			}
+						
+			var dir = new File(src);
+			try {
+				int recursionLevel = 0;
+				compileAllRecursive(dst, dir, conf, recursionLevel);
+				System.out.println("Operation successful !");
+			} catch (Exception e) {
+				System.out.printf("An error occured : %s\n", e.getMessage());
+				e.printStackTrace();
+			}
+			
+			
+		} catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : compileall <source folder> <output folder> [configuration]");}
+	}
+
+	private static void sanitizeFolderEnd(String s) {
+		if (s.endsWith("\\") || s.endsWith("/")) s = s.substring(0, s.length()-1);
+	}
+
+	public static void compileAllRecursive(String dst, File dir, String conf, int recursionLevel) {
+		if (!dir.isDirectory()) return;
+		for (var f : dir.listFiles()) {
+			
+			compileAllRecursive(dst, f, conf, recursionLevel+1);
+
+			var ini = new File(f.getPath().replace(f.getName().split("\\.")[f.getName().split("\\.").length-1], "ini"));
+
+			if (ini.isFile()) {
+				try {
+					geom = Geometry.importFromFile(f, ini, conf == null ? null : new File(conf));
+					
+					var out = dst+File.separator+"CARS"+File.separator+geom.carname;
+					new File(out).mkdirs();
+
+					if (recursionLevel > 0) {
+						TPK tpk = null;
+						try {
+							long t = System.currentTimeMillis();
+							System.out.println("Saving textures...");
+							tpk = new TPK(dir, geom);
+							if (tpk.textures.size() == 0) tpk = null;
+							else {
+								var tpkFile = new File(out+File.separator+"TEXTURES.BIN");
+								backUpFile(tpkFile);
+								tpk.save(tpkFile);
+								System.out.println("\nTextures saved in "+(System.currentTimeMillis()-t)+" ms.");
+							}
+						} catch (Exception e) {
+							System.out.println("Error saving the texture pack: "+e.getMessage());
+						}
+					}
+					
+					try {
+						var geomFile = new File(out+File.separator+"GEOMETRY.BIN");
+						backUpFile(geomFile);
+						geom.save(geomFile);
+						
+					} catch (Exception e) {
+						System.out.printf("Error saving Geometry : %s\n", e.getMessage());
+						e.printStackTrace();
+					}						
+				} catch (Exception e) {} //probably errors out trying to load a geom
+			}
+		}
+	}
+
+	public static void backUpFile(File f) {
+		if (f.isFile()) {
+			File f_old = new File(f.getAbsolutePath());
+			f_old.renameTo(new File(f_old.getAbsolutePath() + ".bak_" + new SimpleDateFormat("yyMMdd-HHmmss").format(new Date(f_old.lastModified()))));
+		}
 	}
 
 	private static void platform(String l) {
@@ -663,7 +821,7 @@ public class GeometryEditorCLI {
 
 	public static void showHelp() {
 		System.out.printf("""
-				 ===   UCGT by ni240sx   === 
+				 ===   UCGT by needeka   === 
 				Geometry Editor Command-Line
 				Version %s - %s
 				
@@ -685,6 +843,11 @@ public class GeometryEditorCLI {
 					compile <glTF/OBJ/Z3D source> <BIN output>
 					    - compile a 3D model and its corresponding config to a BIN file containing a single geometry
 					      also compiles a corresponding TEXTURES.BIN if DDS textures are found in the source folder
+
+					compileall <source folder> <output folder> [configuration]
+					    - compile all suitable models in the source folder and its subfolders to CARS\\XNAME in the output folder
+					      also compiles textures with each model when DDS textures are found next to a model that's not in the root source folder
+					      uses the given configuration file (if provided) for default and override settings
 					    
 					decompile <BIN source> [glTF/OBJ/Z3D output]
 					    - extract a BIN file containing a single geometry to a 3D model and a configuration file
@@ -721,6 +884,6 @@ public class GeometryEditorCLI {
 					    
 					exit
 					    - exits the program
-				""", programVersion, programBuild);
+				""", Utils.geom_version, Utils.geom_build);
 	}
 }

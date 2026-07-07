@@ -16,6 +16,9 @@ public class FileOffset {
 
 	@Override
 	public String toString() {
+		if (chunk == null && file == null) return "Unknown file";
+		if (chunk == null) return file;
+		if (file == null) return chunk;
 		return "Chunk \""+chunk+"\", File \""+file+"\"";
 	}
 }

@@ -7,12 +7,13 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class SkippedBlock extends Block {
+public class SkippedBlock implements Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.INVALID;}
 	
 	public int ID;
+	public byte[] data;
 	
 	public SkippedBlock(ByteBuffer in, int ID) {
 		//System.out.println("Unknown block, ID="+Integer.toHexString(Integer.reverseBytes(ID)));

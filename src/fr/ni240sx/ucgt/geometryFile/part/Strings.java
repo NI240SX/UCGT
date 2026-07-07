@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class Strings extends Block {
+public class Strings implements Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Part_Strings;}

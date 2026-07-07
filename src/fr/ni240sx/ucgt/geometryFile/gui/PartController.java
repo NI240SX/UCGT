@@ -532,19 +532,26 @@ public class PartController{
 		
 		for (int meshViewIndex = 0; meshViewIndex < mesh.getChildren().size(); meshViewIndex++) {
 			
-			for (int pointIndex = 0; pointIndex < ((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().size(); pointIndex++) {
+			if (((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().size() != ((TriangleMesh)((MeshView)zones.get(0).mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().size()) {
+				System.out.println("PartController: WARNING: Different vertex count across Autosculpt zones on part %s".formatted(part.name));
+			}
+			
+			for (int pointIndex = 0; pointIndex < ((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().size()
+					&& pointIndex < ((TriangleMesh)((MeshView)zones.get(0).mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().size(); pointIndex++) {
 				((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().set(pointIndex, 
 							((TriangleMesh)((MeshView)zones.get(0).mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().get(pointIndex)
 						);
 			}
 
-			for (int normalsIndex = 0; normalsIndex < ((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().size(); normalsIndex++) {
+			for (int normalsIndex = 0; normalsIndex < ((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().size()
+					&& normalsIndex < ((TriangleMesh)((MeshView)zones.get(0).mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().size(); normalsIndex++) {
 				((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().set(normalsIndex, 
 							((TriangleMesh)((MeshView)zones.get(0).mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().get(normalsIndex)
 						);
 			}
 			
-			for (int texcoordIndex = 0; texcoordIndex < ((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().size(); texcoordIndex++) {
+			for (int texcoordIndex = 0; texcoordIndex < ((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().size()
+					&& texcoordIndex < ((TriangleMesh)((MeshView)zones.get(0).mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().size(); texcoordIndex++) {
 				((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().set(texcoordIndex, 
 							((TriangleMesh)((MeshView)zones.get(0).mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().get(texcoordIndex)
 						);
@@ -560,7 +567,9 @@ public class PartController{
 		
 			for (int meshViewIndex = 0; meshViewIndex < mesh.getChildren().size(); meshViewIndex++) {
 
-				for (int pointIndex = 0; pointIndex < ((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().size(); pointIndex++) {
+				for (int pointIndex = 0; pointIndex < ((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().size()
+						&& pointIndex < ((TriangleMesh)((MeshView)zones.get(zoneIndex).mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().size()
+						&& pointIndex < ((TriangleMesh)((MeshView)zones.get(0).mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().size(); pointIndex++) {
 					((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().set(pointIndex, 
 							(float) (((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().get(pointIndex) +
 							(	((TriangleMesh)((MeshView)zones.get(zoneIndex).mesh.getChildren().get(meshViewIndex)).getMesh()).getPoints().get(pointIndex) -				
@@ -568,7 +577,9 @@ public class PartController{
 									) * sliders.get(zoneIndex))); //autosculpt.autosculptSliders.get(zoneIndex).slider.getValue()
 				}
 				
-				for (int normalsIndex = 0; normalsIndex < ((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().size(); normalsIndex++) {
+				for (int normalsIndex = 0; normalsIndex < ((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().size()
+						&& normalsIndex < ((TriangleMesh)((MeshView)zones.get(zoneIndex).mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().size()
+						&& normalsIndex < ((TriangleMesh)((MeshView)zones.get(0).mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().size(); normalsIndex++) {
 					((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().set(normalsIndex, 
 							(float) (((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().get(normalsIndex) +
 							(	((TriangleMesh)((MeshView)zones.get(zoneIndex).mesh.getChildren().get(meshViewIndex)).getMesh()).getNormals().get(normalsIndex) -				
@@ -576,7 +587,9 @@ public class PartController{
 									) * sliders.get(zoneIndex))); //autosculpt.autosculptSliders.get(zoneIndex).slider.getValue()
 				}
 				
-				for (int texcoordsIndex = 0; texcoordsIndex < ((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().size(); texcoordsIndex++) {
+				for (int texcoordsIndex = 0; texcoordsIndex < ((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().size()
+						&& texcoordsIndex < ((TriangleMesh)((MeshView)zones.get(zoneIndex).mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().size()
+						&& texcoordsIndex < ((TriangleMesh)((MeshView)zones.get(0).mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().size(); texcoordsIndex++) {
 					((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().set(texcoordsIndex, 
 							(float) (((TriangleMesh)((MeshView)mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().get(texcoordsIndex) +
 							(	((TriangleMesh)((MeshView)zones.get(zoneIndex).mesh.getChildren().get(meshViewIndex)).getMesh()).getTexCoords().get(texcoordsIndex) -				

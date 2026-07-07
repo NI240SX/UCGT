@@ -1,5 +1,6 @@
 package fr.ni240sx.ucgt.geometryFile.gui;
 
+import java.util.Locale;
 import java.util.function.Predicate;
 
 import javafx.scene.control.MultipleSelectionModel;
@@ -37,7 +38,7 @@ public class SearchableTreeView<t extends Object> extends VBox {
 	            	if (pc.part != null) return pc.part.name.toUpperCase().contains(newValue.toUpperCase());
 	            }
 	            
-	            if (obj.toString().toLowerCase().contains(newValue.toLowerCase())) return true;
+	            if (obj.toString().toLowerCase(Locale.ROOT).contains(newValue.toLowerCase(Locale.ROOT))) return true;
 	            
 	            return false;
 	        });

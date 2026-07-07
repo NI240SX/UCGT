@@ -10,7 +10,7 @@ import java.util.List;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class TexList extends Block {
+public class TexList implements Block {
 	
 	public List<Integer> textures = new ArrayList<>();
 	

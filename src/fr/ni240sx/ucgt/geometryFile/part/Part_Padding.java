@@ -7,13 +7,12 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class Part_Padding extends Block {
+public class Part_Padding implements Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Part_Padding;}
 	
-	@SuppressWarnings("hiding")
-	public byte[] data = new byte[12];
+	public byte[] data;
 	
 	public Part_Padding(ByteBuffer in) {
 		var length = in.getInt();
@@ -26,7 +25,7 @@ public class Part_Padding extends Block {
 	
 	@Override
 	public byte[] save(int currentPosition) throws IOException {
-		
+		if (data == null) data = new byte[12];
 		var arr = new byte [data.length+8];
 		
 		var buf = ByteBuffer.wrap(arr);

@@ -7,7 +7,7 @@ import javafx.scene.shape.DrawMode;
 public class OpenBox extends Group {
 
 
-	public OpenBox(double x, double y, double z, double t) {
+	public OpenBox(@SuppressWarnings("unused") double x, double y, double z, double t) {
 		
 		var XLine1 = new Box(1, t, t);
 		var XLine2 = new Box(1, t, t);

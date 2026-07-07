@@ -4,19 +4,19 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import fr.ni240sx.ucgt.geometryFile.GeometryEditorCLI;
 import fr.ni240sx.ucgt.geometryFile.Platform;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
-public class GeomInfo extends Block {
+public class GeomInfo implements Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Geom_Info;}
 	public static final int usualLength = 144;
 	
 	public int const01=0, const02=3, platf=PLATF_UNDERCOVER, partsCount=0;
-	public String filename="Compiled with UCGT v"+GeometryEditorCLI.programVersion+" | needeka", blockname="DEFAULT";
+	public String filename="Compiled with UCGT v"+Utils.geom_version+" | needeka", blockname="DEFAULT";
 	public int const1=128, const21=CONST21_UNDERCOVER, const22=CONST21_UNDERCOVER, const23=CONST23_UNDERCOVER, const24=CONST23_UNDERCOVER;
 
 	public static final int PLATF_UNDERCOVER = 30;

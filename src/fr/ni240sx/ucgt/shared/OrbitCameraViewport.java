@@ -22,7 +22,7 @@ import javafx.scene.transform.Translate;
 
 public class OrbitCameraViewport extends SubScene {
 
-	public Group viewportGroup;
+	private Group viewportGroup;
     
 
     private double anchorX, anchorY;// posX, posY;
@@ -42,9 +42,10 @@ public class OrbitCameraViewport extends SubScene {
     
     public BooleanProperty trackpadMode = new SimpleBooleanProperty();
 
-    private final Set<KeyCode> keys = new HashSet<>();
+    public final Set<KeyCode> keys = new HashSet<>();
 
     public boolean mouseLookEnabled = false;
+    public boolean movementEnabled = true;
 
     private double mouseSensitivity = 0.15;
     private double movementSpeed = 1;
@@ -103,7 +104,7 @@ public class OrbitCameraViewport extends SubScene {
 //            if (e.getButton() == MouseButton.SECONDARY) {
 //                mouseLookEnabled = true;
 //            }
-            if (e.getClickCount() == 2) mouseLookEnabled = !mouseLookEnabled;
+//            if (e.getClickCount() == 2) mouseLookEnabled = !mouseLookEnabled;
         });
         setOnMouseMoved(event -> {
         	if (mouseLookEnabled) {
@@ -178,6 +179,7 @@ public class OrbitCameraViewport extends SubScene {
         
         
         setOnKeyPressed(e -> {
+        	if (!movementEnabled) return;
         	if (e.isAltDown() || e.isControlDown() || e.isMetaDown()) return;
         	keys.add(e.getCode());
         });
@@ -195,11 +197,19 @@ public class OrbitCameraViewport extends SubScene {
                 double deltaSeconds = (now - lastUpdate) / 1_000_000_000.0;
                 lastUpdate = now;
 
+            	if (!movementEnabled) return;
                 updateMovement(deltaSeconds);
             }
         };
 
         movementTimer.start();
+	}
+	
+	public double getAngleX() {
+		return angleX;
+	}
+	public double getAngleY() {
+		return angleY;
 	}
 	
 	private void handleMouseLook(MouseEvent event) {
@@ -318,6 +328,23 @@ public class OrbitCameraViewport extends SubScene {
         radius = 10;
 	}
 	
+
+	public void moveCameraNoListener(double x, double y) {
+		var list = cameraPivotPosition.getOnTransformChanged();
+		cameraPivotPosition.setOnTransformChanged(null);
+		moveCamera(x,y);
+		cameraPivotPosition.setOnTransformChanged(list);
+	}
+	public void moveCamera(double x, double y) {
+		cameraPivotPosition.setX(x);
+		cameraPivotPosition.setY(y);
+	}
+	public void moveCameraNoListener(double x, double y, double z) {
+		var list = cameraPivotPosition.getOnTransformChanged();
+		cameraPivotPosition.setOnTransformChanged(null);
+		moveCamera(x,y,z);
+		cameraPivotPosition.setOnTransformChanged(list);
+	}
 	public void moveCamera(double x, double y, double z) {
 		cameraPivotPosition.setX(x);
 		cameraPivotPosition.setY(y);
@@ -354,5 +381,9 @@ public class OrbitCameraViewport extends SubScene {
 	public void setDistance(double d) {
 		radius = d;
         cameraDistance.setZ(-radius);
+	}
+
+	public double getZoom() {
+		return radius;
 	}
 }

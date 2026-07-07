@@ -1,6 +1,6 @@
 package fr.ni240sx.ucgt.collisionsEditor;
 
-import fr.ni240sx.ucgt.collisionsEditor.CollisionMesh.PlaneEquation;
+import fr.ni240sx.ucgt.collisionsEditor.Collisions.PlaneEquation;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
@@ -67,9 +67,9 @@ public class PlaneControls extends HBox {
 				PlaneEquation eq;
 				plane.convexVerticeShape.PlaneEquations.add(eq = new PlaneEquation());
 				eq.convexVerticeShape = plane.convexVerticeShape;
-				ogColorR = Collisions.randomizeColor(plane.convexVerticeShape.bound.colorR, 0.4);
-				ogColorG = Collisions.randomizeColor(plane.convexVerticeShape.bound.colorG, 0.4);
-				ogColorB = Collisions.randomizeColor(plane.convexVerticeShape.bound.colorB, 0.4);
+				ogColorR = Collisions.randomizeColor(plane.convexVerticeShape.getBound().colorR, 0.4);
+				ogColorG = Collisions.randomizeColor(plane.convexVerticeShape.getBound().colorG, 0.4);
+				ogColorB = Collisions.randomizeColor(plane.convexVerticeShape.getBound().colorB, 0.4);
 				this.setPlane(eq);
 			}
 		});
@@ -86,9 +86,9 @@ public class PlaneControls extends HBox {
 			if (Collisions.similarEnough(plane.a, 0.0f) && !Collisions.similarEnough(a.getValue().floatValue(), 0.0f) && sym.isSelected() && symPlane == null) {
 				plane.convexVerticeShape.PlaneEquations.add(symPlane = new PlaneEquation());
 				symPlane.convexVerticeShape = plane.convexVerticeShape;
-				ogColorSymR = Collisions.randomizeColor(plane.convexVerticeShape.bound.colorR, 0.4);
-				ogColorSymG = Collisions.randomizeColor(plane.convexVerticeShape.bound.colorG, 0.4);
-				ogColorSymB = Collisions.randomizeColor(plane.convexVerticeShape.bound.colorB, 0.4);
+				ogColorSymR = Collisions.randomizeColor(plane.convexVerticeShape.getBound().colorR, 0.4);
+				ogColorSymG = Collisions.randomizeColor(plane.convexVerticeShape.getBound().colorG, 0.4);
+				ogColorSymB = Collisions.randomizeColor(plane.convexVerticeShape.getBound().colorB, 0.4);
 			}
 			
 			plane.a = a.getValue().floatValue();
@@ -104,6 +104,8 @@ public class PlaneControls extends HBox {
 				symPlane.d = d.getValue().floatValue();
 			}
 			plane.convexVerticeShape.updateShape();
+			plane.convexVerticeShape.getBound().updateShape();
+			plane.convexVerticeShape.getBound().compute();
 		}
 	}
 	

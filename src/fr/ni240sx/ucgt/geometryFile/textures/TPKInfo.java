@@ -7,7 +7,7 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class TPKInfo extends Block {
+public class TPKInfo implements Block {
 	
 	public int version = 9,unknownHash=0;
 	public String filename;

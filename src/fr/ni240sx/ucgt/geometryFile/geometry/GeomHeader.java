@@ -4,13 +4,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.UCGTData;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class GeomHeader extends Block {
+public class GeomHeader implements Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Geom_Header;}
@@ -19,6 +20,8 @@ public class GeomHeader extends Block {
 	public PartsList partsList = null;
 	public PartsOffsets partsOffsets = null;
 	public UCGTData geomData = null;
+	
+	public ArrayList<Block> subBlocks = new ArrayList<>();
 	
 	public GeomHeader(ByteBuffer in) throws Exception {
 		var blockLength = in.getInt();
@@ -93,6 +96,7 @@ public class GeomHeader extends Block {
 
 	public void refresh(Geometry g) {
 		if (g.SAVE_useOffsetsTable) partsOffsets.refresh(g);
+		if (!g.SAVE_makeDataBlock) for (var b : subBlocks) if (b.getClass() == UCGTData.class) subBlocks.remove(b);
 		partsList.refresh(g.parts);
 		geomInfo.partsCount = g.parts.size();
 	}

@@ -7,7 +7,9 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class Geom_Unknown extends Block {
+public class Geom_Unknown implements Block {
+	
+	public byte[] data;
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Geom_UNKNOWN;}

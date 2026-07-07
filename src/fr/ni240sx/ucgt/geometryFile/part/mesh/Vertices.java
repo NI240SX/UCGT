@@ -7,7 +7,7 @@ import java.util.List;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public abstract class Vertices extends Block {
+public abstract class Vertices implements Block {
 
 	@Override
 	public abstract BlockType getBlockID();

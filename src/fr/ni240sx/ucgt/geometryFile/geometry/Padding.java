@@ -5,11 +5,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import fr.ni240sx.ucgt.geometryFile.GeometryEditorCLI;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
-public class Padding extends Block {
+public class Padding implements Block {
 	
 	@Override
 	public BlockType getBlockID() {return BlockType.Padding;}
@@ -59,7 +59,7 @@ public class Padding extends Block {
 		buf.order(ByteOrder.LITTLE_ENDIAN);
 		buf.putInt(BlockType.Padding.getKey());
 		buf.putInt(paddingLength);
-		if (paddingLength>36) Block.putString(buf, "Edited with UCGT v"+GeometryEditorCLI.programVersion+" | needeka", paddingLength);
+		if (paddingLength>36) Block.putString(buf, "Edited with UCGT v"+Utils.geom_version+" | needeka", paddingLength);
 		else if (paddingLength>15) Block.putString(buf, "UCGT | needeka", paddingLength);
 		return buf.array();
 	}

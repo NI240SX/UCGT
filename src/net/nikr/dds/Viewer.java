@@ -51,6 +51,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
+
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.FileImageInputStream;
@@ -622,7 +624,7 @@ public class Viewer{
 			if (file.isDirectory()) return acceptDirectories;
 			int index = file.getName().lastIndexOf(".");
 			if (index < 0) return false;
-			return file.getName().substring(index).toLowerCase().equals(".dds");
+			return file.getName().substring(index).toLowerCase(Locale.ROOT).equals(".dds");
 		}
 
 		@Override

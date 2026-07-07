@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -52,10 +53,11 @@ import fr.ni240sx.ucgt.geometryFile.textures.TPK;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
+import fr.ni240sx.ucgt.shared.Utils;
 import javafx.util.Pair;
 import fr.ni240sx.ucgt.geometryFile.settings.*;
 
-public class Geometry extends Block {
+public class Geometry implements Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Geometry;}
@@ -441,28 +443,54 @@ public class Geometry extends Block {
 		
 		if (!carname.equals(UNDETERMINED_CARNAME)) bw.write("=== CONFIGURATION FILE FOR CAR "+carname+" ===\n");
 		else bw.write("=== CONFIGURATION FILE  ===\n");
-		bw.write("UCGT v"+GeometryEditorCLI.programVersion+" by needeka\n"
+		bw.write("UCGT v"+Utils.geom_version+" by needeka\n"
 				+ "\n--- Settings ---\n");
-		if (!carname.equals(UNDETERMINED_CARNAME)) bw.write("SETTING	CarName="+this.carname+"\n");
-		if (platform != Platform.PC) bw.write("SETTING	Platform="+platform.getName()+"\n");
-		if (SAVE_useOffsetsTable) bw.write("SETTING	UseMultithreading="+USE_MULTITHREADING+"\n"
-				+ "SETTING	CompressionType="+defaultCompressionType+"\n"
-				+ "SETTING	CompressionLevel="+defaultCompressionLevel.getName()+"\n");
-		else bw.write("SETTING	UseOffsetsTable=false\n");
-		bw.write("SETTING	VertexColors=");
-		if (IMPORT_importVertexColors) bw.write("Import\n");
-		else if (IMPORT_calculateVertexColors) bw.write("Calculate\n");
-		else bw.write("Off\n");
-		bw.write("SETTING	Tangents="+IMPORT_Tangents.getName()+"\n");
-		if (SAVE_useOffsetsTable) bw.write("SETTING	RemoveUselessAutosculpt="+SAVE_removeUselessAutosculptParts+"\n");
-		bw.write("SETTING	OptimizeMaterials="+SAVE_optimizeMaterials+"\n");
-		if (SAVE_useOffsetsTable) bw.write("SETTING	FixAutosculptNormals="+SAVE_fixAutosculptNormals+"\n");
-		bw.write("SETTING	RemoveInvalid="+SAVE_removeInvalid+"\n");
-		if (SAVE_useOffsetsTable) bw.write("SETTING	CopyMissingLODs="+SAVE_copyMissingLODs+"\n");
-		if (SAVE_useOffsetsTable) bw.write("SETTING	MakeLodD="+SAVE_copyLOD_D+"\n");
-		if (SAVE_useOffsetsTable) bw.write("SETTING	CheckModel=true\n");
-		if (!geomHeader.geomInfo.filename.equals("GEOMETRY.BIN") && !geomHeader.geomInfo.filename.contains("NFS-CarToolkit") && !geomHeader.geomInfo.filename.contains("Compiled with UCGT")) bw.write("SETTING	FileName="+geomHeader.geomInfo.filename+"\n");
-		if (!geomHeader.geomInfo.blockname.equals("DEFAULT") && !geomHeader.geomInfo.blockname.equals("TOOLKIT")) bw.write("SETTING	BlockName="+geomHeader.geomInfo.blockname+"\n");
+		
+		
+		if (new File(Utils.geomDefaultConfig).isFile()) { //read base settings
+			if (!carname.equals(UNDETERMINED_CARNAME)) bw.write("SETTING	CarName="+this.carname+"\n");
+			var br = new BufferedReader(new FileReader(new File(Utils.geomDefaultConfig)));
+			String l;
+			while ((l=br.readLine())!=null) {
+				if (l.startsWith("SETTING")) {
+					for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (s2.contains("=")) {
+						var setting = s2.split("=")[0];
+						var value = s2.split("=")[1];
+						
+						if (setting.equals("CarName")) {
+						} else if (l.contains("always")) {
+							bw.write("SETTING	"+setting+"="+getSetting(setting)+"\n");
+						} else if (l.contains("nondefault")) {
+							if (!value.equals(getSetting(setting).toString()))
+								bw.write("SETTING	"+setting+"="+getSetting(setting)+"\n");
+						}
+
+					}
+				}
+			}//loop on config file lines
+			br.close();
+		} else {
+			if (!carname.equals(UNDETERMINED_CARNAME)) bw.write("SETTING	CarName="+this.carname+"\n");
+			if (platform != Platform.PC) bw.write("SETTING	Platform="+platform.getName()+"\n");
+			if (SAVE_useOffsetsTable) bw.write("SETTING	UseMultithreading="+USE_MULTITHREADING+"\n"
+					+ "SETTING	CompressionType="+defaultCompressionType+"\n"
+					+ "SETTING	CompressionLevel="+defaultCompressionLevel.getName()+"\n");
+			else bw.write("SETTING	UseOffsetsTable=false\n");
+			bw.write("SETTING	VertexColors=");
+			if (IMPORT_importVertexColors) bw.write("Import\n");
+			else if (IMPORT_calculateVertexColors) bw.write("Calculate\n");
+			else bw.write("Off\n");
+			bw.write("SETTING	Tangents="+IMPORT_Tangents.getName()+"\n");
+			if (SAVE_useOffsetsTable) bw.write("SETTING	RemoveUselessAutosculpt="+SAVE_removeUselessAutosculptParts+"\n");
+			bw.write("SETTING	OptimizeMaterials="+SAVE_optimizeMaterials+"\n");
+			if (SAVE_useOffsetsTable) bw.write("SETTING	FixAutosculptNormals="+SAVE_fixAutosculptNormals+"\n");
+			bw.write("SETTING	RemoveInvalid="+SAVE_removeInvalid+"\n");
+			if (SAVE_useOffsetsTable) bw.write("SETTING	CopyMissingLODs="+SAVE_copyMissingLODs+"\n");
+			if (SAVE_useOffsetsTable) bw.write("SETTING	MakeLodD="+SAVE_copyLOD_D+"\n");
+			if (SAVE_useOffsetsTable) bw.write("SETTING	CheckModel=true\n");
+			if (!geomHeader.geomInfo.filename.equals("GEOMETRY.BIN") && !geomHeader.geomInfo.filename.contains("NFS-CarToolkit") && !geomHeader.geomInfo.filename.contains("Compiled with UCGT")) bw.write("SETTING	FileName="+geomHeader.geomInfo.filename+"\n");
+			if (!geomHeader.geomInfo.blockname.equals("DEFAULT") && !geomHeader.geomInfo.blockname.equals("TOOLKIT")) bw.write("SETTING	BlockName="+geomHeader.geomInfo.blockname+"\n");
+		}
 		
 		
 		bw.write("\n--- Materials ---\n");
@@ -624,9 +652,9 @@ public class Geometry extends Block {
 	//---------------------------------------------------------------------------------------------------
 
 	public static Geometry importFromFile(File modelFile) throws IOException, Exception {
-		return importFromFile(modelFile, new File(modelFile.getPath().replace(modelFile.getName().split("\\.")[modelFile.getName().split("\\.").length-1], "ini")));
+		return importFromFile(modelFile, new File(modelFile.getPath().replace(modelFile.getName().split("\\.")[modelFile.getName().split("\\.").length-1], "ini")), null);
 	}
-	public static Geometry importFromFile(File modelFile, File configFile) throws IOException, Exception {
+	public static Geometry importFromFile(File modelFile, File configFile, File masterConfig) throws IOException, Exception {
 		FileInputStream fis = new FileInputStream(modelFile);
 		int signature = fis.read() | fis.read() << 8 | fis.read() << 16 | fis.read() << 24;
 		fis.close();
@@ -640,7 +668,7 @@ public class Geometry extends Block {
 		long time = System.currentTimeMillis();
 		System.out.println("Loading config from "+configFile.getName());
 		Geometry geom = new Geometry();
-		geom.readConfig(configFile);
+		geom.readConfig(configFile, masterConfig);
 		System.out.println("Config read in "+(System.currentTimeMillis()-time)+" ms.");
 		time = System.currentTimeMillis();
 		System.out.println("Importing meshes from "+modelFile.getName());
@@ -702,19 +730,19 @@ public class Geometry extends Block {
 				try {
 					if (new File(modelsDirectory + s).isFile()) {
 						// decompiled 3D models
-						if (s.toLowerCase().endsWith(".ini")) {
+						if (s.toLowerCase(Locale.ROOT).endsWith(".ini")) {
 							Geometry g;
-							if (new File(modelsDirectory + s.toLowerCase().replace(".ini", ".z3d")).exists()) {
+							if (new File(modelsDirectory + s.toLowerCase(Locale.ROOT).replace(".ini", ".z3d")).exists()) {
 								//check the INI for chunk and file name
 								System.out.println("INI and Z3D found : "+s);
-								g = Geometry.importFromFile(new File(modelsDirectory + s.toLowerCase().replace(".ini", ".z3d")));
+								g = Geometry.importFromFile(new File(modelsDirectory + s.toLowerCase(Locale.ROOT).replace(".ini", ".z3d")));
 								binBlocksToReplace.put(
 										new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename),
 										g
 										);
-							} else if (new File(modelsDirectory + s.toLowerCase().replace(".ini", ".obj")).exists()) {
+							} else if (new File(modelsDirectory + s.toLowerCase(Locale.ROOT).replace(".ini", ".obj")).exists()) {
 								System.out.println("INI and OBJ found : "+s);
-								g = Geometry.importFromFile(new File(modelsDirectory + s.toLowerCase().replace(".ini", ".obj")));
+								g = Geometry.importFromFile(new File(modelsDirectory + s.toLowerCase(Locale.ROOT).replace(".ini", ".obj")));
 								binBlocksToReplace.put(
 										new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename),
 										g
@@ -723,8 +751,8 @@ public class Geometry extends Block {
 						}
 						
 						// compiled Geometries and TPKs
-						if (s.toLowerCase().endsWith(".bin") || s.toLowerCase().endsWith(".bun") || s.toLowerCase().endsWith(".tpk") || s.toLowerCase().endsWith(".mpk")) {
-							var binFile = new File(modelsDirectory + s.toLowerCase());
+						if (s.toLowerCase(Locale.ROOT).endsWith(".bin") || s.toLowerCase(Locale.ROOT).endsWith(".bun") || s.toLowerCase(Locale.ROOT).endsWith(".tpk") || s.toLowerCase(Locale.ROOT).endsWith(".mpk")) {
+							var binFile = new File(modelsDirectory + s.toLowerCase(Locale.ROOT));
 							var fis = new FileInputStream(binFile);
 							var binFileToBytes = new byte[(int)binFile.length()];
 							fis.read(binFileToBytes);
@@ -1123,8 +1151,32 @@ public class Geometry extends Block {
 //		System.out.println();
 	}
 
-	
-	public ArrayList<Pair<String,String>> readConfig(File f) throws IOException {
+	public ArrayList<Pair<String,String>> readConfig(File f) throws IOException{
+		return readConfig(f, null);
+	}
+	public ArrayList<Pair<String,String>> readConfig(File f, File masterConfig) throws IOException {
+		if (new File(Utils.geomDefaultConfig).isFile()) { //read base settings
+			var br = new BufferedReader(new FileReader(new File(Utils.geomDefaultConfig)));
+			String l;
+			int lineNbr=0;
+			while ((l=br.readLine())!=null) {
+				lineNbr++;
+				readConfigLine(l, lineNbr);
+			}//loop on config file lines
+			br.close();
+		}
+		
+		if (masterConfig != null && masterConfig.isFile()) { //read base settings
+			var br = new BufferedReader(new FileReader(masterConfig));
+			String l;
+			int lineNbr=0;
+			while ((l=br.readLine())!=null) {
+				lineNbr++;
+				readConfigLine(l, lineNbr);
+			}//loop on config file lines
+			br.close();
+		}
+		
 		var settings = new ArrayList<Pair<String,String>>();
 		var br = new BufferedReader(new FileReader(f));
 		String l;
@@ -1134,6 +1186,29 @@ public class Geometry extends Block {
 			readConfigLine(l, lineNbr, settings);
 		}//loop on config file lines
 		br.close();
+		
+		
+		if (new File(Utils.geomDefaultConfig).isFile()) { //read override settings
+			br = new BufferedReader(new FileReader(new File(Utils.geomDefaultConfig)));
+			lineNbr=0;
+			while ((l=br.readLine())!=null) if (l.contains("override")) {
+				lineNbr++;
+				readConfigLine(l, lineNbr);
+			}//loop on config file lines
+			br.close();
+		}
+
+		if (masterConfig != null && masterConfig.isFile()) { //read override settings
+			br = new BufferedReader(new FileReader(masterConfig));
+			lineNbr=0;
+			while ((l=br.readLine())!=null) if (l.contains("override")) {
+				lineNbr++;
+				readConfigLine(l, lineNbr);
+			}//loop on config file lines
+			br.close();
+		}
+
+		
 		return settings;
 	}
 
@@ -1181,181 +1256,11 @@ public class Geometry extends Block {
 			switch (l.split("	")[0].split(" ")[0]) { // support for both space and tab separators
 			case "SETTING": {
 				for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (s2.contains("=")) {
-					if (settings != null) settings.add(new Pair<>(s2.split("=")[0],s2.split("=")[1]));
+					var setting = s2.split("=")[0];
+					var value = s2.split("=")[1];
+					if (settings != null) settings.add(new Pair<>(setting, value));
 					if (SAVE_makeDataBlock) this.geomHeader.geomData.datas.put("SETTING",s2);
-					switch (s2.split("=")[0]) {
-					case "UseMultithreading":
-						USE_MULTITHREADING = Boolean.parseBoolean(s2.split("=")[1]);
-						if (USE_MULTITHREADING) System.out.println("Now using multi-threading");
-						else System.out.println("Now using single-threading");
-						break;
-						
-					case "UseOffsetsTable":
-						SAVE_useOffsetsTable = Boolean.parseBoolean(s2.split("=")[1]);
-						if (SAVE_useOffsetsTable) System.out.println("Using an offsets table");
-						else System.out.println("Not using any offsets table");
-						break;
-						
-					case "CompressionType":
-						defaultCompressionType = CompressionType.get(s2.split("=")[1]);
-						System.out.println("Compression type set : "+defaultCompressionType.getName());
-						break;
-					case "CompressionLevel":
-						defaultCompressionLevel = CompressionLevel.fromName(s2.split("=")[1]);
-						System.out.println("Compression level set : "+defaultCompressionLevel.getName());
-						break;
-					case "CarName":
-						carname = s2.split("=")[1];
-						System.out.println("Car name set : "+carname);
-						break;
-						
-					case "FileName":
-						String fileName = s2.split("=")[1];
-						if (fileName.length() > 52) fileName = fileName.substring(0, 51);
-						System.out.println("File name set : "+fileName);
-						geomHeader.geomInfo.filename = fileName;
-						break;
-					case "BlockName":
-						String blockName = s2.split("=")[1];
-						if (blockName.length() > 36) blockName = blockName.substring(0, 35);
-						System.out.println("Block name set : "+blockName);
-						geomHeader.geomInfo.blockname = blockName;
-						break;
-						
-						//SAVING SETTINGS
-					case "RemoveUselessAutosculpt":
-						SAVE_removeUselessAutosculptParts = Boolean.parseBoolean(s2.split("=")[1]);
-						if (SAVE_removeUselessAutosculptParts) System.out.println("Removing useless T0 Autosculpt parts (lighter file)");
-						break;
-					case "OptimizeMaterials":
-						SAVE_optimizeMaterials = Boolean.parseBoolean(s2.split("=")[1]);
-						if (SAVE_optimizeMaterials) System.out.println("Optimizing materials to (slightly) reduce file size");
-						break;
-						
-						//IMPORTING SETTINGS
-					case "VertexColors":
-						IMPORT_importVertexColors = false;
-						IMPORT_calculateVertexColors = false;
-						if (s2.split("=")[1].equals("Import")) {
-							IMPORT_importVertexColors = true;
-							System.out.println("Importing vertex colors");
-						}
-						else if (s2.split("=")[1].equals("Calculate") || s2.split("=")[1].equals("Generate")) {
-							IMPORT_calculateVertexColors = true;
-							System.out.println("Generating vertex colors");
-						} else System.out.println("Not using vertex colors (lighter file, poor shadows)");
-						break;
-					case "Tangents":
-						IMPORT_Tangents = SettingsImport_Tangents.get(s2.split("=")[1]);
-						System.out.println("Tangents behavior : "+IMPORT_Tangents.getName() +" ("+ IMPORT_Tangents.getDesc()+")");
-						break;
-					case "FlipV":
-						IMPORT_flipV = Boolean.parseBoolean(s2.split("=")[1]);
-						if (IMPORT_flipV) System.out.println("Flipping V texture coordinates.");
-						break;
-						
-						//EXPERIMENTAL SETTINGS
-					case "ForceAsFix":
-						forceAsFixOnParts.add(s2.split("=")[1]);
-						System.out.println("Forcing Autosculpt fix : "+s2.split("=")[1]);
-						break;
-					case "FixAutosculptNormals":
-						SAVE_fixAutosculptNormals = Boolean.parseBoolean(s2.split("=")[1]);
-						if (SAVE_fixAutosculptNormals) System.out.println("Attempting to fix normals on Autosculpt zero area triangles.");
-						break;
-						
-					case "SortAllByName":
-						SAVE_sortEverythingByName = Boolean.parseBoolean(s2.split("=")[1]);
-						if (SAVE_sortEverythingByName) System.out.println("Sorting everything by name.");
-						break;
-						
-					case "CopyMissingLODs":
-						SAVE_copyMissingLODs = Boolean.parseBoolean(s2.split("=")[1]);
-						if (SAVE_copyMissingLODs) System.out.println("Copying missing LODs.");
-						break;
-					case "MakeLodD":
-					case "CopyLodD":
-					case "CopyLastLod":
-						SAVE_copyLOD_D = Boolean.parseBoolean(s2.split("=")[1]);
-						if (SAVE_copyLOD_D) System.out.println("Copying parts to the lowest lod. This shouldn't be used.");
-						break;
-
-					case "AutoReplaceWorldLODs":
-						SAVE_autoReplaceWorldLODs = Boolean.parseBoolean(s2.split("=")[1]);
-						if (SAVE_autoReplaceWorldLODs) System.out.println("Automatically replacing other world model LODs.");
-						break;
-						
-					case "RemoveInvalid":
-						SAVE_removeInvalid = Boolean.parseBoolean(s2.split("=")[1]);
-						if (SAVE_removeInvalid) System.out.println("Removing invalid parts.");
-						break;
-					case "ProtectModel":
-						SAVE_protectModel = Boolean.parseBoolean(s2.split("=")[1]);
-						if (SAVE_protectModel) System.out.println("Protecting model to prevent easy editing.");
-						break;
-					case "CheckModel":
-						SAVE_checkModel = Boolean.parseBoolean(s2.split("=")[1]);
-						if (SAVE_checkModel) System.out.println("Checking model and displaying potential issues.");
-						break;
-						
-					case "MakeDataBlock":
-						SAVE_makeDataBlock = Boolean.parseBoolean(s2.split("=")[1]);
-						if (SAVE_makeDataBlock) {
-							System.out.println("Adding an UCGT metadata block.");
-							geomHeader.geomData = new UCGTData();
-							geomHeader.subBlocks.add(geomHeader.geomData);
-						}
-						break;
-
-					case "VertexColorBrightnessMin":
-						VertexColorBrightnessMin = Integer.parseInt(s2.split("=")[1]);
-						break;
-					case "VertexColorBrightnessMax":
-						VertexColorBrightnessMax = Integer.parseInt(s2.split("=")[1]);
-						break;
-					case "VertexColorBrightnessFactor":
-						VertexColorBrightnessFactor = Integer.parseInt(s2.split("=")[1]);
-						break;
-					case "VertexColorBrightnessNormalOffset":
-						VertexColorBrightnessNormalOffset = Float.parseFloat(s2.split("=")[1]);
-						break;
-
-					case "VertexColorBrightnessMinWheel":
-						VertexColorBrightnessMinWheel = Integer.parseInt(s2.split("=")[1]);
-						break;
-					case "VertexColorBrightnessMaxWheel":
-						VertexColorBrightnessMaxWheel = Integer.parseInt(s2.split("=")[1]);
-						break;
-					case "VertexColorBrightnessFactorWheel":
-						VertexColorBrightnessFactorWheel = Integer.parseInt(s2.split("=")[1]);
-						break;
-					case "VertexColorBrightnessNormalOffsetWheel":
-						VertexColorBrightnessNormalOffsetWheel = Float.parseFloat(s2.split("=")[1]);
-						break;
-						
-					case "Platform":
-						platform = Platform.get(s2.split("=")[1]);
-						System.out.println("Using "+platform.getName()+" platform.");
-						this.changePlatform(platform);
-						switch (platform) {
-						case PC:
-							break;
-						case X360:
-							System.out.println("X360 support is experimental!");
-							break;
-						case Prostreet_PC:
-						case Prostreet_X360:
-							System.out.println("ProStreet support is experimental!");
-							break;
-						default:
-							System.out.println("Compiling not supported!");
-						}
-						break;
-						
-					default:
-						System.out.println("Setting not supported : "+s2);
-						return false;
-					}
+					return setSetting(setting, value);
 				}
 				break;}
 
@@ -1523,7 +1428,327 @@ public class Geometry extends Block {
 		return false;
 	}
 
+	public boolean setSetting(String setting, String value) {
+		switch (setting) {
+		case "UseMultithreading":
+			USE_MULTITHREADING = Boolean.parseBoolean(value);
+//			if (USE_MULTITHREADING) System.out.println("Now using multi-threading");
+//			else System.out.println("Now using single-threading");
+			break;
+			
+		case "UseOffsetsTable":
+			SAVE_useOffsetsTable = Boolean.parseBoolean(value);
+//			if (SAVE_useOffsetsTable) System.out.println("Using an offsets table");
+//			else System.out.println("Not using any offsets table");
+			break;
+			
+		case "CompressionType":
+			defaultCompressionType = CompressionType.get(value);
+//			System.out.println("Compression type set : "+defaultCompressionType.getName());
+			break;
+		case "CompressionLevel":
+			defaultCompressionLevel = CompressionLevel.fromName(value);
+//			System.out.println("Compression level set : "+defaultCompressionLevel.getName());
+			break;
+		case "CarName":
+			carname = value;
+//			System.out.println("Car name set : "+carname);
+			break;
+			
+		case "FileName":
+			String fileName = value;
+			if (fileName.length() > 52) fileName = fileName.substring(0, 51);
+//			System.out.println("File name set : "+fileName);
+			geomHeader.geomInfo.filename = fileName;
+			break;
+		case "BlockName":
+			String blockName = value;
+			if (blockName.length() > 36) blockName = blockName.substring(0, 35);
+//			System.out.println("Block name set : "+blockName);
+			geomHeader.geomInfo.blockname = blockName;
+			break;
+			
+			//SAVING SETTINGS
+		case "RemoveUselessAutosculpt":
+			SAVE_removeUselessAutosculptParts = Boolean.parseBoolean(value);
+//			if (SAVE_removeUselessAutosculptParts) System.out.println("Removing useless T0 Autosculpt parts (lighter file)");
+			break;
+		case "OptimizeMaterials":
+			SAVE_optimizeMaterials = Boolean.parseBoolean(value);
+//			if (SAVE_optimizeMaterials) System.out.println("Optimizing materials to (slightly) reduce file size");
+			break;
+			
+			//IMPORTING SETTINGS
+		case "VertexColors":
+			IMPORT_importVertexColors = false;
+			IMPORT_calculateVertexColors = false;
+			if (value.equals("Import")) {
+				IMPORT_importVertexColors = true;
+//				System.out.println("Importing vertex colors");
+			}
+			else if (value.equals("Calculate") || value.equals("Generate")) {
+				IMPORT_calculateVertexColors = true;
+//				System.out.println("Generating vertex colors");
+			} //else System.out.println("Not using vertex colors (lighter file, poor shadows)");
+			break;
+		case "Tangents":
+			IMPORT_Tangents = SettingsImport_Tangents.get(value);
+//			System.out.println("Tangents behavior : "+IMPORT_Tangents.getName() +" ("+ IMPORT_Tangents.getDesc()+")");
+			break;
+		case "FlipV":
+			IMPORT_flipV = Boolean.parseBoolean(value);
+//			if (IMPORT_flipV) System.out.println("Flipping V texture coordinates.");
+			break;
+			
+			//EXPERIMENTAL SETTINGS
+		case "ForceAsFix":
+			forceAsFixOnParts.add(value);
+//			System.out.println("Forcing Autosculpt fix : "+value);
+			break;
+		case "FixAutosculptNormals":
+			SAVE_fixAutosculptNormals = Boolean.parseBoolean(value);
+//			if (SAVE_fixAutosculptNormals) System.out.println("Attempting to fix normals on Autosculpt zero area triangles.");
+			break;
+			
+		case "SortAllByName":
+			SAVE_sortEverythingByName = Boolean.parseBoolean(value);
+//			if (SAVE_sortEverythingByName) System.out.println("Sorting everything by name.");
+			break;
+			
+		case "CopyMissingLODs":
+			SAVE_copyMissingLODs = Boolean.parseBoolean(value);
+//			if (SAVE_copyMissingLODs) System.out.println("Copying missing LODs.");
+			break;
+		case "MakeLodD":
+		case "CopyLodD":
+		case "CopyLastLod":
+			SAVE_copyLOD_D = Boolean.parseBoolean(value);
+//			if (SAVE_copyLOD_D) System.out.println("Copying parts to the lowest lod. This shouldn't be used.");
+			break;
 
+		case "AutoReplaceWorldLODs":
+			SAVE_autoReplaceWorldLODs = Boolean.parseBoolean(value);
+//			if (SAVE_autoReplaceWorldLODs) System.out.println("Automatically replacing other world model LODs.");
+			break;
+			
+		case "RemoveInvalid":
+			SAVE_removeInvalid = Boolean.parseBoolean(value);
+//			if (SAVE_removeInvalid) System.out.println("Removing invalid parts.");
+			break;
+		case "ProtectModel":
+			SAVE_protectModel = Boolean.parseBoolean(value);
+//			if (SAVE_protectModel) System.out.println("Protecting model to prevent easy editing.");
+			break;
+		case "CheckModel":
+			SAVE_checkModel = Boolean.parseBoolean(value);
+//			if (SAVE_checkModel) System.out.println("Checking model and displaying potential issues.");
+			break;
+			
+		case "MakeDataBlock":
+			SAVE_makeDataBlock = Boolean.parseBoolean(value);
+			if (SAVE_makeDataBlock) {
+//				System.out.println("Adding an UCGT metadata block.");
+				geomHeader.geomData = new UCGTData();
+				geomHeader.subBlocks.add(geomHeader.geomData);
+			}
+			break;
+
+		case "VertexColorBrightnessMin":
+			VertexColorBrightnessMin = Integer.parseInt(value);
+			break;
+		case "VertexColorBrightnessMax":
+			VertexColorBrightnessMax = Integer.parseInt(value);
+			break;
+		case "VertexColorBrightnessFactor":
+			VertexColorBrightnessFactor = Integer.parseInt(value);
+			break;
+		case "VertexColorBrightnessNormalOffset":
+			VertexColorBrightnessNormalOffset = Float.parseFloat(value);
+			break;
+
+		case "VertexColorBrightnessMinWheel":
+			VertexColorBrightnessMinWheel = Integer.parseInt(value);
+			break;
+		case "VertexColorBrightnessMaxWheel":
+			VertexColorBrightnessMaxWheel = Integer.parseInt(value);
+			break;
+		case "VertexColorBrightnessFactorWheel":
+			VertexColorBrightnessFactorWheel = Integer.parseInt(value);
+			break;
+		case "VertexColorBrightnessNormalOffsetWheel":
+			VertexColorBrightnessNormalOffsetWheel = Float.parseFloat(value);
+			break;
+			
+		case "Platform":
+			platform = Platform.get(value);
+//			System.out.println("Using "+platform.getName()+" platform.");
+			this.changePlatform(platform);
+			switch (platform) {
+			case PC:
+				break;
+			case X360:
+				System.out.println("X360 support is experimental!");
+				break;
+			case Prostreet_PC:
+			case Prostreet_X360:
+				System.out.println("ProStreet support is experimental!");
+				break;
+			default:
+				System.out.println("Compiling not supported!");
+			}
+			break;
+			
+		default:
+			System.out.println("Setting not supported : "+setting);
+			return false;
+		}
+		return true;
+	}
+	
+	public Object getSetting(String setting) {
+		switch (setting) {
+		case "UseMultithreading":
+			return USE_MULTITHREADING;
+		case "UseOffsetsTable":
+			return SAVE_useOffsetsTable;
+			
+		case "CompressionType":
+			return defaultCompressionType;
+		case "CompressionLevel":
+			return defaultCompressionLevel;
+		case "CarName":
+			return carname;
+			
+		case "FileName":
+			return geomHeader.geomInfo.filename;
+		case "BlockName":
+			return geomHeader.geomInfo.blockname;
+			
+			//SAVING SETTINGS
+		case "RemoveUselessAutosculpt":
+			return SAVE_removeUselessAutosculptParts;
+		case "OptimizeMaterials":
+			return SAVE_optimizeMaterials;
+			
+			//IMPORTING SETTINGS
+		case "VertexColors":
+			if (IMPORT_importVertexColors) return "Import";
+			if (IMPORT_calculateVertexColors) return "Calculate";
+			return "None";
+		case "Tangents":
+			return IMPORT_Tangents;
+		case "FlipV":
+			return IMPORT_flipV;
+			
+			//EXPERIMENTAL SETTINGS
+		case "ForceAsFix":
+			return forceAsFixOnParts;
+		case "FixAutosculptNormals":
+			return SAVE_fixAutosculptNormals;
+			
+		case "SortAllByName":
+			return SAVE_sortEverythingByName;
+			
+		case "CopyMissingLODs":
+			return SAVE_copyMissingLODs;
+		case "MakeLodD":
+		case "CopyLodD":
+		case "CopyLastLod":
+			return SAVE_copyLOD_D;
+
+		case "AutoReplaceWorldLODs":
+			return SAVE_autoReplaceWorldLODs;
+			
+		case "RemoveInvalid":
+			return SAVE_removeInvalid;
+		case "ProtectModel":
+			return SAVE_protectModel;
+		case "CheckModel":
+			return SAVE_checkModel;
+			
+		case "MakeDataBlock":
+			return SAVE_makeDataBlock;
+		case "VertexColorBrightnessMin":
+			return VertexColorBrightnessMin;
+		case "VertexColorBrightnessMax":
+			return VertexColorBrightnessMax;
+		case "VertexColorBrightnessFactor":
+			return VertexColorBrightnessFactor;
+		case "VertexColorBrightnessNormalOffset":
+			return VertexColorBrightnessNormalOffset;
+
+		case "VertexColorBrightnessMinWheel":
+			return VertexColorBrightnessMinWheel;
+		case "VertexColorBrightnessMaxWheel":
+			return VertexColorBrightnessMaxWheel;
+		case "VertexColorBrightnessFactorWheel":
+			return VertexColorBrightnessFactorWheel;
+		case "VertexColorBrightnessNormalOffsetWheel":
+			return VertexColorBrightnessNormalOffsetWheel;
+			
+		case "Platform":
+			return platform;
+		default:
+			System.out.println("Setting not supported : "+setting);
+			return null;
+		}
+	}
+
+	public static void writeDefaultConfig() throws IOException {
+		writeDefaultConfig(new File(Utils.geomDefaultConfig));
+	}
+	public static void writeDefaultConfig(File f) throws IOException {
+		new File(f.getParent()).mkdirs();
+		var bw = new BufferedWriter(new FileWriter(f));
+		
+		bw.write("=== DEFAULT CONFIGURATION FILE  ===\n");
+		bw.write("UCGT v%s by needeka\n".formatted(Utils.geom_version));
+		bw.write("Flags usage: \n"
+				+ " - \"always\" to always include in generated configs\n"
+				+ " - \"nondefault\" to include in generated configs if different from the value given in this file\n"
+				+ " - \"override\" to override any corresponding setting given in the model-specific config upon compiling\n");
+		bw.write("\n--- Settings ---\n");
+				
+		bw.write("SETTING	Platform="+Platform.PC.getName()+"	nondefault\n");
+		bw.write("SETTING	UseMultithreading="+USE_MULTITHREADING+"	always\n");
+		bw.write("SETTING	CompressionType="+CompressionType.RawDecompressed+"	always\n");
+		bw.write("SETTING	CompressionLevel="+CompressionLevel.High.getName()+"	always\n");
+
+		bw.write("SETTING	UseOffsetsTable=true	nondefault\n");
+		bw.write("SETTING	VertexColors=Import	always\n");
+		bw.write("SETTING	Tangents=High	always\n");
+		bw.write("SETTING	FlipV=false\n");
+		
+		bw.write("SETTING	SortAllByName=true\n");
+		bw.write("SETTING	RemoveInvalid=true	always\n");
+		bw.write("SETTING	RemoveUselessAutosculpt=true	always\n");
+		bw.write("SETTING	OptimizeMaterials=true	always\n");
+		
+		bw.write("SETTING	CopyMissingLODs=false	always\n");
+		bw.write("SETTING	CopyLastLod=false	always\n");
+		bw.write("SETTING	AutoReplaceWorldLODs=true\n");
+		
+		bw.write("SETTING	FixAutosculptNormals=true	always\n");
+		bw.write("SETTING	CheckModel=true	always\n");
+		
+		bw.write("SETTING	FileName=GEOMETRY.BIN	nondefault\n");
+		bw.write("SETTING	BlockName=DEFAULT	nondefault\n");
+
+		bw.write("SETTING	ProtectModel=false\n");
+		bw.write("SETTING	MakeDataBlock=false\n");
+		
+		bw.write("SETTING	VertexColorBrightnessMin=0\n");
+		bw.write("SETTING	VertexColorBrightnessMax=255\n");
+		bw.write("SETTING	VertexColorBrightnessFactor=150\n");
+		bw.write("SETTING	VertexColorBrightnessNormalOffset=0.8\n");
+		bw.write("SETTING	VertexColorBrightnessMinWheel=20\n");
+		bw.write("SETTING	VertexColorBrightnessMaxWheel=255\n");
+		bw.write("SETTING	VertexColorBrightnessFactorWheel=150\n");
+		bw.write("SETTING	VertexColorBrightnessNormalOffsetWheel=0.8\n");
+		
+		bw.close();
+	}
+	
 	public static void ctkConfigToUCGTConfig(File ctkConfig, File config) throws IOException{
 		ctkConfigToUCGTConfig(ctkConfig,config,"MISSING");
 	}
@@ -1550,7 +1775,7 @@ public class Geometry extends Block {
 		var bw = new BufferedWriter(new FileWriter(config));
 		
 		bw.write("=== CONFIGURATION FILE ===\n"
-				+ "UCGT v"+GeometryEditorCLI.programVersion+" by needeka\n"
+				+ "UCGT v"+Utils.geom_version+" by needeka\n"
 				+ "Converted from a CTK model - please fill in what's missing and check what's already filled in !\n"
 				+ "\n--- Settings ---\n");
 		bw.write("SETTING	CarName="+carname+"\n"
@@ -2485,8 +2710,9 @@ public class Geometry extends Block {
 						texturesIDs.put(new Pair<>(m.TextureHashes.get(i), 0), texi);
 						texi++;
 					}
-				if (i > m.textureUsages.size() && !allTextureUsages.contains(m.textureUsages.get(i))) allTextureUsages.add(m.textureUsages.get(i)); //for the strings block
+				if (i < m.textureUsages.size() && !allTextureUsages.contains(m.textureUsages.get(i))) allTextureUsages.add(m.textureUsages.get(i)); //for the strings block
 			}
+
 			if (legacy && m.textureUsages.size() < m.TextureHashes.size()) {
 				System.out.print("WARNING : missing texture usages on shader "+m.shaderUsage.getName()+", shaderusages_legacy needs tweaking!"
 						+ "\nINFO : material textures : ");
@@ -2865,7 +3091,7 @@ public class Geometry extends Block {
 								asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.add(new Vertex(partsTris.get(p2).get(i)[1]));
 
 								//attempt to fix normals
-								if (v0 != null && SAVE_fixAutosculptNormals) {
+								if (v0 != null && SAVE_fixAutosculptNormals && partsTris.get(p2).get(i)[0].positionEquals(partsTris.get(p2).get(i)[1])) {
 									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID0), v0));
 									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID1), v1));
 									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID2), v2));
@@ -2904,7 +3130,7 @@ public class Geometry extends Block {
 								asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.add(new Vertex(partsTris.get(p2).get(i)[2]));
 
 								//attempt to fix normals
-								if (v0 != null && SAVE_fixAutosculptNormals) {
+								if (v0 != null && SAVE_fixAutosculptNormals && partsTris.get(p2).get(i)[0].positionEquals(partsTris.get(p2).get(i)[2])) {
 									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID0), v0));
 									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID1), v1));
 									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID2), v2));
@@ -2943,7 +3169,7 @@ public class Geometry extends Block {
 								asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.add(new Vertex(partsTris.get(p2).get(i)[2]));
 
 								//attempt to fix normals
-								if (v0 != null && SAVE_fixAutosculptNormals) {
+								if (v0 != null && SAVE_fixAutosculptNormals && partsTris.get(p2).get(i)[1].positionEquals(partsTris.get(p2).get(i)[2])) {
 									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID0), v0));
 									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID1), v1));
 									swapNormals.add(new Pair<>(asParts.get(p2).mesh.materials.materials.get(mat).verticesBlock.vertices.get(ID2), v2));
@@ -2961,19 +3187,19 @@ public class Geometry extends Block {
 			}//loop on materials
 			
 			for (var pair : swapNormals) {
-				if (pair.getKey().hasColor()) {
+				if (pair.getKey().hasColor() && pair.getValue().hasColor()) {
 					pair.getKey().color[R] = pair.getValue().color[R];
 					pair.getKey().color[G] = pair.getValue().color[G];
 					pair.getKey().color[B] = pair.getValue().color[B];
 					pair.getKey().color[A] = pair.getValue().color[A];
 				}
-				if (pair.getKey().hasNormals()) {
+				if (pair.getKey().hasNormals() && pair.getValue().hasNormals()) {
 					pair.getKey().norm[X] = pair.getValue().norm[X];
 					pair.getKey().norm[Y] = pair.getValue().norm[Y];
 					pair.getKey().norm[Z] = pair.getValue().norm[Z];
 //					pair.getKey().norm[W] = pair.getValue().norm[W];
 				}
-				if (pair.getKey().hasTangents()) {
+				if (pair.getKey().hasTangents() && pair.getValue().hasTangents()) {
 					pair.getKey().tan[X] = pair.getValue().tan[X];
 					pair.getKey().tan[Y] = pair.getValue().tan[Y];
 					pair.getKey().tan[Z] = pair.getValue().tan[Z];

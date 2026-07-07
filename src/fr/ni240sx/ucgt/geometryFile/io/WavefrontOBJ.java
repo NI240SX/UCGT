@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.geometryFile.Geometry;
-import fr.ni240sx.ucgt.geometryFile.GeometryEditorCLI;
 import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.geometryFile.part.MPoint;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
@@ -18,6 +17,7 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangle;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
 import fr.ni240sx.ucgt.shared.Hash;
+import fr.ni240sx.ucgt.shared.Utils;
 
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
@@ -215,7 +215,7 @@ public class WavefrontOBJ {
 
 	public static void save(Geometry geom, String f) throws IOException {
 		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(f.replace(".obj", "").replace(".OBJ", "")+".obj")));
-		bw.write("#OBJ file exported with UCGT v"+GeometryEditorCLI.programVersion+" - needeka 2026\n"
+		bw.write("#OBJ file exported with UCGT v"+Utils.geom_version+" - needeka 2026\n"
 				+ "mtllib "+f.split("\\\\")[f.split("\\\\").length-1].replace(".obj", "").replace(".OBJ", "")+".mtl\n");
 //		long iterator = 1;
 		long vl = 1;

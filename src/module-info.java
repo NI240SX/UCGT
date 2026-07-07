@@ -13,4 +13,5 @@ module UCGT {
 	opens fr.ni240sx.ucgt.geometryFile to javafx.graphics, javafx.fxml;
 
 	opens fr.ni240sx.ucgt.damageFile to javafx.graphics, javafx.fxml;
+	opens fr.ni240sx.ucgt.streamEditor to javafx.graphics, javafx.fxml;
 }

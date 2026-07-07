@@ -18,7 +18,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import fr.ni240sx.ucgt.geometryFile.Geometry;
-import fr.ni240sx.ucgt.geometryFile.GeometryEditorCLI;
 import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.geometryFile.part.MPoint;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
@@ -27,6 +26,7 @@ import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangle;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.Hash;
+import fr.ni240sx.ucgt.shared.Utils;
 
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
@@ -400,7 +400,7 @@ public class GLTF {
 		
 		var glTF = new JSONObject();
 		var asset = new JSONObject();
-		asset.put("generator", "Undercover Geometry Tool v"+GeometryEditorCLI.programVersion+" - needeka 2026");
+		asset.put("generator", "Undercover Geometry Tool v"+Utils.geom_version+" - needeka 2026");
 		asset.put("version", "2.0");
 		glTF.put("asset", asset);
 

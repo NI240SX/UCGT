@@ -11,7 +11,7 @@ import fr.ni240sx.ucgt.geometryFile.geometry.PartOffset;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class TexOffsets extends Block{
+public class TexOffsets implements Block{
 	
 	@Override
 	public BlockType getBlockID() {return BlockType.TPK_TexOffsets;}

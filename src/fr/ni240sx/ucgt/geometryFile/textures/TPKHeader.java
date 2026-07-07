@@ -4,12 +4,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.geometryFile.geometry.UnknownBlock;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class TPKHeader extends Block {
+public class TPKHeader implements Block {
+	
+	public ArrayList<Block> subBlocks = new ArrayList<>();
 	
 	public TPKInfo info;
 	public TexList texlist;

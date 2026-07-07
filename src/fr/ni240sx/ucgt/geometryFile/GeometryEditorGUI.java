@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,10 +26,8 @@ import java.util.concurrent.TimeUnit;
 import javax.imageio.stream.FileImageInputStream;
 import javax.imageio.stream.MemoryCacheImageInputStream;
 
-import fr.ni240sx.ucgt.collisionsEditor.CollisionsEditor;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.compression.CompressionType;
-import fr.ni240sx.ucgt.dbmpPlus.DBMPPlus;
 import fr.ni240sx.ucgt.geometryFile.geometry.GeomHeader;
 import fr.ni240sx.ucgt.geometryFile.gui.AutosculptControls;
 import fr.ni240sx.ucgt.geometryFile.gui.ConfigSetting;
@@ -50,6 +49,7 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
 import fr.ni240sx.ucgt.shared.OrbitCameraViewport;
+import fr.ni240sx.ucgt.shared.Utils;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.embed.swing.SwingFXUtils;
@@ -89,11 +89,6 @@ public class GeometryEditorGUI extends Application {
     public static CheckMenuItem useDarkMode = new CheckMenuItem("Dark mode");
     public static CheckMenuItem disableWarnings = new CheckMenuItem("Disable warning pop-ups");
 //	public static boolean widebodyAutoCorrect = true;
-	
-	public static final String programName = "UCGT Geometry Editor";
-	public static final String programGUIVersion = "1.0.3";
-	public static final String settingsFolder = "settings";
-	public static final String settingsFile = "settings/geomGUI.dat";
 	
 	public static Group viewportGroup = new Group();
 	public static OrbitCameraViewport viewport;
@@ -174,8 +169,8 @@ public class GeometryEditorGUI extends Application {
 	}
 
 	public static void writeSettings() throws IOException {
-		Files.createDirectories(Paths.get(settingsFolder));
-		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(settingsFile)));
+		Files.createDirectories(Paths.get(Utils.settingsFolder));
+		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(Utils.settingsGeomEdGui)));
 		bw.write("DO NOT MANUALLY EDIT THIS FILE\n" 
 				+ lastDirectoryLoaded + "\n" 
 				+ lastFileLoaded + "\n" 
@@ -205,7 +200,7 @@ public class GeometryEditorGUI extends Application {
 	}
 
 	public static void readSettings() throws FileNotFoundException, IOException {
-		BufferedReader br = new BufferedReader(new FileReader(new File(settingsFile)));
+		BufferedReader br = new BufferedReader(new FileReader(new File(Utils.settingsGeomEdGui)));
 		br.readLine(); //="DO NOT MANUALLY EDIT THIS FILE"
 		lastDirectoryLoaded = br.readLine();
 		lastFileLoaded = br.readLine();
@@ -235,7 +230,7 @@ public class GeometryEditorGUI extends Application {
 	
     @Override
 	public void start(Stage primaryStage) {
-        primaryStage.setTitle(mainGeometry == null ? programName : programName + " - " + mainGeometry.carname);
+        primaryStage.setTitle(mainGeometry == null ? Utils.geomGUI_Name : Utils.geomGUI_Name + " - " + mainGeometry.carname);
 
         VBox windowTop = new VBox();
         
@@ -247,10 +242,10 @@ public class GeometryEditorGUI extends Application {
         
         Menu menuFile = new Menu("File");
         MenuItem fileNew = new MenuItem("New");
-        MenuItem fileLoad = new MenuItem("Load");
+        MenuItem fileLoad = new MenuItem("Open");
         MenuItem fileReload = new MenuItem("Reload");
-        Menu fileLoadRecent = new Menu("Load recent...");
-        MenuItem fileSave = new MenuItem("Save");
+        Menu fileLoadRecent = new Menu("Open recent...");
+        MenuItem fileSave = new MenuItem("Save as...");
         MenuItem fileExit = new MenuItem("Exit");
         MenuItem fileConvert = new MenuItem("Convert CTK config...");
         MenuItem fileChangeComp = new MenuItem("Change compression of an existing Geometry...");
@@ -383,16 +378,24 @@ public class GeometryEditorGUI extends Application {
 
         
         Menu menuSettings = new Menu("Settings");
-        MenuItem settingsAbout = new MenuItem("About " + programName + "...");
+        MenuItem settingsAbout = new MenuItem("About " + Utils.geomGUI_Name + "...");
         MenuItem settingsUpdates = new MenuItem("Check for updates...");
-        menuSettings.getItems().addAll(importExportTextures, useDarkMode, disableWarnings, trackpadMode, showImportSettingsOnReload, settingsAbout, settingsUpdates);
+        MenuItem settingsDefaults = new MenuItem("Change default Geometry settings...");
+        menuSettings.getItems().addAll(importExportTextures, useDarkMode, disableWarnings, trackpadMode, showImportSettingsOnReload, settingsDefaults, settingsAbout, settingsUpdates);
         menuSettings.setAccelerator(KeyCombination.keyCombination("Alt+S"));
 
         settingsAbout.setOnAction(e -> showInfoWindow());
         settingsUpdates.setOnAction(e -> {
 	    	getHostServices().showDocument("https://github.com/NI240SX/UCGT/releases");
-			new Alert(Alert.AlertType.INFORMATION, "Current versions:\n- Geometry Editor v"+GeometryEditorCLI.programVersion+" built on "+GeometryEditorCLI.programBuild+"\n"
-					+ "- DBModelParts Editor v"+DBMPPlus.programVersion +"\n- Collisions Editor v"+CollisionsEditor.programVersion, ButtonType.OK).showAndWait();
+			new Alert(Alert.AlertType.INFORMATION, "Current versions:\n- Geometry Editor v"+Utils.geom_version+" built on "+Utils.geom_build+"\n"
+					+ "- DBModelParts Editor v"+Utils.dbmp_Version +"\n- Collisions Editor v"+Utils.collisions_Version, ButtonType.OK).showAndWait();
+        });
+        settingsDefaults.setOnAction(e -> {
+        	try {
+				editDefaultConfig();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
         });
                 
         menuBar.getMenus().addAll(menuFile, menuDisplay, menuRendering, menuTools, menuSettings);
@@ -656,6 +659,8 @@ public class GeometryEditorGUI extends Application {
 		if (firstBoot) {
 			showInfoWindow();
 			firstBoot = false;
+		} else if (!new File(Utils.geomDefaultConfig).isFile()) {
+			promptDefaultConfig();
 		}
 //		TestingFunctions.collisionDisplayTest(viewportGroup);
     }
@@ -672,7 +677,7 @@ public class GeometryEditorGUI extends Application {
     public void showInfoWindow() {
     	Stage st = new Stage();
 		openWindows.add(st);
-		st.setTitle("About " + programName);
+		st.setTitle("About " + Utils.geomGUI_Name);
 		
 		var v = new VBox();
 		
@@ -689,7 +694,7 @@ public class GeometryEditorGUI extends Application {
 				%s version %s built %s
 				GUI version %s
 				needeka 2026
-				""".formatted(programName, GeometryEditorCLI.programVersion, GeometryEditorCLI.programBuild, programGUIVersion));
+				""".formatted(Utils.geomGUI_Name, Utils.geom_version, Utils.geom_build, Utils.geomGUI_GUIVersion));
 		l.setWrapText(true);
 		l.setTextAlignment(TextAlignment.JUSTIFY);
 
@@ -714,7 +719,10 @@ public class GeometryEditorGUI extends Application {
 //			openWindows.remove(st);
 //			st.close();
 //		});
-		st.setOnCloseRequest(e2 -> openWindows.remove(st));
+		st.setOnCloseRequest(e2 -> {
+			openWindows.remove(st);
+			if (!new File(Utils.geomDefaultConfig).isFile()) javafx.application.Platform.runLater(() -> promptDefaultConfig());
+		});
 		st.show();
 		st.requestFocus();
     }
@@ -832,8 +840,8 @@ public class GeometryEditorGUI extends Application {
 		return e -> {
 			Stage st = new Stage();
 			openWindows.add(st);
-			st.setTitle("About " + programName);
-			Scene sc = new Scene(new Label(programName + " version " + GeometryEditorCLI.programVersion + "; GUI version " + programGUIVersion + "\n\n"
+			st.setTitle("About " + Utils.geomGUI_Name);
+			Scene sc = new Scene(new Label(Utils.geomGUI_Name + " version " + Utils.geom_version + "; GUI version " + Utils.geomGUI_GUIVersion + "\n\n"
 					+ "Geometry editor for NFS Undercover.\n"
 					+ "Aims to support the file format better.\n"
 					+ "This software has been originally created for the mod Undercover Exposed.\n\n"
@@ -1295,25 +1303,26 @@ public class GeometryEditorGUI extends Application {
 						status.progress.setProgress(-1);
 					});
 					
-				if (selected.getName().toLowerCase().equals("geometry.bin")) {							
-					loadGeometry(selected);
-					mainTPK = null;
-					if (loadTextures.isSelected()) loadTPK(new File(selected.getAbsolutePath().replace(selected.getName(), "TEXTURES.BIN")));
-					lastFileLoaded = selected.getName();
-					lastDirectoryLoaded = selected.getAbsolutePath().replace(selected.getName(), "");
-					if (recentFiles.contains(selected.getAbsolutePath())) recentFiles.remove(selected.getAbsolutePath());
-					recentFiles.add(0, selected.getAbsolutePath());
-					postLoadUpdate(primaryStage);
-//					if (!disableWarnings.isSelected()) new Alert(Alert.AlertType.INFORMATION, "Model loaded successfully.", ButtonType.OK).show();
-
-				} else {
 					//try guess signature
 					
 					FileInputStream fis = new FileInputStream(selected);
 					int signature = getNextInt(fis);
+					int firstBlockLength = getNextInt(fis);
 					fis.close();
 					
-					if (signature == ZModelerZ3D.ZM2S || signature == ZModelerZ3D.Z3DM) {
+					if (signature == BlockType.Geometry.getKey() && firstBlockLength+8 == selected.length()){
+						
+						loadGeometry(selected);
+						mainTPK = null;
+						if (loadTextures.isSelected()) loadTPK(new File(selected.getAbsolutePath().replace(selected.getName(), "TEXTURES.BIN")));
+						lastFileLoaded = selected.getName();
+						lastDirectoryLoaded = selected.getAbsolutePath().replace(selected.getName(), "");
+						if (recentFiles.contains(selected.getAbsolutePath())) recentFiles.remove(selected.getAbsolutePath());
+						recentFiles.add(0, selected.getAbsolutePath());
+						postLoadUpdate(primaryStage);
+//						if (!disableWarnings.isSelected()) new Alert(Alert.AlertType.INFORMATION, "Model loaded successfully.", ButtonType.OK).show();
+						
+					} else if (signature == ZModelerZ3D.ZM2S || signature == ZModelerZ3D.Z3DM) {
 						System.out.println("=== Z3D IMPORT ===");
 
 						if (!doConfigStuff(selected, showSetup)) return;
@@ -1327,7 +1336,7 @@ public class GeometryEditorGUI extends Application {
 						
 						doTPKStuffAndPostLoadUpdate(primaryStage, selected);		
 						
-					} else if (signature == WavefrontOBJ.OBJ_blender || signature == WavefrontOBJ.OBJ_UCGT || selected.getName().toLowerCase().endsWith(".obj")) {
+					} else if (signature == WavefrontOBJ.OBJ_blender || signature == WavefrontOBJ.OBJ_UCGT || selected.getName().toLowerCase(Locale.ROOT).endsWith(".obj")) {
 						System.out.println("=== OBJ IMPORT ===");
 
 						if (!doConfigStuff(selected, showSetup)) return;
@@ -1341,7 +1350,7 @@ public class GeometryEditorGUI extends Application {
 
 						doTPKStuffAndPostLoadUpdate(primaryStage, selected);
 						
-					}else if (signature == GLTF.glTF_blender || signature == GLTF.glTF_BINARY || selected.getName().toLowerCase().endsWith(".gltf")) {
+					}else if (signature == GLTF.glTF_blender || signature == GLTF.glTF_BINARY || selected.getName().toLowerCase(Locale.ROOT).endsWith(".gltf")) {
 						System.out.println("=== glTF IMPORT ===");
 
 						if (!doConfigStuff(selected, showSetup)) return;
@@ -1355,10 +1364,7 @@ public class GeometryEditorGUI extends Application {
 
 						doTPKStuffAndPostLoadUpdate(primaryStage, selected);
 
-					} else
-//					if (selected.getName().toLowerCase().endsWith(".bin") || selected.getName().toLowerCase().endsWith(".bun")) 
-						//try to read a BUN bundle in all other cases
-					{
+					} else  {//try to read a BUN bundle in all other cases
 						fis = new FileInputStream(selected);
 						int inPos = 0;
 						
@@ -1497,8 +1503,6 @@ public class GeometryEditorGUI extends Application {
 						}
 						
 					}
-					
-				}
 				} catch (Error | Exception e) {
 					e.printStackTrace();
 					javafx.application.Platform.runLater(() -> {
@@ -1627,26 +1631,9 @@ public class GeometryEditorGUI extends Application {
 				return;
 			}
 			
-//			var initialPlatform = mainGeometry.platform;
-//			var previousCarName = mainGeometry.carname;
-
 			Stage st = new Stage();
 			
 			var vb = new VBox();
-						
-//			var platform 						= new ConfigSetting.Platform("Platform ", mainGeometry.platform);
-//			var carname 						= new ConfigSetting.Text("Car name ", mainGeometry.carname); 
-//			var compType 						= new ConfigSetting.CompType("Compression type ", mainGeometry.defaultCompressionType);
-//			var compLevel 						= new ConfigSetting.CompLevel("Compression level ", mainGeometry.defaultCompressionLevel);
-//			var tangents 						= new ConfigSetting.Tangents("Tangents ", mainGeometry.IMPORT_Tangents);
-//			var vcolImport 						= new ConfigSetting.Boolean("Import vertex colors ", mainGeometry.IMPORT_importVertexColors);
-//			var vcolCalculate 					= new ConfigSetting.Boolean("Calculate vertex colors ", mainGeometry.IMPORT_calculateVertexColors);
-//			var copyMissingLods 				= new ConfigSetting.Boolean("Copy missing LODs ", mainGeometry.SAVE_copyMissingLODs);
-//			var makeLodD						= new ConfigSetting.Boolean("Copy LOD D ", mainGeometry.SAVE_copyLOD_D);
-//			var removeUselessAutosculptParts 	= new ConfigSetting.Boolean("Remove useless Autosculpt parts ", mainGeometry.SAVE_removeUselessAutosculptParts);
-//			var checkModel 						= new ConfigSetting.Boolean("Check model (see console output) ", mainGeometry.SAVE_checkModel);
-//			var fixAutosculptNormals 			= new ConfigSetting.Boolean("Attempt to fix Autosculpt normals ", mainGeometry.SAVE_fixAutosculptNormals);
-//			var removeInvalid 					= new ConfigSetting.Boolean("Remove invalid parts ", mainGeometry.SAVE_removeInvalid);
 			
 			var settings = new ArrayList<ConfigSetting>();
 			for (var set : currentConfig) {
@@ -1702,62 +1689,10 @@ public class GeometryEditorGUI extends Application {
 			ok.setCenterShape(true);
 			show.setSelected(showImportSettingsOnReload.isSelected());
 			
-//			if (restrictOptions) //when a geom is already loaded
-//				hb.getChildren().addAll(platform,
-//						carname, 
-//						compType, compLevel, 
-////						tangents, vcolImport, vcolCalculate, 
-////						copyMissingLods, makeLodD, 
-////						removeUselessAutosculptParts,
-////						checkModel,
-////						fixAutosculptNormals,
-////						removeInvalid,
-//						
-//						show, ok);
-//			else  //when a geom is being imported
-//				hb.getChildren().addAll(platform,
-//					carname, 
-//					compType, compLevel, 
-//					tangents, vcolImport, vcolCalculate, 
-//					copyMissingLods, makeLodD, 
-//					removeUselessAutosculptParts,
-//					checkModel,
-//					fixAutosculptNormals,
-//					removeInvalid,
-//					
-//					show, ok);
-			
 			vb.getChildren().addAll(show, ok);
 			vb.setAlignment(Pos.CENTER);
+			vb.setPadding(new Insets(5));
 
-//			if (mainGeometry.defaultCompressionType != CompressionType.RefPack) hb.getChildren().remove(compLevel);
-			
-			//carname not bound or bugging out
-//			compType.setting.valueProperty().addListener((obs, o, n) -> {
-//				mainGeometry.defaultCompressionType = n;
-//				if (n == CompressionType.RefPack && !hb.getChildren().contains(compLevel)) {
-//					hb.getChildren().add(3, compLevel);
-//				} else if (hb.getChildren().contains(compLevel)){
-//					hb.getChildren().remove(compLevel);
-//				}
-//			});
-//			compLevel.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.defaultCompressionLevel = n);
-//			tangents.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.IMPORT_Tangents = n);
-//			vcolImport.setting.valueProperty().addListener((obs, o, n) -> {
-//				mainGeometry.IMPORT_importVertexColors = n;
-//				if (n) vcolCalculate.setting.setValue(false);
-//			});
-//			vcolCalculate.setting.valueProperty().addListener((obs, o, n) -> {
-//				mainGeometry.IMPORT_calculateVertexColors = n;
-//				if (n) vcolImport.setting.setValue(false);
-//			});
-//			copyMissingLods.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_copyMissingLODs = n);
-//			makeLodD.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_copyLOD_D = n);
-//			removeUselessAutosculptParts.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_removeUselessAutosculptParts = n);
-//			checkModel.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_checkModel = n);
-//			fixAutosculptNormals.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_fixAutosculptNormals = n);
-//			removeInvalid.setting.valueProperty().addListener((obs, o, n) -> mainGeometry.SAVE_removeInvalid = n);
-//
 			show.selectedProperty().addListener((obs, o, n) -> showImportSettingsOnReload.setSelected(n));
 			
 			
@@ -1828,6 +1763,146 @@ public class GeometryEditorGUI extends Application {
 		return nextReturn;
 		
 	}
+	
+	public static void promptDefaultConfig() {
+		var sure = new Alert(Alert.AlertType.INFORMATION, "No default configuration found. Would you like to generate one and open it for editing?", ButtonType.NO, ButtonType.YES).showAndWait().orElse(ButtonType.NO);
+		if (ButtonType.YES.equals(sure)) {
+			try {
+				Geometry.writeDefaultConfig();
+				editDefaultConfig();
+			} catch(Exception e) {
+				new Alert(Alert.AlertType.ERROR, "Error writing default config:\n"+e.getMessage(), ButtonType.OK).show();
+			}
+		}
+	}
+
+	public static void editDefaultConfig() throws IOException {
+		if (!new File(Utils.geomDefaultConfig).isFile()) return;
+
+		var settings = new ArrayList<ConfigSetting>();
+
+		{
+			var br = new BufferedReader(new FileReader(new File(Utils.geomDefaultConfig)));
+			String l;
+			while ((l=br.readLine())!=null) {
+				if (l.startsWith("SETTING")) {
+					for (var s1 : l.split("	")) for (var s2 : s1.split(" ")) if (s2.contains("=")) {
+						var setting = s2.split("=")[0];
+						var value = s2.split("=")[1];
+						
+						if (value.equals("true") || value.equals("false")) {
+							settings.add(new ConfigSetting.Boolean(setting, Boolean.parseBoolean(value), 
+									(l.contains("always") ? 0x1 : 0)
+									| (l.contains("nondefault") ? 0x2 : 0)
+									| (l.contains("override") ? 0x4 : 0)));
+						} else {
+							settings.add(new ConfigSetting.Text(setting, value, 
+									(l.contains("always") ? 0x1 : 0)
+									| (l.contains("nondefault") ? 0x2 : 0)
+									| (l.contains("override") ? 0x4 : 0)));
+						}
+					}
+				}
+			}//loop on config file lines
+			br.close();
+		}
+		
+		
+		Stage st = new Stage();
+		var vb = new VBox();
+		
+		vb.getChildren().addAll(settings);
+		
+		for (var set : settings) {
+			set.delete.setOnAction(evt -> {
+				vb.getChildren().remove(set);
+				settings.remove(set);
+			});
+		}
+
+		var addSetting= new TextField("");
+		addSetting.setPromptText("Add a setting...");
+		var cm = new ContextMenu();
+		
+		addSetting.textProperty().addListener((txt, was, is) -> {
+			if (!is.isBlank() && is.length() > 2) {
+				cm.show(addSetting, Side.BOTTOM, 0, 0);
+				cm.getItems().clear();
+				for (var set : Geometry.ALL_VALID_CONFIG_SETTINGS) if (set.startsWith(is)) {
+					var mi = new MenuItem(set);
+					mi.setOnAction(evt -> addSetting.setText(set));
+					cm.getItems().add(mi);
+				}
+			} else cm.hide();
+		});
+		addSetting.setOnAction(evt -> {
+			for (var set : settings) if (set.name.equals(addSetting.getText().strip()) && !set.name.equals("ForceAsFix")) return;
+			var set = new ConfigSetting.Text(addSetting.getText().strip(),"", 0);
+			settings.add(set);
+			vb.getChildren().add(vb.getChildren().size()-2, set);
+			set.delete.setOnAction(ev -> {
+				vb.getChildren().remove(set);
+				settings.remove(set);
+			});
+
+			st.sizeToScene();
+		});
+		vb.getChildren().add(addSetting);
+		
+		var ok = new Button("OK");
+		ok.setCenterShape(true);
+		
+		vb.getChildren().addAll(ok);
+		vb.setAlignment(Pos.CENTER);
+		vb.setPadding(new Insets(5));
+		
+		
+		openWindows.add(st);
+		st.setTitle("Default Geometry settings");
+		Scene sc = new Scene(vb);
+		if (useDarkMode.isSelected()) sc.getRoot().setStyle("-fx-base:black");
+		st.setScene(sc);
+		st.show();
+		ok.requestFocus();
+
+		
+		ok.setOnAction(e -> {
+			
+			try {
+				var tmp = new File(new File(Utils.geomDefaultConfig).getAbsolutePath()+".tmp");
+				var br = new BufferedReader(new FileReader(new File(Utils.geomDefaultConfig)));
+				var bw = new BufferedWriter(new FileWriter(tmp));
+				String l;
+				boolean firstSetting = true;
+				while ((l=br.readLine())!=null) {
+					if (l.startsWith("SETTING")) {
+						if (firstSetting) {
+							for (var s : settings) {
+								bw.write("SETTING\t"+s.getName()+"="+s.getStringValue());
+								if ((s.flags & 0x1) != 0) bw.write("\talways");
+								if ((s.flags & 0x2) != 0) bw.write("\tnondefault");
+								if ((s.flags & 0x4) != 0) bw.write("\toverride");
+								bw.write("\n");
+							}
+							firstSetting = false;
+						}
+					} else bw.write(l+"\n");
+				}//loop on config file lines
+				br.close();
+				bw.close();
+				new File(Utils.geomDefaultConfig).delete();
+				tmp.renameTo(new File(Utils.geomDefaultConfig));
+			} catch(Exception ex) {
+				ex.printStackTrace();
+			}
+			st.close();
+
+			openWindows.remove(st);
+		});
+		st.setOnCloseRequest(e -> {
+			openWindows.remove(st);
+		});
+	}
 
 	public static int getNextInt(FileInputStream fis) throws IOException {
 		return fis.read() | fis.read() << 8 | fis.read() << 16 | fis.read() << 24;
@@ -1868,7 +1943,7 @@ public class GeometryEditorGUI extends Application {
 
 	public static void postLoadUpdate(Stage primaryStage) throws InterruptedException {
 		javafx.application.Platform.runLater(() -> {
-			primaryStage.setTitle(mainGeometry == null ? programName : programName + " - " + mainGeometry.carname);
+			primaryStage.setTitle(mainGeometry == null ? Utils.geomGUI_Name : Utils.geomGUI_Name + " - " + mainGeometry.carname);
 			partsDisplay.filter.setText("");
 
 			tpkImagesList.getItems().clear();

@@ -18,6 +18,11 @@ public enum Platform {
     	return names[0];
     }
     
+    @Override
+	public String toString() {
+    	return getName();
+    }
+    
     public static Platform get(String s) {
     	for (var p : values()) for (var n : p.names){
     		if (n.equals(s)) return p;

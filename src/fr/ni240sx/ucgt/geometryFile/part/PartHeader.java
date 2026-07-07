@@ -9,7 +9,7 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
 
-public class PartHeader extends Block {
+public class PartHeader implements Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Part_Header;}

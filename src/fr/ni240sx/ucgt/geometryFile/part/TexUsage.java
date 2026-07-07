@@ -9,7 +9,7 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import javafx.util.Pair;
 
-public class TexUsage extends Block {
+public class TexUsage implements Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Part_TexUsage;}

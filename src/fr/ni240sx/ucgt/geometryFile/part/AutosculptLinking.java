@@ -11,7 +11,7 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
 
-public class AutosculptLinking extends Block {
+public class AutosculptLinking implements Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Part_AutosculptLinking;}

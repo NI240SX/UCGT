@@ -7,7 +7,7 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class CompressedData extends Block {
+public class CompressedData implements Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.CompressedData;}
@@ -15,6 +15,8 @@ public class CompressedData extends Block {
 	public int decompressionOffset;
 	public int decompressedLength;
 	public int supplementaryChunkOffset;
+	
+	public byte[] data;
 	
 	public CompressedData(ByteBuffer in) {
 		decompressedLength = in.getInt();

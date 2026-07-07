@@ -16,6 +16,7 @@ public abstract class ConfigSetting extends HBox {
 	public Node setting;
 	public Button delete;
 	public boolean isChanged = false;
+	public int flags;
 	
 	public ConfigSetting(String name, Node set) {
 		this.name = name;
@@ -26,6 +27,35 @@ public abstract class ConfigSetting extends HBox {
 		var sep2 = new Separator();
         HBox.setHgrow(sep, Priority.SOMETIMES);
 		this.getChildren().addAll(label, sep, set, sep2, delete);
+	}
+	
+	public ConfigSetting(String name, Node set, int f) {
+		this(name, set);
+		this.flags = f;
+		var cbAlways = new CheckBox("Always");
+		var cbNonDefault = new CheckBox("NonDefault");
+		var cbOverride = new CheckBox("Override");
+		
+		cbAlways.setTooltip(new Tooltip("Always include in generated configs."));
+		cbNonDefault.setTooltip(new Tooltip("Include in generated configs if it doesn't correspond to this default value."));
+		cbOverride.setTooltip(new Tooltip("Upon compiling, override any corresponding setting from a model-specific configuration file."));
+		
+		cbAlways.setSelected((flags & 0x1) != 0);
+		cbNonDefault.setSelected((flags & 0x2) != 0);
+		cbOverride.setSelected((flags & 0x4) != 0);
+		cbAlways.setOnAction(e -> {
+			if (cbAlways.isSelected()) flags = flags | 0x1;
+			else flags = flags & ~0x1;
+		});
+		cbNonDefault.setOnAction(e -> {
+			if (cbNonDefault.isSelected()) flags = flags | 0x2;
+			else flags = flags & ~0x2;
+		});
+		cbOverride.setOnAction(e -> {
+			if (cbOverride.isSelected()) flags = flags | 0x4;
+			else flags = flags & ~0x4;
+		});
+		this.getChildren().addAll(new Separator(), new Label("Flags"), new Separator(), cbAlways, new Separator(), cbNonDefault, new Separator(), cbOverride);
 	}
 	
 	public String getName() {
@@ -39,6 +69,12 @@ public abstract class ConfigSetting extends HBox {
 		
 		public Text(String name, String set) {
 			super(name, new TextField(set));
+			this.setting = (TextField) super.setting;
+			this.setting.textProperty().addListener(l -> isChanged = true);
+		}
+		
+		public Text(String name, String set, int flags) {
+			super(name, new TextField(set), flags);
 			this.setting = (TextField) super.setting;
 			this.setting.textProperty().addListener(l -> isChanged = true);
 		}
@@ -122,6 +158,14 @@ public abstract class ConfigSetting extends HBox {
 		
 		public Boolean(String name, java.lang.Boolean b) {
 			super(name, new ComboBox<java.lang.Boolean>());
+			this.setting = (ComboBox<java.lang.Boolean>) super.setting;
+			this.setting.getItems().addAll(true, false);
+			this.setting.getSelectionModel().select(b);
+			this.setting.getSelectionModel().selectedItemProperty().addListener(l -> isChanged = true);
+		}
+
+		public Boolean(String name, boolean b, int flags) {
+			super(name, new ComboBox<java.lang.Boolean>(), flags);
 			this.setting = (ComboBox<java.lang.Boolean>) super.setting;
 			this.setting.getItems().addAll(true, false);
 			this.setting.getSelectionModel().select(b);

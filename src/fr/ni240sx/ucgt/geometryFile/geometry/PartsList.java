@@ -11,7 +11,7 @@ import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class PartsList extends Block {
+public class PartsList implements Block {
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Geom_PartsList;}

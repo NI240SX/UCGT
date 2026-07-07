@@ -5,7 +5,7 @@ import java.io.IOException;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public abstract class Mesh_Info extends Block {
+public abstract class Mesh_Info implements Block {
 
 	public int version;
 
