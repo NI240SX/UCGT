@@ -49,7 +49,7 @@ public class ZMesh extends ZModBlock {
 		//vrite material data one after the other
 		int matID = 0;
 		
-		for (var m : p.mesh.materials.materials) {
+		for (var m : p.mesh.materials.materials) if (m.verticesBlock != null) {
 
 			if (m.verticesBlock.vertexFormat.getNumTexChannels() == 2) {
 				vertexFormat = 55;

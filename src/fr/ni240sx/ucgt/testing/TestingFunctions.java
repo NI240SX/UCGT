@@ -324,7 +324,7 @@ public class TestingFunctions extends Application{
 					
 					fis.skipNBytes(bSize-headerLength-paddingLength-16);
 					
-					var header = new TPKHeader(headerData);
+					var header = new TPKHeader(headerData, null);
 					System.out.println(String.format("%10d", inPos) + " - " + String.format("0x%08X", bTypeRaw) + " (" + bType + ") has alignment modulo "+mod+" - \""+header.info.filename+"\" chunk "+header.info.blockname);
 				} else {
 					if (bType == BlockType.Padding)

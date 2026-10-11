@@ -25,6 +25,7 @@ public class ChunkScenery_Instances implements Block {
 		while(in.position() < blockStart+blockLength) {
 			positions.add(new Position(in));
 		}
+		in.position(blockStart+blockLength);
 	}
 	
 	@Override
@@ -106,7 +107,7 @@ public class ChunkScenery_Instances implements Block {
 		}
 		
 		public byte[] save() {
-			var bb = ByteBuffer.allocate(48);
+			var bb = ByteBuffer.allocate(96);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
 			bb.putFloat(boundsMin[X]);
 			bb.putFloat(boundsMin[Y]);

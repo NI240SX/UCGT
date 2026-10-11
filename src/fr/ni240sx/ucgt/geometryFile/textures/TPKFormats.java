@@ -11,7 +11,8 @@ import fr.ni240sx.ucgt.shared.BlockType;
 public class TPKFormats implements Block{
 	
 	TPK tpk;
-	
+	boolean isXenon = false;
+
 	@Override
 	public BlockType getBlockID() {return BlockType.TPK_Formats;}
 		
@@ -20,8 +21,8 @@ public class TPKFormats implements Block{
 		var blockStart = in.position();
 		
 		this.tpk = tpk;
-		for (var t : tpk.textures) {
-			t.readHeaderPart2(in); //length 24
+		if (tpk != null) for (var t : tpk.textures) {
+			isXenon |= t.readHeaderPart2(in); //length 24
 		}
 		in.position(blockStart+blockLength);
 	}

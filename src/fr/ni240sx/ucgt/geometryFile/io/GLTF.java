@@ -37,6 +37,8 @@ public class GLTF {
 	public final static int glTF_BINARY = 1179937895; //glb, actually
 	public final static int JSON = 1313821514;
 	public final static int BIN = 5130562;
+	public static final String FileExtension_gltf = ".gltf";
+	public static final String FileExtension_glb = ".glb";
 	
 	public static final String LOD_TRIANGLES_SUFFIX = "-ROADLOD";
 	
@@ -589,18 +591,19 @@ public class GLTF {
 			node.put("name", p.name);
 			glTF.append("nodes", node);
 			
+			if (p.mesh == null) continue;
 			var mesh = new JSONObject();
 			mesh.put("name", p.name);
 			
-			for	(var m : p.mesh.materials.materials) {
+			for	(var m : p.mesh.materials.materials) if (m.verticesBlock != null) {
 				if (m.trianglesExtra.size() != 0 && !partsWithExtraTriangles.contains(p)) partsWithExtraTriangles.add(p);
 				var primitive = new JSONObject();
 				var attributes = new JSONObject();
 				
 				exportPosition(glTF, bos, m, attributes);
-				if (m.shaderUsage.vertexFormat_PC.hasNormals()) exportNormals(glTF, bos, m, attributes);
-				for (int i=0; i<m.shaderUsage.vertexFormat_PC.getNumTexChannels(); i++) exportTexcoords(glTF, bos, m, attributes, i);				
-				if (m.shaderUsage.vertexFormat_PC.hasColor()) exportColors(glTF, bos, m, attributes);
+				if (m.shaderUsage.vertexFormat(geom).hasNormals()) exportNormals(glTF, bos, m, attributes);
+				for (int i=0; i<m.shaderUsage.vertexFormat(geom).getNumTexChannels(); i++) exportTexcoords(glTF, bos, m, attributes, i);				
+				if (m.shaderUsage.vertexFormat(geom).hasColor()) exportColors(glTF, bos, m, attributes);
 				primitive.put("attributes", attributes);
 				
 				exportTriangles(glTF, bos, m.triangles, primitive);
@@ -695,7 +698,7 @@ public class GLTF {
 		glTF.append("buffers", buffer);
 		
 		if (!exportGlb) {
-			var bw = new BufferedWriter(new FileWriter(new File(f)));
+			var bw = new BufferedWriter(new FileWriter(new File(f.replace(".gltf", "").replace(".GLTF", "").replace(".glTF", "")+".gltf")));
 			bw.write(glTF.toString());
 			bw.close();
 			

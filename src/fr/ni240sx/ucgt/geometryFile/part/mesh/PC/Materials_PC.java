@@ -66,6 +66,10 @@ public class Materials_PC extends Materials {
 			in.getInt();
 			in.getInt();
 			m.verticesDataLength = in.getInt();
+			in.get();
+			in.get();
+			m.singleVertexLength = in.get();
+			in.get();
 			//vertex format ? 0x00002080 maybe more like amount of data in the vertex format or smth
 			
 			in.position(matStart+132);

@@ -118,6 +118,8 @@ public class Geometry implements Block {
 	
 	public Platform platform = Platform.PC;
 	
+	public static final String[] ALL_SUPPORTED_IO_EXTENSIONS = { WavefrontOBJ.FileExtension, ZModelerZ3D.FileExtension, GLTF.FileExtension_glb, GLTF.FileExtension_gltf };
+	
 	//---------------------------------------------------------------------------------------------------
 	//
 	//										CONSTRUCTORS
@@ -148,6 +150,7 @@ public class Geometry implements Block {
 			SAVE_removeInvalid = false; //this is meant for car geometries
 			SAVE_copyMissingLODs = false;
 			SAVE_copyLOD_D = false;
+			defaultCompressionType = CompressionType.RawDecompressed;
 			while (in.position() < blockStart+blockLength) {
 				in.getInt();
 				parts.add(new Part(in));
@@ -253,6 +256,9 @@ public class Geometry implements Block {
 			for (var mpc : mpointsPositions) mpc.mpoints.sort(new MPointSorterName());
 			mpointsPositions.sort(new MPointPosSorterName());
 		}
+		
+
+		in.position(blockStart+blockLength);
 	}
 
 	public Geometry() {
@@ -515,7 +521,6 @@ public class Geometry implements Block {
 		}
 		
 		bw.close();
-		System.out.println("Configuration file written");
 	}
 	
 	public static void dumpStream(String stream, String dumpfolder, String format, List<String> filters) throws FileNotFoundException, IOException {
@@ -662,7 +667,7 @@ public class Geometry implements Block {
 		if (signature != WavefrontOBJ.OBJ_blender && signature != WavefrontOBJ.OBJ_UCGT 
 				&& signature != ZModelerZ3D.Z3DM && signature != ZModelerZ3D.ZM2S 
 				&& signature != GLTF.glTF_blender && signature != GLTF.glTF_BINARY 
-				&& !modelFile.getName().endsWith(".obj") && !modelFile.getName().endsWith(".gltf")) {
+				&& !modelFile.getName().endsWith(WavefrontOBJ.FileExtension) && !modelFile.getName().endsWith(GLTF.FileExtension_gltf)) {
 			throw new Exception("Wrong file format ! Only Wavefront OBJ, glTF and ZModeler 2 Z3D are supported.");
 		}
 		long time = System.currentTimeMillis();
@@ -672,11 +677,11 @@ public class Geometry implements Block {
 		System.out.println("Config read in "+(System.currentTimeMillis()-time)+" ms.");
 		time = System.currentTimeMillis();
 		System.out.println("Importing meshes from "+modelFile.getName());
-		if (signature == WavefrontOBJ.OBJ_blender || signature == WavefrontOBJ.OBJ_UCGT || modelFile.getName().endsWith(".obj")) 
+		if (signature == WavefrontOBJ.OBJ_blender || signature == WavefrontOBJ.OBJ_UCGT || modelFile.getName().endsWith(WavefrontOBJ.FileExtension)) 
 			WavefrontOBJ.load(geom, modelFile);
 		if (signature == ZModelerZ3D.Z3DM || signature == ZModelerZ3D.ZM2S) 
 			ZModelerZ3D.load(geom, modelFile);
-		if (signature == GLTF.glTF_blender || signature == GLTF.glTF_BINARY || modelFile.getName().endsWith(".gltf")) 
+		if (signature == GLTF.glTF_blender || signature == GLTF.glTF_BINARY || modelFile.getName().endsWith(GLTF.FileExtension_gltf)) 
 			GLTF.load(geom, modelFile);
 		System.out.println("3D model converted in "+(System.currentTimeMillis()-time)+" ms.");			
 		return geom;			
@@ -732,21 +737,17 @@ public class Geometry implements Block {
 						// decompiled 3D models
 						if (s.toLowerCase(Locale.ROOT).endsWith(".ini")) {
 							Geometry g;
-							if (new File(modelsDirectory + s.toLowerCase(Locale.ROOT).replace(".ini", ".z3d")).exists()) {
-								//check the INI for chunk and file name
-								System.out.println("INI and Z3D found : "+s);
-								g = Geometry.importFromFile(new File(modelsDirectory + s.toLowerCase(Locale.ROOT).replace(".ini", ".z3d")));
-								binBlocksToReplace.put(
-										new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename),
-										g
-										);
-							} else if (new File(modelsDirectory + s.toLowerCase(Locale.ROOT).replace(".ini", ".obj")).exists()) {
-								System.out.println("INI and OBJ found : "+s);
-								g = Geometry.importFromFile(new File(modelsDirectory + s.toLowerCase(Locale.ROOT).replace(".ini", ".obj")));
-								binBlocksToReplace.put(
-										new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename),
-										g
-										);
+							
+							for (var ext : ALL_SUPPORTED_IO_EXTENSIONS) {
+								if (new File(modelsDirectory + s.toLowerCase(Locale.ROOT).replace(".ini", ext)).exists()) {
+									//check the INI for chunk and file name
+									System.out.println(".INI and %s found : %s".formatted(ext.toUpperCase(), s));
+									g = Geometry.importFromFile(new File(modelsDirectory + s.toLowerCase(Locale.ROOT).replace(".ini", ext)));
+									binBlocksToReplace.put(
+											new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename),
+											g
+											);
+								}	
 							}
 						}
 						
@@ -843,6 +844,23 @@ public class Geometry implements Block {
 		ArrayList<Block> l8rBlocks = null;
 		StreamChunksOffsets offsets = null;
 		if (l8rFile != null) {
+			Block.doNotRead.put(BlockType.ChunksEmpty, true);
+			Block.doNotRead.put(BlockType.ChunksTrackPathZones, true);
+			Block.doNotRead.put(BlockType.ChunksPositionMarkers, true);
+			Block.doNotRead.put(BlockType.VisibleSections, true);
+			Block.doNotRead.put(BlockType.VisibleSections_Info, true);
+			Block.doNotRead.put(BlockType.VisibleSections_Boundaries, true);
+			Block.doNotRead.put(BlockType.ChunksElevationRules, true);
+			Block.doNotRead.put(BlockType.ChunksLoadingSections, true);
+			Block.doNotRead.put(BlockType.VisibleSections_Relations, true);
+			Block.doNotRead.put(BlockType.ChunksSceneryOverrideInfos, true);
+			Block.doNotRead.put(BlockType.ChunksSceneryGroups, true);
+			Block.doNotRead.put(BlockType.ChunksSceneryHierarchies, true);
+			Block.doNotRead.put(BlockType.SceneryHierarchy, true);
+			Block.doNotRead.put(BlockType.CarpWorldGrid, true);
+			Block.doNotRead.put(BlockType.BoundsPack, true);
+			Block.doNotRead.put(BlockType.CarCollisions, true);
+			Block.doNotRead.put(BlockType.TrackPathBarriers, true);
 			File inputL8rFile = new File(l8rFile.replace(".BUN", "").replace(".BIN", "")+".OLD");
 			outputL8rFile = new File(l8rFile);
 			FileInputStream fisL8r = new FileInputStream(inputL8rFile);
@@ -867,7 +885,7 @@ public class Geometry implements Block {
 			}
 		}
 		
-		
+		//Block.doNotRead.put(BlockType.TPK, true);
 		
 		//we have the names of the models to replace, now it's time to iterate over the stream blocks and find the ones to edit
 		
@@ -919,62 +937,16 @@ public class Geometry implements Block {
 //						Block.doNotRead.remove(BlockType.Geometry);
 //					}
 //					bb.position(blockStart);
-					Block b = Block.read(bb);
 					
-					
-//					if (b.getClass() != Padding.class) {
-//						if (hasPadding) {
-//
-////0x00000000 (Padding) has alignment modulo 4
-////0xB3300000 (TPK) has alignment modulo 128
-////0x80134000 (Geometry) has alignment modulo 4
-////0x00034027 (INVALID) has alignment modulo 128 <-
-////0x80034100 (INVALID) has alignment modulo 128 <-      Model something, unhappy
-////!0x00034159 (INVALID) has alignment modulo 4	<-					
-////!0x00034185 (INVALID) has alignment modulo 16 <-
-////0x80036000 (INVALID) has alignment modulo 16
-////0x00037220 (INVALID) has alignment modulo 128 - WorldAnim, unhappy
-////0x00037250 (INVALID) has alignment modulo 4
-////0x00037260 (INVALID) has alignment modulo 4
-////0x00037270 (INVALID) has alignment modulo 8
-////0x0003B801 (INVALID) has alignment modulo 32 <-      
-////0x0003B802 (INVALID) has alignment modulo 32
-////0x0003BC00 (INVALID) has alignment modulo 16
-//
-//							byte[] padding;
-//							if (b.getClass() == TPK.class || b.getClass() == Geometry.class) {
-//								padding = Padding.makePadding(posInChunk,128); //fixes broken textures
-//							} else {
-////							if (b.getClass() == UnknownBlock.class) {
-////								var unk = (UnknownBlock)b;
-//////								if (unk.ID == 0x80034100 || unk.ID == 0x00037220 || unk.ID == 0x00034027
-//////										|| unk.ID == 0x0003B801 || unk.ID == 0x0003B802
-////										//|| unk.ID == 0x00034185 
-////										//|| unk.ID == 0x00034159
-//////										) paddingSize = 128;
-////								if (unk.ID == 0x00034185) {
-////									paddingSize = 2048;
-////								}
-////								if (unk.ID == 0x00034159) {
-////									paddingStart -=4;
-////									paddingSize = 128;
-////								}
-////							}
-//								padding = new Padding(previousPaddingLength).save(posInChunk); //(almost) fixes crashes and missing collision
-//							
-//							}
-//
-//							fosStream.write(padding);
-//							currentPositionOut += padding.length;
-//							posInChunk += padding.length;
-//						}
-//						hasPadding = false;
-//					}
-					
-					
-//					System.out.println(", ID="+(b.getBlockID() == BlockType.INVALID ? String.format("0x%08X", ((UnknownBlock)b).ID) : b.getBlockID())+", end at "+bb.position()+", length "+(bb.position()-blockStart));
-					if (b.getClass() == Geometry.class) { // check the need to replace the geometry
-						Geometry g = (Geometry) b;
+					int chunkToInt;
+					BlockType block = BlockType.get(chunkToInt = bb.getInt());
+//					System.out.println("Next block %s, in %d, out %d".formatted(block.toString(), bb.position()-4, posInChunk));
+
+					switch (block) { //custom method to prevent editing other read only blocks
+					case Geometry:
+					{
+						Geometry g = new Geometry(bb);
+//						System.out.println("Pumping Geometry %s".formatted(g.geomHeader.geomInfo.filename));
 						byte[] outGeom;
 						var replacementBlock = binBlocksToReplace.get(new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename));
 						Geometry newGeom;
@@ -1011,9 +983,13 @@ public class Geometry implements Block {
 						fosStream.write(outGeom);
 						currentPositionOut += outGeom.length;
 						posInChunk += outGeom.length;
+						break;
+					}
 						
-					} else if (b.getClass() == TPK.class) {
-						TPK tpk = (TPK) b;
+					case TPK:
+					{
+						TPK tpk = new TPK(bb);
+//						System.out.println("Pumping TPK %s".formatted(tpk.header.info.filename));
 						byte[] outTPK;
 
 						var replacementBlock = binBlocksToReplace.get(new Pair<>(tpk.header.info.blockname.replace("STREAMINGTEXTUREPACK", ""), tpk.header.info.filename.split("\\.")[0].toUpperCase()));
@@ -1022,6 +998,13 @@ public class Geometry implements Block {
 							newTPK= (TPK)replacementBlock;
 							newTPK.header.info.blockname = tpk.header.info.blockname;
 							newTPK.header.info.filename = tpk.header.info.filename;
+							
+//							search: for (var t : tpk.textures) {
+//								for (var rep : newTPK.textures) {
+//									if (rep.binKey == t.binKey) continue search;
+//								}
+//								newTPK.textures.add(t); //add back old textures if not found -> DOESNT WORK
+//							}
 
 							outTPK = newTPK.save(posInChunk);
 						} else {
@@ -1031,29 +1014,64 @@ public class Geometry implements Block {
 						fosStream.write(outTPK);
 						currentPositionOut += outTPK.length;
 						posInChunk += outTPK.length;
+						break;
+					}
+					
+					case Padding:
+						//first padding block/unexpected padding
+						{
+							var length = bb.getInt();
+							var blockStart = bb.position();
+							bb.position(blockStart+length);
+	
+						}
+						break;
 						
-					} else if (b.getClass() == Padding.class){
-//						hasPadding = true;
-//						previousPaddingLength = ((Padding)b).length;
-						byte[] padding = Padding.makePadding(posInChunk,2048); //game crashes when not set to 2048, collisions bug out if set to 2048
-						fosStream.write(padding);
-						currentPositionOut += padding.length;
-						posInChunk += padding.length;
-					} else {
+//					case Padding:
+//						{
+//							var length = bb.getInt();
+//							var blockStart = bb.position();
+//							bb.position(blockStart+length);
+//						}
+////						byte[] padding = Padding.makePadding(posInChunk,2048); //game crashes when not set to 2048, collisions bug out if set to 2048
+////						fosStream.write(padding);
+////						currentPositionOut += padding.length;
+////						posInChunk += padding.length;
+//						break; //skip
+						
+					default:
+						var b = new UnknownBlock(bb, chunkToInt);	
 						byte[] outBlock = b.save(posInChunk);
 						fosStream.write(outBlock);
 						currentPositionOut += outBlock.length;
 						posInChunk += outBlock.length;
+					}					
+										
+					//force padding between each block
+					if (block != BlockType.Padding && bb.hasRemaining()) {
+						if (bb.getInt(bb.position()) == 0) { //skip any padding block
+							bb.getInt();
+							var length = bb.getInt();
+							var blockStart = bb.position();
+							bb.position(blockStart+length);
+							
+							int paddingOffset = bb.position() % 256;
+							
+							byte[] padding = Padding.makePadding(posInChunk - paddingOffset, 256); //game crashes when not set to 2048, collisions bug out if set to 2048
+							fosStream.write(padding);
+							currentPositionOut += padding.length;
+							posInChunk += padding.length;
+						}
 					}
 
 				}
 				chunk.size = (int) (currentPositionOut - chunk.offset);
 				chunk.sizeCompressed = chunk.size;
 				
-				byte[] padding = Padding.makePadding(posInChunk,2048);
-				fosStream.write(padding);
-				currentPositionOut += padding.length;
-				posInChunk += padding.length;
+//				byte[] padding = Padding.makePadding(posInChunk,2048);
+//				fosStream.write(padding);
+//				currentPositionOut += padding.length;
+//				posInChunk += padding.length;
 				
 			} else { //no need to edit this block, just pump and update offsets
 				
@@ -1095,8 +1113,10 @@ public class Geometry implements Block {
 					byte[] outGeom;
 					if (binBlocksToReplace.get(new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename)) != null) {
 						outGeom = binBlocksToReplace.get(new Pair<>(g.geomHeader.geomInfo.blockname, g.geomHeader.geomInfo.filename)).save(posInChunk);
+						System.out.println("Replacing Geometry %s".formatted(g.geomHeader.geomInfo.filename));
 					} else {
 						outGeom = g.save(posInChunk);
+						System.out.println("Keeping Geometry %s".formatted(g.geomHeader.geomInfo.filename));
 					}
 					fosStream.write(outGeom);
 					currentPositionOut += outGeom.length;
@@ -1105,7 +1125,7 @@ public class Geometry implements Block {
 					TPK tpk = (TPK) b;
 					byte[] outTPK;
 
-					var replacementBlock = binBlocksToReplace.get(new Pair<>(tpk.header.info.blockname, tpk.header.info.filename.split("\\.")[0].toUpperCase()));
+					var replacementBlock = binBlocksToReplace.get(new Pair<>(tpk.header.info.blockname.replace("STREAMINGTEXTUREPACK", ""), tpk.header.info.filename.split("\\.")[0].toUpperCase()));
 					TPK newTPK;
 					if (replacementBlock != null && replacementBlock.getClass() == TPK.class) {
 						newTPK= (TPK)replacementBlock;
@@ -1113,8 +1133,10 @@ public class Geometry implements Block {
 						newTPK.header.info.filename = tpk.header.info.filename;
 
 						outTPK = newTPK.save(posInChunk);
+						System.out.println("Replacing TPK %s".formatted(tpk.header.info.filename));
 					} else {
 						outTPK = tpk.save(posInChunk);
+						System.out.println("Keeping TPK %s".formatted(tpk.header.info.filename));
 					}
 						
 					fosStream.write(outTPK);
@@ -1131,10 +1153,12 @@ public class Geometry implements Block {
 				}
 
 				// make padding after each block read
-				byte[] outBlock = Padding.makePadding(posInChunk, 128);
-				fosStream.write(outBlock);
-				currentPositionOut += outBlock.length;
-				posInChunk += outBlock.length;
+				if (b.getClass() != Padding.class && bb.hasRemaining()) {
+					byte[] padding = Padding.makePadding(posInChunk,128);
+					fosStream.write(padding);
+					currentPositionOut += padding.length;
+					posInChunk += padding.length;
+				}
 			}
 		} //working on a single file without chunk offsets
 		
@@ -1149,6 +1173,7 @@ public class Geometry implements Block {
 			fosL8r.close();
 		}
 //		System.out.println();
+		Block.doNotRead.clear();
 	}
 
 	public ArrayList<Pair<String,String>> readConfig(File f) throws IOException{

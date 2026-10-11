@@ -23,8 +23,10 @@ public class ChunkVisCurtains implements Block {
 		while (in.getInt() == 0x11111111) {}
 		in.position(in.position()-4);
 		while(in.position() < blockStart+blockLength) {
+			
 			curtains.add(new VisCurtain(in));
 		}
+		in.position(blockStart+blockLength);
 	}
 	
 	@Override
@@ -63,6 +65,7 @@ public class ChunkVisCurtains implements Block {
 		public float[] vector = new float[3];
 		
 		VisCurtain(ByteBuffer in){
+			try {
 			from[X] = in.getFloat();
 			from[Y] = in.getFloat();
 			from[Z] = in.getFloat();
@@ -77,6 +80,9 @@ public class ChunkVisCurtains implements Block {
 			vector[Y] = in.getFloat();
 			vector[Z] = in.getFloat();
 			in.getInt(); //AAAAAAAA
+			} catch (Exception e) {
+				//X360
+			}
 		}
 		
 		public byte[] save() {

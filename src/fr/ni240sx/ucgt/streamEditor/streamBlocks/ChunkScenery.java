@@ -29,6 +29,7 @@ public class ChunkScenery implements Block {
 		while(in.position() < blockStart+blockLength) {
 			if ((block = Block.read(in)) != null) subBlocks.add(block);
 		}
+		in.position(blockStart+blockLength);
 		
 		// if there's more than one block only the last one is taken into account
 		for (var b : subBlocks) {

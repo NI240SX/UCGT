@@ -234,7 +234,7 @@ public class VisualController {
 				break;
 			case ChunkCollisions:
 				var collisions = (ChunkCollisions) block;
-				{
+				if (collisions.CARP.collisionInstances != null) {
 					collisionsMeshes = new ArrayList<>();
 					for (var inst : collisions.CARP.collisionInstances.instances) //if (inst.groupNumber == 0) //get rid of the barrier collisions
 					{
@@ -851,7 +851,7 @@ public class VisualController {
 			if (model != null && model.header != null)
 				key = model.header.binKey;
 			
-			if (model != null && model.mesh != null && model.mesh.materials != null) for (var mat : model.mesh.materials.materials){
+			if (model != null && model.mesh != null && model.mesh.materials != null) for (var mat : model.mesh.materials.materials) if (mat.verticesBlock != null){
 				TriangleMesh matMesh = new TriangleMesh();
 				
 				if (mat.verticesBlock.vertexFormat.hasNormals()) matMesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
@@ -912,7 +912,8 @@ public class VisualController {
 			image = SwingFXUtils.toFXImage(r.read(0), null);
 			iis.close();
 			}catch(Exception e) {
-				e.printStackTrace();
+				System.err.println("Cannot load texture: "+e.getMessage());
+//				e.printStackTrace();
 			}
 		}
 	}

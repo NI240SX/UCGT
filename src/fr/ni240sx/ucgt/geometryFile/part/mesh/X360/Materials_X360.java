@@ -28,7 +28,11 @@ public class Materials_X360 extends Materials {
 			
 			in.position(matStart+36);
 			m.verticesDataLength = in.getInt();
-			in.getInt(); //vertex format data, 0x00001880 for cars
+//			in.getInt(); //vertex format data, 0x00001880 for cars
+			in.get();
+			in.get();
+			m.singleVertexLength = in.get();
+			in.get();
 			m.fromTriIndex = in.getInt();
 			m.toTriIndex = in.getInt();
 

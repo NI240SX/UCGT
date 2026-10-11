@@ -24,6 +24,7 @@ public class ChunkScenery_Objects implements Block {
 		while(in.position() < blockStart+blockLength) {
 			objects.add(new Object(in));
 		}
+		in.position(blockStart+blockLength);
 	}
 	
 	@Override
@@ -90,7 +91,7 @@ public class ChunkScenery_Objects implements Block {
 		}
 		
 		public byte[] save() {
-			var bb = ByteBuffer.allocate(48);
+			var bb = ByteBuffer.allocate(72);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
 
 			var nameEnd = bb.position()+24;

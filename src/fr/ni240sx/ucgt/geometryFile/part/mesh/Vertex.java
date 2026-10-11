@@ -411,12 +411,10 @@ public class Vertex {
 		in.getShort();
 	}
 	private void pos_h4_in(ByteBuffer in) {
-		in.order(ByteOrder.BIG_ENDIAN);
 		pos[X] = new HalfPrecisionFloat(in.getShort()).getFullFloat();
 		pos[Y] = new HalfPrecisionFloat(in.getShort()).getFullFloat();
 		pos[Z] = new HalfPrecisionFloat(in.getShort()).getFullFloat();
 		in.getShort();
-		in.order(ByteOrder.LITTLE_ENDIAN);
 	}
 
 	private void col_in(ByteBuffer in) {
@@ -447,10 +445,8 @@ public class Vertex {
 		tex[i][V] = 1-(in.getShort())/factor;
 	}
 	private void tex_h2_in(ByteBuffer in, int i) {
-		in.order(ByteOrder.BIG_ENDIAN);
 		tex[i][U] = new HalfPrecisionFloat(in.getShort()).getFullFloat();
 		tex[i][V] = 1 - new HalfPrecisionFloat(in.getShort()).getFullFloat();
-		in.order(ByteOrder.LITTLE_ENDIAN);
 	}
 	
 	private void norm_f4_in(ByteBuffer in) {
@@ -471,16 +467,16 @@ public class Vertex {
 		norm[W] = (in.getShort())/vecFactor;
 	}
 	private void norm_d4n_in(ByteBuffer in) {
-		var bits = Integer.reverseBytes(in.getInt());
+		var bits = in.getInt();
 		
 //		int w = (bits >> 30) & 0b11;
 		int z = (bits >> 20) & 0b1111111111; // Bits 30-21
         int y = (bits >> 10) & 0b1111111111; // Bits 20-11
         int x = bits & 0b1111111111;         // Bits 10-1
 
-        norm[x] = x < 512 ? x/511.0f : (x-1024)/511.0f;
-        norm[y] = y < 512 ? y/511.0f : (y-1024)/511.0f;
-        norm[z] = z < 512 ? z/511.0f : (z-1024)/511.0f;
+        norm[X] = x < 512 ? x/511.0f : (x-1024)/511.0f;
+        norm[Y] = y < 512 ? y/511.0f : (y-1024)/511.0f;
+        norm[Z] = z < 512 ? z/511.0f : (z-1024)/511.0f;
         
 		/*
 		 * SAMPLE VALUES FOR IDENTIFICATION
@@ -515,17 +511,17 @@ public class Vertex {
 		tan[W] = (in.getShort())/vecFactor;
 	}
 	private void tan_d4n_in(ByteBuffer in) {
-		var bits = Integer.reverseBytes(in.getInt());
+		var bits = in.getInt();
 		
 		int w = (bits >> 30) & 0b11;
 		int z = (bits >> 20) & 0b1111111111; // Bits 30-21
         int y = (bits >> 10) & 0b1111111111; // Bits 20-11
         int x = bits & 0b1111111111;         // Bits 10-1
 
-        tan[x] = x < 512 ? x/511.0f : (x-1024)/511.0f;
-        tan[y] = y < 512 ? y/511.0f : (y-1024)/511.0f;
-        tan[z] = z < 512 ? z/511.0f : (z-1024)/511.0f;
-        tan[w] = w;
+        tan[X] = x < 512 ? x/511.0f : (x-1024)/511.0f;
+        tan[Y] = y < 512 ? y/511.0f : (y-1024)/511.0f;
+        tan[Z] = z < 512 ? z/511.0f : (z-1024)/511.0f;
+        tan[W] = w;
 	}
 	
 
@@ -827,12 +823,10 @@ public class Vertex {
 		out.putShort((short) (0x0CCD));
 	}
 	private void pos_h4_out(ByteBuffer out) {
-		out.order(ByteOrder.BIG_ENDIAN);
 		out.putShort(new HalfPrecisionFloat(pos[X]).getHalfPrecisionAsShort());
 		out.putShort(new HalfPrecisionFloat(pos[Y]).getHalfPrecisionAsShort());
 		out.putShort(new HalfPrecisionFloat(pos[Z]).getHalfPrecisionAsShort());
 		out.putShort(new HalfPrecisionFloat(1.0f).getHalfPrecisionAsShort());
-		out.order(ByteOrder.LITTLE_ENDIAN);
 	}
 
 	private void col_out(ByteBuffer out) {
@@ -863,10 +857,8 @@ public class Vertex {
 		out.putShort((short) ((1-tex[i][V])*factor));
 	}
 	private void tex_h2_out(ByteBuffer out, int i) {
-		out.order(ByteOrder.BIG_ENDIAN);
 		out.putShort(new HalfPrecisionFloat(tex[i][U]).getHalfPrecisionAsShort());
 		out.putShort(new HalfPrecisionFloat(1-tex[i][V]).getHalfPrecisionAsShort());
-		out.order(ByteOrder.LITTLE_ENDIAN);
 	}
 
 	private void norm0_out(ByteBuffer out) {
@@ -895,7 +887,7 @@ public class Vertex {
         z = (z > 0) ? z : (z + 1024);
 		
         int bits = (1 << 30) | (z << 20) | (y << 10) | x;
-		out.putInt(Integer.reverseBytes(bits));
+		out.putInt(bits);
 	}
 
 	private void tan0_out(ByteBuffer out) {
@@ -924,7 +916,7 @@ public class Vertex {
         z = (z > 0) ? z : (z + 1024);
         
         int bits = (1 << 30) | (z << 20) | (y << 10) | x;
-		out.putInt(Integer.reverseBytes(bits));
+		out.putInt(bits);
 	}
 	
 	@Override

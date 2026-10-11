@@ -25,6 +25,7 @@ public class WavefrontOBJ {
 
 	public static final int OBJ_blender = 1816272931;
 	public static final int OBJ_UCGT = 1245859619;
+	public static final String FileExtension = ".obj";
 
 	public static void load(Geometry geom, File f) throws IOException {
 //		boolean verticesPerPart = false;
@@ -34,7 +35,7 @@ public class WavefrontOBJ {
         boolean nextIsMarker = false;
         Part curPart = null;
         MPoint curMarker = null;
-        Material curMat = Material.getFallbackMaterial(geom);
+        Material curMat = null; // Material.getFallbackMaterial(geom);
         ArrayList<VertexData3> verts = new ArrayList<>(); //WARNING obj index = list index + 1
         ArrayList<VertexData3> normals = new ArrayList<>(); //WARNING obj index = list index + 1
         ArrayList<TexcoordData2> tex = new ArrayList<>(); //WARNING obj index = list index + 1
@@ -115,6 +116,11 @@ public class WavefrontOBJ {
 	        		
         		if (!nextIsMarker) {
         			//part
+        			if (curMat == null) {
+        				curMat = Material.getFallbackMaterial(geom);
+            			System.out.println("[OBJLoader] Warning : missing material on part %s!".formatted(curPart == null ? "null" : curPart.name));
+        			}
+        			
         			int numVerts = line.split(" ").length-1;
         			Vertex[] triVerts = new Vertex[numVerts];
         			for (int i=1; i<numVerts+1; i++) {
@@ -220,6 +226,7 @@ public class WavefrontOBJ {
 //		long iterator = 1;
 		long vl = 1;
         for (var p : geom.parts) {
+        	if (p.mesh == null) continue;
         	bw.write("\n"
         			+ "o "+p.name+"\n"
         			+ "g "+p.name+"\n");
@@ -227,12 +234,13 @@ public class WavefrontOBJ {
         	for (var m : p.mesh.materials.materials) if (m.verticesBlock != null) {
         		for (var v : m.verticesBlock.vertices) {
         			// vertex + vertex color
-        			bw.write("v "+v.pos[X]+" "+v.pos[Y]+" "+v.pos[Z]+" "
-        			+v.color[R]+" "+v.color[G]+" "+v.color[B]+"\n");
+        			bw.write("v "+v.pos[X]+" "+v.pos[Y]+" "+v.pos[Z]);
+        			if (m.shaderUsage.vertexFormat(geom).hasColor()) bw.write(" "+v.color[R]+" "+v.color[G]+" "+v.color[B]);
+        			bw.write("\n");
         			//vertex texcoord
         			bw.write("vt "+v.tex[0][U]+" "+v.tex[0][V]+"\n");
         			//vertex normal
-        			bw.write("vn "+v.norm[X]+" "+v.norm[Y]+" "+v.norm[Z]+"\n");
+        			if (m.shaderUsage.vertexFormat(geom).hasNormals()) bw.write("vn "+v.norm[X]+" "+v.norm[Y]+" "+v.norm[Z]+"\n");
         		}
         		//material
         		bw.write("usemtl "+m.uniqueName+"\n");

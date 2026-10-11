@@ -52,6 +52,8 @@ public class Material {
 	public int DefaultTextureHash = 0;
 	public ArrayList<Integer> TextureHashes = new ArrayList<>();
 	
+	public byte singleVertexLength;
+	
 	public String uniqueName = "";
 	public boolean useTangents = false;
 

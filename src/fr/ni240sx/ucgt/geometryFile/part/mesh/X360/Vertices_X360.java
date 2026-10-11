@@ -31,7 +31,7 @@ public class Vertices_X360 extends Vertices {
 	public void readVertices() {
 		if (verticesData == null) return;
 		var bb = ByteBuffer.wrap(verticesData);
-		bb.order(ByteOrder.LITTLE_ENDIAN);
+		bb.order(ByteOrder.BIG_ENDIAN);
 //		System.out.println("Vertex format to use "+vertexFormat.getName());
 		while (bb.position() < bb.capacity()) {
 			vertices.add(new Vertex(bb, vertexFormat));
@@ -60,6 +60,7 @@ public class Vertices_X360 extends Vertices {
 		
 		Block.makeAlignment(out, alignment, (byte) 0x11);
 		
+		out.order(ByteOrder.BIG_ENDIAN);
 		for (var v : vertices) {
 			v.save(out, vertexFormat);
 		}

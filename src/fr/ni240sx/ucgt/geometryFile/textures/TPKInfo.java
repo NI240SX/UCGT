@@ -35,7 +35,7 @@ public class TPKInfo implements Block {
 	
 	public TPKInfo(ByteBuffer in, TPK tpk) {
 		this(in);
-		tpk.version = this.version;
+		if (tpk != null) tpk.version = this.version;
 	}
 
 

@@ -148,5 +148,9 @@ public class StreamChunksOffsets implements Block {
 			bb.putInt(checksum);
 			bb.put(otherData);
 		}
+
+		public boolean isScenery() {
+			return ID < 20000;
+		}
 	}
 }

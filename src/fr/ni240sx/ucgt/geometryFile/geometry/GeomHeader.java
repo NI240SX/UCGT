@@ -96,7 +96,9 @@ public class GeomHeader implements Block {
 
 	public void refresh(Geometry g) {
 		if (g.SAVE_useOffsetsTable) partsOffsets.refresh(g);
-		if (!g.SAVE_makeDataBlock) for (var b : subBlocks) if (b.getClass() == UCGTData.class) subBlocks.remove(b);
+		if (!g.SAVE_makeDataBlock) for (int i=0; i<subBlocks.size(); i++) {
+			if (subBlocks.get(i).getClass() == UCGTData.class) subBlocks.remove(i);
+		}
 		partsList.refresh(g.parts);
 		geomInfo.partsCount = g.parts.size();
 	}

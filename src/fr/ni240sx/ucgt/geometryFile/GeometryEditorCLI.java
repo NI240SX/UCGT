@@ -10,6 +10,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -33,6 +34,7 @@ public class GeometryEditorCLI {
 
 	public static Geometry geom = null;
 //	public static ArrayList<String> commandsHistory = new ArrayList<>();
+	public static File commandLocation = null;
 	
 	public static void main(String[] args) {
 		
@@ -68,8 +70,9 @@ public class GeometryEditorCLI {
 		        	e.printStackTrace();
 		        }
 			}
+			commandLocation = new File("").getAbsoluteFile();
 			
-			System.out.print("\n> ");
+			System.out.print("\n%s> ".formatted(commandLocation == null ? "" : commandLocation.getAbsolutePath()));
 	
 	        var in = new BufferedReader(new InputStreamReader(System.in));
 	        String l;
@@ -78,7 +81,7 @@ public class GeometryEditorCLI {
 				while (!(l = in.readLine()).equals("exit")) {
 					parseCommand(l);
 			    	System.gc();
-					System.out.print("\n> ");
+					System.out.print("\n%s> ".formatted(commandLocation == null ? "" : commandLocation.getAbsolutePath()));
 				}
 			} catch (Exception e) {
 				System.out.println("An unexpected error happened while parsing user input, the program has to close.");
@@ -145,6 +148,33 @@ public class GeometryEditorCLI {
 				System.out.println("The Grand Syndicate of Trolling agrees with your decision. Therefore I shall NOT nuke your coputer !");
 				break;
 				
+			case "config":
+				if (!new File(Utils.geomDefaultConfig).isFile()) Geometry.writeDefaultConfig();
+        		Desktop.getDesktop().open(new File(Utils.geomDefaultConfig));
+				break;
+				
+			case "cd":
+				try {
+					l = l.substring(3);					
+					//read first path
+					if (l.startsWith("\"")) {
+						l = l.substring(1);
+						src = l.split("\"")[0];
+						l = l.substring(src.length()+1);
+					} else {
+						src = l.split(" ")[0];
+						l = l.substring(src.length());
+					}
+					src = resolveRelativePath(src);
+
+					if (new File(src).isDirectory()) {
+						commandLocation = new File(src).getCanonicalFile();
+					}
+				} catch (Exception e) {
+					System.out.println("Invalid command syntax : cd <new directory>");
+				}
+				break;
+				
 			default:
 				System.out.println("Unknown command : \""+l+"\". Type \"help\" for a list of commands.");
 			}
@@ -168,6 +198,7 @@ public class GeometryEditorCLI {
 				src = l.split(" ")[0];
 				l = l.substring(src.length());
 			}
+			src = resolveRelativePath(src);
 
 			if (l.length()>1) {
 				l = l.substring(1);
@@ -260,6 +291,9 @@ public class GeometryEditorCLI {
 				dst = src.replace(".BIN", ".both").replace(".bin", ".both");
 			}
 			
+			src = resolveRelativePath(src);
+			dst = resolveRelativePath(dst);
+
 			new File(dst).getParentFile().mkdirs();
 			
 			try {
@@ -306,6 +340,7 @@ public class GeometryEditorCLI {
 						System.out.println("ZModeler scene saved in "+(System.currentTimeMillis()-t)+" ms.");
 				        geom.writeConfig(new File(dst+".ini"));
 					}
+					System.out.println("Configuration file written.");
 					if (tpk != null) {
 						System.out.println("Saving textures...");
 						t = System.currentTimeMillis();
@@ -338,17 +373,24 @@ public class GeometryEditorCLI {
 			} else {
 				src = l.split(" ")[0];
 			}
+			src = resolveRelativePath(src);
 			
 			try {
 				System.out.println("Reading script...");
+				long t = System.currentTimeMillis();
 				BufferedReader script = new BufferedReader(new FileReader(new File(src)));
 				String scriptCommand;
-				while ((scriptCommand = script.readLine()) != null) if (!scriptCommand.isBlank()) {
+				var previousCommandLocation = commandLocation;
+				commandLocation = new File(src).getParentFile().getCanonicalFile();
+				while ((scriptCommand = script.readLine()) != null) if (!scriptCommand.isBlank() && !scriptCommand.startsWith("#")) {
+					System.out.println("\n%s> %s".formatted(commandLocation == null ? "" : commandLocation.getAbsolutePath(), scriptCommand));
 					parseCommand(scriptCommand);
 				}
+				commandLocation = previousCommandLocation;
 				script.close();
 //					Geometry.ctkConfigToUCGTConfig(new File(src), new File(dst));
-				System.out.println("Script fully executed !");
+				System.out.println("Script fully executed ! Took "+(System.currentTimeMillis()-t)+" ms.");
+
 				
 			} catch (Exception e) {
 				System.out.printf("Error reading script : %s\n", e.getMessage());
@@ -401,6 +443,10 @@ public class GeometryEditorCLI {
 				}
 			}
 			
+			src = resolveRelativePath(src);
+			dst = resolveRelativePath(dst);
+			definitions = resolveRelativePath(definitions);
+
 			try {
 				long t = System.currentTimeMillis();
 				System.out.println("Starting to replace data...");
@@ -446,6 +492,9 @@ public class GeometryEditorCLI {
 			}
 			sanitizeFolderEnd(src);
 			dst += File.separator;
+
+			src = resolveRelativePath(src);
+			dst = resolveRelativePath(dst);
 
 			//read type if existing
 			if (l.length() > 1) {
@@ -518,6 +567,9 @@ public class GeometryEditorCLI {
 				}
 			} else dst = src.replace(".txt", ".ini");
 			
+			src = resolveRelativePath(src);
+			dst = resolveRelativePath(dst);
+
 			try {
 				System.out.println("Reading CTK config...");
 				Geometry.ctkConfigToUCGTConfig(new File(src), new File(dst));
@@ -557,6 +609,8 @@ public class GeometryEditorCLI {
 				dst = l.split(" ")[0];
 //					l = l.substring(dst.length()+1);
 			}
+			src = resolveRelativePath(src);
+			dst = resolveRelativePath(dst);
 			
 			backUpFile(new File(dst));
 			new File(dst).getParentFile().mkdirs();
@@ -600,17 +654,23 @@ public class GeometryEditorCLI {
 						var fos = new FileOutputStream(dst);
 						
 						for (var s : filesInDir) {
-							s = s.toLowerCase(Locale.ROOT);
-							// decompiled 3D models
-							if (s.endsWith(".ini")) {
-								Geometry g;
-								if (new File(src + s.replace(".ini", ".z3d")).exists()) {
-									g = Geometry.importFromFile(new File(src + s.replace(".ini", ".z3d")));
-									fos.write(g.save(0));
-								} else if (new File(src + s.replace(".ini", ".obj")).exists()) {
-									g = Geometry.importFromFile(new File(src + s.replace(".ini", ".obj")));
-									fos.write(g.save(0));
+							if (new File(src + s).isFile()) {
+								// decompiled 3D models
+								if (s.toLowerCase(Locale.ROOT).endsWith(".ini")) {
+									for (var ext : Geometry.ALL_SUPPORTED_IO_EXTENSIONS) {
+										if (new File(src + s.toLowerCase(Locale.ROOT).replace(".ini", ext)).exists()) {
+											var g = Geometry.importFromFile(new File(src + s.toLowerCase(Locale.ROOT).replace(".ini", ext)));
+											fos.write(g.save(0));
+										}	
+									}
 								}
+								//compiled models not taken into account
+							}
+							
+							//TPKs as folders (using UC support)
+							if (s.contains("-") && new File(src + s).isDirectory()) {
+								var tpk = new TPK(new File(src + s), 9);
+								if (tpk.textures.size() > 0) fos.write(tpk.save(0));
 							}
 						}
 						fos.close();
@@ -627,6 +687,12 @@ public class GeometryEditorCLI {
 			}
 			
 		} catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : compile <OBJ/Z3D source> <BIN output>");}
+	}
+
+	private static String resolveRelativePath(String src) {
+		if (src == null) return null;
+		if (new File(src).isAbsolute()) return src;
+		return commandLocation.getAbsolutePath() + File.separator + src;
 	}
 
 	private static void compileAll(String l) {
@@ -665,6 +731,9 @@ public class GeometryEditorCLI {
 					conf = l.split(" ")[0];
 				}
 			}
+			src = resolveRelativePath(src);
+			dst = resolveRelativePath(dst);
+			conf = resolveRelativePath(conf);
 			
 			sanitizeFolderEnd(src);
 			sanitizeFolderEnd(dst);
@@ -881,6 +950,9 @@ public class GeometryEditorCLI {
 
 					help
 					    - show this info
+					    
+					config
+					    - opens the default configuration file
 					    
 					exit
 					    - exits the program

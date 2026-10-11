@@ -124,6 +124,10 @@ public class Mesh implements Block {
 		ShaderUsage previousSU = null;
 		int j=0;
 		if (materials != null && triangles != null) for (int i=0; i<materials.materials.size(); i++) {
+			if (verticesBlocks.size() == j) {
+				System.out.println("Mesh : No more vertices block found ! (material idx %d / total materials %d / vertices block idx %d / total vertices blocks %d)".formatted(i, materials.materials.size(), j, verticesBlocks.size()));
+				break;
+			}
 			switch (platform) {
 			case PC:
 			case Prostreet_PC:
@@ -138,8 +142,18 @@ public class Mesh implements Block {
 				verticesBlocks.get(j).vertexFormat = materials.materials.get(i).shaderUsage.vertexFormat_PS3;
 				break;
 			}
-			verticesBlocks.get(j).readVertices();
-
+			
+			if (materials.materials.get(i).singleVertexLength != 0 && materials.materials.get(i).singleVertexLength != verticesBlocks.get(j).vertexFormat.getLength()) {
+				System.err.println("WARN: mismatching vertex format length: declared %d, expected %d (shader %s)".formatted(materials.materials.get(i).singleVertexLength, verticesBlocks.get(j).vertexFormat.getLength(), materials.materials.get(i).shaderUsage.getName()));
+			}
+			try {
+				verticesBlocks.get(j).readVertices();
+			} catch (Exception e) {
+				verticesBlocks.get(j).verticesData = null;
+				System.err.println("Unable to read all vertices (%d / %d successfully read) @ in=%d".formatted(verticesBlocks.get(j).vertices.size(), materials.materials.get(i).verticesDataLength / materials.materials.get(i).singleVertexLength, in.position()));
+				e.printStackTrace();
+			}
+				
 			verticesBlocks.get(j).material = materials.materials.get(i);
 			materials.materials.get(i).verticesBlock = verticesBlocks.get(j);
 			

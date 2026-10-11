@@ -17,38 +17,12 @@ public class TPKHeader implements Block {
 	public TPKInfo info;
 	public TexList texlist;
 	public TexOffsets offsets;
+	public TPKNames names;
+	public TPKFormats formats;
 	
 	@Override
 	public BlockType getBlockID() {
 		return BlockType.TPK_Header;
-	}
-
-	public TPKHeader(ByteBuffer in) throws Exception {
-		var blockLength = in.getInt();
-		var blockStart = in.position();
-		Block block;
-		
-		while(in.position() < blockStart+blockLength) {
-			if ((block = Block.read(in)) != null) subBlocks.add(block);
-		}
-		
-		// SUB-BLOCKS PRE-TREATMENT TO REFERENCE THEM ALL
-		// if there's more than one block only the last one is taken into account
-		for (var b : subBlocks) {
-			switch (b.getBlockID()) {
-			case TPK_Info:
-				info = (TPKInfo)b;
-				break;
-			case TPK_TexList:
-				texlist = (TexList)b;
-				break;
-			case TPK_TexOffsets:
-				offsets = (TexOffsets)b;
-				break;
-			default:
-				break;
-			}
-		}
 	}
 	
 	public TPKHeader(ByteBuffer in, TPK tpk) throws Exception {
@@ -92,6 +66,12 @@ public class TPKHeader implements Block {
 				break;
 			case TPK_TexOffsets:
 				offsets = (TexOffsets)b;
+				break;
+			case TPK_Names:
+				names = (TPKNames)b;
+				break;
+			case TPK_Formats:
+				formats = (TPKFormats)b;
 				break;
 			default:
 				break;

@@ -20,6 +20,8 @@ public class ChunksElevationRules implements Block {
 	public ChunksElevationRules(ByteBuffer in) {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
+		while (in.getInt() == 0x11111111) {}
+		in.position(in.position()-4);
 		while(in.position() < blockStart+blockLength) {
 			elevationRuleTriangles.add(new ElevationRuleTriangle(in));
 		}
@@ -37,6 +39,7 @@ public class ChunksElevationRules implements Block {
 		out.write(buf.array());
 
 		for (var z : elevationRuleTriangles) out.write(z.save());
+		Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 16), (byte)0x11);
 		
 		buf = ByteBuffer.wrap(new byte[4]);
 		buf.order(ByteOrder.LITTLE_ENDIAN);

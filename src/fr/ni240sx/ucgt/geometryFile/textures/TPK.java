@@ -53,7 +53,7 @@ public class TPK implements Block {
 	
 	public TPK(ByteBuffer in) throws Exception {
 		in.order(ByteOrder.LITTLE_ENDIAN);
-		//var blockLength = 
+		var blockLength = 
 				in.getInt();
 		var blockStart = in.position();		
 		
@@ -80,17 +80,20 @@ public class TPK implements Block {
 			in.getInt(); //size
 			while (in.getInt() == 0x11111111) {}
 			in.position(in.position()-4);
-			texloop: for (var t : textures) {
-				t.readImage(in);
+			var imagesStart = in.position();
+			//texloop: 
+			for (var t : textures) {
+				in.position(imagesStart + t.imageOffset);
+				t.readImage(in, header.formats.isXenon);
 
-				try {
-//					while (in.getInt() == 0) {}
-		            var pad = 0x80 - (in.position()-blockStart+8) % 0x80;
-		            if (pad != 0x80) in.position(in.position()+pad);
-				} catch (@SuppressWarnings("unused") Exception e) {
-					break texloop;
-				}
-//				in.position(in.position()-4);
+//				try {
+////					while (in.getInt() == 0) {}
+//		            var pad = 0x80 - (in.position()-blockStart+8) % 0x80;
+//		            if (pad != 0x80) in.position(in.position()+pad);
+//				} catch (@SuppressWarnings("unused") Exception e) {
+//					break texloop;
+//				}
+////				in.position(in.position()-4);
 			}
 
 			
@@ -150,6 +153,7 @@ public class TPK implements Block {
 				}
 			}
 		}
+		in.position(blockStart+blockLength);
 	}
 	
 	@Override
@@ -283,9 +287,11 @@ public class TPK implements Block {
 				out.write(t.save(this.version));
 				header.offsets.setLengths(t, out.size()-length);
 			}
+			if (textures.indexOf(t) != textures.size() -1)
 			Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 128), (byte) 0x00);
 		} else for (var t : textures) {
 			out.write(t.writeImageData());
+			if (textures.indexOf(t) != textures.size() -1)
 			Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 128), (byte) 0x00);
 		}
 	

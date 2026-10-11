@@ -1193,7 +1193,7 @@ public class GeometryEditorGUI extends Application {
 									});
 
 									FileInputStream fis = new FileInputStream(selected);
-									byte [] arr = new byte[(int)selected.length()-4];
+									byte [] arr = new byte[(int)selected.length()]; 
 									fis.read(arr);
 									fis.close();
 									var bb = ByteBuffer.wrap(arr);
@@ -1413,7 +1413,7 @@ public class GeometryEditorGUI extends Application {
 									
 									fis.skipNBytes(bSize-headerLength-paddingLength-16);
 									
-									var header = new TPKHeader(headerData);
+									var header = new TPKHeader(headerData, null);
 									
 									tpkOffsets.add(new FileOffset(inPos,bSize,header.info.blockname,header.info.filename));
 									
@@ -1627,6 +1627,11 @@ public class GeometryEditorGUI extends Application {
 		javafx.application.Platform.runLater(() -> {
 			if (mainGeometry == null) {
 				if (!disableWarnings.isSelected()) new Alert(Alert.AlertType.ERROR, "No Geometry loaded!", ButtonType.OK).show();
+				latch.countDown();
+				return;
+			}
+			if (currentConfig == null) {
+				if (!disableWarnings.isSelected()) new Alert(Alert.AlertType.ERROR, "Current configuration not found!", ButtonType.OK).show();
 				latch.countDown();
 				return;
 			}

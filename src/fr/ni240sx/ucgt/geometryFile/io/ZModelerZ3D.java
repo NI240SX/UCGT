@@ -21,6 +21,8 @@ public class ZModelerZ3D {
 
 	public final static int ZM2S = 1395805530;
 	public final static int Z3DM = 1296315226;
+	public static final String FileExtension = ".z3d";
+
 
 	public static ArrayList<ZModInfo> info = new ArrayList<>();
 	public static HashMap<Integer, ZModBlock> blocks = new HashMap<>();
@@ -142,6 +144,7 @@ public class ZModelerZ3D {
 			if (sn.node.getClass() == MeshNode.class) {
 				var mn = (MeshNode)sn.node;
 				if (mn.binPart != null) { //binPart is null if it's being created for a marker
+					if (mn.binPart.mesh == null) continue;
 					mn.renderTechnique = new MeshRenderTechnique();
 					mn.renderTechniqueUID = mn.renderTechnique.UID;
 					mn.mesh = new ZMesh(mn.binPart, CMaterialsService, CTexturesService);

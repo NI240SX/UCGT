@@ -377,19 +377,33 @@ public class Collisions implements Block{
 		in.getInt(); //0x20C0C020	m_magic
 		in.getInt(); //0			resolveAddress, should stay zero
 		in.getInt(); //16			m_fileVersion
-		in.getInt(); //0x01000104	m_layoutRules [bytes per pointer, isLittleEndian, reusePaddingOptimization, emptyBaseClassOptimization]
-		in.getInt(); //0			m_contentsSectionOffset
-		in.getInt(); //0x554DF6C5	m_contentsClassNameCRC
-		in.getInt(); //0x00050500	m_contentsVersion
-		in.getInt(); //48			m_absoluteDataStart
-
+		//if (in.getInt() != 16) System.err.println("Bounds: Havok file is not version 16!");
+		//in.getInt(); //0x01000104	m_layoutRules [bytes per pointer, isLittleEndian, reusePaddingOptimization, emptyBaseClassOptimization]
+		if (in.get() != 4) System.err.println("Bounds: Havok file is not 4 bytes per pointer!");
+		ByteOrder endianness = ByteOrder.LITTLE_ENDIAN;
+		if (in.get() != 1) {
+			System.out.println("Bounds: Havok file is big-endian!");
+			in.order(ByteOrder.BIG_ENDIAN);
+			endianness = ByteOrder.BIG_ENDIAN;
+		}
+		in.get();
+		in.get();
+		//in.getInt(); //0			m_contentsSectionOffset
+		if (in.getInt() != 0) System.err.println("Bounds: Havok file m_contentsSectionOffset is non-zero!");
+		//in.getInt(); //0x554DF6C5	m_contentsClassNameCRC
+		if (in.getInt() != 0x554DF6C5) System.err.println("Bounds: Wrong m_contentsClassNameCRC in Havok file!");
+		//in.getInt(); //0x00050500	m_contentsVersion
+		if (in.getInt() != 0x00050500) System.err.println("Bounds: Wrong m_contentsVersion in Havok file!");
+		//in.getInt(); //48			m_absoluteDataStart
+		if (in.getInt() != 48) System.err.println("Bounds: Havok file m_absoluteDataStart not equal to 48!");
+		
 		var m_localFixupsOffset = in.getInt(); //	m_localFixupsOffset
 		var m_virtualFixupsOffset = in.getInt(); //	m_virtualFixupsOffset	count2 = count1+112
 		var m_endOffset = in.getInt(); //			m_endOffset				count3 = count2+48
 		
 
 		ByteBuffer data = in.slice(in.position(), m_endOffset);
-		data.order(ByteOrder.LITTLE_ENDIAN);
+		data.order(endianness);
 
 
 		data.position(m_localFixupsOffset);
@@ -411,6 +425,7 @@ public class Collisions implements Block{
 		scg = new scgHeader(data, LocalFixUps, VirtualFixUps);
 		carname = scg.name;
 
+		in.order(ByteOrder.LITTLE_ENDIAN);
 		in.position(blockStart+blockLength);
 	}
 	

@@ -32,8 +32,9 @@ public enum TextureUsage {
 	ELEMENTSMASK(0x3DC91356),
 	ROADBASE(0xECE777E1),
 	BASESPEC(0xE37F2EE9),
-	ELEMENTSNORMAL(0x64966205),
+	ELEMENTSSPEC(0x1D40C8C1),
 	BASENORMAL(0xFF546B1F),
+	ELEMENTSNORMAL(0x64966205),
 	LIGHTMAP(0x1FA9A254),
 	LIGHTMAP_SAMPLER(0x1FA9A254), //TODO remove, for compatibility
 	OPACITY_SPEC_REFL(0xB36383C6),
@@ -58,7 +59,7 @@ public enum TextureUsage {
         for (TextureUsage c : values()) {
             if (c.key == key) return c;
         }
-        System.out.println("WARNING : unknown texture usage "+Integer.toHexString(Integer.reverseBytes(key)));
+        System.err.println("WARNING : unknown texture usage "+Integer.toHexString(Integer.reverseBytes(key)));
         return INVALID; // Handle invalid value
     }
     

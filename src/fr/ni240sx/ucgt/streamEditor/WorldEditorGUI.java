@@ -957,7 +957,12 @@ public class WorldEditorGUI extends Application {
         };
 	}
 	
-	public static void loadByFileType(Stage primaryStage, File selected) throws Exception {
+	public static void loadByFileType(Stage primaryStage, File sel) throws Exception {
+		File selected;
+		if (sel.getName().contains("STREAM")) {
+			selected = new File(sel.getParent() + File.separator + sel.getName().replace("STREAM", ""));
+		} else selected = sel;
+		
 		new Thread(() -> {
 			try {
 				unsavedChanges = false;

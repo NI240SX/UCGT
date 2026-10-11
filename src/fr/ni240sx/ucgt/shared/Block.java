@@ -137,12 +137,18 @@ public interface Block {
 			
 		case TPK:
 			return new TPK(in);
+		case TPK_Header:
+			return new TPKHeader(in, null);
 		case TPK_Info:
-			return new TPKInfo(in);
+			return new TPKInfo(in, null);
 		case TPK_TexList:
 			return new TexList(in);
 		case TPK_TexOffsets:
 			return new TexOffsets(in);
+		case TPK_Names:
+			return new TPKNames(in, null);
+		case TPK_Formats:
+			return new TPKFormats(in, null);
 			
 		case CarCollisions:
 			return new Collisions(in);

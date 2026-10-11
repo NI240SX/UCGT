@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.Platform;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.shared.Hash;
@@ -121,7 +122,7 @@ public class ShaderUsage {
         for (ShaderUsage c : legacyValues) {
             if (c.key == key) return c;
         }
-        System.out.println("WARNING : unknown shader usage "+Integer.toHexString(Integer.reverseBytes(key)));
+        System.err.println("WARNING : unknown shader "+Integer.toHexString(Integer.reverseBytes(key)));
         ShaderUsage ret = new ShaderUsage(key, String.format("0x%08X", Integer.reverseBytes(key)), new String[] {String.format("0x%08X", Integer.reverseBytes(key))});
 //        values.add(ret);
         return ret; // Handle invalid value
@@ -138,7 +139,7 @@ public class ShaderUsage {
         for (ShaderUsage c : values) for (String n : c.possibleNames) {
             if (n.equals(name)) return c;
         }
-        System.out.println("WARNING : unknown shader usage "+name);
+        System.err.println("WARNING : unknown shader "+name);
         
         if (name.startsWith("0x") || name.startsWith("0X")) {
 			//already hashed input
@@ -189,7 +190,7 @@ public class ShaderUsage {
 				parseUsageLegacy(l);
 			}
     	} catch (Exception e) {
-    		System.out.println("Warning : unable to fetch shader usages from data folder !");
+    		System.out.println("Warning : unable to fetch shaders from data folder !");
     		e.printStackTrace();
     		values.add(new ShaderUsage(Hash.findVLT("car"), "Diffuse", new String[]{"Diffuse","car"}));
     		values.add(new ShaderUsage(Hash.findVLT("car_a"), "DiffuseAlpha", new String[]{"DiffuseAlpha","Alpha","car_a"}));
@@ -302,14 +303,15 @@ public class ShaderUsage {
 		for (var u : legacyValues) {
 			if (u.key >>> 24 == Platform.indexOf(platform)) {
 				for (var s : u.possibleNames) if (s.contains(name) || name.contains(s)) {
-					System.out.println("Cannot find legacy shader usage with name: "+name+"; picked "+s+" instead.");
+					System.out.println("Cannot find legacy shader with name: "+name+"; picked "+s+" instead.");
+					
 					return u;
 				}
 			}
 		}
 		for (var u : legacyValues) {
 			if (u.key >>> 24 == Platform.indexOf(platform) && ((Legacy)u).isDefault) {
-				System.out.println("Cannot find legacy shader usage with name: "+name+"; defaulted to "+u.name+" instead.");
+				System.out.println("Cannot find legacy shader with name: "+name+"; defaulted to "+u.name+" instead.");
 				return u;
 			}
 		}
@@ -327,5 +329,21 @@ public class ShaderUsage {
 			isDefault = def;
 		}
 		
+	}
+
+	public VertexFormat vertexFormat(Geometry geom) {
+		return switch (geom.platform) {
+		case PC:
+		case Prostreet_PC:
+		case Carbon_PC:
+			yield vertexFormat_PC;
+		case PS3:
+			yield vertexFormat_PS3;
+		case Prostreet_X360:
+		case X360:
+			yield vertexFormat_X360;
+		default:
+			throw new IllegalArgumentException("Unexpected value: " + geom.platform);
+		};
 	}
 }

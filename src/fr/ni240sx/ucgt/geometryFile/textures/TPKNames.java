@@ -22,8 +22,8 @@ public class TPKNames implements Block{
 		this.tpk = tpk;
 		while(in.position()<blockStart+blockLength) {
 			var t = new NFSTexture();
-			tpk.textures.add(t);
 			t.readHeaderPart1(in);
+			if (tpk != null) tpk.textures.add(t);
 		}
 		in.position(blockStart+blockLength);
 	}

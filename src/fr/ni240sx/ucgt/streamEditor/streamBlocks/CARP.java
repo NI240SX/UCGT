@@ -5,6 +5,7 @@ import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.Y;
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.Z;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,9 +31,13 @@ public class CARP{
 //		in.getInt(); //0
 //		in.getInt(); //1
 		
+		if (in.getInt(in.position()) == 0x50524143) {
+			in.order(ByteOrder.BIG_ENDIAN);
+		}
 		root = new HeaderEntry(in);
 		if (!root.isType("CARP")) System.err.println("CARP reader: Not a CARP block!");
 		root.readRecursive(in);
+		in.order(ByteOrder.LITTLE_ENDIAN);
 
 //		
 //		var magic1 = in.getInt();
