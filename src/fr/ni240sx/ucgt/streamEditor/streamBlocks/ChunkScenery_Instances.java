@@ -10,20 +10,26 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
-public class ChunkScenery_Instances implements Block {
+public class ChunkScenery_Instances extends ArrayList<fr.ni240sx.ucgt.streamEditor.streamBlocks.ChunkScenery_Instances.Instance> implements Block {
 
-	public ArrayList<Position> positions = new ArrayList<>();
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2708267506081067281L;
+	//public ArrayList<Position> instances = new ArrayList<>();
 	
 	@Override
 	public BlockType getBlockID() {return BlockType.ChunkScenery_Instances;}
 
 	public ChunkScenery_Instances(ByteBuffer in) {
+		super();
 		var blockLength = in.getInt();
 		var blockStart = in.position();
 		while (in.getInt() == 0x11111111) {}
 		in.position(in.position()-4);
 		while(in.position() < blockStart+blockLength) {
-			positions.add(new Position(in));
+			//instances.
+			add(new Instance(in));
 		}
 		in.position(blockStart+blockLength);
 	}
@@ -40,7 +46,8 @@ public class ChunkScenery_Instances implements Block {
 		out.write(buf.array());
 		Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 16), (byte)0x11);
 
-		for (var z : positions) out.write(z.save());
+		//instances
+		for (var z : this) out.write(z.save());
 		
 		buf = ByteBuffer.wrap(new byte[4]);
 		buf.order(ByteOrder.LITTLE_ENDIAN);
@@ -57,53 +64,66 @@ public class ChunkScenery_Instances implements Block {
 	}
 
 	
-	public static class Position{
-		public short objectIndex, objectID, v1, v2, v3, v4, v5, v6, v7, v8; 
-		public short groupID, instanceID;
+	public static class Instance{
+		public short 
+		//objectIndex, objectID, v1, v2, v3, v4, 
+		PcaVertexColourIndexLOD0, PcaVertexColourIndexLOD1, PcaVertexColourIndexLOD2, PcaVertexColourIndexLOD3,
+		PrecullerInfoIndex, SceneryInfoNumber; 
+//		public short groupID, instanceID;
+		public int InstanceFlags, SceneryGUID;
+		public byte LodGroup, LoiFlags, SwayMaxMultiplier, WSpeedMultiplier; 
 		//int hash;
 		public float[] pos = new float[3];
 		public float[] boundsMin = new float[3];
 		public float[] boundsMax = new float[3];
 		public float[][] matrix = new float[3][3];
 
-		Position(ByteBuffer in){
+		Instance(ByteBuffer in){
 			boundsMin[X] = in.getFloat();
 			boundsMin[Y] = in.getFloat();
 			boundsMin[Z] = in.getFloat();
 
-			v1 = in.getShort();
-			objectID = in.getShort();
+//			v1 = in.getShort();
+//			objectID = in.getShort(); //InstanceFlags
+			InstanceFlags = in.getInt();
 
 			boundsMax[X] = in.getFloat();
 			boundsMax[Y] = in.getFloat();
 			boundsMax[Z] = in.getFloat();
-			v2 = in.getShort();
-			objectIndex = in.getShort();
+//			v2 = in.getShort();
+//			objectIndex = in.getShort();
+			PrecullerInfoIndex = in.getShort();
+			SceneryInfoNumber = in.getShort();
 			
 			pos[X] = in.getFloat();
 			pos[Y] = in.getFloat();
 			pos[Z] = in.getFloat();
-			instanceID = in.getShort();
-			groupID = in.getShort();
+//			instanceID = in.getShort();
+//			groupID = in.getShort();
 //			hash = in.getInt();
+			SceneryGUID = in.getInt();
 			
 			matrix[0][0] = in.getFloat();
 			matrix[1][0] = in.getFloat();
 			matrix[2][0] = in.getFloat();
-			v3 = in.getShort();
-			v4 = in.getShort();
+//			v3 = in.getShort();
+//			v4 = in.getShort();
+			LodGroup = in.get();
+			LoiFlags = in.get();
+			SwayMaxMultiplier = in.get();
+			WSpeedMultiplier = in.get();
 			
 			matrix[0][1] = in.getFloat();
 			matrix[1][1] = in.getFloat();
 			matrix[2][1] = in.getFloat();
-			v5 = in.getShort();
-			v6 = in.getShort();
+			PcaVertexColourIndexLOD0 = in.getShort();
+			PcaVertexColourIndexLOD1 = in.getShort();
 			
 			matrix[0][2] = in.getFloat();
 			matrix[1][2] = in.getFloat();
 			matrix[2][2] = in.getFloat();
-			v7 = in.getShort();
-			v8 = in.getShort();
+			PcaVertexColourIndexLOD2 = in.getShort();
+			PcaVertexColourIndexLOD3 = in.getShort();
 		}
 		
 		public byte[] save() {
@@ -112,38 +132,46 @@ public class ChunkScenery_Instances implements Block {
 			bb.putFloat(boundsMin[X]);
 			bb.putFloat(boundsMin[Y]);
 			bb.putFloat(boundsMin[Z]);
-			bb.putShort(v1);
-			bb.putShort(objectID);
+//			bb.putShort(v1);
+//			bb.putShort(objectID);
+			bb.putInt(InstanceFlags);
 
 			bb.putFloat(boundsMax[X]);
 			bb.putFloat(boundsMax[Y]);
 			bb.putFloat(boundsMax[Z]);
-			bb.putShort(v2);
-			bb.putShort(objectIndex);
+//			bb.putShort(v2);
+//			bb.putShort(objectIndex);
+			bb.putShort(PrecullerInfoIndex);
+			bb.putShort(SceneryInfoNumber);
 			
 			bb.putFloat(pos[X]);
 			bb.putFloat(pos[Y]);
 			bb.putFloat(pos[Z]);
-			bb.putShort(instanceID);
-			bb.putShort(groupID);
+//			bb.putShort(instanceID);
+//			bb.putShort(groupID);
+			bb.putInt(SceneryGUID);
 
 			bb.putFloat(matrix[0][0]);
 			bb.putFloat(matrix[1][0]);
 			bb.putFloat(matrix[2][0]);
-			bb.putShort(v3);
-			bb.putShort(v4);
+//			bb.putShort(v3);
+//			bb.putShort(v4);
+			bb.put(LodGroup);
+			bb.put(LoiFlags);
+			bb.put(SwayMaxMultiplier);
+			bb.put(WSpeedMultiplier);
 
 			bb.putFloat(matrix[0][1]);
 			bb.putFloat(matrix[1][1]);
 			bb.putFloat(matrix[2][1]);
-			bb.putShort(v5);
-			bb.putShort(v6);
+			bb.putShort(PcaVertexColourIndexLOD0);
+			bb.putShort(PcaVertexColourIndexLOD1);
 
 			bb.putFloat(matrix[0][2]);
 			bb.putFloat(matrix[1][2]);
 			bb.putFloat(matrix[2][2]);
-			bb.putShort(v7);
-			bb.putShort(v8);
+			bb.putShort(PcaVertexColourIndexLOD2);
+			bb.putShort(PcaVertexColourIndexLOD3);
 
 			return bb.array();
 		}

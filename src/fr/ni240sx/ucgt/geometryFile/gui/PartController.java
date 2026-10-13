@@ -24,6 +24,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
 import javafx.scene.shape.CullFace;
+import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
 import javafx.scene.shape.VertexFormat;
@@ -301,7 +302,7 @@ public class PartController{
 			mv.setViewOrder(-1);
 			mv.setCullFace(CullFace.NONE);
 		}
-
+		if (GeometryEditorGUI.doWireframe.isSelected()) mv.setDrawMode(DrawMode.LINE);
 		mesh.getChildren().add(mv);
 		
 		
@@ -346,6 +347,7 @@ public class PartController{
 			mvCol.setMaterial(vertexColorMaterial);
 //			mvCol.setBlendMode(BlendMode.MULTIPLY);
 			mvCol.setOnMouseClicked(mv.getOnMouseClicked());
+			if (GeometryEditorGUI.doWireframe.isSelected()) mvCol.setDrawMode(DrawMode.LINE);
 			if (GeometryEditorGUI.doVertexColors.isSelected()) mesh.getChildren().add(mvCol);
 			vertexColorMeshes.add(mvCol);
 		}
@@ -362,6 +364,7 @@ public class PartController{
 				mv2.setViewOrder(-1);
 				mv2.setCullFace(CullFace.NONE);
 			}
+			if (GeometryEditorGUI.doWireframe.isSelected()) mv2.setDrawMode(DrawMode.LINE);
 			mesh2.getChildren().add(mv2);
 		}
 	}
@@ -654,6 +657,17 @@ public class PartController{
 	@Override
 	public int hashCode() {
 		return super.hashCode();
+	}
+
+	
+	public void updateWireframe(boolean isWireframe) {
+		if (isWireframe) {
+			if (mesh != null) for (var c : mesh.getChildren()) if (c.getClass() == MeshView.class) ((MeshView)c).setDrawMode(DrawMode.LINE);
+			if (mesh2 != null) for (var c : mesh2.getChildren()) if (c.getClass() == MeshView.class) ((MeshView)c).setDrawMode(DrawMode.LINE);
+		} else {
+			if (mesh != null) for (var c : mesh.getChildren()) if (c.getClass() == MeshView.class) ((MeshView)c).setDrawMode(DrawMode.FILL);
+			if (mesh2 != null) for (var c : mesh2.getChildren()) if (c.getClass() == MeshView.class) ((MeshView)c).setDrawMode(DrawMode.FILL);
+		}
 	}
 
 }

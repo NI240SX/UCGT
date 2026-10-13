@@ -10,10 +10,14 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
-public class ChunkSmokeSpawners implements Block {
+public class ChunkSmokeSpawners extends ArrayList<fr.ni240sx.ucgt.streamEditor.streamBlocks.ChunkSmokeSpawners.SmokeSpawner> implements Block {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6674048519507341434L;
 	public int type1=11, type2=11;
-	public ArrayList<SmokeSpawner> spawners = new ArrayList<>();
+//	public ArrayList<SmokeSpawner> spawners = new ArrayList<>();
 	
 	@Override
 	public BlockType getBlockID() {return BlockType.ChunkSmokeSpawners;}
@@ -34,7 +38,7 @@ public class ChunkSmokeSpawners implements Block {
 		
 //		while(in.position() < blockStart+blockLength) {
 		for (int i=0; i<numSpawners;i++) {
-			spawners.add(new SmokeSpawner(in));
+			this.add(new SmokeSpawner(in));
 		}
 		in.position(blockStart+blockLength);
 	}
@@ -56,11 +60,11 @@ public class ChunkSmokeSpawners implements Block {
 		buf.putInt(type1);
 		buf.putInt(type2);
 		buf.putShort((short) -1); //TODO
-		buf.putShort((short) spawners.size());
+		buf.putShort((short) this.size());
 		buf.putInt(0);
 		out.write(buf.array());
 		
-		for (var z : spawners) out.write(z.save());
+		for (var z : this) out.write(z.save());
 		
 		buf = ByteBuffer.wrap(new byte[4]);
 		buf.order(ByteOrder.LITTLE_ENDIAN);

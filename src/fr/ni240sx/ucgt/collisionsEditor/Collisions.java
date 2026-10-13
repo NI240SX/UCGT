@@ -382,7 +382,7 @@ public class Collisions implements Block{
 		if (in.get() != 4) System.err.println("Bounds: Havok file is not 4 bytes per pointer!");
 		ByteOrder endianness = ByteOrder.LITTLE_ENDIAN;
 		if (in.get() != 1) {
-			System.out.println("Bounds: Havok file is big-endian!");
+//			System.out.println("Bounds: Havok file is big-endian!");
 			in.order(ByteOrder.BIG_ENDIAN);
 			endianness = ByteOrder.BIG_ENDIAN;
 		}

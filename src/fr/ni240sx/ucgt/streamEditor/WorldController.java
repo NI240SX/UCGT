@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import fr.ni240sx.ucgt.geometryFile.StreamChunksOffsets;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.streamEditor.regionBlocks.*;
 import fr.ni240sx.ucgt.streamEditor.streamBlocks.CARP;
@@ -22,13 +21,13 @@ public class WorldController {
 	
 	public List<Block> l8rBlocks = new ArrayList<>();
 
-	public List<ChunksTrackPathZones.Zone> zones1;
-	public List<ChunksMarkers.Marker> markers;
-	public List<ChunksBoundaries.ChunkBoundary> boundaries;
-	public List<ChunksElevationRules.ElevationRuleTriangle> elevationRuleTriangles;
-	public List<ChunksRelations.ChunksRelated> relatedChunks;
-	public List<BarrierSplines.Spline> barrierSplines;
-	public List<StreamChunksOffsets.ChunkInfo> visualChunks;
+	public List<ChunksTrackPathZones.TrackPathZone> zones1;
+	public List<TrackPositionMarkers.TrackPositionMarker> trackPositionMarkers;
+	public List<VisibleSectionBoundaries.VisibleSectionBoundary> boundaries;
+	public List<ChunksElevPolys.ElevPoly> elevPolies;
+	public List<DrivableScenerySections.DrivableScenerySection> relatedChunks;
+	public List<TrackPathBarriers.TrackPathBarrier> trackPathBarriers;
+	public List<TrackStreamingSections.TrackStreamingSection> trackStreamingSections;
 	public CARP worldGrid;
 	
     public List<StreamController> streamControllers = new ArrayList<>();
@@ -71,26 +70,38 @@ public class WorldController {
 			   		4A410300 ChunksZones TRACK_PATH_ZONES zones ? -> cops stuff maybe ->>> MINIMAP_ICON_HIDING_SPOT from there
 			   	46410300 ChunksData1 TRACK_POSITION_MARKERS positions -> NIS markers ->>> MINIMAP_ICON_PURSUIT_BREAKER from there
 			   	50410380 container
-			 * 		51410300 counts (400, 655) then list of chunk ids in int16 -> 1, 2, ..., 1001, 1002, ..., 2001, ..., 5001 (length 655*int16), then 0s (881*int16 but Z0 + 792*(Y+X+W+U))...
-			   		52410300 ChunksZones2 MAY CONTAIN ELEVATION DATA HASH
-			   		56410300 elevation data (hashes only 2 values BE6566DE and 927B806A (file hash))
-			 * 		55410300 fixups or smth ??????? LS26/LS18/LS76/LS30 4*76-byte
+			 * 		51410300 VISIBLE_SECTION_MANAGER_INFO LODOffset NumSections Sections[1536]      counts (400, 655) then list of chunk ids in int16 -> 1, 2, ..., 1001, 1002, ..., 2001, ..., 5001 (length 655*int16), then 0s (881*int16 but Z0 + 792*(Y+X+W+U))...
+			   		52410300 VISIBLE_SECTION_BOUNDARIES ChunksZones2 MAY CONTAIN ELEVATION DATA HASH
+			   		56410300 ELEV_POLYS     elevation data (hashes only 2 values BE6566DE and 927B806A (file hash))
+			 * 		55410300 LOADING_SECTIONS (see LoadingSection)   fixups or smth ??????? LS26/LS18/LS76/LS30 4*76-byte
 			 * 				11 11 LSxx 3x0 1-int16 id-int16 7x0 0-int16 numIDs-int16 IDs-int16 list -> preculler something but doesn't match preculler data !
-			   		53410300 ChunksRelated chunks to load ? list 11 11 0 int16 id int16 num int16 total int16 num then list of int16s (some ids are 22000+ /24000+ -> YXWU ???)
-			 * 		50420300 alignment- 3 3 2 0 -> Weatherman
+			   		53410300 VISIBLE_SECTION_DRIVABLE ChunksRelated chunks to load ? list 11 11 0 int16 id int16 num int16 total int16 num then list of int16s (some ids are 22000+ /24000+ -> YXWU ???)
+			 * 		50420300 alignment- 3 3 2 0 -> Weatherman, bTNode<WeatherRegionPack>, Version, NumRegions
 			 * 	01020304 no fucking clue (integrity check of some sort ?) -> seemingly completely ignored in code
 			 * 	padding
 			 * 	00B00380 SPLINE_PACK empty 
 			 * 	padding
 			   	10410300 TRACK_STREAMING_SECTION ChunksOffsets
 			 * 	13410300 TRACK_STREAMING_DISC_BUNDLE empty
-			 * 	11410300 TRACK_STREAMING_INFO 0 0
+			 * 	11410300 TRACK_STREAMING_INFO 0 0 FileSize (int[2])
 			 * 	padding
 			 * 		@767504 dec
-			 * 	08410300 SCENERY_OVERRIDE_INFOS -> chunkID int16 int16 ->>> ModelSlotPool smth
+			 * 	08410300 SCENERY_OVERRIDE_INFOS -> SectionNumber(chunkID) InstanceNumber(int16) ExcludeFlags(int16) ->>> ModelSlotPool smth
 			 * 		@939460 dec
 			 * 	09410300 SCENERY_GROUPS int16 -> BARRIER SPLINE INFO : 11 11 BARRIER_SPLINE_1004 int16 listlength(int16) type(int32) list of int16 -> ids still unknown
 			 * 							first entry 13371 ids type 0 up to about 28600
+			 * SceneryGroup
+				0x0	0x8	bTNode<SceneryGroup>	/bTNode<SceneryGroup>
+				0x8	0x4	int	int	NameHash	//T_UINT4
+				0xc	0x2	short	short	GroupNumber	//T_SHORT
+				0xe	0x2	short	short	NumObjects	//T_SHORT
+				0x10	0x1	db	byte	BarrierFlag	//T_CHAR
+				0x11	0x1	db	byte	DriveThroughBarrierFlag	//T_CHAR
+				0x12	0x2	short	short	RaceSpecificSectionNumber	//T_SHORT
+				0x14	0xfffe	short[32767]	short[32767]	OverrideInfoNumbers	//
+			 * 
+			 * 
+			 * 
 			 * 	padding
 			 * 		@1027552 dec
 			 * 	0B410380 SCENERY_HEIRARCHIES container 
@@ -121,21 +132,21 @@ public class WorldController {
 		if (Block.debug) System.out.println("/\\=== Blocks in region file ===/\\");
 		for (var b : l8rBlocks) switch (b.getBlockID()){
 		case ChunksTrackPathContainer:
-			zones1 = ((ChunksZonesContainer)b).zones.zones;
+			zones1 = ((ChunksZonesContainer)b).zones.trackPathZones;
 			break;
 		case ChunksPositionMarkers:
-			markers = ((ChunksMarkers)b).markers;
+			trackPositionMarkers = ((TrackPositionMarkers)b);
 			break;
 		case VisibleSections:
-			boundaries = ((ChunksStreamingContainer)b).boundaries.boundaries;
-			elevationRuleTriangles = ((ChunksStreamingContainer)b).elevationRules.elevationRuleTriangles;
-			relatedChunks = ((ChunksStreamingContainer)b).relatedChunks.chunksRelated;
+			boundaries = ((ChunksStreamingContainer)b).boundaries;
+			elevPolies = ((ChunksStreamingContainer)b).elevationPolys;
+			relatedChunks = ((ChunksStreamingContainer)b).drivableScenerySection;
 			break;			
 		case ChunksOffsets:
-			visualChunks = ((StreamChunksOffsets)b).chunkInfos;
+			trackStreamingSections = ((TrackStreamingSections)b);
 			break;
 		case TrackPathBarriers:
-			barrierSplines = ((BarrierSplines)b).splines;
+			trackPathBarriers = ((TrackPathBarriers)b);
 			break;
 		case CarpWorldGrid:
 			worldGrid = ((CarpWorldGrid)b).CARP;
@@ -147,14 +158,14 @@ public class WorldController {
 //		System.out.println("%d preculler data".formatted(relatedChunks.size()));
 		
 		for (var linked : relatedChunks) {
-			streamControllers.add(new StreamController(linked, boundaries, elevationRuleTriangles));
+			streamControllers.add(new StreamController(linked, boundaries, elevPolies));
 		}
 		missing: for (var b : boundaries) {
-			for (var linked : relatedChunks) if (linked.ID == b.ID) continue missing;
+			for (var linked : relatedChunks) if (linked.SectionNumber == b.SectionNumber) continue missing;
 			//missing ones
-			streamControllers.add(new StreamController(b, relatedChunks, elevationRuleTriangles));
+			streamControllers.add(new StreamController(b, relatedChunks, elevPolies));
 		}
-		for (var c : visualChunks) {
+		for (var c : trackStreamingSections) {
 			visualControllers.add(new VisualController(c));
 		}
 		
@@ -178,6 +189,10 @@ public class WorldController {
 			System.out.println("Starting to render section %s".formatted(chunk.toString()));
 			
 			for (var c : toDisplay) c.getContent(streaml8r, models, textures);
+			
+			WorldEditorGUI.texturesBuilder.submit(() -> { //precalc textures + move the load on another thread to potentially reduce random crashes ?
+				for (var c : toDisplay) c.updateMaterials(textures);
+			});
 			
 //			if (phaser.get() != phase) return 1; //skip if new chunk requested fast
 
@@ -216,14 +231,21 @@ public class WorldController {
 //			if (phaser.get() != phase) return 1; //skip if new chunk requested fast
 
 			for (var c : visualControllers) if (!toDisplay.contains(c)) c.unload(models, textures);
-			
-			for (var c : toDisplay) c.updateMaterials(textures);
 
+			WorldEditorGUI.texturesBuilder.submit(() -> { //apply textures + move the load on another thread to potentially reduce random crashes ?
+				for (var c : toDisplay) c.updateMaterials(textures);
+			});
 			
 			return 0;
-		} catch (Exception | Error e) {
+		} catch (java.lang.OutOfMemoryError e) {
 			e.printStackTrace();
 			return -1;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return -2;
+		} catch (Error e) {
+			e.printStackTrace();
+			return -3;
 		}
 	}
 

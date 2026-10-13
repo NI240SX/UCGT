@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
-import fr.ni240sx.ucgt.streamEditor.regionBlocks.ChunksBoundaries;
-import fr.ni240sx.ucgt.streamEditor.regionBlocks.ChunksBoundaries.ChunkBoundary;
-import fr.ni240sx.ucgt.streamEditor.regionBlocks.ChunksElevationRules;
-import fr.ni240sx.ucgt.streamEditor.regionBlocks.ChunksElevationRules.ElevationRuleTriangle;
+import fr.ni240sx.ucgt.streamEditor.regionBlocks.VisibleSectionBoundaries;
+import fr.ni240sx.ucgt.streamEditor.regionBlocks.VisibleSectionBoundaries.VisibleSectionBoundary;
+import fr.ni240sx.ucgt.streamEditor.regionBlocks.ChunksElevPolys;
+import fr.ni240sx.ucgt.streamEditor.regionBlocks.ChunksElevPolys.ElevPoly;
 import javafx.scene.DepthTest;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.paint.Color;
@@ -17,44 +17,50 @@ import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
 import javafx.scene.shape.VertexFormat;
-import fr.ni240sx.ucgt.streamEditor.regionBlocks.ChunksRelations;
+import fr.ni240sx.ucgt.streamEditor.regionBlocks.DrivableScenerySections;
 
 public class StreamController {
 	//controller for streamer chunk -> chunksRelated in code
 	public short ID;
-	public ChunksBoundaries.ChunkBoundary boundary;
-	public ChunksRelations.ChunksRelated visualChunks;
-	public List<ChunksElevationRules.ElevationRuleTriangle> elevationRuleTriangles;
+	public VisibleSectionBoundaries.VisibleSectionBoundary boundary;
+	public DrivableScenerySections.DrivableScenerySection visualChunks;
+	public List<ChunksElevPolys.ElevPoly> elevPolies0;
+	public List<ChunksElevPolys.ElevPoly> elevPolies1;
 	
 	private MeshView flatMeshView;
 	private PhongMaterial mat;
 	
-	public StreamController(ChunkBoundary b, List<ChunksRelations.ChunksRelated> chunksLoader, List<ElevationRuleTriangle> triangles) {
+	public StreamController(VisibleSectionBoundary b, List<DrivableScenerySections.DrivableScenerySection> chunksLoader, List<ElevPoly> triangles) {
 		boundary = b;
-		ID = b.ID;
-		for (var c : chunksLoader) if (c.ID == ID) {
+		ID = b.SectionNumber;
+		for (var c : chunksLoader) if (c.SectionNumber == ID) {
 			visualChunks = c;
 		}
-		if (boundary.elevationHash != 0) {
-			elevationRuleTriangles = new ArrayList<>();
-			for (var t : triangles) if (t.hash == boundary.elevationHash){
-				elevationRuleTriangles.add(t);
+		figureElevPolys(triangles);
+	}
+
+	public void figureElevPolys(List<ElevPoly> triangles) {
+		if (boundary.DepthNames[0] != 0) {
+			elevPolies0 = new ArrayList<>();
+			for (var t : triangles) if (t.DepthName == boundary.DepthNames[0]){
+				elevPolies0.add(t);
+			}
+		}
+		if (boundary.DepthNames[1] != 0) {
+			elevPolies1 = new ArrayList<>();
+			for (var t : triangles) if (t.DepthName == boundary.DepthNames[1]){
+				elevPolies1.add(t);
 			}
 		}
 	}
 	
-	public StreamController(ChunksRelations.ChunksRelated linked, List<ChunkBoundary> chunksBoundaries, List<ElevationRuleTriangle> triangles) {
+	public StreamController(DrivableScenerySections.DrivableScenerySection linked, List<VisibleSectionBoundary> chunksBoundaries, List<ElevPoly> triangles) {
 		visualChunks = linked;
-		ID = linked.ID;
-		for (var c : chunksBoundaries) if (c.ID == ID) {
+		ID = linked.SectionNumber;
+		for (var c : chunksBoundaries) if (c.SectionNumber == ID) {
 			boundary = c;
 		}
-		if (boundary != null && boundary.elevationHash != 0) {
-			elevationRuleTriangles = new ArrayList<>();
-			for (var t : triangles) if (t.hash == boundary.elevationHash){
-				elevationRuleTriangles.add(t);
-			}
-		}
+		if (boundary != null) figureElevPolys(triangles);
 	}
 	
 	public List<VisualController> getVisualChunks(List<VisualController> all){
@@ -115,6 +121,10 @@ public class StreamController {
 	
 	@Override
 	public String toString() {
+		return ((char)('A'+(ID/1000))+""+ID%1000);
+	}
+	
+	public static String getSectionIDAsString(int ID) {
 		return ((char)('A'+(ID/1000))+""+ID%1000);
 	}
 }

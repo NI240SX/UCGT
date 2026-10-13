@@ -34,8 +34,6 @@ import javax.imageio.stream.MemoryCacheImageInputStream;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.Part;
-import fr.ni240sx.ucgt.geometryFile.StreamChunksOffsets;
-import fr.ni240sx.ucgt.geometryFile.StreamChunksOffsets.ChunkInfo;
 import fr.ni240sx.ucgt.geometryFile.geometry.GeomHeader;
 import fr.ni240sx.ucgt.geometryFile.gui.FileOffset;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
@@ -53,6 +51,8 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
 import fr.ni240sx.ucgt.shared.OrbitCameraViewport;
+import fr.ni240sx.ucgt.streamEditor.regionBlocks.TrackStreamingSections;
+import fr.ni240sx.ucgt.streamEditor.regionBlocks.TrackStreamingSections.TrackStreamingSection;
 import javafx.application.Application;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.embed.swing.SwingFXUtils;
@@ -88,6 +88,7 @@ import javafx.stage.Stage;
 import javafx.util.Pair;
 import net.nikr.dds.DDSImageReader;
 
+@SuppressWarnings({"unused","hiding"})
 public class TestingFunctions extends Application{
 
 	public static PhongMaterial vertexColorMaterial = new PhongMaterial();
@@ -846,7 +847,7 @@ public class TestingFunctions extends Application{
 		return (int)(a*10) == (int)(b*10);
 	}
 
-	static StreamChunksOffsets offsets = null;
+	static TrackStreamingSections offsets = null;
 	static ChunkBoundary currentChunk = null;
 	private static void l8rFuckeries(String[] args, String folder, String file) throws FileNotFoundException, IOException {
 
@@ -862,8 +863,8 @@ public class TestingFunctions extends Application{
 		var boundaries = new ArrayList<ChunkBoundary>();
 		var elevationRules = new ArrayList<ElevationRule>();
 		
-		var chunksSpheres = new HashMap<ChunkInfo,Sphere>();
-		var chunksGroups = new HashMap<ChunkInfo,Group>();
+		var chunksSpheres = new HashMap<TrackStreamingSection,Sphere>();
+		var chunksGroups = new HashMap<TrackStreamingSection,Group>();
 		
 		var meshesGroup = new Group();
 		meshesGroup.setDepthTest(DepthTest.ENABLE);
@@ -1138,8 +1139,8 @@ public class TestingFunctions extends Application{
 								viewport.cameraPivotPosition.setOnTransformChanged(null);
 								viewport.moveCamera(b.posX, b.posY, 0);
 								viewport.cameraPivotPosition.setOnTransformChanged(otc);
-								if (!displayFromChunksBoundaries(b.id, STREAM_PATH, chunksRelated, offsets.chunkInfos, chunksGroups, new AtomicInteger(), 0)) {
-									for (var chunk : offsets.chunkInfos) if (chunk.ID == b.id) {
+								if (!displayFromChunksBoundaries(b.id, STREAM_PATH, chunksRelated, offsets, chunksGroups, new AtomicInteger(), 0)) {
+									for (var chunk : offsets) if (chunk.SectionNumber == b.id) {
 										if (chunksGroups.get(chunk).getChildren().size() == 0) {
 											var models = new ConcurrentHashMap<Integer,Part>();
 											var textures = new ConcurrentHashMap<Integer, NFSTexture>();
@@ -1273,8 +1274,8 @@ public class TestingFunctions extends Application{
 					
 				case ChunksOffsets:
 					in.position(in.position()-4);
-					offsets = new StreamChunksOffsets(in);
-					for (var c : offsets.chunkInfos) {
+					offsets = new TrackStreamingSections(in);
+					for (var c : offsets) {
 						var g = new Group();
 						g.setDepthTest(DepthTest.ENABLE);
 						chunksGroups.put(c, g);
@@ -1285,22 +1286,22 @@ public class TestingFunctions extends Application{
 					var sphereDefault = new PhongMaterial(Color.WHEAT);
 					var sphereNoRel = new PhongMaterial(Color.WHITE);
 										
-					if (chunkoffsets) for (var c : offsets.chunkInfos) 
+					if (chunkoffsets) for (var c : offsets) 
 						//if (c.radius != 0 //&& c.ID % 1000 < 400
 							//) 
 						{
 						var _hasRelations = false;
-						for (var rel : chunksRelated) if (rel.chunkID == c.ID) {
+						for (var rel : chunksRelated) if (rel.chunkID == c.SectionNumber) {
 							_hasRelations = true;
 						}
 						final var hasRelations = _hasRelations;
 //						if (!hasRelations) continue;
 						
-						if (c.radius != 0) {
+						if (c.Radius != 0) {
 //							var s = new Sphere(c.radius);
 //							s.setMaterial(new PhongMaterial(Color.color(1, 1, 1, 0.5)));
 							var s = new Sphere(20);
-							var newSphereX = c.centerX;
+							var newSphereX = c.Centre[X];
 							findPlace: while (true) {
 								for (var o : viewportGroup.getChildren()) if (o.getTranslateX() == newSphereX) {
 									newSphereX += 10;
@@ -1309,17 +1310,17 @@ public class TestingFunctions extends Application{
 								break;
 							}
 							s.setTranslateX(newSphereX);
-							s.setTranslateY(c.centerY);
-							s.setOnMouseClicked(e -> viewport.moveCamera(c.centerX,  c.centerY, 0));
+							s.setTranslateY(c.Centre[Y]);
+							s.setOnMouseClicked(e -> viewport.moveCamera(c.Centre[X],  c.Centre[Y], 0));
 							s.setMaterial(hasRelations ? sphereDefault : sphereNoRel);
 							viewportGroup.getChildren().add(s);
 							chunksSpheres.put(c, s);
 							
-							var t = new Tooltip("Chunk="+c.name+
-									"\nID="+c.ID+"/"+(char)('A'+(c.ID/1000))+""+c.ID%1000+
-									"\nradius="+c.radius+
-									"\nchecksum="+String.format("0x%08X", c.checksum)+
-									"\nrender priority="+c.index);
+							var t = new Tooltip("Chunk="+c.SectionName+
+									"\nID="+c.SectionNumber+"/"+(char)('A'+(c.SectionNumber/1000))+""+c.SectionNumber%1000+
+									"\nradius="+c.Radius+
+									"\nchecksum="+String.format("0x%08X", c.Checksum)+
+									"\nrender priority="+c.SectionPriority);
 							s.setOnMouseEntered(e -> t.show(s, e.getScreenX()+10, e.getScreenY()+10));
 							s.setOnMouseExited(e -> t.hide());
 
@@ -1384,7 +1385,7 @@ public class TestingFunctions extends Application{
 				if (id != curID.get()) {
 					curID.set(id);
 					int cur = ongoing.incrementAndGet();
-					streamer.execute(() -> displayFromChunksBoundaries(curID.get(), STREAM_PATH, chunksRelated, offsets.chunkInfos, chunksGroups, ongoing, cur));
+					streamer.execute(() -> displayFromChunksBoundaries(curID.get(), STREAM_PATH, chunksRelated, offsets, chunksGroups, ongoing, cur));
 				}
 			}
 			if (currentChunk == null) {
@@ -1403,7 +1404,7 @@ public class TestingFunctions extends Application{
 								}	
 							}
 							int cur = ongoing.incrementAndGet();
-							streamer.execute(() -> displayFromChunksBoundaries(curID.get(), STREAM_PATH, chunksRelated, offsets.chunkInfos, chunksGroups, ongoing, cur));
+							streamer.execute(() -> displayFromChunksBoundaries(curID.get(), STREAM_PATH, chunksRelated, offsets, chunksGroups, ongoing, cur));
 							break;
 						}						
 					}
@@ -1518,7 +1519,7 @@ public class TestingFunctions extends Application{
 	public static ConcurrentHashMap<Material, PhongMaterial> materials = new ConcurrentHashMap<>();
 
 	private static boolean displayFromChunksBoundaries(
-			int precullerID, String streamPath, ArrayList<ChunksRelated> chunksRelated, ArrayList<ChunkInfo> chunkInfos, HashMap<ChunkInfo,Group> chunksGroups
+			int precullerID, String streamPath, ArrayList<ChunksRelated> chunksRelated, ArrayList<TrackStreamingSection> trackStreamingSections, HashMap<TrackStreamingSection,Group> chunksGroups
 			//HashMap<ChunkInfo, Sphere> chunksSpheres, 
 //			PhongMaterial sphereHighlight, PhongMaterial sphereDefault, PhongMaterial sphereNoRel, 
 			//ChunkInfo c, final boolean hasRelations,
@@ -1548,7 +1549,7 @@ public class TestingFunctions extends Application{
 
 				var pool = Executors.newFixedThreadPool(Math.max(1, Runtime.getRuntime().availableProcessors()/2));
 				var objects //= Collections.synchronizedList(new ArrayList<ChunkObject>());
-							= new ConcurrentHashMap<ChunkInfo,ArrayList<ChunkObject>>();
+							= new ConcurrentHashMap<TrackStreamingSection,ArrayList<ChunkObject>>();
 //				var unload = new ArrayList<ChunkInfo>();
 				
 				var clearChunks = new ArrayList<Group>();
@@ -1559,17 +1560,17 @@ public class TestingFunctions extends Application{
 				
 				System.out.println("Now in section "+(char)('A'+(precullerID/1000))+""+precullerID%1000);
 //				System.out.println("Relations for chunk "+precullerID);
-				for (var chunk2 : chunkInfos) {
+				for (var chunk2 : trackStreamingSections) {
 					var found = false;
 					for (int i=0; i< rel.relatedChunks.length; i++) {
-						if (chunk2.ID == rel.relatedChunks[i]) {
+						if (chunk2.SectionNumber == rel.relatedChunks[i]) {
 							found = true;
 							break;
 						}
 					}
 //											if (chunk2.ID%1000 > 400) found = false;
 //					if (chunk2.ID%1000 == 0) found = true; //force load Z0 25000 and Y0 24000
-					if (found || chunk2.ID%1000 == 0) {
+					if (found || chunk2.SectionNumber%1000 == 0) {
 						if (phaser.get() != phase) break;
 //						System.out.println("- "+chunk2.name);
 //						if (chunksSpheres.get(chunk2) != null) chunksSpheres.get(chunk2).setMaterial(sphereHighlight);
@@ -1591,7 +1592,7 @@ public class TestingFunctions extends Application{
 									e.printStackTrace();
 								}
 							};
-							if (chunksGroups.get(chunk2).getChildren().size() == 0 || chunk2.ID%1000 == 0) { //TODO build permanent objects hash map for chunks that arent reloaded
+							if (chunksGroups.get(chunk2).getChildren().size() == 0 || chunk2.SectionNumber%1000 == 0) { //TODO build permanent objects hash map for chunks that arent reloaded
 								//priority
 								pool.execute(r);
 							} else {
@@ -2085,11 +2086,11 @@ public class TestingFunctions extends Application{
 	}
 	
 	private static void displayFromChunksOffsets(String streamPath, ArrayList<ChunksRelated> chunksRelated,
-			HashMap<ChunkInfo, Sphere> chunksSpheres, StreamChunksOffsets offsets, PhongMaterial sphereHighlight,
-			PhongMaterial sphereDefault, PhongMaterial sphereNoRel, Group meshesGroup, ChunkInfo c,
+			HashMap<TrackStreamingSection, Sphere> chunksSpheres, TrackStreamingSections offsets, PhongMaterial sphereHighlight,
+			PhongMaterial sphereDefault, PhongMaterial sphereNoRel, Group meshesGroup, TrackStreamingSection c,
 			final boolean hasRelations) {
 		
-		viewport.moveCamera(c.centerX, c.centerY, 0);
+		viewport.moveCamera(c.Centre[X], c.Centre[Y], 0);
 		meshesGroup.getChildren().clear();
 		
 		new Thread(() -> {
@@ -2099,7 +2100,7 @@ public class TestingFunctions extends Application{
 			var textures = new ConcurrentHashMap<Integer, NFSTexture>();
 			var materials = new ConcurrentHashMap<Material, PhongMaterial>();
 			var objects //= Collections.synchronizedList(new ArrayList<ChunkObject>());
-						= new ConcurrentHashMap<ChunkInfo,ArrayList<ChunkObject>>();
+						= new ConcurrentHashMap<TrackStreamingSection,ArrayList<ChunkObject>>();
 			imageTextures.clear();
 			ExecutorService pool = Executors.newFixedThreadPool(Math.max(1, Runtime.getRuntime().availableProcessors()/2));
 
@@ -2115,30 +2116,30 @@ public class TestingFunctions extends Application{
 				});
 				
 			} else {
-				for (var chunk2 : offsets.chunkInfos) {
+				for (var chunk2 : offsets) {
 					var _hasRel = false;
-					for (var rel : chunksRelated) if (rel.chunkID == chunk2.ID) {
+					for (var rel : chunksRelated) if (rel.chunkID == chunk2.SectionNumber) {
 						_hasRel = true;
 					}
 					if (chunksSpheres.get(chunk2) != null) chunksSpheres.get(chunk2).setMaterial(_hasRel ? sphereDefault : sphereNoRel);
 				}
 				for (var rel : chunksRelated) {
 //											System.out.println(rel.chunkID);
-					if ((rel.chunkID == c.ID)// || (c.ID % 1000 > 400 && rel.chunkID == c.ID-400)
+					if ((rel.chunkID == c.SectionNumber)// || (c.ID % 1000 > 400 && rel.chunkID == c.ID-400)
 							) {
-						System.out.println("Relations for chunk "+c.name);
-						for (var chunk2 : offsets.chunkInfos) {
+						System.out.println("Relations for chunk "+c.SectionName);
+						for (var chunk2 : offsets) {
 							var found = false;
 							for (int i=0; i< rel.relatedChunks.length; i++) {
-								if (chunk2.ID == rel.relatedChunks[i]) {
+								if (chunk2.SectionNumber == rel.relatedChunks[i]) {
 									found = true;
 									break;
 								}
 							}
 //													if (chunk2.ID%1000 > 400) found = false;
-							if (chunk2.ID%1000 == 0) found = true; //force load Z0 25000 and Y0 24000
+							if (chunk2.SectionNumber%1000 == 0) found = true; //force load Z0 25000 and Y0 24000
 							if (found) {
-								System.out.println("- "+chunk2.name);
+								System.out.println("- "+chunk2.SectionName);
 								if (chunksSpheres.get(chunk2) != null) chunksSpheres.get(chunk2).setMaterial(sphereHighlight);
 								pool.execute(() -> {
 									objects.put(c, readChunk(streamPath, chunk2, models, textures));
@@ -2220,16 +2221,16 @@ public class TestingFunctions extends Application{
 			}
 		}
 	}
-	private static ArrayList<ChunkObject> readChunk(String streamPath, ChunkInfo chunk,
+	private static ArrayList<ChunkObject> readChunk(String streamPath, TrackStreamingSection chunk,
 			ConcurrentHashMap<Integer, Part> models, ConcurrentHashMap<Integer, NFSTexture> textures//, Phaser phaser
 			) {
 		var objects = new ArrayList<ChunkObject>();
 		try {
 //			phaser.register();
 			var stream = new RandomAccessFile(new File(streamPath), "r");
-			stream.seek(chunk.offset);
+			stream.seek(chunk.FileOffset);
 			
-			var chunkData = ByteBuffer.allocate(chunk.size);
+			var chunkData = ByteBuffer.allocate(chunk.Size);
 			chunkData.order(ByteOrder.LITTLE_ENDIAN);
 			stream.read(chunkData.array());
 			stream.close();
@@ -2311,7 +2312,7 @@ public class TestingFunctions extends Application{
 					if (model == null) {
 						model = models.get(o.lodZ);
 						if (model == null) {
-							System.out.println(chunk.name +": Object "+o.name+" not found in loaded chunks!");
+							System.out.println(chunk.SectionName +": Object "+o.name+" not found in loaded chunks!");
 							for (var p : o.positions) {
 								var b = new Box(p.maxX-p.minX,p.maxY-p.minY,p.maxZ-p.minZ);
 								
@@ -2329,7 +2330,7 @@ public class TestingFunctions extends Application{
 								b.setViewOrder(-10);
 								
 							    var t2 = new Tooltip("Model="+Hash.getBIN(o.lodA)+" ("+o.name+"/"+String.format("0x%08X", o.lodA)+")"+
-							    		"\nChunk="+o.chunk.name+
+							    		"\nChunk="+o.chunk.SectionName+
 							    		"\nGroupID="+p.groupID+
 							    		"\nInstanceID="+p.instanceID+
 //							    		"\nPositionHash="+Hash.getBIN(p.hash)+
@@ -2368,7 +2369,7 @@ public class TestingFunctions extends Application{
 					}
 					if (mat.verticesBlock.vertexFormat.getNumTexChannels() > 0) for (var v : mat.verticesBlock.vertices) {
 						matMesh.getTexCoords().addAll(v.tex[0][U], 1-v.tex[0][V]);
-					} else for (@SuppressWarnings("unused") var v : mat.verticesBlock.vertices) {
+					} else for (var v : mat.verticesBlock.vertices) {
 						matMesh.getTexCoords().addAll(0, 0);
 					}
 //						if (mat.verticesBlock.vertexFormat.hasColor()) for (var v : mat.verticesBlock.vertices) {
@@ -2415,7 +2416,7 @@ public class TestingFunctions extends Application{
 					mv.getTransforms().add(transform);
 				    
 				    var t2 = new Tooltip("Model="+model.name+" ("+String.format("0x%08X", model.header.binKey)+")"+
-				    		"\nChunk="+o.chunk.name+
+				    		"\nChunk="+o.chunk.SectionName+
 				    		"\nMaterial="+mat.generateName()+
 				    		"\nGroupID="+p.groupID+
 				    		"\nInstanceID="+p.instanceID+
@@ -2452,14 +2453,14 @@ public class TestingFunctions extends Application{
 		}
 		return nodes;
 	}
-	private static void unloadChunkTextures(String streamPath, ChunkInfo chunk//, Phaser phaser
+	private static void unloadChunkTextures(String streamPath, TrackStreamingSection chunk//, Phaser phaser
 			) {
 		try {
 //			phaser.register();
 			var stream = new RandomAccessFile(new File(streamPath), "r");
-			stream.seek(chunk.offset);
+			stream.seek(chunk.FileOffset);
 			
-			var chunkData = ByteBuffer.allocate(chunk.size);
+			var chunkData = ByteBuffer.allocate(chunk.Size);
 			chunkData.order(ByteOrder.LITTLE_ENDIAN);
 			stream.read(chunkData.array());
 			stream.close();
@@ -2679,7 +2680,7 @@ class ChunkObject{
 	ArrayList<ObjectPosition> positions = new ArrayList<>();
 	String name;
 	int lodA, lodB, lodC, lodZ;
-	ChunkInfo chunk = null;
+	TrackStreamingSection chunk = null;
 	ChunkObject(ByteBuffer in){
 		var nameEnd = in.position()+24;
 		name = Block.readString(in);

@@ -55,22 +55,28 @@ public class Compression {
 		return compress(arr, compressionType, CompressionLevel.Ultra);
 	}
 
-	public static byte[] compress(byte[] arr, CompressionType compressionType, CompressionLevel compressionLevel){
+
+	public static byte[] compress(byte[] arr, CompressionType compressionType, CompressionLevel compressionLevel) {
+		return compress(arr, 0, arr.length, compressionType, compressionLevel);
+	}
+	public static byte[] compress(byte[] arr, int offset, int size, CompressionType compressionType, CompressionLevel compressionLevel){
 //		System.out.println("Compression type : "+compressionType);
 		
 		switch(compressionType) {
 		case RefPack:
-			return new RefPackCompress().compress(arr, compressionLevel);
+			return new RefPackCompress().compress(arr, offset, size, compressionLevel);
 		case JDLZ:
-			return JDLZCompress.compress(arr);
+			return JDLZCompress.compress(arr, offset, size);
 		case RawDecompressed:
-			var bb = ByteBuffer.allocate(arr.length+16);
+//			var bb = ByteBuffer.allocate(arr.length+16);
+			var bb = ByteBuffer.allocate(size+16);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
 			bb.put((byte) 0x52); bb.put((byte) 0x41); bb.put((byte) 0x57); bb.put((byte) 0x57);
 			bb.putInt(4097);
 			bb.putInt(arr.length);
 			bb.putInt(arr.length);
-			bb.put(arr);
+//			bb.put(arr);
+			bb.put(arr, offset, size);
 			return bb.array();
 			
 		default:

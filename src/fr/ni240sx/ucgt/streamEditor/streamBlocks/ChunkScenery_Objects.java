@@ -9,10 +9,16 @@ import java.util.ArrayList;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class ChunkScenery_Objects implements Block {
+public class ChunkScenery_Objects extends ArrayList<fr.ni240sx.ucgt.streamEditor.streamBlocks.ChunkScenery_Objects.Object> implements Block {
 
-	public ArrayList<Object> objects = new ArrayList<>();
+//	public ArrayList<Object> objects = new ArrayList<>();
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 8748264193659576113L;
+
+
 	@Override
 	public BlockType getBlockID() {return BlockType.ChunkScenery_Objects;}
 
@@ -22,7 +28,7 @@ public class ChunkScenery_Objects implements Block {
 		while (in.getInt() == 0x11111111) {}
 		in.position(in.position()-4);
 		while(in.position() < blockStart+blockLength) {
-			objects.add(new Object(in));
+			add(new Object(in));
 		}
 		in.position(blockStart+blockLength);
 	}
@@ -39,7 +45,7 @@ public class ChunkScenery_Objects implements Block {
 		out.write(buf.array());
 		Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 16), (byte)0x11);
 
-		for (var z : objects) out.write(z.save());
+		for (var z : this) out.write(z.save());
 		
 		buf = ByteBuffer.wrap(new byte[4]);
 		buf.order(ByteOrder.LITTLE_ENDIAN);

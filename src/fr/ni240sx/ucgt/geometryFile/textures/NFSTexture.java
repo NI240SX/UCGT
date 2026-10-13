@@ -356,7 +356,7 @@ public class NFSTexture {
 			format = 0x35545844;
 			break;
 		case DXTN:
-			format = 0x4E545844;
+			format = 0x55354342; //BC5U
 			break;
 		default:
 			break;
@@ -598,7 +598,9 @@ public class NFSTexture {
 			case 0x35545844:
 				this.compression = CompressionType.DXT5;
 				break;
-			case 0x4E545844:
+			case 0x4E545844: //DXTN, wrong
+			case 0x55354342: //BC5U
+			case 0x32495441: //ATI2
 				this.compression = CompressionType.DXTN;
 				break;
 			default:

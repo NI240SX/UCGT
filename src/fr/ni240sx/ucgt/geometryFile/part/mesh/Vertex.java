@@ -1,7 +1,6 @@
 package fr.ni240sx.ucgt.geometryFile.part.mesh;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Objects;
 
 import fr.ni240sx.ucgt.geometryFile.part.mesh.X360.HalfPrecisionFloat;

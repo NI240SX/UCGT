@@ -10,20 +10,26 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
-public class ChunksMarkers implements Block {
+public class TrackPositionMarkers extends ArrayList<fr.ni240sx.ucgt.streamEditor.regionBlocks.TrackPositionMarkers.TrackPositionMarker> implements Block {
 
-	public ArrayList<Marker> markers = new ArrayList<>();
+//	public ArrayList<TrackPositionMarker> trackPositionMarkers = new ArrayList<>();
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 7992420016088859679L;
+
+
 	@Override
 	public BlockType getBlockID() {return BlockType.ChunksPositionMarkers;}
 
-	public ChunksMarkers(ByteBuffer in) {
+	public TrackPositionMarkers(ByteBuffer in) {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
 		while (in.getInt() == 0x11111111) {}
 		in.position(in.position()-4);
 		while(in.position() < blockStart+blockLength) {
-			markers.add(new Marker(in));
+			this.add(new TrackPositionMarker(in));
 		}
 	}
 	
@@ -39,7 +45,7 @@ public class ChunksMarkers implements Block {
 		out.write(buf.array());
 		Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 48), (byte)0x11);
 
-		for (var z : markers) out.write(z.save());
+		for (var z : this) out.write(z.save());
 		
 		buf = ByteBuffer.wrap(new byte[4]);
 		buf.order(ByteOrder.LITTLE_ENDIAN);
@@ -56,16 +62,18 @@ public class ChunksMarkers implements Block {
 	}
 
 	
-	public static class Marker{
-		public int type1, type2, hash, hash2, region;
-		public short sh;
+	public static class TrackPositionMarker{
+		public int NameHash, Param, TrackNumber;
 		public float[] pos = new float[3];
+		public byte[] SceneryGroupNumber = new byte[9];
+		public byte NumSceneryGroups = 0;
+		public short Angle;
 
-		Marker(ByteBuffer in){
-			type1 = in.getInt(); //11
-			type2 = in.getInt(); //11
-			hash = in.getInt(); //unknown, hash?
-			hash2 = in.getInt(); //unknown, hash?
+		TrackPositionMarker(ByteBuffer in){
+			in.getInt(); //11 -> bTNode<TrackPositionMarker>
+			in.getInt(); //11
+			NameHash = in.getInt(); //unknown, hash?
+			Param = in.getInt(); //unknown, hash?
 			/*
 			 * B8560C7D = BustedAlley
 			 * B803A89F = BustedCity
@@ -77,31 +85,27 @@ public class ChunksMarkers implements Block {
 			pos[Y] = in.getFloat();
 			pos[Z] = in.getFloat();
 			in.getInt();
-			region = in.getInt(); //region number (8000 or 8999)
-			in.getInt(); //AAAAAAAA
-			in.getInt(); //AAAAAAAA
-			in.get(); //AA
-			in.get(); //00
-			sh = in.getShort(); //unknown, not a chunk id
+			TrackNumber = in.getInt(); //region number (8000 or 8999)
+			in.get(SceneryGroupNumber); //AAAAAAAA AAAAAAAA AA
+			NumSceneryGroups = in.get(); //00
+			Angle = in.getShort(); //unknown, not a chunk id
 		}
 		
 		public byte[] save() {
 			var bb = ByteBuffer.allocate(48);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
-			bb.putInt(type1);
-			bb.putInt(type2);
-			bb.putInt(hash);
-			bb.putInt(hash2);
+			bb.putInt(11);
+			bb.putInt(11);
+			bb.putInt(NameHash);
+			bb.putInt(Param);
 			bb.putFloat(pos[X]);
 			bb.putFloat(pos[Y]);
 			bb.putFloat(pos[Z]);
 			bb.putInt(0);
-			bb.putInt(region);
-			bb.putInt(0xAAAAAAAA);
-			bb.putInt(0xAAAAAAAA);
-			bb.put((byte)0xAA);
-			bb.put((byte)0x00);
-			bb.putShort(sh);
+			bb.putInt(TrackNumber);
+			bb.put(SceneryGroupNumber);
+			bb.put(NumSceneryGroups);
+			bb.putShort(Angle);
 
 			return bb.array();
 		}

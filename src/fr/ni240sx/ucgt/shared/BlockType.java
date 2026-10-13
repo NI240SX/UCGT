@@ -93,8 +93,15 @@ public enum BlockType {
 	ChunkScenery_Objects(0x02410300), //objects list 
 	ChunkScenery_Ads(0x04410300), //might be MassiveAds stuff
 	ChunkScenery_TreeNodes(0x05410300), //? not sure
-	ChunkScenery_OverrideHookups(0x00034106, false), 
-	ChunkScenery_PrecullerInfos(0x07410300), //often empty 512, sometimes very long with super sparse data (inner data length 512)	
+	/*
+	0x0		0xc		bVector3Packed	BBoxMin	//bVector3Packed
+	0xc		0x2		short			NumChildren	//T_SHORT
+	0xe		0x2		short			Pad	//T_SHORT
+	0x10	0xc		bVector3Packed	BBoxMax	//bVector3Packed
+	0x1c	0x14	short[10]		ChildCodes	//
+	 */
+	ChunkScenery_OverrideHookups(0x00034106, false), //-> SceneryOverrideInfoHookup ? short short, OverrideInfoNumber/InstanceNumber
+	ChunkScenery_PrecullerInfos(0x07410300), //often empty 512, sometimes very long with super sparse data (inner data length 512 -> tPrecullerInfo.VisibilityBits)
 	CarpWGridIslandData(0x0003B802, false),
 	ChunkVisCurtains(0x00034185, false),
 	ChunkHeliSheet(0x00034159, false),

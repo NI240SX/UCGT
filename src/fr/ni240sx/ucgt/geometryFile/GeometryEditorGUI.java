@@ -134,6 +134,7 @@ public class GeometryEditorGUI extends Application {
     public static CheckMenuItem doNormal = new CheckMenuItem("Show Normal");
     public static CheckMenuItem doSelfIllum = new CheckMenuItem("Show Self Illumination");
     public static CheckMenuItem doVertexColors = new CheckMenuItem("Show Vertex Colors");
+    public static CheckMenuItem doWireframe = new CheckMenuItem("Wireframe mode");
 
     public static ArrayList<String> textureLookupFolders = new ArrayList<>();
     public static ArrayList<String> recentFiles = new ArrayList<>();
@@ -316,7 +317,7 @@ public class GeometryEditorGUI extends Application {
         displayMarkers.setAccelerator(KeyCombination.keyCombination("Alt+M"));
 
         Menu menuRendering = new Menu("Rendering");
-        menuRendering.getItems().addAll(displayMarkers, loadTextures, textureFolders, new SeparatorMenuItem(), doDiffuse, doSpecular, doNormal, doSelfIllum, doVertexColors);
+        menuRendering.getItems().addAll(displayMarkers, loadTextures, textureFolders, new SeparatorMenuItem(), doDiffuse, doSpecular, doNormal, doSelfIllum, doVertexColors, doWireframe);
         menuRendering.setAccelerator(KeyCombination.keyCombination("Alt+R"));
         doDiffuse.setSelected(true);
         doSpecular.setSelected(true);
@@ -338,6 +339,8 @@ public class GeometryEditorGUI extends Application {
         	}
         });
         doVertexColors.setSelected(true);
+        doWireframe.setOnAction(e -> updateWireframe());
+        doWireframe.setAccelerator(KeyCombination.keyCombination("Alt+W"));
 
         allowConflictingParts.setOnAction(e ->{
         	if (!allowConflictingParts.isSelected()) updateRender();
@@ -671,6 +674,14 @@ public class GeometryEditorGUI extends Application {
 			visualModelMaterials.get(i).setSpecularMap(doSpecular.isSelected() ? specularMaps.get(i) : null);
 			visualModelMaterials.get(i).setBumpMap(doNormal.isSelected() ? normalMaps.get(i) : null);
 			visualModelMaterials.get(i).setSelfIlluminationMap(doSelfIllum.isSelected() ? selfIlluminationMaps.get(i) : null);
+		}
+	}
+	
+	private static void updateWireframe() {
+		if (doWireframe.isSelected()) {
+	    	for (var p : parts) p.updateWireframe(true);
+		} else {
+	    	for (var p : parts) p.updateWireframe(false);
 		}
 	}
 
@@ -1435,6 +1446,11 @@ public class GeometryEditorGUI extends Application {
 //								if (!disableWarnings.isSelected()) new Alert(Alert.AlertType.INFORMATION, "Model loaded successfully.", ButtonType.OK).show();
 								return;
 
+							}
+							
+							if (geomOffsets.size() + tpkOffsets.size() > 0) {
+								if (recentFiles.contains(selected.getAbsolutePath())) recentFiles.remove(selected.getAbsolutePath());
+								recentFiles.add(0, selected.getAbsolutePath());
 							}
 
 							javafx.application.Platform.runLater(() -> {

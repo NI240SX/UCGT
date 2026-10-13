@@ -24,14 +24,17 @@ import fr.ni240sx.ucgt.geometryFile.gui.SearchableListView;
 import fr.ni240sx.ucgt.shared.Hash;
 import fr.ni240sx.ucgt.shared.OrbitCameraViewport;
 import fr.ni240sx.ucgt.shared.Utils;
+import fr.ni240sx.ucgt.streamEditor.regionBlocks.eTrackPathZoneType;
 import fr.ni240sx.ucgt.streamEditor.streamBlocks.CARP;
-import fr.ni240sx.ucgt.streamEditor.streamBlocks.CARP.CARPBlockID;
+import fr.ni240sx.ucgt.streamEditor.streamBlocks.CARP.UDataID;
+import fr.ni240sx.ucgt.streamEditor.streamBlocks.CARP.WRoad;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldListCell;
@@ -68,7 +71,7 @@ public class WorldEditorGUI extends Application {
 	public static OrbitCameraViewport viewport;
 
 	public static Group boundariesGroup = new Group();	
-	public static Group zones1Group = new Group();	
+	public static Group trackPathZonesGroup = new Group();	
 	public static Group markersGroup = new Group();	
 	public static Group elevationGroup = new Group();	
 	public static Group barrierSplinesGroup = new Group();
@@ -91,9 +94,10 @@ public class WorldEditorGUI extends Application {
 
     private static CheckMenuItem regionBoundaries = new CheckMenuItem("Show drivable visible section boundaries");
     private static CheckMenuItem regionPanoramaBoundaries = new CheckMenuItem("Show panorama visible section boundaries");
-    private static CheckMenuItem regionTrackPathZones = new CheckMenuItem("Show track path zones");
+//    private static CheckMenuItem regionTrackPathZones = new CheckMenuItem("Show track path zones");
     private static CheckMenuItem regionTrackMarkers = new CheckMenuItem("Show track position markers");
-    private static CheckMenuItem regionRoadNetwork = new CheckMenuItem("Show road network");
+    private static CheckMenuItem regionRoadNetwork = new CheckMenuItem("Show road network (simple)");
+    private static CheckMenuItem regionRoadNetworkDetailed = new CheckMenuItem("Show road network (detailed)");
     private static CheckMenuItem regionBarrierSplines = new CheckMenuItem("Show track path barrier splines");
 
     public static CheckMenuItem visibleScenery = new CheckMenuItem("Show visible section scenery"); //TODO hide barriers -> scenery groups ?
@@ -112,6 +116,7 @@ public class WorldEditorGUI extends Application {
     public static CheckMenuItem doVertexColors = new CheckMenuItem("Show Vertex Colors");
 
     public static ComboBox<String> displayLod = new ComboBox<>();
+    public static ComboBox<eTrackPathZoneType> trackPathZoneFilter = new ComboBox<>();
     
     public static ArrayList<String> textureLookupFolders = new ArrayList<>();
     public static ArrayList<String> recentFiles = new ArrayList<>();
@@ -125,12 +130,21 @@ public class WorldEditorGUI extends Application {
     
     public static WorldController mainStreamer = null;
     public static StreamController currentChunk;
+    public static StreamController currentChunk_elev;
     int chunkListType = 0;
     
 //    static HashMap<Integer,String> barrierSplineHashes = new HashMap<>();
     static HashMap<Integer,Integer> barrierSplineHashes = new HashMap<>();
 
 	static ExecutorService streamer = Executors.newSingleThreadExecutor(r -> {
+	    Thread t = new Thread(r);
+	    t.setUncaughtExceptionHandler((thread, throwable) -> {
+	        throwable.printStackTrace();
+	    });
+	    return t;
+	});
+	
+	static ExecutorService texturesBuilder = Executors.newSingleThreadExecutor(r -> {
 	    Thread t = new Thread(r);
 	    t.setUncaughtExceptionHandler((thread, throwable) -> {
 	        throwable.printStackTrace();
@@ -336,13 +350,15 @@ public class WorldEditorGUI extends Application {
         
 
         Menu menuRegion = new Menu("Region");
-        menuRegion.getItems().addAll(regionBoundaries, regionPanoramaBoundaries, regionTrackPathZones, regionTrackMarkers, regionRoadNetwork, regionBarrierSplines);
+        menuRegion.getItems().addAll(regionBoundaries, regionPanoramaBoundaries, //regionTrackPathZones, 
+        		regionTrackMarkers, regionRoadNetwork, regionRoadNetworkDetailed, regionBarrierSplines);
 
         regionBoundaries.setOnAction(e -> updateBoundaries());
         regionPanoramaBoundaries.setOnAction(e -> updateBoundaries());
-        regionTrackPathZones.setOnAction(null); //TODO
+//        regionTrackPathZones.setOnAction(e -> updateTrackPathZones());
         regionTrackMarkers.setOnAction(e -> updateMarkers());
         regionRoadNetwork.setOnAction(e -> updateWorldGridRoadNetwork()); //TODO
+        regionRoadNetworkDetailed.setOnAction(e -> updateWorldGridRoadNetwork()); //TODO
         regionBarrierSplines.setOnAction(e -> updateBarrierSplines());
         
         Menu menuVisibleSections = new Menu("Visible sections");
@@ -448,21 +464,26 @@ public class WorldEditorGUI extends Application {
         displayLod.getItems().addAll("A","B","C","Z");
         displayLod.getSelectionModel().select(0);
         displayLod.setOnAction(e -> renderWorldFromChunk(currentChunk));
-        
+        trackPathZoneFilter.getItems().addAll(eTrackPathZoneType.values());
+        trackPathZoneFilter.getSelectionModel().select(eTrackPathZoneType.NONE);
+        trackPathZoneFilter.setOnAction(e -> updateTrackPathZones());
         
 		var coordX = new Label();
 		var coordY = new Label();
 		var coordZ = new Label();
 
         shortcutsBar.getChildren().addAll(
-        		new Label("LOD"), displayLod, switchChunkList, infSep, new Label("Camera pivot coordinates"), new Separator(), coordX, new Separator(), coordY, new Separator(), coordZ);
+        		new Label("LOD"), displayLod, switchChunkList, 
+        		new Label("TrackPathZone filter"), trackPathZoneFilter, 
+        		infSep, 
+        		new Label("Camera pivot coordinates"), new Separator(), coordX, new Separator(), coordY, new Separator(), coordZ);
         
         windowTop.getChildren().addAll(menuBar, shortcutsBar);
         
         viewport = new OrbitCameraViewport(viewportGroup, 0, 0);
         viewportGroup.getChildren().addAll(
         		boundariesGroup,
-				zones1Group,
+				trackPathZonesGroup,
 				markersGroup,
 				elevationGroup,
 				barrierSplinesGroup,
@@ -503,14 +524,14 @@ public class WorldEditorGUI extends Application {
             		}
             	}
         		is.setMeshColor(Color.RED); //is contained in its related chunk ids
-				if (centerOnPart.isSelected() && viewport.keys.isEmpty()) viewport.moveCameraNoListener(is.boundary.pos[X], is.boundary.pos[Y]);
+				if (centerOnPart.isSelected() && viewport.keys.isEmpty()) viewport.moveCameraNoListener(is.boundary.Centre[X], is.boundary.Centre[Y]);
         	}
         	streamInfo.update(is, mainStreamer.visualControllers, mainStreamer.streaml8r);
         	
         	if (showChunksOnClick.isSelected()) {
 				renderWorldFromChunk(is);
 				if (is != null && centerOnPart.isSelected()) {
-					viewport.moveCameraNoListener(is.boundary.pos[X], is.boundary.pos[Y]);
+					viewport.moveCameraNoListener(is.boundary.Centre[X], is.boundary.Centre[Y]);
             	}
         	}
         });
@@ -519,7 +540,7 @@ public class WorldEditorGUI extends Application {
         	for (var st : mainStreamer.streamControllers) if (st.ID == is.ID) {
         		st.setMeshColor(Color.RED);
         	} else st.resetMeshColor();
-			if (centerOnPart.isSelected()) viewport.moveCameraNoListener(is.chunk.centerX, is.chunk.centerY);
+			if (centerOnPart.isSelected()) viewport.moveCameraNoListener(is.chunk.Centre[X], is.chunk.Centre[Y]);
 
         });
         
@@ -660,17 +681,10 @@ public class WorldEditorGUI extends Application {
 			var z = viewport.cameraPivotPosition.getZ();
 			
 			if (currentChunk != null && !(new Point(x, y).isInside(currentChunk.boundary.points))) currentChunk = null;
-			if (currentChunk != null && currentChunk.boundary.elevationHash != 0) {
-				float f = Float.POSITIVE_INFINITY;
-				for (var r : currentChunk.elevationRuleTriangles) if (new Point(x,y).isInside(new float[] {r.points[0][X],r.points[1][X],r.points[2][X]}, new float[]{r.points[0][Y], r.points[1][Y], r.points[2][Y]})) {
-					f = r.points[0][Z];
-				}
-				var chunk = currentChunk;
-				if (z > f) for (var c2 : mainStreamer.streamControllers) if (c2.ID == currentChunk.boundary.ID_over){
-					chunk = c2;
-				}
-				var chunkf = chunk;
-				renderWorldFromChunk(chunkf);
+			if (currentChunk != null) {				
+				var chunkf = figureElevation(x, y, z, currentChunk);
+				if (chunkf != currentChunk_elev) renderWorldFromChunk(chunkf);
+				currentChunk_elev = chunkf;
 			}
 			if (currentChunk == null) {
 				for (var c : mainStreamer.streamControllers) {
@@ -679,18 +693,9 @@ public class WorldEditorGUI extends Application {
 							c.boundary.boundsMin[Y] < y && y < c.boundary.boundsMax[Y]) {
 						if (new Point((float)x,(float)y).isInside(c.boundary.points)) {
 							currentChunk = c;
-							var chunk = currentChunk;
-							if (currentChunk.boundary.elevationHash != 0) {
-								float f = Float.POSITIVE_INFINITY;
-								for (var r : currentChunk.elevationRuleTriangles) if (new Point(x,y).isInside(new float[] {r.points[0][X],r.points[1][X],r.points[2][X]}, new float[]{r.points[0][Y], r.points[1][Y], r.points[2][Y]})) {
-									f = r.points[0][Z];
-								}
-								if (z > f) for (var c2 : mainStreamer.streamControllers) if (c2.ID == currentChunk.boundary.ID_over){
-									chunk = c2;
-								}
-							}
-							var chunkf = chunk;
+							var chunkf = figureElevation(x, y, z, currentChunk);
 							renderWorldFromChunk(chunkf);
+							currentChunk_elev = chunkf;
 							break;
 						}						
 					}
@@ -704,6 +709,28 @@ public class WorldEditorGUI extends Application {
 		}
 	}
 
+	public static StreamController figureElevation(double x, double y, double z, StreamController chunk) {
+		if (currentChunk.elevPolies0 != null) {
+			float f1 = Float.POSITIVE_INFINITY;
+			for (var r : currentChunk.elevPolies0) if (new Point(x,y).isInside(new float[] {r.vertices[0][X],r.vertices[1][X],r.vertices[2][X]}, new float[]{r.vertices[0][Y], r.vertices[1][Y], r.vertices[2][Y]})) {
+				f1 = r.vertices[0][Z];
+			}
+			if (z > f1) for (var c2 : mainStreamer.streamControllers) if (c2.ID == currentChunk.boundary.DepthSectionNumbers[0]){
+				chunk = c2;
+			}
+		}
+		if (currentChunk.elevPolies1 != null) {
+			float f1 = Float.POSITIVE_INFINITY;
+			for (var r : currentChunk.elevPolies1) if (new Point(x,y).isInside(new float[] {r.vertices[0][X],r.vertices[1][X],r.vertices[2][X]}, new float[]{r.vertices[0][Y], r.vertices[1][Y], r.vertices[2][Y]})) {
+				f1 = r.vertices[0][Z];
+			}
+			if (z > f1) for (var c2 : mainStreamer.streamControllers) if (c2.ID == currentChunk.boundary.DepthSectionNumbers[1]){
+				chunk = c2;
+			}
+		}
+		return chunk;
+	}
+
 	public static AtomicInteger phaser = new AtomicInteger();
 	
 	private static void renderWorldFromChunk(StreamController chunk) {
@@ -713,7 +740,7 @@ public class WorldEditorGUI extends Application {
 
 		listViewStream.getSelectionModel().select(chunk);
 
-		streamer.execute(() -> {
+		streamer.submit(() -> {
 
 			if (phaser.get() != phase) return;
 			int result = mainStreamer.renderWorldFromChunk(chunk, modelsGroup);
@@ -723,10 +750,16 @@ public class WorldEditorGUI extends Application {
 				javafx.application.Platform.runLater(() -> {
 					status.text.setText("Out of memory, attempting to clean up!");
 					status.progress.setProgress(-1);
-//					modelsGroup.getChildren().clear();
 				});
 				mainStreamer.doMemoryCleanup();
 				mainStreamer.renderWorldFromChunk(chunk, modelsGroup); //try again
+			}
+			if (result == -2 | result == -3) {
+				javafx.application.Platform.runLater(() -> {
+					status.text.setText("An error occured! See the console.");
+					status.progress.setProgress(0);
+				});
+				return;
 			}
 			
 //        	streamInfo.update(chunk, mainStreamer.visualControllers, mainStreamer.streaml8r);
@@ -963,6 +996,8 @@ public class WorldEditorGUI extends Application {
 			selected = new File(sel.getParent() + File.separator + sel.getName().replace("STREAM", ""));
 		} else selected = sel;
 		
+		currentChunk = null; //reset streaming
+		
 		new Thread(() -> {
 			try {
 				unsavedChanges = false;
@@ -984,7 +1019,7 @@ public class WorldEditorGUI extends Application {
 				e1.printStackTrace();
 
 				javafx.application.Platform.runLater(() -> {
-					new Alert(Alert.AlertType.ERROR, "Error loading the model:\n"+e1.getMessage(), ButtonType.OK).show();
+					new Alert(Alert.AlertType.ERROR, "Error loading the world:\n"+e1.getMessage(), ButtonType.OK).show();
 					status.text.setText(null);
 					status.progress.setProgress(0);
 				});
@@ -1027,7 +1062,7 @@ public class WorldEditorGUI extends Application {
 //		listViewStream.updateTreeView();
 
 		javafx.application.Platform.runLater(() -> {
-			zones1Group.getChildren().clear();
+			trackPathZonesGroup.getChildren().clear();
 			markersGroup.getChildren().clear();
 			elevationGroup.getChildren().clear();
 			barrierSplinesGroup.getChildren().clear();
@@ -1065,30 +1100,40 @@ public class WorldEditorGUI extends Application {
 			}
 		}
 	}
+
+	private static void updateTrackPathZones() {
+		trackPathZonesGroup.getChildren().clear();
+		for (var z : mainStreamer.zones1) 
+			if (
+					//regionTrackPathZones.isSelected() && 
+					(trackPathZoneFilter.getValue() == eTrackPathZoneType.ALL || trackPathZoneFilter.getValue() == z.type)) {
+			var m = z.getFlatMesh();
+			if (m != null) trackPathZonesGroup.getChildren().add(m);
+		}
+	}
 	
 	public static double MARKER_SPHERE_SIZE = 5;
 	private static void updateMarkers() {
 		
 		markersGroup.getChildren().clear();
 		
-		if (regionTrackMarkers.isSelected()) for (var m : mainStreamer.markers) {
+		if (regionTrackMarkers.isSelected()) for (var m : mainStreamer.trackPositionMarkers) {
 			var s = new Sphere(MARKER_SPHERE_SIZE);
 			s.setTranslateX(m.pos[X]);
 			s.setTranslateY(m.pos[Y]);
 			s.setTranslateZ(m.pos[Z]);
-			s.setMaterial(new PhongMaterial(Color.hsb(m.hash, 1, 1)));
+			s.setMaterial(new PhongMaterial(Color.hsb(m.NameHash, 1, 1)));
 			s.setOnMouseClicked(e -> {
 				if (centerOnPart.isSelected() && e.isStillSincePress()) viewport.moveCameraNoListener(m.pos[X], m.pos[Y], m.pos[Z]);
 			});
 			markersGroup.getChildren().add(s);
 			
-			var t = new Tooltip("Marker\n"+
-					"type1="+m.type1+
-					"\ntype2="+m.type2+
-					"\nhash="+Hash.getBIN(m.hash)+
-					"\nhash2="+Hash.getBIN(m.hash2)+
-					"\nregion="+m.region+
-					"\nsh="+m.sh);
+			var t = new Tooltip("TrackPositionMarker\n"+
+					"\nNameHash = "+Hash.getBIN(m.NameHash)+
+					"\nParam = "+Hash.getBIN(m.Param)+
+					"\nTrack Number = "+m.TrackNumber+
+					"\nScenery Groups Count = "+m.NumSceneryGroups+
+					"\nAngle = "+m.Angle);
 			s.setOnMouseEntered(e -> t.show(s, e.getScreenX()+10, e.getScreenY()+10));
 			s.setOnMouseExited(e -> t.hide());
 
@@ -1099,14 +1144,14 @@ public class WorldEditorGUI extends Application {
 		
 		barrierSplinesGroup.getChildren().clear();
 		
-		if (regionBarrierSplines.isSelected()) for (var spline : mainStreamer.barrierSplines) {
+		if (regionBarrierSplines.isSelected()) for (var spline : mainStreamer.trackPathBarriers) {
 			var line = new MeshView(doVerticalRectangle(spline.from[X], spline.from[Y], 0, spline.to[X], spline.to[Y], 200));
 			line.setCullFace(CullFace.NONE);
 			
-			line.setMaterial(new PhongMaterial(Color.hsb(spline.hash*20, 1, 1)));
+			line.setMaterial(new PhongMaterial(Color.hsb(spline.GroupHash*20, 1, 1)));
 			barrierSplinesGroup.getChildren().add(line);
 
-			var t = new Tooltip(barrierSplineHashes.get(spline.hash) != null ? "BARRIER_SPLINE_%04d".formatted(barrierSplineHashes.get(spline.hash)) : Hash.getBIN(spline.hash));
+			var t = new Tooltip(barrierSplineHashes.get(spline.GroupHash) != null ? "BARRIER_SPLINE_%04d".formatted(barrierSplineHashes.get(spline.GroupHash)) : Hash.getBIN(spline.GroupHash));
 			line.setOnMouseEntered(e -> t.show(line, e.getScreenX()+10, e.getScreenY()+10));
 			line.setOnMouseExited(e -> t.hide());	
 
@@ -1114,34 +1159,110 @@ public class WorldEditorGUI extends Application {
 	}
 	
 	private static void updateWorldGridRoadNetwork() {
-		
-		worldGridGroup.getChildren().clear();
-		var mat = new PhongMaterial(Color.BLACK);
-		
-		if (regionRoadNetwork.isSelected()) {
-			if (mainStreamer != null && mainStreamer.worldGrid != null && mainStreamer.worldGrid.root.hasEntry(CARPBlockID.RoadNetworkGroup)) {
-				var rn = mainStreamer.worldGrid.root.getEntry(CARPBlockID.RoadNetworkGroup);
-				for (var n : ((CARP.RoadNetworkNodes)rn.getData(CARPBlockID.RoadNetworkNodes)).nodes ) {
-					var s = new Sphere(0.5);
-					s.setTranslateX(n.position[Z]);
-					s.setTranslateY(-n.position[X]);
-					s.setTranslateZ(n.position[Y]);
-					s.setMaterial(mat);
-					worldGridGroup.getChildren().add(s);
+		new Thread(() -> {
+			try {
+				var mtl_road = new PhongMaterial(Color.BLACK);
+				var mtl_shortcut = new PhongMaterial(Color.GRAY);
+				var mtl_unknown = new PhongMaterial(Color.MAGENTA);
+				var nodes = new ArrayList<Node>();
+				
+				if (regionRoadNetwork.isSelected() || regionRoadNetworkDetailed.isSelected()) {
+					if (mainStreamer != null && mainStreamer.worldGrid != null && mainStreamer.worldGrid.root.hasEntry(UDataID.RoadNetworkGroup)) {
+						var rn = mainStreamer.worldGrid.root.getEntry(UDataID.RoadNetworkGroup);
+						
+						var rnNodes = ((CARP.RoadNetworkNodes)rn.getData(UDataID.RoadNetworkNodes)).nodes;
+						var rnSegments = ((CARP.RoadNetworkSegments)rn.getData(UDataID.RoadNetworkSegments)).segments;
+						var rnRoads = ((CARP.RoadNetworkRoads)rn.getData(UDataID.RoadNetworkRoads)).wRoads;
+						var rnProfiles = ((CARP.RoadNetworkProfiles)rn.getData(UDataID.RoadNetworkProfiles)).profiles;
+						
+//						for (var n : rnNodes) {
+//							var s = new Sphere(0.5);
+//							s.setTranslateX(n.position[Z]);
+//							s.setTranslateY(-n.position[X]);
+//							s.setTranslateZ(n.position[Y]);
+//							s.setMaterial(mat);
+//							worldGridGroup.getChildren().add(s);
+//						}
+						
+						
+						for (var s : rnSegments) {
+							var n1 = rnNodes.get(s.nodeStart);
+							var n2 = rnNodes.get(s.nodeEnd);
+
+							WRoad road = null;
+							if (s.roadID != -1) road = rnRoads.get(s.roadID);
+//							if (s.roadID == -1) continue;
+
+							if (regionRoadNetworkDetailed.isSelected()) {
+//								var road = rnRoads.get(s.roadID);
+								var profile1 = rnProfiles.get(n1.profileIndex);
+								var profile2 = rnProfiles.get(n2.profileIndex);
+
+								var pos1 = new float[]{n1.position[Z], -n1.position[X], n1.position[Y]};
+								var pos2 = new float[]{n2.position[Z], -n2.position[X], n2.position[Y]};
+								
+								var vec01 = new float[] {pos2[0]-pos1[0], pos2[1]-pos1[1], pos2[2]-pos1[2]};
+								normalize(vec01);
+								
+								var lateral = new float[3];
+								var vertical = new float[] {0, 0, 1};
+								crossProduct(vec01, vertical, lateral);
+								
+								for (int i=0; i<profile1.numZones && i<profile2.numZones; i++) {
+									var mv = new MeshView(VisualController.doLineMesh(
+											pos1[0] + profile1.getLaneOffset(i)*lateral[0],
+											pos1[1] + profile1.getLaneOffset(i)*lateral[1],
+											pos1[2] + profile1.getLaneOffset(i)*lateral[2],
+
+											pos2[0] + profile2.getLaneOffset(i)*lateral[0],
+											pos2[1] + profile2.getLaneOffset(i)*lateral[1],
+											pos2[2] + profile2.getLaneOffset(i)*lateral[2]
+											));
+									mv.setDrawMode(DrawMode.LINE);
+//									if (road.shortcut == 1) mv.setMaterial(mtl_shortcut);
+//									else mv.setMaterial(mtl_road);
+									mv.setMaterial(profile1.getLaneType(i).mat);
+									
+									nodes.add(mv);
+								}					
+							} else {
+								var mv = new MeshView(VisualController.doLineMesh(n1.position[Z], -n1.position[X], n1.position[Y],
+								n2.position[Z], -n2.position[X], n2.position[Y]));
+								mv.setDrawMode(DrawMode.LINE);
+								if (road != null && road.shortcut == -1)
+									mv.setMaterial(mtl_road);
+								else if (road != null)
+									mv.setMaterial(mtl_unknown);
+//								else mv.setMaterial(mtl_unknown);
+								else mv.setMaterial(mtl_shortcut);
+								
+								nodes.add(mv);
+							}
+						}
+					}
 				}
 				
-				for (var s : ((CARP.RoadNetworkSegments)rn.getData(CARPBlockID.RoadNetworkSegments)).segments ) {
-					var n1 = ((CARP.RoadNetworkNodes)rn.getData(CARPBlockID.RoadNetworkNodes)).nodes.get(s.nodeStart);
-					var n2 = ((CARP.RoadNetworkNodes)rn.getData(CARPBlockID.RoadNetworkNodes)).nodes.get(s.nodeEnd);
-					
-					var mv = new MeshView(VisualController.doLineMesh(n1.position[Z], -n1.position[X], n1.position[Y],
-																		n2.position[Z], -n2.position[X], n2.position[Y]));
-					mv.setDrawMode(DrawMode.LINE);
-					mv.setMaterial(mat);
-					worldGridGroup.getChildren().add(mv);
-				}
+				javafx.application.Platform.runLater(() -> {
+					worldGridGroup.getChildren().clear();
+					worldGridGroup.getChildren().addAll(nodes);
+				});
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-		}
+		}).start();
+
+	}
+	
+	static void crossProduct(float vect_A[], float vect_B[], float cross_P[])	{
+		cross_P[0] = vect_A[1] * vect_B[2] - vect_A[2] * vect_B[1];
+		cross_P[1] = vect_A[2] * vect_B[0] - vect_A[0] * vect_B[2];
+		cross_P[2] = vect_A[0] * vect_B[1] - vect_A[1] * vect_B[0];
+	}
+	static void normalize(float[] vec) {
+		var prod = Math.sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
+		vec[0] /= prod;
+		vec[1] /= prod;
+		vec[2] /= prod;
 	}
 
 	private static TriangleMesh doVerticalRectangle(float x1, float y1, float z1, float x2, float y2, float z2) {

@@ -54,6 +54,7 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
 import fr.ni240sx.ucgt.shared.Utils;
+import fr.ni240sx.ucgt.streamEditor.regionBlocks.TrackStreamingSections;
 import javafx.util.Pair;
 import fr.ni240sx.ucgt.geometryFile.settings.*;
 
@@ -529,7 +530,104 @@ public class Geometry implements Block {
 		Files.createDirectories(Paths.get(dumpfolder));
 		
 		File f = new File(stream);
-		FileInputStream fis = new FileInputStream(f);
+		FileInputStream fis = new FileInputStream(f);		
+		File region = new File(new File(stream).getParent() + File.separator + new File(stream).getName().replace("STREAM", ""));
+
+		if (region.isFile()) {
+			TrackStreamingSections offsets = null;
+			{
+				//find chunk offsets in region
+				ArrayList<Block> l8rBlocks = null;
+				Block.doNotRead.put(BlockType.ChunksEmpty, true);
+				Block.doNotRead.put(BlockType.ChunksTrackPathZones, true);
+				Block.doNotRead.put(BlockType.ChunksPositionMarkers, true);
+				Block.doNotRead.put(BlockType.VisibleSections, true);
+				Block.doNotRead.put(BlockType.VisibleSections_Info, true);
+				Block.doNotRead.put(BlockType.VisibleSections_Boundaries, true);
+				Block.doNotRead.put(BlockType.ChunksElevationRules, true);
+				Block.doNotRead.put(BlockType.ChunksLoadingSections, true);
+				Block.doNotRead.put(BlockType.VisibleSections_Relations, true);
+				Block.doNotRead.put(BlockType.ChunksSceneryOverrideInfos, true);
+				Block.doNotRead.put(BlockType.ChunksSceneryGroups, true);
+				Block.doNotRead.put(BlockType.ChunksSceneryHierarchies, true);
+				Block.doNotRead.put(BlockType.SceneryHierarchy, true);
+				Block.doNotRead.put(BlockType.CarpWorldGrid, true);
+				Block.doNotRead.put(BlockType.BoundsPack, true);
+				Block.doNotRead.put(BlockType.CarCollisions, true);
+				Block.doNotRead.put(BlockType.TrackPathBarriers, true);
+				FileInputStream fisL8r = new FileInputStream(region);
+				byte[] L8rToBytes = new byte[(int) region.length()];
+				fisL8r.read(L8rToBytes);
+				fisL8r.close();
+				
+				l8rBlocks = new ArrayList<>();
+				var l8rBB = ByteBuffer.wrap(L8rToBytes);
+				l8rBB.order(ByteOrder.LITTLE_ENDIAN);
+				while (l8rBB.remaining()>8) {
+					try {
+						var b = Block.read(l8rBB);
+						l8rBlocks.add(b);
+						if (b.getBlockID() == BlockType.ChunksOffsets) {
+							offsets = (TrackStreamingSections) b;
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+				Block.doNotRead.clear();
+			}
+			
+			if (offsets != null) {
+				long currentPositionIn = 0;
+				for (var chunk : offsets) {
+					if (currentPositionIn < chunk.FileOffset) { //if there was preexisting padding
+						currentPositionIn += fis.skip(chunk.FileOffset - currentPositionIn);
+					}
+					
+					byte[] chunkBytes = new byte[chunk.CompressedSize];
+					fis.read(chunkBytes);
+					currentPositionIn += chunk.CompressedSize;
+					
+					
+					
+					var bb = ByteBuffer.wrap(chunkBytes);
+					bb.order(ByteOrder.LITTLE_ENDIAN);
+					if (chunk.Size != chunk.CompressedSize) {
+						byte[] partData = new byte[chunk.Size];
+						var dataWriter = ByteBuffer.wrap(partData);
+						dataWriter.order(ByteOrder.LITTLE_ENDIAN);
+
+						
+						//loops on the one or multiple compressed blocks (usually RefPack, 32768 bytes each)
+						while (bb.hasRemaining()) {
+							try {
+								CompressedData d = (CompressedData) Block.read(bb);
+								var decomp = Compression.decompress(d.data);
+		//						if (decomp==null) continue offsets;
+								dataWriter.put(d.decompressionOffset, decomp);
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+						}
+						
+						dataWriter.position(0);
+						bb = dataWriter;
+					}
+
+					while (bb.hasRemaining()) {
+						var blockID = bb.getInt(bb.position());
+						var blockLength = bb.getInt(bb.position()+4);
+						var blockStart = bb.position() + 8;
+						dumpBChunk(dumpfolder, format, filters, 0, bb.position(), chunk, blockID, bb); 
+						bb.position(blockStart + blockLength);
+					}
+						
+				}
+				fis.close();
+				return;
+			}
+		}
+		
 		int blockIndex=0;
 		long inPos=0;
 		
@@ -558,89 +656,11 @@ public class Geometry implements Block {
 			block[6] = length[2];
 			block[7] = length[3];
 			fis.read(block, 8, blockLength);
+			
+			var bb = ByteBuffer.wrap(block);
+			bb.order(ByteOrder.LITTLE_ENDIAN);
 
-			if (blockID == BlockType.Geometry.getKey()) {
-				var bb = ByteBuffer.wrap(block);
-				bb.order(ByteOrder.LITTLE_ENDIAN);
-				try {
-					var geom = (Geometry) Block.read(bb);
-//					System.out.print("\rBlock #"+blockIndex+" : Geometry, length="+blockLength+", position="+inPos+", name="+geom.geomHeader.geomInfo.filename+", block name="+geom.geomHeader.geomInfo.blockname);
-
-					boolean filterRead = true;
-					// no filter set, anything is read; filters set, if we don't find one of them in either the file name or the blck name, then we skip
-					for (var fil : filters) if (!geom.geomHeader.geomInfo.filename.contains(fil) && !geom.geomHeader.geomInfo.blockname.contains(fil)) {
-						filterRead = false;
-						break;
-					}
-					
-//					if (filter == null || geom.geomHeader.geomInfo.filename.contains(filter) || geom.geomHeader.geomInfo.blockname.contains(filter)) {
-					if (filterRead) {
-						switch (format.toUpperCase()) {
-						case "Z3D":
-						case "ZMODELER2":
-						case "ZM2":
-							geom.writeConfig(new File(dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename+".ini"));
-							ZModelerZ3D.save(geom, dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename);
-							break;
-						case "GLTF":
-						case "GLB":
-							geom.writeConfig(new File(dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename+".ini"));
-							GLTF.save(geom, dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename, false);
-							break;
-						case "OBJ":
-						case "WAVEFRONT":
-							geom.writeConfig(new File(dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename+".ini"));
-							WavefrontOBJ.save(geom, dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename);
-							break;
-						case "BIN":
-						case "GEOMETRY":
-						default:
-							geom.save(new File(dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename));
-						}
-					}
-					
-				} catch (Exception e) {
-					System.out.println("Error loading Geometry in block #"+blockIndex+" at "+inPos+" !");
-					e.printStackTrace();
-				}
-			} 
-			if (blockID == BlockType.TPK.getKey()) {
-				var bb = ByteBuffer.wrap(block);
-				bb.order(ByteOrder.LITTLE_ENDIAN);
-				try {
-					var tpk = (TPK) Block.read(bb);
-//					System.out.print("\rBlock #"+blockIndex+" : Geometry, length="+blockLength+", position="+inPos+", name="+geom.geomHeader.geomInfo.filename+", block name="+geom.geomHeader.geomInfo.blockname);
-
-					boolean filterRead = true;
-					// no filter set, anything is read; filters set, if we don't find one of them in either the file name or the blck name, then we skip
-					for (var fil : filters) if (!tpk.header.info.filename.contains(fil) && !tpk.header.info.blockname.contains(fil)) {
-						filterRead = false;
-						break;
-					}
-					
-					if (filterRead) {
-						switch (format.toUpperCase()) {
-						case "Z3D":
-						case "ZMODELER2":
-						case "ZM2":
-						case "OBJ":
-						case "WAVEFRONT":
-						case "GLTF":
-						case "GLB":
-							tpk.exportToFolder(dumpfolder+tpk.header.info.blockname+"-"+tpk.header.info.filename, null);
-							break;
-						case "BIN":
-						case "GEOMETRY":
-						default:
-							tpk.save(new File(dumpfolder+tpk.header.info.blockname+"-"+tpk.header.info.filename));
-						}
-					}
-					
-				} catch (Exception e) {
-					System.out.println("Error loading TPK in block #"+blockIndex+" at "+inPos+" !");
-					e.printStackTrace();
-				}
-			} 
+			dumpBChunk(dumpfolder, format, filters, blockIndex, inPos, null, blockID, bb); 
 //			else System.out.print("\rBlock #"+blockIndex+" : "+BlockType.get(blockID)+", ID="+String.format("0x%08X", blockID)+", length="+blockLength+", position="+inPos);
 			
 			inPos += blockLength + 8;
@@ -648,6 +668,93 @@ public class Geometry implements Block {
 		}
 		
 		fis.close();
+	}
+
+	public static void dumpBChunk(String dumpfolder, String format, List<String> filters, int blockIndex, long inPos,
+			TrackStreamingSections.TrackStreamingSection chunk, int blockID, ByteBuffer bb) {
+		if (blockID == BlockType.Geometry.getKey()) {
+			try {
+				var geom = (Geometry) Block.read(bb);
+//					System.out.print("\rBlock #"+blockIndex+" : Geometry, length="+blockLength+", position="+inPos+", name="+geom.geomHeader.geomInfo.filename+", block name="+geom.geomHeader.geomInfo.blockname);
+
+				boolean filterRead = true;
+				// no filter set, anything is read; filters set, if we don't find one of them in either the file name or the blck name, then we skip
+				for (var fil : filters) if (!geom.geomHeader.geomInfo.filename.contains(fil) && !geom.geomHeader.geomInfo.blockname.contains(fil)) {
+					filterRead = false;
+					break;
+				}
+				
+//					if (filter == null || geom.geomHeader.geomInfo.filename.contains(filter) || geom.geomHeader.geomInfo.blockname.contains(filter)) {
+				if (filterRead) {
+					switch (format.toUpperCase()) {
+					case "Z3D":
+					case "ZMODELER2":
+					case "ZM2":
+						geom.writeConfig(new File(dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename+".ini"));
+						ZModelerZ3D.save(geom, dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename);
+						break;
+					case "GLTF":
+					case "GLB":
+						geom.writeConfig(new File(dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename+".ini"));
+						GLTF.save(geom, dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename, false);
+						break;
+					case "OBJ":
+					case "WAVEFRONT":
+						geom.writeConfig(new File(dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename+".ini"));
+						WavefrontOBJ.save(geom, dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename);
+						break;
+					case "BIN":
+					case "GEOMETRY":
+					default:
+						geom.save(new File(dumpfolder+geom.geomHeader.geomInfo.blockname+"-"+geom.geomHeader.geomInfo.filename));
+					}
+				}
+				
+			} catch (Exception e) {
+				if (chunk != null && chunk.SectionName != null) System.out.println("Error dumping Geometry in chunk "+chunk.SectionName+" at "+inPos+" !");
+				else System.out.println("Error dumping Geometry in block #"+blockIndex+" at "+inPos+" !");
+				e.printStackTrace();
+			}
+		} else if (blockID == BlockType.TPK.getKey()) {
+			try {
+				var tpk = (TPK) Block.read(bb);
+//					System.out.print("\rBlock #"+blockIndex+" : Geometry, length="+blockLength+", position="+inPos+", name="+geom.geomHeader.geomInfo.filename+", block name="+geom.geomHeader.geomInfo.blockname);
+
+				boolean filterRead = true;
+				// no filter set, anything is read; filters set, if we don't find one of them in either the file name or the blck name, then we skip
+				for (var fil : filters) if (!tpk.header.info.filename.contains(fil) && !tpk.header.info.blockname.contains(fil)) {
+					filterRead = false;
+					break;
+				}
+				
+				if (filterRead) {
+					switch (format.toUpperCase()) {
+					case "Z3D":
+					case "ZMODELER2":
+					case "ZM2":
+					case "OBJ":
+					case "WAVEFRONT":
+					case "GLTF":
+					case "GLB":
+						tpk.exportToFolder(dumpfolder+tpk.header.info.blockname+"-"+tpk.header.info.filename, null);
+						break;
+					case "BIN":
+					case "GEOMETRY":
+					default:
+						tpk.save(new File(dumpfolder+tpk.header.info.blockname+"-"+tpk.header.info.filename));
+					}
+				}
+				
+			} catch (Exception e) {
+				if (chunk != null && chunk.SectionName != null) System.out.println("Error dumping TPK in chunk "+chunk.SectionName+" at "+inPos+" !");
+				else System.out.println("Error dumping TPK in block #"+blockIndex+" at "+inPos+" !");
+				e.printStackTrace();
+			}
+		} 
+//		else {
+//			bb.getInt();
+//			bb.position(bb.position()+bb.getInt()); //skip block
+//		}
 	}
 	
 	//---------------------------------------------------------------------------------------------------
@@ -686,6 +793,8 @@ public class Geometry implements Block {
 		System.out.println("3D model converted in "+(System.currentTimeMillis()-time)+" ms.");			
 		return geom;			
 	}
+	
+	public static final int COMPRESSION_BLOCK_SIZE = 32768;
 	
 	public static void replaceInStream(String modelsDirectory, String streamFile, String l8rFile) throws Exception {
 		// REPLACE IN STREAM \/
@@ -837,12 +946,12 @@ public class Geometry implements Block {
 		
 		
 
-		File inputFile = new File(streamFile.replace(".BUN", "").replace(".BIN", "")+".OLD");
-		File outputFile = new File(streamFile);
+		File streamFileIn = new File(streamFile.replace(".BUN", "").replace(".BIN", "")+".OLD");
+		File streamFileOut = new File(streamFile);
 		
-		File outputL8rFile = null;
+		File regionFileOut = null;
 		ArrayList<Block> l8rBlocks = null;
-		StreamChunksOffsets offsets = null;
+		TrackStreamingSections offsets = null;
 		if (l8rFile != null) {
 			Block.doNotRead.put(BlockType.ChunksEmpty, true);
 			Block.doNotRead.put(BlockType.ChunksTrackPathZones, true);
@@ -861,10 +970,10 @@ public class Geometry implements Block {
 			Block.doNotRead.put(BlockType.BoundsPack, true);
 			Block.doNotRead.put(BlockType.CarCollisions, true);
 			Block.doNotRead.put(BlockType.TrackPathBarriers, true);
-			File inputL8rFile = new File(l8rFile.replace(".BUN", "").replace(".BIN", "")+".OLD");
-			outputL8rFile = new File(l8rFile);
-			FileInputStream fisL8r = new FileInputStream(inputL8rFile);
-			byte[] L8rToBytes = new byte[(int) inputL8rFile.length()];
+			File regionFileIn = new File(l8rFile.replace(".BUN", "").replace(".BIN", "")+".OLD");
+			regionFileOut = new File(l8rFile);
+			FileInputStream fisL8r = new FileInputStream(regionFileIn);
+			byte[] L8rToBytes = new byte[(int) regionFileIn.length()];
 			fisL8r.read(L8rToBytes);
 			fisL8r.close();
 			
@@ -875,13 +984,13 @@ public class Geometry implements Block {
 				var b = Block.read(l8rBB);
 				l8rBlocks.add(b);
 				if (b.getBlockID() == BlockType.ChunksOffsets) {
-					offsets = (StreamChunksOffsets) b;
+					offsets = (TrackStreamingSections) b;
 				}
 			}
 			l8rBB = null;
 			L8rToBytes = null;
 			if (offsets == null) {
-				throw new Exception("Couldn't find block offsets in the provided L8R file !");
+				throw new Exception("Couldn't find block offsets in the region file !");
 			}
 		}
 		
@@ -889,43 +998,68 @@ public class Geometry implements Block {
 		
 		//we have the names of the models to replace, now it's time to iterate over the stream blocks and find the ones to edit
 		
-		FileInputStream fisStream = new FileInputStream(inputFile);
-		FileOutputStream fosStream = new FileOutputStream(outputFile);
+		FileInputStream fisStream = new FileInputStream(streamFileIn);
+		FileOutputStream fosStream = new FileOutputStream(streamFileOut);
 		
 //		int totalAddedOffset = 0;
 		long currentPositionIn = 0;
 		long currentPositionOut = 0;
 		
-		if (offsets != null) for (var chunk : offsets.chunkInfos) {
+		System.out.println();
+		if (offsets != null) for (var chunk : offsets) {
 			
-			if (currentPositionIn < chunk.offset) { //if there was preexisting padding
-				currentPositionIn += fisStream.skip(chunk.offset - currentPositionIn);
+			if (currentPositionIn < chunk.FileOffset) { //if there was preexisting padding
+				currentPositionIn += fisStream.skip(chunk.FileOffset - currentPositionIn);
 
 				byte[] outBlock = Padding.makePadding(currentPositionOut, 2048);
 				fosStream.write(outBlock);
 				currentPositionOut += outBlock.length;
 			}
-			chunk.offset = (int) currentPositionOut;
+			chunk.FileOffset = (int) currentPositionOut;
 
-			if (blocksToEdit.contains(chunk.name) 
+			System.out.print("\rEditing stream... "+(offsets.indexOf(chunk)*100/offsets.size())+"% - "+chunk.SectionName);
+
+			if (blocksToEdit.contains(chunk.SectionName) 
 //					|| "C132".equals(chunk.name)
 					) { //need to edit this chunk
 //			if (true) {
 				
 //				if (chunk.name.equals("Y2")) chunk = null;
 				
-				System.out.println("Editing chunk "+chunk.name
+//				System.out.println("Editing chunk "+chunk.name
 //						+" at "+currentPositionIn+" in, length "+chunk.length1
-						);
-				byte[] chunkBytes = new byte[chunk.size];
+//						);
+
+				byte[] chunkBytes = new byte[chunk.CompressedSize];
+				ByteArrayOutputStream outChunk = new ByteArrayOutputStream();
 				fisStream.read(chunkBytes);
-				currentPositionIn += chunk.size;
+				currentPositionIn += chunk.CompressedSize;
 				int posInChunk = 0;
+				
+				
 //				boolean hasPadding = false;
 //				int previousPaddingLength = 0;
 				
 				var bb = ByteBuffer.wrap(chunkBytes);
 				bb.order(ByteOrder.LITTLE_ENDIAN);
+				if (chunk.Size != chunk.CompressedSize) {
+					byte[] partData = new byte[chunk.Size];
+					var dataWriter = ByteBuffer.wrap(partData);
+					dataWriter.order(ByteOrder.LITTLE_ENDIAN);
+
+					//loops on the one or multiple compressed blocks (usually RefPack, 32768 bytes each)
+					while (bb.hasRemaining()) {
+						CompressedData d = (CompressedData) Block.read(bb);
+						var decomp = Compression.decompress(d.data);
+//						if (decomp==null) continue offsets;
+						dataWriter.put(d.decompressionOffset, decomp);
+					}
+					
+					dataWriter.position(0);
+					bb = dataWriter;
+				}
+				
+				
 				while (bb.hasRemaining()) {
 //					var blockStart = bb.position();
 //					System.out.print("reading block at "+blockStart);
@@ -962,7 +1096,7 @@ public class Geometry implements Block {
 							}
 							
 							newGeom.geomHeader.geomInfo.blockname = g.geomHeader.geomInfo.blockname;
-							if (newGeom.SAVE_autoReplaceWorldLODs && (chunk.name.startsWith("X") || chunk.name.startsWith("W") || chunk.name.startsWith("U")) && !newGeom.geomHeader.geomInfo.filename.contains("XOs")) {
+							if (newGeom.SAVE_autoReplaceWorldLODs && (chunk.SectionName.startsWith("X") || chunk.SectionName.startsWith("W") || chunk.SectionName.startsWith("U")) && !newGeom.geomHeader.geomInfo.filename.contains("XOs")) {
 								for (var p : newGeom.parts) {
 									if (p.name.endsWith("1A_00")) lodA = p;
 									if (p.name.endsWith("1B_00")) lodB = p;
@@ -974,14 +1108,14 @@ public class Geometry implements Block {
 								}
 							}
 							outGeom = newGeom.save(posInChunk);
-							if (newGeom.SAVE_autoReplaceWorldLODs && (chunk.name.startsWith("X") || chunk.name.startsWith("W") || chunk.name.startsWith("U")) && !newGeom.geomHeader.geomInfo.filename.contains("XOs")) {
+							if (newGeom.SAVE_autoReplaceWorldLODs && (chunk.SectionName.startsWith("X") || chunk.SectionName.startsWith("W") || chunk.SectionName.startsWith("U")) && !newGeom.geomHeader.geomInfo.filename.contains("XOs")) {
 								if (lodB != null && lodA != null) newGeom.parts.add(0,lodA);
 							}
 						} else {
 							outGeom = g.save(posInChunk);
 						}
-						fosStream.write(outGeom);
-						currentPositionOut += outGeom.length;
+						outChunk.write(outGeom);
+//						currentPositionOut += outGeom.length;
 						posInChunk += outGeom.length;
 						break;
 					}
@@ -1011,8 +1145,8 @@ public class Geometry implements Block {
 							outTPK = tpk.save(posInChunk);
 						}
 							
-						fosStream.write(outTPK);
-						currentPositionOut += outTPK.length;
+						outChunk.write(outTPK);
+//						currentPositionOut += outTPK.length;
 						posInChunk += outTPK.length;
 						break;
 					}
@@ -1042,8 +1176,8 @@ public class Geometry implements Block {
 					default:
 						var b = new UnknownBlock(bb, chunkToInt);	
 						byte[] outBlock = b.save(posInChunk);
-						fosStream.write(outBlock);
-						currentPositionOut += outBlock.length;
+						outChunk.write(outBlock);
+//						currentPositionOut += outBlock.length;
 						posInChunk += outBlock.length;
 					}					
 										
@@ -1058,15 +1192,41 @@ public class Geometry implements Block {
 							int paddingOffset = bb.position() % 256;
 							
 							byte[] padding = Padding.makePadding(posInChunk - paddingOffset, 256); //game crashes when not set to 2048, collisions bug out if set to 2048
-							fosStream.write(padding);
-							currentPositionOut += padding.length;
+							outChunk.write(padding);
+//							currentPositionOut += padding.length;
 							posInChunk += padding.length;
 						}
 					}
 
 				}
-				chunk.size = (int) (currentPositionOut - chunk.offset);
-				chunk.sizeCompressed = chunk.size;
+				
+				var outBytes = outChunk.toByteArray();
+				if (chunk.Size != chunk.CompressedSize) {
+					int off = 0;
+					int compPos = 0;
+					while (off < outBytes.length) {
+
+						var decompressedLength = off + COMPRESSION_BLOCK_SIZE > outBytes.length ? outBytes.length - off : COMPRESSION_BLOCK_SIZE;
+						var compressedData = Compression.compress(outBytes, off, 
+								decompressedLength, 
+								decompressedLength > 16 ? CompressionType.RefPack : CompressionType.RawDecompressed, 
+								CompressionLevel.Medium);
+						
+						var compblock = new CompressedData(compressedData, decompressedLength, off, compPos).save((int) currentPositionOut);
+						fosStream.write(compblock);
+						currentPositionOut += compblock.length;
+						
+						off += COMPRESSION_BLOCK_SIZE;
+						compPos += compblock.length;
+					}
+//					System.out.println("Compressing stream chunk %s!".formatted(chunk.name));
+				} else {
+					fosStream.write(outBytes);
+					currentPositionOut += outBytes.length;
+				}
+				
+				chunk.Size = outBytes.length;
+				chunk.CompressedSize = (int) (currentPositionOut - chunk.FileOffset);
 				
 //				byte[] padding = Padding.makePadding(posInChunk,2048);
 //				fosStream.write(padding);
@@ -1076,16 +1236,16 @@ public class Geometry implements Block {
 			} else { //no need to edit this block, just pump and update offsets
 				
 //				System.out.println("Chunk "+chunk.name+" at "+currentPositionIn+ " length "+chunk.length1);
-				var arr = new byte[chunk.size];
-				if (fisStream.read(arr) < chunk.size) {
-					System.out.println("something went wrong at "+currentPositionIn+" in chunk "+chunk.name);
+				var arr = new byte[chunk.CompressedSize];
+				if (fisStream.read(arr) < chunk.CompressedSize) {
+					System.out.println("something went wrong at "+currentPositionIn+" in chunk "+chunk.SectionName);
 					chunk = null;
 				}
 				assert(chunk != null); //remove compiler whining for a willingly executed crash
-				currentPositionIn += chunk.size;
+				currentPositionIn += chunk.CompressedSize;
 				fosStream.write(arr); 
 				fosStream.flush();
-				currentPositionOut += chunk.size;
+				currentPositionOut += chunk.CompressedSize;
 				arr = null;
 				
 			}
@@ -1166,7 +1326,7 @@ public class Geometry implements Block {
 		fosStream.close();
 		
 		if (l8rFile != null && l8rBlocks != null) {
-			FileOutputStream fosL8r = new FileOutputStream(outputL8rFile);
+			FileOutputStream fosL8r = new FileOutputStream(regionFileOut);
 			for (var b : l8rBlocks) {
 				fosL8r.write(b.save(0));
 			}

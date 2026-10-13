@@ -7,6 +7,7 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
+//ScenerySectionHeader
 public class ChunkScenery_Header implements Block {
 
 	@Override
@@ -17,7 +18,7 @@ public class ChunkScenery_Header implements Block {
 	public ChunkScenery_Header(ByteBuffer in) throws Exception {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
-		chunkID = in.getInt(12);
+		chunkID = in.getInt(blockStart+12);
 		in.position(blockStart+blockLength);
 	}
 

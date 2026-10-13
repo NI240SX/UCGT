@@ -10,9 +10,15 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
-public class ChunkVisCurtains implements Block {
+public class ChunkVisCurtains extends ArrayList<fr.ni240sx.ucgt.streamEditor.streamBlocks.ChunkVisCurtains.VisCurtain> implements Block {
 
-	public ArrayList<VisCurtain> curtains = new ArrayList<>();
+/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6204170888488720681L;
+
+
+//	public ArrayList<VisCurtain> curtains = new ArrayList<>();
 	
 	@Override
 	public BlockType getBlockID() {return BlockType.ChunkVisCurtains;}
@@ -23,8 +29,7 @@ public class ChunkVisCurtains implements Block {
 		while (in.getInt() == 0x11111111) {}
 		in.position(in.position()-4);
 		while(in.position() < blockStart+blockLength) {
-			
-			curtains.add(new VisCurtain(in));
+			this.add(new VisCurtain(in));
 		}
 		in.position(blockStart+blockLength);
 	}
@@ -41,7 +46,7 @@ public class ChunkVisCurtains implements Block {
 		out.write(buf.array());
 		Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 128), (byte)0x11);
 		
-		for (var z : curtains) out.write(z.save());
+		for (var z : this) out.write(z.save());
 		
 		buf = ByteBuffer.wrap(new byte[4]);
 		buf.order(ByteOrder.LITTLE_ENDIAN);
@@ -82,6 +87,7 @@ public class ChunkVisCurtains implements Block {
 			in.getInt(); //AAAAAAAA
 			} catch (Exception e) {
 				//X360
+				e.printStackTrace();
 			}
 		}
 		

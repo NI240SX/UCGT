@@ -194,7 +194,7 @@ public class Part implements Block {
 	 * Creates a part with the specified name and adds it to the Geometry.
 	 * This also assigns markers and autosculpt links with the corresponding tempPartName.
 	 * @param geom
-	 * @param name
+	 * @param SectionName
 	 */
 	public Part(Geometry geom, String partname) {
 		this(geom.carname, partname, geom.platform);

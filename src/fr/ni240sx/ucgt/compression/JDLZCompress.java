@@ -9,22 +9,32 @@ public class JDLZCompress {
 	
 	public static final int HEADER_SIZE = 16;
 	
+
+	public static byte[] compress(byte[] input) {
+		return compress(input, 0, input.length);
+	}
+
 	//alternative compressor
-	public static byte[] compress(byte[] input)
-	{
+	/**
+	 * @param in the input data byte array
+	 * @param inOffset the offset in the input data
+	 * @param inSize the length in the input data
+	 * @return JDLZ compressed data without NFS compression header
+	 */
+	public static byte[] compress(byte[] input, int inOffset, int inSize) {
 	    if (input == null) return null;
 
 	    final int HeaderSize = 16;
 	    final int MinMatchLength = 3;
 	    final int MaxSearchDepth = 512;
 
-	    int inputBytes = input.length;
+	    int inputBytes = inSize;
 	    byte[] output = new byte[inputBytes + ((inputBytes + 7) / 8 ) + HeaderSize + 1];
 	    int[] hashPos = new int[0x2000];
 	    int[] hashChain = new int[inputBytes];
 
 	    int outPos = 0;
-	    int inPos = 0;
+	    int inPos = inOffset;
 	    byte flags1bit = 1;
 	    byte flags2bit = 1;
 	    byte flags1 = 0;
@@ -61,7 +71,7 @@ public class JDLZCompress {
 	            int hash = (-0x1A1 * ((input[inPos]&0xff) ^ (((input[inPos + 1]&0xff) ^ ((input[inPos + 2] << 4)&0xff)) << 4))) & 0x1FFF;
 	            int matchPos = hashPos[hash];
 	            hashPos[hash] = inPos;
-	            hashChain[inPos] = matchPos;
+	            hashChain[inPos-inOffset] = matchPos;
 	            int prevMatchPos = inPos;
 
 	            for (int i = 0; i < MaxSearchDepth; i++)
@@ -85,7 +95,7 @@ public class JDLZCompress {
 	                }
 
 	                prevMatchPos = matchPos;
-	                matchPos = hashChain[matchPos];
+	                matchPos = hashChain[matchPos-inOffset];
 	            }
 	        }
 

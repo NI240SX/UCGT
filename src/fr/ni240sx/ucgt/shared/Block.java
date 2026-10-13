@@ -164,17 +164,17 @@ public interface Block {
 		case ChunksTrackPathZones:
 			return new ChunksTrackPathZones(in);
 		case ChunksPositionMarkers:
-			return new ChunksMarkers(in);
+			return new TrackPositionMarkers(in);
 		case VisibleSections:
 			return new ChunksStreamingContainer(in);
 		case VisibleSections_Boundaries:
-			return new ChunksBoundaries(in);
+			return new VisibleSectionBoundaries(in);
 		case ChunksElevationRules:
-			return new ChunksElevationRules(in);
+			return new ChunksElevPolys(in);
 		case VisibleSections_Relations:
-			return new ChunksRelations(in);
+			return new DrivableScenerySections(in);
 		case ChunksOffsets:
-			return new StreamChunksOffsets(in);
+			return new TrackStreamingSections(in);
 		case ChunksSceneryHierarchies:
 			return new SceneryHierarchies(in);
 		case CarpWorldGrid:
@@ -182,7 +182,7 @@ public interface Block {
 		case BoundsPack:
 			return new BoundsPack(in);
 		case TrackPathBarriers:
-			return new BarrierSplines(in);
+			return new TrackPathBarriers(in);
 			
 			//stream file
 		case ChunkScenery:

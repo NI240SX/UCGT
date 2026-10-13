@@ -3,6 +3,7 @@ package fr.ni240sx.ucgt.geometryFile;
 import java.awt.Desktop;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -17,8 +18,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import fr.ni240sx.ucgt.compression.Compression;
 import fr.ni240sx.ucgt.compression.CompressionLevel;
 import fr.ni240sx.ucgt.compression.CompressionType;
+import fr.ni240sx.ucgt.geometryFile.geometry.CompressedData;
+import fr.ni240sx.ucgt.geometryFile.geometry.Padding;
 import fr.ni240sx.ucgt.geometryFile.io.GLTF;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
 import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
@@ -26,6 +30,7 @@ import fr.ni240sx.ucgt.geometryFile.textures.TPK;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Utils;
+import fr.ni240sx.ucgt.streamEditor.regionBlocks.TrackStreamingSections;
 import javafx.scene.shape.Path;
 import javafx.util.Pair;
 
@@ -139,6 +144,16 @@ public class GeometryEditorCLI {
 				l = l.substring(11);
 				changeComp(l,CompressionType.RawDecompressed);
 				break;
+
+			case "compress_stream":
+				l = l.substring(9+7);
+				changeStreamComp(l,CompressionType.JDLZ); //JDLZ because RefPack is slow as hell
+				break;
+
+			case "decompress_stream":
+				l = l.substring(11+7);
+				changeStreamComp(l,CompressionType.RawDecompressed);
+				break;
 				
 			case "platform":
 				platform(l);
@@ -186,6 +201,205 @@ public class GeometryEditorCLI {
 		}
 	}
 
+	private static void changeStreamComp(String l, CompressionType ct) {
+		String stream = null;
+		String region = null;
+		try {
+			//read first path
+			if (l.startsWith("\"")) {
+				l = l.substring(1);
+				stream = l.split("\"")[0];
+				l = l.substring(stream.length()+1);
+			} else {
+				stream = l.split(" ")[0];
+				l = l.substring(stream.length());
+			}
+			stream = resolveRelativePath(stream);
+
+			if (l.length()>1) {
+				l = l.substring(1);
+				//read comp type			
+				ct = CompressionType.get(l.split(" ")[0]);
+				l = l.substring(l.split(" ")[0].length());
+			}
+			
+
+			//read type if existing
+			if (l.length() > 1) {
+				l = l.substring(1);
+				if (l.startsWith("\"")) {
+					l = l.substring(1);
+					region = l.split("\"")[0];
+				} else {
+					region = l.split(" ")[0];
+				}
+				region = resolveRelativePath(region);
+			}
+
+			
+			try {
+				if (stream.contains("STREAM") && region == null) region = stream.replace("STREAM", "");
+				else throw new RuntimeException("Couldn't find the region file !");
+				
+//				if (new File(stream.replace(".BUN", "").replace(".BIN", "")+".tmp").isFile()) new File(stream.replace(".BUN", "").replace(".BIN", "")+".tmp").delete();
+//				if (new File(region.replace(".BUN", "").replace(".BIN", "")+".tmp").isFile()) new File(region.replace(".BUN", "").replace(".BIN", "")+".tmp").delete();
+
+				new File(stream).renameTo(new File(stream.replace(".BUN", "").replace(".BIN", "")+".tmp")); //i'll read this file and transfer the data to a new file as it is read, to lower RAM usage which already gets high just with cars
+				new File(region).renameTo(new File(region.replace(".BUN", "").replace(".BIN", "")+".tmp"));
+	
+				File streamFileIn = new File(stream.replace(".BUN", "").replace(".BIN", "")+".tmp");
+				File streamFileOut = new File(stream);
+				File regionFileOut = null;
+				ArrayList<Block> regionBlocks = null;
+				TrackStreamingSections offsets = null;
+				long t = System.currentTimeMillis();
+				System.out.println("Changing stream compression...");
+				
+				{
+					Block.doNotRead.put(BlockType.ChunksEmpty, true);
+					Block.doNotRead.put(BlockType.ChunksTrackPathZones, true);
+					Block.doNotRead.put(BlockType.ChunksPositionMarkers, true);
+					Block.doNotRead.put(BlockType.VisibleSections, true);
+					Block.doNotRead.put(BlockType.VisibleSections_Info, true);
+					Block.doNotRead.put(BlockType.VisibleSections_Boundaries, true);
+					Block.doNotRead.put(BlockType.ChunksElevationRules, true);
+					Block.doNotRead.put(BlockType.ChunksLoadingSections, true);
+					Block.doNotRead.put(BlockType.VisibleSections_Relations, true);
+					Block.doNotRead.put(BlockType.ChunksSceneryOverrideInfos, true);
+					Block.doNotRead.put(BlockType.ChunksSceneryGroups, true);
+					Block.doNotRead.put(BlockType.ChunksSceneryHierarchies, true);
+					Block.doNotRead.put(BlockType.SceneryHierarchy, true);
+					Block.doNotRead.put(BlockType.CarpWorldGrid, true);
+					Block.doNotRead.put(BlockType.BoundsPack, true);
+					Block.doNotRead.put(BlockType.CarCollisions, true);
+					Block.doNotRead.put(BlockType.TrackPathBarriers, true);
+					File regionFileIn = new File(region.replace(".BUN", "").replace(".BIN", "")+".tmp");
+					regionFileOut = new File(region);
+					FileInputStream fisL8r = new FileInputStream(regionFileIn);
+					byte[] L8rToBytes = new byte[(int) regionFileIn.length()];
+					fisL8r.read(L8rToBytes);
+					fisL8r.close();
+					
+					regionBlocks = new ArrayList<>();
+					var l8rBB = ByteBuffer.wrap(L8rToBytes);
+					l8rBB.order(ByteOrder.LITTLE_ENDIAN);
+					while (l8rBB.remaining()>8) {
+						var b = Block.read(l8rBB);
+						regionBlocks.add(b);
+						if (b.getBlockID() == BlockType.ChunksOffsets) {
+							offsets = (TrackStreamingSections) b;
+						}
+					}
+					l8rBB = null;
+					L8rToBytes = null;
+					if (offsets == null) {
+						throw new Exception("Couldn't find block offsets in the region file !");
+					}
+				}
+				
+				
+				
+				FileInputStream fisStream = new FileInputStream(streamFileIn);
+				FileOutputStream fosStream = new FileOutputStream(streamFileOut);
+				
+				long currentPositionIn = 0;
+				long currentPositionOut = 0;
+
+				System.out.println();
+				for (var chunk : offsets) {
+					if (currentPositionIn < chunk.FileOffset) { //if there was preexisting padding
+						currentPositionIn += fisStream.skip(chunk.FileOffset - currentPositionIn);
+
+						byte[] outBlock = Padding.makePadding(currentPositionOut, 2048);
+						fosStream.write(outBlock);
+						currentPositionOut += outBlock.length;
+					}
+					chunk.FileOffset = (int) currentPositionOut;
+										
+					
+					System.out.print("\rChanging compression of stream... "+(offsets.indexOf(chunk)*100/offsets.size())+"% - "+chunk.SectionName);
+					byte[] chunkBytes = new byte[chunk.CompressedSize];
+					fisStream.read(chunkBytes);
+					currentPositionIn += chunk.CompressedSize;
+					int posInChunk = 0;
+					
+					var bb = ByteBuffer.wrap(chunkBytes);
+					bb.order(ByteOrder.LITTLE_ENDIAN);
+					if (chunk.Size != chunk.CompressedSize) {
+						byte[] partData = new byte[chunk.Size];
+						var dataWriter = ByteBuffer.wrap(partData);
+						dataWriter.order(ByteOrder.LITTLE_ENDIAN);
+
+						//loops on the one or multiple compressed blocks (usually RefPack, 32768 bytes each)
+						while (bb.hasRemaining()) {
+							CompressedData d = (CompressedData) Block.read(bb);
+							var decomp = Compression.decompress(d.data);
+//							if (decomp==null) continue offsets;
+							dataWriter.put(d.decompressionOffset, decomp);
+						}
+						
+						dataWriter.position(0);
+						bb = dataWriter;
+					}
+					
+					
+					
+					
+					
+					var outBytes = bb.array();
+					//vanilla X360 has parts 1, 2, 3, 4 ... and only then 0 ???
+					if (ct != CompressionType.RawDecompressed) {
+						int off = 0;
+						int compPos = 0;
+						while (off < outBytes.length) {
+
+							var decompressedLength = off + Geometry.COMPRESSION_BLOCK_SIZE > outBytes.length ? outBytes.length - off : Geometry.COMPRESSION_BLOCK_SIZE;
+							var compressedData = Compression.compress(outBytes, off, 
+									decompressedLength, 
+									decompressedLength > 16 ? ct : CompressionType.RawDecompressed, 
+									CompressionLevel.Minimum);
+							
+							var compblock = new CompressedData(compressedData, decompressedLength, off, compPos).save((int) currentPositionOut);
+							fosStream.write(compblock);
+							currentPositionOut += compblock.length;
+							
+							off += decompressedLength;
+							compPos += compblock.length;
+						}
+//						System.out.println("Compressing stream chunk %s!".formatted(chunk.name));
+					} else {
+						fosStream.write(outBytes);
+						currentPositionOut += outBytes.length;
+					}
+					
+					chunk.Size = outBytes.length;
+					chunk.CompressedSize = (int) (currentPositionOut - chunk.FileOffset);
+					fosStream.flush();
+				}
+				fisStream.close();
+				fosStream.close();
+				
+				new File(stream.replace(".BUN", "").replace(".BIN", "")+".tmp").delete();
+				new File(region.replace(".BUN", "").replace(".BIN", "")+".tmp").delete();
+
+				{
+					FileOutputStream fosL8r = new FileOutputStream(regionFileOut);
+					for (var b : regionBlocks) {
+						fosL8r.write(b.save(0));
+					}
+					fosL8r.close();
+				}
+				
+				System.out.println("Operation successful !");
+				Block.doNotRead.clear();				
+			} catch (Exception e) {
+				System.out.printf("Error changing stream compression: %s\n", e.getMessage());
+				e.printStackTrace();
+			}
+			
+		}catch (ArrayIndexOutOfBoundsException | StringIndexOutOfBoundsException e) {System.out.println("Invalid command syntax : compress_stream/decompress_stream <stream file> [region file] [compression type]");}
+	}
+	
 	private static void changeComp(String l, CompressionType ct) {
 		String src;
 		try {
@@ -922,8 +1136,8 @@ public class GeometryEditorCLI {
 					    - extract a BIN file containing a single geometry to a 3D model and a configuration file
 					      also extracts textures if a corresponding TEXTURES.BIN is found
 					    
-					compress <BIN source>
-					    - compress an existing geometry using RefPack Maximum
+					compress <BIN source> [compression type]
+					    - compress an existing geometry
 					
 					decompress <BIN source>
 					    - decompress an existing geometry
@@ -942,6 +1156,12 @@ public class GeometryEditorCLI {
 					      if needed, it can also update blocks definitions offsets, this will be automatically recognized
 					      if you're using this tool in a very custom environment, fill in the [blocks definitions]
 					    
+					compress_stream <stream file> [region file] [compression type]
+						- compress a map stream
+					    
+					decompress_stream <stream file> [region file] [compression type]
+						- decompress a map stream
+						
 					convert <TXT CTK config> [INI UCGT config]
 					    - convert a CTK .txt config to an UCGT .ini config
 					    

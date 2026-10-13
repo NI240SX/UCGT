@@ -10,20 +10,26 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
-public class ChunksElevationRules implements Block {
+public class ChunksElevPolys extends ArrayList<fr.ni240sx.ucgt.streamEditor.regionBlocks.ChunksElevPolys.ElevPoly> implements Block {
 
-	public ArrayList<ElevationRuleTriangle> elevationRuleTriangles = new ArrayList<>();
+//	public ArrayList<ElevPoly> elevPolies = new ArrayList<>();
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1100173830974207614L;
+
+
 	@Override
 	public BlockType getBlockID() {return BlockType.ChunksElevationRules;}
 
-	public ChunksElevationRules(ByteBuffer in) {
+	public ChunksElevPolys(ByteBuffer in) {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
 		while (in.getInt() == 0x11111111) {}
 		in.position(in.position()-4);
 		while(in.position() < blockStart+blockLength) {
-			elevationRuleTriangles.add(new ElevationRuleTriangle(in));
+			this.add(new ElevPoly(in));
 		}
 	}
 	
@@ -38,7 +44,7 @@ public class ChunksElevationRules implements Block {
 
 		out.write(buf.array());
 
-		for (var z : elevationRuleTriangles) out.write(z.save());
+		for (var z : this) out.write(z.save());
 		Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 16), (byte)0x11);
 		
 		buf = ByteBuffer.wrap(new byte[4]);
@@ -56,20 +62,20 @@ public class ChunksElevationRules implements Block {
 	}
 
 	
-	public static class ElevationRuleTriangle{
-		public int hash;
+	public static class ElevPoly{
+		public int DepthName;
 
-		public float[][] points = new float[3][3];
+		public float[][] vertices = new float[3][3];
 				
-		ElevationRuleTriangle(ByteBuffer in){
-			hash = in.getInt(); 
+		ElevPoly(ByteBuffer in){
+			DepthName = in.getInt(); 
 			in.getInt();
 			in.getInt();
 			in.getInt();
 			for (int i=0; i<numPoints(); i++) {
-				points[i][X] = in.getFloat();
-				points[i][Y] = in.getFloat();
-				points[i][Z] = in.getFloat();
+				vertices[i][X] = in.getFloat();
+				vertices[i][Y] = in.getFloat();
+				vertices[i][Z] = in.getFloat();
 				in.getInt();
 			}
 		}
@@ -77,14 +83,14 @@ public class ChunksElevationRules implements Block {
 		public byte[] save() {
 			var bb = ByteBuffer.allocate(64);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
-			bb.putInt(hash);
+			bb.putInt(DepthName);
 			bb.putInt(0);
 			bb.putInt(0);
 			bb.putInt(0);
 			for (int i=0; i<numPoints(); i++) {
-				bb.putFloat(points[i][X]);
-				bb.putFloat(points[i][Y]);
-				bb.putFloat(points[i][Z]);
+				bb.putFloat(vertices[i][X]);
+				bb.putFloat(vertices[i][Y]);
+				bb.putFloat(vertices[i][Z]);
 				bb.putInt(0);
 			}
 			return bb.array();

@@ -73,31 +73,31 @@ public class StreamInfo extends TreeView<String>{ //tried using SearchableTreeVi
 			} else {
 				var b = controller.boundary;
 				var rel = controller.visualChunks;
-				var elev = controller.elevationRuleTriangles;
+				var elev = controller.elevPolies0;
 
 				root.setValue(controller.toString());
 				root.getChildren().add(new TreeItem<>("ID: %s".formatted(controller.ID)));
 
 				if (b != null) {
 					root.getChildren().add(position);
-					position.getChildren().add(new TreeItem<>("X="+b.pos[X]));
-					position.getChildren().add(new TreeItem<>("Y="+b.pos[Y]));
+					position.getChildren().add(new TreeItem<>("X="+b.Centre[X]));
+					position.getChildren().add(new TreeItem<>("Y="+b.Centre[Y]));
 					
 					root.getChildren().add(bounds);
 					bounds.getChildren().add(new TreeItem<>("X="+b.boundsMin[X]+" to X="+b.boundsMax[X]));
 					bounds.getChildren().add(new TreeItem<>("Y="+b.boundsMin[Y]+" to Y="+b.boundsMax[Y]));
 
 					root.getChildren().add(misc);
-					misc.getChildren().add(new TreeItem<>("Type: %d".formatted(b.type)));
-					misc.getChildren().add(new TreeItem<>("Unknown1: %d".formatted(b.type1)));
-					misc.getChildren().add(new TreeItem<>("Unknown2: %d".formatted(b.type2)));
-					misc.getChildren().add(new TreeItem<>("Unknown3: %d".formatted(b.unk2)));
-					misc.getChildren().add(new TreeItem<>("Unknown4: %d".formatted(b.unk3)));
+					misc.getChildren().add(new TreeItem<>("PanoramaBoundary: %d".formatted(b.PanoramaBoundary)));
 					
-					if (b.elevationHash != 0) {
+					if (b.DepthNames[0] != 0) {
 						root.getChildren().add(elevation);
-						elevation.getChildren().add(new TreeItem<>("Toggle mesh hash: "+Hash.getBIN(b.elevationHash)));
-						elevation.getChildren().add(new TreeItem<>("Toggle with chunk: "+IDToString(b.ID_over)));
+						elevation.getChildren().add(new TreeItem<>("Depth name 0: "+Hash.getBIN(b.DepthNames[0])));
+						elevation.getChildren().add(new TreeItem<>("Depth section 0: "+IDToString(b.DepthSectionNumbers[0])));
+						if (b.DepthNames[1] != 0) {
+							elevation.getChildren().add(new TreeItem<>("Depth name 1: "+Hash.getBIN(b.DepthNames[1])));
+							elevation.getChildren().add(new TreeItem<>("Depth section 1: "+IDToString(b.DepthSectionNumbers[1])));
+						}
 					}
 					
 				}
@@ -107,9 +107,8 @@ public class StreamInfo extends TreeView<String>{ //tried using SearchableTreeVi
 				
 				if (rel != null) {
 					root.getChildren().add(linkedChunks);
-					linkedChunks.getChildren().add(new TreeItem<>("Type: %d".formatted(rel.type)));
-					linkedChunks.getChildren().add(new TreeItem<>("Unknown1: %d".formatted(rel.type1)));
-					linkedChunks.getChildren().add(new TreeItem<>("Unknown2: %d".formatted(rel.type2)));
+					linkedChunks.getChildren().add(new TreeItem<>("Most visible sections: %d".formatted(rel.MostVisibleSections)));
+					linkedChunks.getChildren().add(new TreeItem<>("Num visible sections: %d".formatted(rel.relatedChunkIDs.size())));
 
 					final var phase = phaser.incrementAndGet();
 

@@ -3,9 +3,11 @@ package fr.ni240sx.ucgt.streamEditor.streamBlocks;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import fr.ni240sx.ucgt.streamEditor.streamBlocks.CARP.CARPBlock;
+import fr.ni240sx.ucgt.streamEditor.streamBlocks.CARP.UData;
 
-public class HavokCollisionMesh implements CARPBlock{ //not only a CARP block
+public class HavokCollisionMesh implements UData{ //not only a CARP block
+	
+	//TODO merge Havok data with Collisions (Bounds) from the collisions editor!
 	
 	public short instanceID;
 	
@@ -48,16 +50,44 @@ public class HavokCollisionMesh implements CARPBlock{ //not only a CARP block
 		instanceID = (short) num;
 //		var headerStart = in.position();
 		//header (48)
+
+		//TODO merge Havok data with Collisions (Bounds) from the collisions editor!
 		
+//		in.getInt(); //0x67E0E067	m_magic
+//		in.getInt(); //0x20C0C020	m_magic
+//		in.getInt(); //0			resolveAddress, should stay zero
+//		in.getInt(); //16			m_fileVersion
+//		in.getInt(); //0x01000104	m_layoutRules [bytes per pointer, isLittleEndian, reusePaddingOptimization, emptyBaseClassOptimization]
+//		in.getInt(); //0			m_contentsSectionOffset
+//		in.getInt(); //0x70C4C47A	m_contentsClassNameCRC
+//		in.getInt(); //0x00050500	m_contentsVersion
+//		in.getInt(); //48			m_absoluteDataStart
+
+		ByteOrder endianness = in.order();
+
 		in.getInt(); //0x67E0E067	m_magic
 		in.getInt(); //0x20C0C020	m_magic
 		in.getInt(); //0			resolveAddress, should stay zero
 		in.getInt(); //16			m_fileVersion
-		in.getInt(); //0x01000104	m_layoutRules [bytes per pointer, isLittleEndian, reusePaddingOptimization, emptyBaseClassOptimization]
-		in.getInt(); //0			m_contentsSectionOffset
-		in.getInt(); //0x70C4C47A	m_contentsClassNameCRC
-		in.getInt(); //0x00050500	m_contentsVersion
-		in.getInt(); //48			m_absoluteDataStart
+		//if (in.getInt() != 16) System.err.println("WCollision: Havok file is not version 16!");
+		//in.getInt(); //0x01000104	m_layoutRules [bytes per pointer, isLittleEndian, reusePaddingOptimization, emptyBaseClassOptimization]
+		if (in.get() != 4) System.err.println("WCollision: Havok file is not 4 bytes per pointer!");
+		if (in.get() != 1) {
+			System.out.println("WCollision: Havok file is big-endian!");
+			in.order(ByteOrder.BIG_ENDIAN);
+			endianness = ByteOrder.BIG_ENDIAN;
+		}
+		in.get();
+		in.get();
+		//in.getInt(); //0			m_contentsSectionOffset
+		if (in.getInt() != 0) System.err.println("WCollision: Havok file m_contentsSectionOffset is non-zero!");
+		//in.getInt(); //0x554DF6C5	m_contentsClassNameCRC
+		if (in.getInt() != 0x70C4C47A) System.err.println("WCollision: Wrong m_contentsClassNameCRC in Havok file!");
+		//in.getInt(); //0x00050500	m_contentsVersion
+		if (in.getInt() != 0x00050500) System.err.println("WCollision: Wrong m_contentsVersion in Havok file!");
+		//in.getInt(); //48			m_absoluteDataStart
+		if (in.getInt() != 48) System.err.println("WCollision: Havok file m_absoluteDataStart not equal to 48!");
+		
 
 		var m_localFixupsOffset = in.getInt(); //	m_localFixupsOffset
 		var m_virtualFixupsOffset = in.getInt(); //	m_virtualFixupsOffset	count2 = count1+112
@@ -65,7 +95,7 @@ public class HavokCollisionMesh implements CARPBlock{ //not only a CARP block
 		
 
 		ByteBuffer data = in.slice(in.position(), m_endOffset);
-		data.order(ByteOrder.LITTLE_ENDIAN);
+		data.order(endianness);
 
 
 		data.position(m_localFixupsOffset);
@@ -623,10 +653,16 @@ public class HavokCollisionMesh implements CARPBlock{ //not only a CARP block
 		}
 	}
 	public class Data4{
-		public short v1, v2;
+//		public byte v1, v2, v3, v4;
+		public int val;
 		public Data4(ByteBuffer in) {
-			v1 = in.getShort(); //vertical or horizontal, two values mostly
-			v2 = in.getShort();
+//			v1 = in.getShort(); //vertical or horizontal, two values mostly
+//			v2 = in.getShort();
+//			v1 = in.get();
+//			v2 = in.get();
+//			v3 = in.get();
+//			v4 = in.get();
+			val = in.getInt();
 		}
 	}
 	

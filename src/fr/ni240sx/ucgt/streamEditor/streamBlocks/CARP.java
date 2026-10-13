@@ -11,10 +11,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import fr.ni240sx.ucgt.shared.Block;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
 
 public class CARP{
 //	public ArrayList<CARPHeaderEntry> headerEntries;
-	public HeaderEntry root;
+	public UDataHeader root;
 //	public ArrayList<CARPBlock> blocks;
 	
 	public CollisionInstances collisionInstances;
@@ -34,49 +36,12 @@ public class CARP{
 		if (in.getInt(in.position()) == 0x50524143) {
 			in.order(ByteOrder.BIG_ENDIAN);
 		}
-		root = new HeaderEntry(in);
+		root = new UDataHeader(in);
 		if (!root.isType("CARP")) System.err.println("CARP reader: Not a CARP block!");
 		root.readRecursive(in);
+		root.readDataRecursive(in, root);
 		in.order(ByteOrder.LITTLE_ENDIAN);
 
-//		
-//		var magic1 = in.getInt();
-//		if (CARPType == 42 && magic1 != 0x41727469) System.err.println("CARP reader: Expecting Arti in a collisions block!");
-//		if (CARPType == 112 && magic1 != 0x43446174) System.err.println("CARP reader: Expecting CDat in a world grid block!");
-//		//in.getInt(); //0x41727469 itrA => Arti
-//		in.getInt(); //18
-//		var AttriCount = in.getInt();
-//		in.getInt(); //1
-//		
-//		headerEntries = new ArrayList<>();
-//		for (int i=0; i<AttriCount; i++) {
-//			headerEntries.add(new CARPHeaderEntry(in));
-//		}
-//		
-//		//AAAAAAAA padding %256 relative to CARP block beginning
-//		blocks = new ArrayList<>();
-//		for (var e : headerEntries) try {
-//			blocks.add(e.readEntry(in));
-//		} catch(Exception | Error ex) {
-//			try {
-//				for (var b : blocks) if (b.getClass() == CARPName.class) {
-//					System.err.println("Error reading CARP block 0x%08X in chunk %s".formatted(e.type, ((CARPName)b).name));
-//				}
-//			} catch (Exception ex2) {}
-//			
-//			ex.printStackTrace();
-//		}
-//		//one last padding block at the end
-//		
-//		//WARNING: the ByteBuffer ends up in an undefined place!
-//		
-//		for (var b : blocks) if (b != null) {
-//			if (b.getClass() == CARPName.class) name = (CARPName) b;
-//			if (b.getClass() == CARPCollisionInstances.class) {
-//				collisionInstances = (CARPCollisionInstances) b;
-//				collisionInstances.getInstances(blocks);
-//			}
-//		}
 		if (root.hasEntry("Arti")) {
 			if (root.getEntry("Arti").hasEntry("ci")) {
 				collisionInstances = (CollisionInstances)(root.getEntry("Arti").getData("ci"));
@@ -95,30 +60,54 @@ public class CARP{
 		return null;
 	}
 	
-	public static class HeaderEntry{
-		int offset;
-		int type; //inverted -> CARP, Arti, Name, ci, hk
-		byte typeFlag;
-		int dataLength;
-		int numEntries;
-		int dataOffset;
+	public static class UDataHeader{
+		int fOffset;
+		int fTag; //inverted -> CARP, Arti, Name, ci, hk
+		byte DataFlags;
+		int fSize;
+		int fCount;
+		int fPointer;
 		
-		public ArrayList<HeaderEntry> children;
-		public CARPBlock data;
+		public ArrayList<UDataHeader> children;
+		public UData data;
 		
-		public HeaderEntry(ByteBuffer in) {
-			offset = in.position(); //needed later
-			type = in.getInt();
-			var v1 = in.getInt();
-			typeFlag = (byte) (v1 & 0xff); //2=Name, 3=ci/hk
-			dataLength = (v1 >>> 8) & 0xffffff;
-			numEntries = in.getInt(); //ci contains all Havok blocks
+		public UDataHeader(ByteBuffer in) {
+			fOffset = in.position(); //needed later
+			fTag = in.getInt();
+//			var v1 = in.getInt();
+//			typeFlag = (byte) (v1 & 0xff); //2=Name, 3=ci/hk
+//			dataLength = (v1 >>> 8) & 0xffffff;
+			
+			fSize = in.getInt();
+			if (isType("CARP")) {
+				//read UGroup flags and size
+				if (in.order() == ByteOrder.LITTLE_ENDIAN) {
+					DataFlags = (byte) (fSize & 0x1f);
+					fSize >>>= 5;
+				} else {
+					DataFlags = (byte) (fSize >>> 27);
+					fSize = fSize & 0x7ffffff;
+				}
+			} else {
+				//read UData flags and size
+				if (in.order() == ByteOrder.LITTLE_ENDIAN) {
+					DataFlags = (byte) (fSize & 0xff);
+					fSize >>>= 8;
+				} else {
+					DataFlags = (byte) (fSize >>> 24);
+					fSize = fSize & 0xffffff;
+				}
+			}
+			
+			fCount = in.getInt(); //ci contains all Havok blocks
 										//but set to 1 for each Havok block
-			dataOffset = in.getInt(); //in.position(offset + dataOffset);
+			fPointer = in.getInt(); //in.position(offset + dataOffset);
+			
+			System.out.println(getTagString()+" size="+fSize);
 		}
 		
-		public CARPBlock readEntry(ByteBuffer in) {
-			in.position(offset + dataOffset);
+		public UData readEntry(ByteBuffer in, @SuppressWarnings("unused") UDataHeader CARP) {
+			in.position(fOffset + fPointer);
 			/*
 			 * CARP types
 			 * 
@@ -146,7 +135,7 @@ public class CARP{
 			 * 		RNsg	0x524E7367	Segments
 			 * 								//Barriers, Shortcuts, RaceSegments, HighwayRamps
 			 */
-			switch(type) {
+			switch(fTag) {
 			case 0x4E616D65:
 				return new Name(in);
 			case 0x43477264: //Cgrd
@@ -154,27 +143,29 @@ public class CARP{
 			case 0x636C0000:
 				return new cl(in);
 			case 0x524E6864:
-				return new RoadNetworkHeader(in);
+				return new WRoadNetworkInfo(in);
 			case 0x524E6E64:
-				return new RoadNetworkNodes(in, dataLength);
+				return new RoadNetworkNodes(in, fSize);
 			case 0x524E7066:
-				return new RoadNetworkProfiles(in, dataLength);
+				return new RoadNetworkProfiles(in, fSize);
 			case 0x524E7264:
-				return new RoadNetworkRoads(in, dataLength);
+				return new RoadNetworkRoads(in, fSize);
 			case 0x524E7367:
-				return new RoadNetworkSegments(in, dataLength);
-				
+				return new RoadNetworkSegments(in, fSize);
+
+            case 0x43415250: //CARP, UGroup so no associated data block
+                return null;
 				
 			default:
-				switch(type & 0xffff0000) {
+				switch(fTag & 0xffff0000) {
 				//block num in type & 0xffff
 				case 0x63690000: //ci
-					return new CollisionInstances(in, dataLength); //should also be able to use numEntries
+					return new CollisionInstances(in, fSize); //should also be able to use numEntries
 				case 0x686B0000: //hk
-					return new HavokCollisionMesh(in, type & 0xffff);
+					return new HavokCollisionMesh(in, fTag & 0xffff);
 				default:
-					System.err.println("CARP reader: Unsupported type 0x%08X/%s"
-							.formatted(type,getTypeString()));
+					System.err.println("CARP reader: Unsupported tag 0x%08X/%s"
+							.formatted(fTag,getTagString()));
 					return null;
 				}
 				
@@ -183,72 +174,84 @@ public class CARP{
 			}
 		}
 		
-		public String getTypeString() {
+		public String getTagString() {
 			return String.valueOf(new char[]{
-					(char) ((type >>> 24)&0xff) , 
-					(char) ((type >>> 16)&0xff) , 
-					(char) ((type >>> 8)&0xff) , 
-					(char) (type & 0xff)});
+					(char) ((fTag >>> 24)&0xff) , 
+					(char) ((fTag >>> 16)&0xff) , 
+					(char) ((fTag >>> 8)&0xff) , 
+					(char) (fTag & 0xff)});
 		}
 
 		public void readRecursive(ByteBuffer in) {
 //			System.out.println("Reading %s".formatted(getTypeString()));
-			if (dataLength == 0) { //has children
-				children = new ArrayList<>();
-				int num = numEntries;
-				if (isType("CARP")) switch (typeFlag) {
-				case 42:
-					num = 1;
-					break;
-				case 122:
-					num = 3;
-				}
+			if (fSize == 0 || isType("CARP")) { //has children
+				int num = fCount;
+				if (isType("CARP")) num = fSize;
+//				if (isType("CARP")) switch (DataFlags) {
+//				case 42: //WCollision PC
+//				case 80: //WCollision X360
+//					num = 1;
+//					break;
+//				case 122: //WGrid PC
+//				case 88: //X360
+//					num = 3;
+//				}
+				if (num > 0) children = new ArrayList<>();
 				for (int i = 0; i < num; i++) {
-//					System.out.println("Children of %s".formatted(getTypeString()));
-					in.position(offset+16*(dataOffset+i));
-					var he = new HeaderEntry(in);
+//					System.out.println("Children of %s".formatted(getTagString()));
+					in.position(fOffset+16*(fPointer+i));
+					var he = new UDataHeader(in);
 					children.add(he);
 					he.readRecursive(in);
 				}
-			} else { //has data
+			} 
+//			else { //has data
 //				System.out.println("Data of %s".formatted(getTypeString()));
-				data = readEntry(in);
-			}
-			in.position(offset+16);
+//				data = readEntry(in);
+//			}
+//			in.position(fOffset+16);
 		}
+		
+        public void readDataRecursive(ByteBuffer in, UDataHeader CARP) {
+            if ((DataFlags & (in.order() == ByteOrder.LITTLE_ENDIAN ? DataFlagsEnum.fEmbedded.value : DataFlagsEnum.fEmbeddedBE.value)) != 0) {
+//            	System.out.println("Data of %s".formatted(getTagString()));
+                data = readEntry(in, CARP);
+            }
+            if (children != null) for (var child : children) child.readDataRecursive(in, CARP);
+        }
 		
 		public boolean isType(String s) {
 			int i = stringToInt(s);
 						
-			if (type == i) return true;
+			if (fTag == i) return true;
 			return false;
 		}
 		
-		public HeaderEntry getEntry(CARPBlockID id) {
+		public UDataHeader getEntry(UDataID id) {
 			return getEntry(id.key);
 		}
-		public HeaderEntry getEntry(String s) {
+		public UDataHeader getEntry(String s) {
 			return getEntry(stringToInt(s));
 		}
-		public HeaderEntry getEntry(int i) {
+		public UDataHeader getEntry(int i) {
 			if (children == null) return null;
-			for (var itm : children) if (itm.type == i) return itm;
+			for (var itm : children) if (itm.fTag == i) return itm;
 			return null;
 		}
 		
-		public CARPBlock getData(CARPBlockID id) {
+		public UData getData(UDataID id) {
 			return getData(id.key);
 		}
- 		public CARPBlock getData(String s) {
+ 		public UData getData(String s) {
 			return getData(stringToInt(s));
 		}
- 		public CARPBlock getData(int i) {
+ 		public UData getData(int i) {
 			if (children == null) return null;
-			for (var itm : children) if (itm.type == i) return itm.data;
+			for (var itm : children) if (itm.fTag == i) return itm.data;
 			return null;
 		}
 
- 		public boolean hasEntry(CARPBlockID id) {
+ 		public boolean hasEntry(UDataID id) {
  			return hasEntry(id.key);
 		}
  		public boolean hasEntry(String s) {
@@ -256,7 +259,7 @@ public class CARP{
 		}
  		public boolean hasEntry(int i) {
 			if (children == null) return false;
-			for (var itm : children) if (itm.type == i) return true;
+			for (var itm : children) if (itm.fTag == i) return true;
 			return false;
 		}
 
@@ -279,7 +282,44 @@ public class CARP{
 //		System.out.println("0x%08X".formatted(i));
 //	}
 	
-	public static enum CARPBlockID{
+    public static enum DataFlagsEnum{
+        //UData flags
+
+        fNone(0),
+        /** If set, the UData uses 2-byte magic and an index "AA\0\i". */
+        fIndexed(1 << 0),
+        /** If set, uses a pointer relative to the header entry offset. */
+        fEmbedded(1 << 1),
+        /** Unknown. */
+        fAllocated(1 << 2),
+        /** Unknown. */
+        fAllocatedBE(0x20),
+        /** If set, uses a pointer relative to the header entry offset. */
+        fEmbeddedBE(0x40),
+        /** If set, the UData uses 2-byte magic and an index "AA\0\i". */
+        fIndexedBE(0x80),
+        /** Mask for the Section argument. */
+        fSection(0x8F),
+
+        //UGroup flags
+        /** UGroup flag. */
+        fDataSorted(1 << 3), //additional flags for UGroup
+        /** UGroup flag. */
+        fGroupSorted(1 << 4),
+        /** UGroup flag. */
+        fGroupSortedBE(0x08),
+        /** UGroup flag. */
+        fDataSortedBE(0x10);
+    	
+    	int value;
+    	DataFlagsEnum(int i) {this.value = i;}
+    	public static DataFlagsEnum get(int i) {
+    		for (var v : values()) if (v.value==i) return v;
+    		return fNone;
+    	}
+    }
+	
+	public static enum UDataID{
 		CARP(0x43415250),
 		Arti(0x41727469),
 		Name(0x4E616D65),
@@ -310,19 +350,19 @@ public class CARP{
 		;
 
 		int key;
-		CARPBlockID(int i) {key = i;}
+		UDataID(int i) {key = i;}
 	}
 	
-	public static interface CARPBlock{}
+	public static interface UData{}
 	
-	public static class Name implements CARPBlock{
+	public static class Name implements UData{
 		public String name;
 		public Name(ByteBuffer in) {
 			name = Block.readString(in);
 		}
 	}
 	
-	public static class CollisionInstances implements CARPBlock{
+	public static class CollisionInstances implements UData{
 		public List<CollisionInstance> instances = new ArrayList<>();
 		public CollisionInstances(ByteBuffer in, int length) {
 			var start = in.position();
@@ -336,7 +376,7 @@ public class CARP{
 //				instances.get(havok.instanceID).collisionData = havok;
 //			}
 //		}
-		public void getInstances(ArrayList<HeaderEntry> entries) {
+		public void getInstances(ArrayList<UDataHeader> entries) {
 			for (var e : entries) if (e.data != null && e.data.getClass() == HavokCollisionMesh.class) {
 				var havok = (HavokCollisionMesh)e.data;
 				instances.get(havok.instanceID).collisionData = havok;
@@ -391,7 +431,7 @@ public class CARP{
 //					v7 %f""".formatted(chunkID, offset, v1,v2,v3,posX,posY,posZ,v7));
 		}
 	}
-	public static class CGrid implements CARPBlock{
+	public static class CGrid implements UData{
 		public float[] gridMin = new float[3];
 		public float edgeSize, resolution;
 		public int numRows, numCols;
@@ -414,7 +454,7 @@ public class CARP{
 		}
 	}
 	
-	public static class cl implements CARPBlock{
+	public static class cl implements UData{
 		public short[] shorts = new short[5];
 		public cl(ByteBuffer in) { //even looking up the decompiled version i have no clue what this is for
 			shorts[0] = in.getShort();
@@ -425,33 +465,35 @@ public class CARP{
 		}
 	}
 
-	public static class RoadNetworkHeader implements CARPBlock{
-		public short numProfiles, numNodes, numSegments, numRoads;
-		public RoadNetworkHeader(ByteBuffer in) {
+	public static class WRoadNetworkInfo implements UData{
+		public short numProfiles, numNodes, numSegments, numIntersections, numRoads, numJunctions;
+		public WRoadNetworkInfo(ByteBuffer in) {
 			numProfiles = in.getShort(); //num road profiles
 			numNodes = in.getShort(); //num road nodes
 			numSegments = in.getShort(); //num road segments
-			in.getShort(); //0
+			numIntersections = in.getShort(); //0
 			numRoads = in.getShort(); //num roads
+			numJunctions = in.getShort(); //0
 			in.getShort(); //0
-			in.getShort(); //0
+			
+			System.out.println("Road network info: %d profiles, %d nodes, %d segments, %d intersections, %d roads, %d junctions".formatted(numProfiles, numNodes, numSegments, numIntersections, numRoads, numJunctions));
 		}
 	}
 	
-	public static class RoadNetworkNodes implements CARPBlock{
-		public ArrayList<RoadNode> nodes = new ArrayList<>();
+	public static class RoadNetworkNodes implements UData{
+		public ArrayList<WRoadNode> nodes = new ArrayList<>();
 		public RoadNetworkNodes(ByteBuffer in, int length) {
 			var start = in.position();
 			while (in.position() < start + length) {
-				nodes.add(new RoadNode(in));
+				nodes.add(new WRoadNode(in));
 			}
 		}
 	}
-	public static class RoadNode{
+	public static class WRoadNode{
 		public float[] position = new float[3];
 		public short index, profileIndex, numSegments;
 		public short[] segmentIndex = new short[7];
-		public RoadNode(ByteBuffer in) {
+		public WRoadNode(ByteBuffer in) {
 			position[X] = in.getFloat();
 			position[Y] = in.getFloat();
 			position[Z] = in.getFloat();
@@ -462,48 +504,77 @@ public class CARP{
 		}
 	}
 	
-	public static class RoadNetworkProfiles implements CARPBlock{
-		public ArrayList<RoadProfile> profiles = new ArrayList<>();
+	public static class RoadNetworkProfiles implements UData{
+		public ArrayList<WRoadProfile> profiles = new ArrayList<>();
 		public RoadNetworkProfiles(ByteBuffer in, int length) {
 			var start = in.position();
 			while (in.position() < start + length) {
-				profiles.add(new RoadProfile(in));
+				profiles.add(new WRoadProfile(in));
 			}
 		}
 	}
-	public static class RoadProfile{
+	public static class WRoadProfile{
 		public byte numZones, middleZone;
 		public int[] lanes = new int[15];
-		public RoadProfile(ByteBuffer in) {
+		public WRoadProfile(ByteBuffer in) {
 			numZones = in.get();
 			middleZone = in.get();
 			in.getShort(); //AAAA padding
 			for (int i=0; i<15; i++) lanes[i] = in.getInt();
 		}
-		public int getLaneType(int laneIndex) {
-			return lanes[laneIndex] & 0xf;
+		public eLaneType getLaneType(int laneIndex) {
+			return eLaneType.get(lanes[laneIndex] & 0xf);
 		}
 		public float getLaneOffset(int laneIndex) {
-			return (lanes[laneIndex] >>> 18) * 0.012208521f; //200/16384
+			return (lanes[laneIndex] >> 18) * 0.012208521f; //200/16384
 		}
 		public float getLaneWidth(int laneIndex) {
 			return ((lanes[laneIndex] << 14 | lanes[laneIndex] >>> 18) >>> 18) * 0.012208521f; //100/8192
 		}
 	}
+	public static enum eLaneType{
+		INVALID(-1, new PhongMaterial(Color.MAGENTA)),
+		kLaneRacing(0, new PhongMaterial(Color.RED)),
+		kLaneTraffic(1, new PhongMaterial(Color.DARKGREY)),
+		kLaneDrag(2, new PhongMaterial(Color.ORANGE)),
+		kLaneCop(3, new PhongMaterial(Color.BLUE)),
+		kLaneCopReckless(4, new PhongMaterial(Color.DARKBLUE)),
+		kLaneReset(5, new PhongMaterial(Color.DARKOLIVEGREEN)),
+		kLaneStartingGrid(6, new PhongMaterial(Color.INDIANRED)),
+		kLaneAny(7, new PhongMaterial(Color.WHITE));
+		
+		public int id;
+		public PhongMaterial mat;
+		eLaneType(int i, PhongMaterial m) {
+			id = i;
+			mat = m;
+		}
+		
+		public static eLaneType get(int i) {
+			for (var e : values()) if (e.id == i) return e;
+			System.out.println("Invalid lane type "+i);
+			return INVALID;
+		}
+		
+		@Override
+		public String toString() {
+			return name();
+		}
+	}
 	
-	public static class RoadNetworkRoads implements CARPBlock{
-		public ArrayList<Road> roads = new ArrayList<>();
+	public static class RoadNetworkRoads implements UData{
+		public ArrayList<WRoad> wRoads = new ArrayList<>();
 		public RoadNetworkRoads(ByteBuffer in, int length) {
 			var start = in.position();
 			while (in.position() < start + length) {
-				roads.add(new Road(in));
+				wRoads.add(new WRoad(in));
 			}
 		}
 	}
-	public static class Road{
+	public static class WRoad{
 		public short scale, length, speechID;
 		public byte shortcut, minWidth;
-		public Road(ByteBuffer in) {
+		public WRoad(ByteBuffer in) {
 			scale = in.getShort();
 			length = in.getShort();
 			shortcut = in.get();
@@ -512,20 +583,20 @@ public class CARP{
 		}
 	}
 	
-	public static class RoadNetworkSegments implements CARPBlock{
-		public ArrayList<RoadSegment> segments = new ArrayList<>();
+	public static class RoadNetworkSegments implements UData{
+		public ArrayList<WRoadSegment> segments = new ArrayList<>();
 		public RoadNetworkSegments(ByteBuffer in, int length) {
 			var start = in.position();
 			while (in.position() < start + length) {
-				segments.add(new RoadSegment(in));
+				segments.add(new WRoadSegment(in));
 			}
 		}
 	}
-	public static class RoadSegment{
+	public static class WRoadSegment{
 		public short nodeStart, nodeEnd, length, roadID, index, flags, endHandleLength, startHandleLength;
 		public byte[] startHandle = new byte[3];
 		public byte[] endHandle = new byte[3];
-		public RoadSegment(ByteBuffer in) {
+		public WRoadSegment(ByteBuffer in) {
 			nodeStart = in.getShort();
 			nodeEnd = in.getShort();
 			length = in.getShort();

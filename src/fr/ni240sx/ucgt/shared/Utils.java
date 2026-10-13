@@ -5,10 +5,10 @@ import java.io.File;
 public class Utils {
 
 	public static final String geom_version = "1.3.4";
-	public static final String geom_build = "2026.10.04";
+	public static final String geom_build = "2026.10.12";
 
 	public static final String geomGUI_Name = "UCGT Geometry Editor";
-	public static final String geomGUI_GUIVersion = "1.0.3";
+	public static final String geomGUI_GUIVersion = "1.0.4";
 	
 	public static final String worldEditor_Name = "UCGT World Editor";
 	public static final String worldEditor_Version = "wip";

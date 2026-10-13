@@ -13,22 +13,25 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 import javax.imageio.stream.MemoryCacheImageInputStream;
 
+import fr.ni240sx.ucgt.compression.Compression;
 import fr.ni240sx.ucgt.geometryFile.Geometry;
 import fr.ni240sx.ucgt.geometryFile.Part;
-import fr.ni240sx.ucgt.geometryFile.StreamChunksOffsets;
-import fr.ni240sx.ucgt.geometryFile.StreamChunksOffsets.ChunkInfo;
+import fr.ni240sx.ucgt.geometryFile.geometry.CompressedData;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.textures.NFSTexture;
 import fr.ni240sx.ucgt.geometryFile.textures.TPK;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.Hash;
+import fr.ni240sx.ucgt.streamEditor.regionBlocks.TrackStreamingSections;
+import fr.ni240sx.ucgt.streamEditor.regionBlocks.TrackStreamingSections.TrackStreamingSection;
 import fr.ni240sx.ucgt.streamEditor.streamBlocks.*;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.DepthTest;
@@ -50,7 +53,7 @@ import net.nikr.dds.DDSImageReader;
 public class VisualController {
 	//controller for objects chunk
 	public short ID;
-	public StreamChunksOffsets.ChunkInfo chunk;
+	public TrackStreamingSections.TrackStreamingSection chunk;
 	
 	public static final float heliSheetFactorXY = 4.0f;
 	public static final float heliSheetFactorZ = 16.0f;
@@ -77,7 +80,7 @@ public class VisualController {
 //	public ChunkCollisions collisions;
 	
 	public Node heliSheetMesh;
-	public ArrayList<Node> smokeSpawnersMeshes, visCurtainsMeshes, collisionsMeshes;
+	public List<Node> smokeSpawnersMeshes, visCurtainsMeshes, collisionsMeshes;
 	
 	
 	public int currentLod = -1;
@@ -90,20 +93,20 @@ public class VisualController {
 	public static final PhongMaterial COLLISION = new PhongMaterial(Color.color(0, 1, 0, 1));
 	public static final PhongMaterial COLLISION_ALPHA = new PhongMaterial(Color.color(0, 1, 0, 0.2));
 
-	public VisualController(ChunkInfo c) {
+	public VisualController(TrackStreamingSection c) {
 		chunk = c;
-		ID = c.ID;
+		ID = c.SectionNumber;
 	}
 
 	public List<Summary> getContentSummary(File streamPath) throws Exception {
 		if (summaries != null) return summaries;
 		summaries = Collections.synchronizedList(new ArrayList<>());
 		
-		var chunkData = ByteBuffer.allocate(chunk.size);
+		var chunkData = ByteBuffer.allocate(chunk.Size);
 		chunkData.order(ByteOrder.LITTLE_ENDIAN);
 		{
 			var stream = new RandomAccessFile(streamPath, "r");
-			stream.seek(chunk.offset);
+			stream.seek(chunk.FileOffset);
 			stream.read(chunkData.array());
 			stream.close();
 		}
@@ -134,18 +137,36 @@ public class VisualController {
 
 	public void getContent(File streamPath, ConcurrentHashMap<Integer,ModelController> allModels, ConcurrentHashMap<Integer, TextureController> allTextures) throws Exception {
 		if (isLoaded) return;
-		var chunkData = ByteBuffer.allocate(chunk.size);
+		var chunkData = ByteBuffer.allocate(chunk.Size);
 		chunkData.order(ByteOrder.LITTLE_ENDIAN);
 		{
 			var stream = new RandomAccessFile(streamPath, "r");
-			stream.seek(chunk.offset);
-			stream.read(chunkData.array());
+			stream.seek(chunk.FileOffset);
+			if (chunk.Size != chunk.CompressedSize) {
+				//chunk is compressed
+								
+				var bb = ByteBuffer.allocate(chunk.CompressedSize);
+				bb.order(ByteOrder.LITTLE_ENDIAN);
+				stream.read(bb.array());
+				
+				//loops on the one or multiple compressed blocks (usually RefPack, 32768 bytes each)
+				while (bb.hasRemaining()) {
+					CompressedData d = (CompressedData) Block.read(bb);
+					var decomp = Compression.decompress(d.data);
+//					if (decomp==null) continue offsets;
+					chunkData.put(d.decompressionOffset, decomp);
+				}
+				chunkData.position(0);
+			} else {
+				//chunk is not compressed
+				stream.read(chunkData.array());
+			}
 			stream.close();
 		}
 
-		if (models == null) models = new ArrayList<>();
-		if (textures == null) textures = new ArrayList<>();
-		if (sceneryGroups == null) sceneryGroups = new ArrayList<>();
+		if (models == null) models = new LinkedList<>();
+		if (textures == null) textures = new LinkedList<>();
+		if (sceneryGroups == null) sceneryGroups = new LinkedList<>();
 		
 		Block block;
 		if (Block.debug) System.out.println("\\/=== Blocks in chunk %s ===\\/".formatted(this.toString()));
@@ -157,14 +178,14 @@ public class VisualController {
 				((Geometry)block).parts.forEach(p -> {
 					var mc = new ModelController(p);
 					models.add(mc);
-					allModels.put(p.header.binKey, mc);
+					allModels.put(mc.key, mc);
 				});
 				break;
 			case TPK:
 				((TPK)block).textures.forEach(tex -> {
 					var tc = new TextureController(tex);
 					textures.add(tc);
-					allTextures.put(tex.binKey, tc);
+					allTextures.put(tc.key, tc);
 				});
 				break;
 				
@@ -195,8 +216,9 @@ public class VisualController {
 				}
 				break;
 			case ChunkSmokeSpawners:
-				var smokeSpawners = (((ChunkSmokeSpawners)block).spawners);
-				if (smokeSpawners != null) {
+				var smokeSpawners = (((ChunkSmokeSpawners)block));
+				//if (smokeSpawners != null) 
+				{
 					smokeSpawnersMeshes = new ArrayList<>();
 					for (var spawner : smokeSpawners) {
 						var s = new Sphere(1.0);
@@ -218,8 +240,9 @@ public class VisualController {
 				}
 				break;
 			case ChunkVisCurtains:
-				var visCurtains = ((ChunkVisCurtains)block).curtains;
-				if (visCurtains != null) {
+				var visCurtains = ((ChunkVisCurtains)block);
+				//if (visCurtains != null) 
+				{
 					visCurtainsMeshes = new ArrayList<>();
 					for (var curtain : visCurtains) {
 						var mv = new MeshView(doVerticalRectangle(curtain.from[X], curtain.from[Y], curtain.from[Z],
@@ -266,13 +289,13 @@ public class VisualController {
 //									mv.setMaterial(COLLISION);
 //									mv.setMaterial(new PhongMaterial(Color.hsb(dat, 1, 1)));
 //									mv.setMaterial(new PhongMaterial(Color.hsb(havok.data4[i].v2 *2, 1, 1)));
-									mv.setMaterial(new PhongMaterial(Color.hsb(havok.collisionShape.simSurfaces.get((mesh.havokMatToSimSurface.get(havokMatIndex).v2 & 0xff)/8), 1, 1)));
+									mv.setMaterial(new PhongMaterial(Color.hsb(havok.collisionShape.simSurfaces.get(((mesh.havokMatToSimSurface.get(havokMatIndex).val >>> 16) & 0xff)/8), 1, 1))); //v2 & 0xff short works for pc, v2 & 0xff byte works for xbox
 //										mv.setDrawMode(DrawMode.LINE);
 									mv.setViewOrder(-20);
 									collisionsMeshes.add(mv);
 				
 									var t2 = new Tooltip("""
-											Collision surface: %s""".formatted(Hash.getVLT(havok.collisionShape.simSurfaces.get((mesh.havokMatToSimSurface.get(havokMatIndex).v2 & 0xff)/8))));
+											Collision surface: %s""".formatted(Hash.getVLT(havok.collisionShape.simSurfaces.get(((mesh.havokMatToSimSurface.get(havokMatIndex).val >>> 16) & 0xff)/8))));
 									mv.setOnMouseClicked(evt -> {
 										if (t2.isShowing()) t2.hide();
 										else t2.show(mv, evt.getScreenX()+10, evt.getScreenY()+10);
@@ -301,14 +324,18 @@ public class VisualController {
 //		System.out.println("UNLOADING %s".formatted(toString()));
 		if (models != null) {
 			for (var m : models) {
-				allModels.remove(m.key, m);
+//				allModels.remove(m.key, m);
+				allModels.values().remove(m);
 			}
+			models.clear();
 			models = null;
 		}
 		if (textures != null) {
 			for (var t : textures) {
-				allTextures.remove(t.key, t);
+//				allTextures.remove(t.key, t);
+				allTextures.values().remove(t);
 			}
+			textures.clear();
 			textures = null;
 		}
 		sceneryGroups = null;
@@ -351,9 +378,9 @@ public class VisualController {
 		
 		for (var scenery : sceneryGroups) {
 			int index = 0;
-			for (var obj : scenery.objects.objects) {
-				for (var pos : scenery.instances.positions)
-				if (pos.objectIndex == index){
+			for (var obj : scenery.objects) {
+				for (var pos : scenery.instances)
+				if (pos.SceneryInfoNumber == index){
 					ModelController model = null;
 					int lod = 0;
 					for (lod = WorldEditorGUI.displayLod.getSelectionModel().getSelectedIndex(); lod < 4; lod++) {
@@ -477,6 +504,7 @@ public class VisualController {
 	
 	public void updateMaterials(ConcurrentHashMap<Integer, TextureController> allTextures) {
 //		if (areMaterialsDone) return;
+		if (this.models == null) return;
 		for (var m : models) for (var mat : m.materials) if (mat.needsTexturing) {
 			//USE NEW TEXTURE CONTROLLERS IF NEEDED
 			
@@ -738,28 +766,33 @@ public class VisualController {
 			
 			var latch = new CountDownLatch(1);
 			javafx.application.Platform.runLater(() -> {
-				mat.matVis = new PhongMaterial();
-				
-				mat.matVis.setDiffuseMap(WorldEditorGUI.doDiffuse.isSelected() ? mat.diffuse : null);
-				mat.matVis.setBumpMap(WorldEditorGUI.doNormal.isSelected() ? mat.normal : null);
-				mat.matVis.setSpecularMap(WorldEditorGUI.doSpecular.isSelected() ? mat.specular : null);
-				mat.matVis.setSelfIlluminationMap(WorldEditorGUI.doSelfIllum.isSelected() ? mat.selfillum : null);
-				
-				if (diffuseMap != 0 && WorldEditorGUI.doDiffuse.isSelected()) {
-					if (mat.matVis.getDiffuseMap() == null) mat.matVis.setDiffuseColor(Color.rgb(255, 0, 255));
-					else {
-						mat.matVis.setDiffuseColor(Color.WHITE);
-					}
-				}	
-
-				if((diffuseMap == 0 || (WorldEditorGUI.doDiffuse.isSelected() && mat.matVis.getDiffuseMap() != null))
-						&& (normalMap == 0 || (WorldEditorGUI.doNormal.isSelected() && mat.matVis.getBumpMap() != null))
-						&& (specularMap == 0 || (WorldEditorGUI.doSpecular.isSelected() && mat.matVis.getSpecularMap() != null))
-						&& (selfIlluminationMap == 0 || (WorldEditorGUI.doSelfIllum.isSelected() && mat.matVis.getSelfIlluminationMap() != null)))
-					mat.needsTexturing = false;
+				try {
+					mat.matVis = new PhongMaterial();
 					
-				for (var mv : mat.meshViews) mv.setMaterial(mat.matVis);
-				latch.countDown();
+					mat.matVis.setDiffuseMap(WorldEditorGUI.doDiffuse.isSelected() ? mat.diffuse : null);
+					mat.matVis.setBumpMap(WorldEditorGUI.doNormal.isSelected() ? mat.normal : null);
+					mat.matVis.setSpecularMap(WorldEditorGUI.doSpecular.isSelected() ? mat.specular : null);
+					mat.matVis.setSelfIlluminationMap(WorldEditorGUI.doSelfIllum.isSelected() ? mat.selfillum : null);
+					
+					if (diffuseMap != 0 && WorldEditorGUI.doDiffuse.isSelected()) {
+						if (mat.matVis.getDiffuseMap() == null) mat.matVis.setDiffuseColor(Color.rgb(255, 0, 255));
+						else {
+							mat.matVis.setDiffuseColor(Color.WHITE);
+						}
+					}	
+
+					if((diffuseMap == 0 || (WorldEditorGUI.doDiffuse.isSelected() && mat.matVis.getDiffuseMap() != null))
+							&& (normalMap == 0 || (WorldEditorGUI.doNormal.isSelected() && mat.matVis.getBumpMap() != null))
+							&& (specularMap == 0 || (WorldEditorGUI.doSpecular.isSelected() && mat.matVis.getSpecularMap() != null))
+							&& (selfIlluminationMap == 0 || (WorldEditorGUI.doSelfIllum.isSelected() && mat.matVis.getSelfIlluminationMap() != null)))
+						mat.needsTexturing = false;
+						
+					for (var mv : mat.meshViews) mv.setMaterial(mat.matVis);
+					latch.countDown();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			});
 			try {
 				latch.await();
@@ -767,16 +800,22 @@ public class VisualController {
 				e.printStackTrace();
 			}
 			mat.meshViews.clear();
-			
+
+			if (this.models == null) return;
 		} else {
 			var latch = new CountDownLatch(1);
 			javafx.application.Platform.runLater(() -> {
-				mat.matVis.setDiffuseMap(WorldEditorGUI.doDiffuse.isSelected() ? mat.diffuse : null);
-				mat.matVis.setBumpMap(WorldEditorGUI.doNormal.isSelected() ? mat.normal : null);
-				mat.matVis.setSpecularMap(WorldEditorGUI.doSpecular.isSelected() ? mat.specular : null);
-				mat.matVis.setSelfIlluminationMap(WorldEditorGUI.doSelfIllum.isSelected() ? mat.selfillum : null);
-				for (var mv : mat.meshViews) mv.setMaterial(mat.matVis);
-				latch.countDown();
+				try {
+					mat.matVis.setDiffuseMap(WorldEditorGUI.doDiffuse.isSelected() ? mat.diffuse : null);
+					mat.matVis.setBumpMap(WorldEditorGUI.doNormal.isSelected() ? mat.normal : null);
+					mat.matVis.setSpecularMap(WorldEditorGUI.doSpecular.isSelected() ? mat.specular : null);
+					mat.matVis.setSelfIlluminationMap(WorldEditorGUI.doSelfIllum.isSelected() ? mat.selfillum : null);
+					for (var mv : mat.meshViews) mv.setMaterial(mat.matVis);
+					latch.countDown();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			});
 			try {
 				latch.await();
@@ -784,6 +823,7 @@ public class VisualController {
 				e.printStackTrace();
 			}
 			mat.meshViews.clear();
+			if (this.models == null) return;
 		}
 //		areMaterialsDone = true;
 	}

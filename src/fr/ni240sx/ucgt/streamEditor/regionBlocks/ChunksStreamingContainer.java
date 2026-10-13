@@ -16,9 +16,9 @@ public class ChunksStreamingContainer implements Block {
 	
 	public ArrayList<Block> subBlocks = new ArrayList<>();
 	
-	public ChunksBoundaries boundaries;
-	public ChunksElevationRules elevationRules;
-	public ChunksRelations relatedChunks;
+	public VisibleSectionBoundaries boundaries;
+	public ChunksElevPolys elevationPolys;
+	public DrivableScenerySections drivableScenerySection;
 	
 	public ChunksStreamingContainer(ByteBuffer in) throws Exception {
 		var blockLength = in.getInt();
@@ -35,13 +35,13 @@ public class ChunksStreamingContainer implements Block {
 		for (var b : subBlocks) {
 			switch (b.getBlockID()) {
 			case VisibleSections_Boundaries:
-				boundaries = (ChunksBoundaries) b;
+				boundaries = (VisibleSectionBoundaries) b;
 				break;
 			case ChunksElevationRules:
-				elevationRules = ((ChunksElevationRules)b);
+				elevationPolys = ((ChunksElevPolys)b);
 				break;
 			case VisibleSections_Relations:
-				relatedChunks = ((ChunksRelations)b);
+				drivableScenerySection = ((DrivableScenerySections)b);
 				break;
 			default:
 				break;

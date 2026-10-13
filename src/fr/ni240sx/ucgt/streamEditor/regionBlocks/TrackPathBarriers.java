@@ -10,18 +10,24 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
-public class BarrierSplines implements Block {
+public class TrackPathBarriers extends ArrayList<fr.ni240sx.ucgt.streamEditor.regionBlocks.TrackPathBarriers.TrackPathBarrier> implements Block {
 
-	public ArrayList<Spline> splines = new ArrayList<>();
+/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8210835100273328074L;
+
+
+//	public ArrayList<TrackPathBarrier> trackPathBarriers = new ArrayList<>();
 	
 	@Override
 	public BlockType getBlockID() {return BlockType.TrackPathBarriers;}
 
-	public BarrierSplines(ByteBuffer in) {
+	public TrackPathBarriers(ByteBuffer in) {
 		var blockLength = in.getInt();
 		var blockStart = in.position();
 		while(in.position() < blockStart+blockLength) {
-			splines.add(new Spline(in));
+			this.add(new TrackPathBarrier(in));
 		}
 	}
 	
@@ -36,7 +42,7 @@ public class BarrierSplines implements Block {
 
 		out.write(buf.array());
 
-		for (var z : splines) out.write(z.save());
+		for (var z : this) out.write(z.save());
 		
 		buf = ByteBuffer.wrap(new byte[4]);
 		buf.order(ByteOrder.LITTLE_ENDIAN);
@@ -53,19 +59,23 @@ public class BarrierSplines implements Block {
 	}
 
 	
-	public static class Spline{
-		public int hash;
-		public int priority;
+	public static class TrackPathBarrier{
+		public int GroupHash;
+//		public int priority;
+		public byte Enabled, PlayerBarrier, LeftHanded;
 		public float[] from = new float[2];
 		public float[] to = new float[2];
 		
-		Spline(ByteBuffer in){
+		TrackPathBarrier(ByteBuffer in){
 			from[X] = in.getFloat();
 			from[Y] = in.getFloat();
 			to[X] = in.getFloat();
 			to[Y] = in.getFloat();
-			priority = in.getInt();
-			hash = in.getInt();
+			Enabled = in.get();
+			in.get();
+			PlayerBarrier = in.get();
+			LeftHanded = in.get();
+			GroupHash = in.getInt();
 		}
 		
 		public byte[] save() {
@@ -75,8 +85,11 @@ public class BarrierSplines implements Block {
 			bb.putFloat(from[Y]);
 			bb.putFloat(to[X]);
 			bb.putFloat(to[Y]);
-			bb.putInt(hash);
-			bb.putInt(priority);
+			bb.put(Enabled);
+			bb.put((byte)0);
+			bb.put(PlayerBarrier);
+			bb.put(LeftHanded);
+			bb.putInt(GroupHash);
 			return bb.array();
 		}
 	}
