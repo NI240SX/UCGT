@@ -4,17 +4,17 @@ import java.io.File;
 
 public class Versions {
 
-	public static final String geom_version = "1.3.4";
+	public static final String geom_version = "1.3.5";
 	public static final String geom_build = "2026.10.13";
 
 	public static final String geomGUI_Name = "UCGT Geometry Editor";
-	public static final String geomGUI_GUIVersion = "1.0.4";
+	public static final String geomGUI_GUIVersion = "1.0.5";
 	
 	public static final String worldEditor_Name = "UCGT World Editor";
 	public static final String worldEditor_Version = "wip";
 	
 	public static final String dbmp_Name = "UCGT DBModelParts Editor";
-	public static final String dbmp_Version = "1.1.4";
+	public static final String dbmp_Version = "1.2.0";
 	
 	public static final String collisions_Name = "UCGT Collisions Editor";
 	public static final String collisions_Version = "1.1.0";
