@@ -7,13 +7,13 @@ As long as you explicitly credit me, you can freely reuse portions of this code 
 If you wish to support my stuff, you can [buy me a coffee](https://ko-fi.com/ni240sx).
 
 
-**JAVA 15 OR HIGHER IS REQUIRED TO RUN ANY OF THE FOLLOWING**
+**JAVA 15 OR HIGHER IS REQUIRED TO RUN ANY OF THE FOLLOWING** ([Java downloads](https://www.oracle.com/java/technologies/downloads/))
 
 Download the latest version in the [Releases](https://github.com/NI240SX/Releases) page. 
 
 All tools rely on shared dependencies, and as such are all bundled together.
 
-##Included tools
+## Included tools
 ### Geometry Editor
 
 A model extractor/editor with a focus on NFS Undercover. Also supports NFS Undercover X360 and NFS ProStreet.
