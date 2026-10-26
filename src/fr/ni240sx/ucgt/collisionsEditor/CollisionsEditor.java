@@ -40,7 +40,7 @@ import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
 import fr.ni240sx.ucgt.shared.OrbitCameraViewport;
 import fr.ni240sx.ucgt.shared.RandomAccessFileLE;
-import fr.ni240sx.ucgt.shared.Utils;
+import fr.ni240sx.ucgt.shared.Versions;
 import fr.ni240sx.ucgt.streamEditor.regionBlocks.BoundsPack;
 import javafx.application.Application;
 import javafx.beans.property.BooleanProperty;
@@ -147,8 +147,8 @@ public class CollisionsEditor extends Application {
 	}
 
 	public static void writeSettings() throws IOException {
-		Files.createDirectories(Paths.get(Utils.settingsFolder));
-		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(Utils.settingsColsEd)));
+		Files.createDirectories(Paths.get(Versions.settingsFolder));
+		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(Versions.settingsColsEd)));
 		bw.write("DO NOT MANUALLY EDIT THIS FILE\n" 
 				+ lastDirectoryLoaded + "\n" 
 				+ lastFileLoaded + "\n" 
@@ -168,7 +168,7 @@ public class CollisionsEditor extends Application {
 	}
 
 	public static void readSettings() throws FileNotFoundException, IOException {
-		BufferedReader br = new BufferedReader(new FileReader(new File(Utils.settingsColsEd)));
+		BufferedReader br = new BufferedReader(new FileReader(new File(Versions.settingsColsEd)));
 		br.readLine(); //="DO NOT MANUALLY EDIT THIS FILE"
 		lastDirectoryLoaded = br.readLine();
 		lastFileLoaded = br.readLine();
@@ -191,7 +191,7 @@ public class CollisionsEditor extends Application {
 	
     @Override
 	public void start(Stage primaryStage) {
-        primaryStage.setTitle(Utils.collisions_Name + " - " + mainCollisions.carname);
+        primaryStage.setTitle(Versions.collisions_Name + " - " + mainCollisions.carname);
 
         VBox windowTop = new VBox();
         
@@ -219,10 +219,10 @@ public class CollisionsEditor extends Application {
         menuDisplay.getItems().addAll(displayShapes, displayBounds, displayPivots, displayVisual);
         displayShapes.setSelected(true);
         
-        Menu menuSettings = new Menu(Utils.collisions_Name);
+        Menu menuSettings = new Menu(Versions.collisions_Name);
         CheckMenuItem settingsDark = new CheckMenuItem("Dark mode");
         CheckMenuItem settingsWarnings = new CheckMenuItem("Disable warning pop-ups");
-        MenuItem settingsAbout = new MenuItem("About " + Utils.collisions_Name + "...");
+        MenuItem settingsAbout = new MenuItem("About " + Versions.collisions_Name + "...");
         menuSettings.getItems().addAll(settingsDark, trackpadMode, settingsWarnings, settingsAbout);
 
         menuBar.getMenus().addAll(menuFile, menuDisplay, menuSettings);
@@ -597,8 +597,8 @@ public class CollisionsEditor extends Application {
 	private static void handleSettingsAbout(MenuItem settingsAbout) {
 		settingsAbout.setOnAction(e -> {
 			Stage st = new Stage();
-			st.setTitle("About " + Utils.collisions_Name);
-			Scene sc = new Scene(new Label(Utils.collisions_Name + " version " + Utils.collisions_Version + "\n\n"
+			st.setTitle("About " + Versions.collisions_Name);
+			Scene sc = new Scene(new Label(Versions.collisions_Name + " version " + Versions.collisions_Version + "\n\n"
 					+ "Advanced Collisions editor for NFS Undercover.\n"
 					+ "Aims to make it possible to edit such data.\n"
 					+ "This software has been originally created for the mod Undercover Exposed.\n\n"
@@ -1094,7 +1094,7 @@ public class CollisionsEditor extends Application {
 				recentFiles.add(0, selected.getAbsolutePath());
 
 				updateAllBoundsDisplay();
-				primaryStage.setTitle(Utils.collisions_Name + " - " + mainCollisions.carname);
+				primaryStage.setTitle(Versions.collisions_Name + " - " + mainCollisions.carname);
 				
 				renderVisualModel.set(false);
 	//				menuDBMP.setText(mainCollisions.carname.label);
@@ -1141,7 +1141,7 @@ public class CollisionsEditor extends Application {
 			recentFiles.add(0, selected.getAbsolutePath());
 
 			updateAllBoundsDisplay();
-			primaryStage.setTitle(Utils.collisions_Name + " - " + mainCollisions.carname);
+			primaryStage.setTitle(Versions.collisions_Name + " - " + mainCollisions.carname);
 			
 			renderVisualModel.set(false);
 //				menuDBMP.setText(mainCollisions.carname.label);

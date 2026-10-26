@@ -1,19 +1,21 @@
 package fr.ni240sx.ucgt.compression;
 
 public enum CompressionType {
-	RefPack("RefPack",new String[]{"RefPack", "RFPK"}),
-	JDLZ("JDLZ",new String[]{"JDLZ", "EA_JDLZ"}),
-	COMP("COMP",new String[]{"COMP", "EA_COMP"}),
-	HUFF("HUFF",new String[]{"HUFF", "EA_HUFF", "Huffman"}),
-	RawDecompressed("RawDecompressed",new String[]{"RawDecompressed", "RAWW"}),
-	Unknown("Unknown",new String[]{""});
+	RefPack(0x4B504652, "RefPack", "RFPK"),
+	JDLZ(0x5A4C444A, "JDLZ", "EA_JDLZ"),
+	COMP(0x504D4F43, "COMP", "EA_COMP"),
+	HUFF(0x46465548, "HUFF", "EA_HUFF", "Huffman"),
+	RawDecompressed(0x57574152, "RawDecompressed", "RAWW"),
+	Unknown(-1, "Unknown");
 	
+	final int magic;
     private final String name;
     private final String[] possibleNames;
 
-    CompressionType(String name, String[] possibleNames) {
-        this.name = name;
-		this.possibleNames = possibleNames;
+    CompressionType(int magic, String... names) {
+    	this.magic = magic;
+        this.name = names[0];
+		this.possibleNames = names;
     }
     
     public String getName() {
@@ -29,6 +31,11 @@ public enum CompressionType {
             if (n.toUpperCase().equals(name.toUpperCase())) return c;
         }
         System.out.println("Unknown compression type : "+name);
-        return RawDecompressed; // Handle invalid value
+        return Unknown; // Handle invalid value
+    }
+    
+    public static CompressionType get(int magic) {
+    	for (var c: values()) if (c.magic == magic) return c;
+    	return Unknown;
     }
 }

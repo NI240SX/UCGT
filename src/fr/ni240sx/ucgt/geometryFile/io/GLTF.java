@@ -24,9 +24,9 @@ import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangle;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
-import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.Hash;
 import fr.ni240sx.ucgt.shared.Utils;
+import fr.ni240sx.ucgt.shared.Versions;
 
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
@@ -402,7 +402,7 @@ public class GLTF {
 		
 		var glTF = new JSONObject();
 		var asset = new JSONObject();
-		asset.put("generator", "Undercover Geometry Tool v"+Utils.geom_version+" - needeka 2026");
+		asset.put("generator", "Undercover Geometry Tool v"+Versions.geom_version+" - needeka 2026");
 		asset.put("version", "2.0");
 		glTF.put("asset", asset);
 
@@ -431,7 +431,7 @@ public class GLTF {
 			material.put("name", m.uniqueName);
 			material.put("doubleSided", false);
 			alphasearch: {
-				for (var n : m.shaderUsage.possibleNames) if (n.contains("Alpha")) {
+				for (var n : m.shader.possibleNames) if (n.contains("Alpha")) {
 					material.put("alphaMode", "BLENDED");
 					break alphasearch;
 				}
@@ -601,9 +601,9 @@ public class GLTF {
 				var attributes = new JSONObject();
 				
 				exportPosition(glTF, bos, m, attributes);
-				if (m.shaderUsage.vertexFormat(geom).hasNormals()) exportNormals(glTF, bos, m, attributes);
-				for (int i=0; i<m.shaderUsage.vertexFormat(geom).getNumTexChannels(); i++) exportTexcoords(glTF, bos, m, attributes, i);				
-				if (m.shaderUsage.vertexFormat(geom).hasColor()) exportColors(glTF, bos, m, attributes);
+				if (m.shader.vertexFormat(geom).hasNormals()) exportNormals(glTF, bos, m, attributes);
+				for (int i=0; i<m.shader.vertexFormat(geom).getNumTexChannels(); i++) exportTexcoords(glTF, bos, m, attributes, i);				
+				if (m.shader.vertexFormat(geom).hasColor()) exportColors(glTF, bos, m, attributes);
 				primitive.put("attributes", attributes);
 				
 				exportTriangles(glTF, bos, m.triangles, primitive);
@@ -708,7 +708,7 @@ public class GLTF {
 			
 		} else {
 			var json = glTF.toString().getBytes(StandardCharsets.UTF_8);
-			int suppl = Block.findAlignment(json.length, 4);
+			int suppl = Utils.findAlignment(json.length, 4);
 			
 			var bb = ByteBuffer.allocate(20);
 			bb.order(ByteOrder.LITTLE_ENDIAN);

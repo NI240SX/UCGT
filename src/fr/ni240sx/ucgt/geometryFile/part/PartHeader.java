@@ -8,6 +8,7 @@ import fr.ni240sx.ucgt.geometryFile.Platform;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class PartHeader implements Block {
 
@@ -99,7 +100,7 @@ public class PartHeader implements Block {
 		else System.out.println("Unknown part header magic! ("+game+")");
 //		System.out.println("Part header magic "+const02);
 		
-		partName = Block.readString(in);
+		partName = Utils.readString(in);
 //		if (partName.isEmpty()) throw new Exception("Part name cannot be empty !");
 		
 //		System.out.println("part header data for "+partName+": const01="+String.format("0x%08X", Integer.reverseBytes(const01)) + ", const11="+const11+", const12="+const12);
@@ -162,7 +163,7 @@ public class PartHeader implements Block {
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 		
 		//process size
-		var alignment = Block.findAlignment(currentPosition+8, 16);
+		var alignment = Utils.findAlignment(currentPosition+8, 16);
 		var blockLength = usualLengthWithoutName + partName.length() + 1 + alignment;
 		if (game == PROSTREET) blockLength -=16;
 		if (game == CARBON) blockLength -=40;
@@ -174,7 +175,7 @@ public class PartHeader implements Block {
 		out.putInt(getBlockID().getKey());
 		out.putInt(blockLength);
 
-		Block.makeAlignment(out, alignment, (byte) 0x11);
+		Utils.makeAlignment(out, alignment, (byte) 0x11);
 		
 		out.putInt(0);
 		out.putInt(0);
@@ -215,7 +216,7 @@ public class PartHeader implements Block {
 		
 		if (game == UNDERCOVER) out.position(out.position()+40); //UC
 		else if (game == PROSTREET) out.position(out.position()+24); //PS
-		Block.putString(out, partName);
+		Utils.putString(out, partName);
 
 		return out.array();	
 	}

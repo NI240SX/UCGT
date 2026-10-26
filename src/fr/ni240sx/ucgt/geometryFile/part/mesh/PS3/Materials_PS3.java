@@ -6,7 +6,7 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Materials;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.Shader;
 import fr.ni240sx.ucgt.shared.BlockType;
 
 public class Materials_PS3 extends Materials {
@@ -81,7 +81,7 @@ public class Materials_PS3 extends Materials {
 			}
 
 			in.position(matStart+372);
-			m.shaderUsage = ShaderUsage.get(in.getInt());
+			m.shader = Shader.get(in.getInt());
 			m.shaderUsageID = (byte) in.getInt();
 			
 			

@@ -41,7 +41,7 @@ import fr.ni240sx.ucgt.geometryFile.io.GLTF;
 import fr.ni240sx.ucgt.geometryFile.io.WavefrontOBJ;
 import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.Shader;
 import fr.ni240sx.ucgt.geometryFile.textures.NFSTexture;
 import fr.ni240sx.ucgt.geometryFile.textures.TPK;
 import fr.ni240sx.ucgt.geometryFile.textures.TPKHeader;
@@ -49,7 +49,7 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
 import fr.ni240sx.ucgt.shared.OrbitCameraViewport;
-import fr.ni240sx.ucgt.shared.Utils;
+import fr.ni240sx.ucgt.shared.Versions;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.embed.swing.SwingFXUtils;
@@ -95,6 +95,7 @@ public class GeometryEditorGUI extends Application {
 
 	public static Geometry mainGeometry = null;
 	public static TPK mainTPK = null;
+	public static ArrayList<NFSTexture> globalTextures = new ArrayList<>();
 	public static ArrayList<PhongMaterial> visualModelMaterials = null;
 	public static ArrayList<Image> diffuseMaps = null;
 	public static ArrayList<Image> specularMaps = null;
@@ -124,10 +125,12 @@ public class GeometryEditorGUI extends Application {
     public static CheckMenuItem strictKitDisplay = new CheckMenuItem("Strict kit display");
     public static CheckMenuItem simplifiedPartsList = new CheckMenuItem("Simplified parts list");
     public static CheckMenuItem loadTextures = new CheckMenuItem("Load textures");
+    public static CheckMenuItem loadGlobalTextures = new CheckMenuItem("Try to auto-load global textures");
     public static CheckMenuItem displayMarkers = new CheckMenuItem("Display markers");
     public static CheckMenuItem trackpadMode = new CheckMenuItem("Trackpad mode");
     public static CheckMenuItem centerOnPart = new CheckMenuItem("Center camera on selected part");
     public static CheckMenuItem importExportTextures = new CheckMenuItem("Import and export textures along with geometry");
+    public static CheckMenuItem exportSelectedOnly = new CheckMenuItem("Export selected parts only");
 
     public static CheckMenuItem doDiffuse = new CheckMenuItem("Show Diffuse");
     public static CheckMenuItem doSpecular = new CheckMenuItem("Show Specular");
@@ -156,6 +159,8 @@ public class GeometryEditorGUI extends Application {
 		} catch (@SuppressWarnings("unused") Exception e) {
 			simplifiedPartsList.setSelected(true);
 			loadTextures.setSelected(true);
+			loadGlobalTextures.setSelected(true);
+			centerOnPart.setSelected(true);
 		}
 		
 		
@@ -170,8 +175,8 @@ public class GeometryEditorGUI extends Application {
 	}
 
 	public static void writeSettings() throws IOException {
-		Files.createDirectories(Paths.get(Utils.settingsFolder));
-		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(Utils.settingsGeomEdGui)));
+		Files.createDirectories(Paths.get(Versions.settingsFolder));
+		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(Versions.settingsGeomEdGui)));
 		bw.write("DO NOT MANUALLY EDIT THIS FILE\n" 
 				+ lastDirectoryLoaded + "\n" 
 				+ lastFileLoaded + "\n" 
@@ -195,13 +200,15 @@ public class GeometryEditorGUI extends Application {
 				+ Boolean.toString(firstBoot) + "\n");
 		for (var f : (recentFiles.size() > maxRecentFiles ? recentFiles.subList(0, maxRecentFiles) : recentFiles)) bw.write(f+">");
 		bw.write("\n"
-				+ Boolean.toString(showImportSettingsOnReload.isSelected()) + "\n");
+				+ Boolean.toString(showImportSettingsOnReload.isSelected()) + "\n"
+				+ Boolean.toString(exportSelectedOnly.isSelected()) + "\n"
+				+ Boolean.toString(loadGlobalTextures.isSelected()) + "\n");
 		
 		bw.close();
 	}
 
 	public static void readSettings() throws FileNotFoundException, IOException {
-		BufferedReader br = new BufferedReader(new FileReader(new File(Utils.settingsGeomEdGui)));
+		BufferedReader br = new BufferedReader(new FileReader(new File(Versions.settingsGeomEdGui)));
 		br.readLine(); //="DO NOT MANUALLY EDIT THIS FILE"
 		lastDirectoryLoaded = br.readLine();
 		lastFileLoaded = br.readLine();
@@ -224,6 +231,8 @@ public class GeometryEditorGUI extends Application {
 		firstBoot = Boolean.valueOf(br.readLine());
 		for (var s : br.readLine().split(">")) if (s != null && !s.isBlank()) recentFiles.add(s);
 		showImportSettingsOnReload.setSelected(Boolean.valueOf(br.readLine()));
+		exportSelectedOnly.setSelected(Boolean.valueOf(br.readLine()));
+		loadGlobalTextures.setSelected(Boolean.valueOf(br.readLine()));
 		//String s;
 		//if(!(s=br.readLine()).isBlank())
 		br.close();
@@ -231,7 +240,7 @@ public class GeometryEditorGUI extends Application {
 	
     @Override
 	public void start(Stage primaryStage) {
-        primaryStage.setTitle(mainGeometry == null ? Utils.geomGUI_Name : Utils.geomGUI_Name + " - " + mainGeometry.carname);
+        primaryStage.setTitle(mainGeometry == null ? Versions.geomGUI_Name : Versions.geomGUI_Name + " - " + mainGeometry.carname);
 
         VBox windowTop = new VBox();
         
@@ -317,7 +326,7 @@ public class GeometryEditorGUI extends Application {
         displayMarkers.setAccelerator(KeyCombination.keyCombination("Alt+M"));
 
         Menu menuRendering = new Menu("Rendering");
-        menuRendering.getItems().addAll(displayMarkers, loadTextures, textureFolders, new SeparatorMenuItem(), doDiffuse, doSpecular, doNormal, doSelfIllum, doVertexColors, doWireframe);
+        menuRendering.getItems().addAll(displayMarkers, loadTextures, loadGlobalTextures, textureFolders, new SeparatorMenuItem(), doDiffuse, doSpecular, doNormal, doSelfIllum, doVertexColors, doWireframe);
         menuRendering.setAccelerator(KeyCombination.keyCombination("Alt+R"));
         doDiffuse.setSelected(true);
         doSpecular.setSelected(true);
@@ -381,17 +390,17 @@ public class GeometryEditorGUI extends Application {
 
         
         Menu menuSettings = new Menu("Settings");
-        MenuItem settingsAbout = new MenuItem("About " + Utils.geomGUI_Name + "...");
+        MenuItem settingsAbout = new MenuItem("About " + Versions.geomGUI_Name + "...");
         MenuItem settingsUpdates = new MenuItem("Check for updates...");
         MenuItem settingsDefaults = new MenuItem("Change default Geometry settings...");
-        menuSettings.getItems().addAll(importExportTextures, useDarkMode, disableWarnings, trackpadMode, showImportSettingsOnReload, settingsDefaults, settingsAbout, settingsUpdates);
+        menuSettings.getItems().addAll(importExportTextures, useDarkMode, disableWarnings, trackpadMode, showImportSettingsOnReload, exportSelectedOnly, settingsDefaults, settingsAbout, settingsUpdates);
         menuSettings.setAccelerator(KeyCombination.keyCombination("Alt+S"));
 
         settingsAbout.setOnAction(e -> showInfoWindow());
         settingsUpdates.setOnAction(e -> {
 	    	getHostServices().showDocument("https://github.com/NI240SX/UCGT/releases");
-			new Alert(Alert.AlertType.INFORMATION, "Current versions:\n- Geometry Editor v"+Utils.geom_version+" built on "+Utils.geom_build+"\n"
-					+ "- DBModelParts Editor v"+Utils.dbmp_Version +"\n- Collisions Editor v"+Utils.collisions_Version, ButtonType.OK).showAndWait();
+			new Alert(Alert.AlertType.INFORMATION, "Current versions:\n- Geometry Editor v"+Versions.geom_version+" built on "+Versions.geom_build+"\n"
+					+ "- DBModelParts Editor v"+Versions.dbmp_Version +"\n- Collisions Editor v"+Versions.collisions_Version, ButtonType.OK).showAndWait();
         });
         settingsDefaults.setOnAction(e -> {
         	try {
@@ -662,7 +671,7 @@ public class GeometryEditorGUI extends Application {
 		if (firstBoot) {
 			showInfoWindow();
 			firstBoot = false;
-		} else if (!new File(Utils.geomDefaultConfig).isFile()) {
+		} else if (!new File(Versions.geomDefaultConfig).isFile()) {
 			promptDefaultConfig();
 		}
 //		TestingFunctions.collisionDisplayTest(viewportGroup);
@@ -688,7 +697,7 @@ public class GeometryEditorGUI extends Application {
     public void showInfoWindow() {
     	Stage st = new Stage();
 		openWindows.add(st);
-		st.setTitle("About " + Utils.geomGUI_Name);
+		st.setTitle("About " + Versions.geomGUI_Name);
 		
 		var v = new VBox();
 		
@@ -705,7 +714,7 @@ public class GeometryEditorGUI extends Application {
 				%s version %s built %s
 				GUI version %s
 				needeka 2026
-				""".formatted(Utils.geomGUI_Name, Utils.geom_version, Utils.geom_build, Utils.geomGUI_GUIVersion));
+				""".formatted(Versions.geomGUI_Name, Versions.geom_version, Versions.geom_build, Versions.geomGUI_GUIVersion));
 		l.setWrapText(true);
 		l.setTextAlignment(TextAlignment.JUSTIFY);
 
@@ -732,7 +741,7 @@ public class GeometryEditorGUI extends Application {
 //		});
 		st.setOnCloseRequest(e2 -> {
 			openWindows.remove(st);
-			if (!new File(Utils.geomDefaultConfig).isFile()) javafx.application.Platform.runLater(() -> promptDefaultConfig());
+			if (!new File(Versions.geomDefaultConfig).isFile()) javafx.application.Platform.runLater(() -> promptDefaultConfig());
 		});
 		st.show();
 		st.requestFocus();
@@ -851,8 +860,8 @@ public class GeometryEditorGUI extends Application {
 		return e -> {
 			Stage st = new Stage();
 			openWindows.add(st);
-			st.setTitle("About " + Utils.geomGUI_Name);
-			Scene sc = new Scene(new Label(Utils.geomGUI_Name + " version " + Utils.geom_version + "; GUI version " + Utils.geomGUI_GUIVersion + "\n\n"
+			st.setTitle("About " + Versions.geomGUI_Name);
+			Scene sc = new Scene(new Label(Versions.geomGUI_Name + " version " + Versions.geom_version + "; GUI version " + Versions.geomGUI_GUIVersion + "\n\n"
 					+ "Geometry editor for NFS Undercover.\n"
 					+ "Aims to support the file format better.\n"
 					+ "This software has been originally created for the mod Undercover Exposed.\n\n"
@@ -973,6 +982,14 @@ public class GeometryEditorGUI extends Application {
 					new Thread() {
 		                @Override
 						public void run() {
+		                	var oldParts = mainGeometry.parts;
+		                	if (exportSelectedOnly.isSelected()) {
+		                		mainGeometry.parts = new ArrayList<>();
+		                		for (var p : parts) if (p.display.get()){
+		                			mainGeometry.parts.add(p.part);
+		                		}
+		                	}
+		                	
 							try {
 								if (fc.getSelectedExtensionFilter() == TYPE_GEOM) {
 									mainGeometry.save(f, status);
@@ -1026,6 +1043,8 @@ public class GeometryEditorGUI extends Application {
 								e2.printStackTrace();
 								javafx.application.Platform.runLater(() -> new Alert(Alert.AlertType.ERROR, "Error saving model!\n"+e2.getMessage()).show());
 							}
+
+		                	mainGeometry.parts = oldParts;
 		                }
 
 						private void writeConfigAndTextures(@SuppressWarnings("hiding") File f) throws IOException, Exception {
@@ -1314,6 +1333,10 @@ public class GeometryEditorGUI extends Application {
 						status.progress.setProgress(-1);
 					});
 					
+					//try to load global textures
+					globalTextures = new ArrayList<>();
+					if (loadGlobalTextures.isSelected()) tryLoadGlobalTextures(selected);
+					
 					//try guess signature
 					
 					FileInputStream fis = new FileInputStream(selected);
@@ -1589,6 +1612,7 @@ public class GeometryEditorGUI extends Application {
 					input.read(arr);
 					input.close();
 					mainTPK = new TPK(ByteBuffer.wrap(arr));
+					if (mainTPK.textures.size() > 0 && !globalTextures.contains(mainTPK.textures.get(0))) globalTextures.addAll(mainTPK.textures);
 					postLoadUpdate(primaryStage);
 //										if (!disableWarnings.isSelected()) new Alert(Alert.AlertType.INFORMATION, "Model loaded successfully.", ButtonType.OK).show();
 					
@@ -1798,12 +1822,12 @@ public class GeometryEditorGUI extends Application {
 	}
 
 	public static void editDefaultConfig() throws IOException {
-		if (!new File(Utils.geomDefaultConfig).isFile()) return;
+		if (!new File(Versions.geomDefaultConfig).isFile()) return;
 
 		var settings = new ArrayList<ConfigSetting>();
 
 		{
-			var br = new BufferedReader(new FileReader(new File(Utils.geomDefaultConfig)));
+			var br = new BufferedReader(new FileReader(new File(Versions.geomDefaultConfig)));
 			String l;
 			while ((l=br.readLine())!=null) {
 				if (l.startsWith("SETTING")) {
@@ -1890,8 +1914,8 @@ public class GeometryEditorGUI extends Application {
 		ok.setOnAction(e -> {
 			
 			try {
-				var tmp = new File(new File(Utils.geomDefaultConfig).getAbsolutePath()+".tmp");
-				var br = new BufferedReader(new FileReader(new File(Utils.geomDefaultConfig)));
+				var tmp = new File(new File(Versions.geomDefaultConfig).getAbsolutePath()+".tmp");
+				var br = new BufferedReader(new FileReader(new File(Versions.geomDefaultConfig)));
 				var bw = new BufferedWriter(new FileWriter(tmp));
 				String l;
 				boolean firstSetting = true;
@@ -1911,8 +1935,8 @@ public class GeometryEditorGUI extends Application {
 				}//loop on config file lines
 				br.close();
 				bw.close();
-				new File(Utils.geomDefaultConfig).delete();
-				tmp.renameTo(new File(Utils.geomDefaultConfig));
+				new File(Versions.geomDefaultConfig).delete();
+				tmp.renameTo(new File(Versions.geomDefaultConfig));
 			} catch(Exception ex) {
 				ex.printStackTrace();
 			}
@@ -1964,7 +1988,7 @@ public class GeometryEditorGUI extends Application {
 
 	public static void postLoadUpdate(Stage primaryStage) throws InterruptedException {
 		javafx.application.Platform.runLater(() -> {
-			primaryStage.setTitle(mainGeometry == null ? Utils.geomGUI_Name : Utils.geomGUI_Name + " - " + mainGeometry.carname);
+			primaryStage.setTitle(mainGeometry == null ? Versions.geomGUI_Name : Versions.geomGUI_Name + " - " + mainGeometry.carname);
 			partsDisplay.filter.setText("");
 
 			tpkImagesList.getItems().clear();
@@ -2017,6 +2041,12 @@ public class GeometryEditorGUI extends Application {
 			    	for (var t : textureLookupFolders) { //unhash textures
 			    		if (new File(t).list() != null) for (var f : new File(t).list()) {
 			    			if (f.endsWith(".dds")) Hash.findBIN(f.replace(".dds", ""));
+			    			if (f.endsWith(".bin") || f.endsWith(".bun") || f.endsWith(".lzc"))
+								try {
+									addAllTexturesFromTPKsInFile(new File(f));
+								} catch (Exception e) {
+									e.printStackTrace();
+								}
 			    		}
 			    	}
 			    	
@@ -2029,10 +2059,26 @@ public class GeometryEditorGUI extends Application {
 							//diffuse: 
 								for (int i=0; i< m.textureUsages.size(); i++) {
 								if (m.textureUsages.get(i).getKey() == TextureUsage.DIFFUSE.getKey() || m.textureUsages.get(i).getKey() == TextureUsage.ROADBASE.getKey()
-										|| ((m.shaderUsage == ShaderUsage.get("car_nm_v_s") || m.shaderUsage == ShaderUsage.get("car_t_nm") || m.shaderUsage.getClass() == ShaderUsage.Legacy.class) 
+										|| ((m.shader == Shader.get("car_nm_v_s") || m.shader == Shader.get("car_t_nm") || m.shader.getClass() == Shader.Legacy.class) 
 												&& m.textureUsages.get(i).getKey() == TextureUsage.AMBIENT.getKey())) {
 			
 									try {
+
+										for (var t : globalTextures) if (t.binKey == m.TextureHashes.get(i)) {
+											BufferedImage image;
+											var r = new DDSImageReader(null);
+											var iis = new MemoryCacheImageInputStream(new ByteArrayInputStream(t.DDSImage));
+											r.setInput(iis);
+											if (m.isOpaque()) {
+												r.ignoreAlpha = true;										
+											}
+											image = r.read(0);
+											
+											diffuseMaps.set(mainGeometry.materials.indexOf(m), SwingFXUtils.toFXImage(image, null));
+											iis.close();
+	//										break diffuse;
+										}
+										
 										//fixes TPK priority since break statement is removed (for skin1)
 										for (var s : textureLookupFolders) {
 											var f = new File(s+Hash.getBIN(m.TextureHashes.get(i))+ ".dds");
@@ -2089,7 +2135,7 @@ public class GeometryEditorGUI extends Application {
 							
 							//bump map
 							bump: for (int i=0; i< m.textureUsages.size(); i++) {
-								if (!(m.shaderUsage == ShaderUsage.get("car_nm_v_s") || m.shaderUsage == ShaderUsage.get("car_t_nm") || m.TextureHashes.get(i) == Hash.findBIN("DAMAGE_N"))) 
+								if (!(m.shader == Shader.get("car_nm_v_s") || m.shader == Shader.get("car_t_nm") || m.TextureHashes.get(i) == Hash.findBIN("DAMAGE_N"))) 
 									if (m.textureUsages.get(i).getKey() == TextureUsage.NORMALMAP.getKey() 
 									|| m.textureUsages.get(i).getKey() == TextureUsage.NORMAL_SAMPLER.getKey() 
 									|| m.textureUsages.get(i).getKey() == TextureUsage.BASENORMAL.getKey()) {
@@ -2120,6 +2166,17 @@ public class GeometryEditorGUI extends Application {
 													iis.close();
 													break bump;
 											}
+										}
+										for (var t : globalTextures) if (t.binKey == m.TextureHashes.get(i)) {
+											BufferedImage image;
+											var r = new DDSImageReader(null);
+											var iis = new MemoryCacheImageInputStream(new ByteArrayInputStream(t.DDSImage));
+											r.setInput(iis);
+											image = r.read(0);
+											
+											normalMaps.set(mainGeometry.materials.indexOf(m), SwingFXUtils.toFXImage(image, null));
+											iis.close();
+											break bump;
 										}
 									} catch (Exception e) {
 										e.printStackTrace();
@@ -2161,6 +2218,17 @@ public class GeometryEditorGUI extends Application {
 													break si;
 											}
 										}
+										for (var t : globalTextures) if (t.binKey == m.TextureHashes.get(i)) {
+											BufferedImage image;
+											var r = new DDSImageReader(null);
+											var iis = new MemoryCacheImageInputStream(new ByteArrayInputStream(t.DDSImage));
+											r.setInput(iis);
+											image = r.read(0);
+											
+											selfIlluminationMaps.set(mainGeometry.materials.indexOf(m), SwingFXUtils.toFXImage(image, null));
+											iis.close();
+											break si;
+										}
 									} catch (Exception e) {
 										e.printStackTrace();
 									}
@@ -2174,6 +2242,17 @@ public class GeometryEditorGUI extends Application {
 			
 									try {
 										if (mainTPK != null) for (var t : mainTPK.textures) if (t.binKey == m.TextureHashes.get(i)) {
+											BufferedImage image;
+											var r = new DDSImageReader(null);
+											var iis = new MemoryCacheImageInputStream(new ByteArrayInputStream(t.DDSImage));
+											r.setInput(iis);
+											image = r.read(0);
+											
+											specularMaps.set(mainGeometry.materials.indexOf(m), SwingFXUtils.toFXImage(image, null));
+											iis.close();
+											break spec;
+										}
+										for (var t : globalTextures) if (t.binKey == m.TextureHashes.get(i)) {
 											BufferedImage image;
 											var r = new DDSImageReader(null);
 											var iis = new MemoryCacheImageInputStream(new ByteArrayInputStream(t.DDSImage));
@@ -2448,7 +2527,9 @@ public class GeometryEditorGUI extends Application {
 		}
 		
 		if (p.display.get() && (p.part.lod == null || !p.part.lod.equals(displayLod.getValue()))) {
-			for (var p2 : parts) if (p2.part.part.equals(p.part.part) && (p2.part.lod == null || !p2.part.lod.equals(displayLod.getValue())) && ((p2.part.kit == null && p.part.kit == null) || p2.part.kit.equals(p.part.kit))) {
+			for (var p2 : parts) if (
+					p2.part.part.equals(p.part.part) && (p2.part.lod == null || p2.part.lod.equals(displayLod.getValue())) && 
+					((p2.part.kit == null && p.part.kit == null) || p2.part.kit.equals(p.part.kit))) {
 				if (selected != null && selected.getValue() == p) {
 					reselect: for (var n : partsRoot.getChildren()) {
 						if (p.part.kit != null && p.part.kit.equals(n.getValue().name)) {
@@ -2471,5 +2552,51 @@ public class GeometryEditorGUI extends Application {
 			}
 			p.display.set(false);    			
 		}
+	}
+
+	public static void tryLoadGlobalTextures(File selected1) throws FileNotFoundException, IOException, Exception {
+		var lookup = selected1.getParentFile();
+		lookup: while(lookup != null) {
+			for (var f : lookup.listFiles()) {
+				if (f.getName().equals("GLOBAL") && f.isDirectory()) {
+					if (addAllTexturesFromTPKsInFile(new File(f.getCanonicalPath() + File.separator + "GlobalB.lzc")) == -1) {
+						addAllTexturesFromTPKsInFile(new File(f.getCanonicalPath() + File.separator + "GLOBALB.BUN"));
+					}
+					break lookup;
+				}
+			}
+			
+			lookup = lookup.getParentFile();
+		}
+	}
+
+	public static int addAllTexturesFromTPKsInFile(File f) throws IOException, Exception {
+		var globalb = new FileInputStream(f);
+		var bChunk = getNextInt(globalb);
+		if (CompressionType.get(bChunk) == CompressionType.Unknown) {
+			while (globalb.available() > 0){
+				var chunkSize = getNextInt(globalb);
+				if (bChunk == BlockType.TPK.getKey()) {
+					var bb = ByteBuffer.allocate(chunkSize + 4);
+					bb.order(ByteOrder.LITTLE_ENDIAN);
+					globalb.read(bb.array(), 4, chunkSize);
+					var tpk = new TPK(bb);
+//					globalTextures.addAll(tpk.textures);
+					newTexLoop: for (var newT : tpk.textures) {
+						for (var exT : globalTextures) {
+							if (newT.binKey == exT.binKey) continue newTexLoop;
+						}
+						globalTextures.add(newT);
+					}
+				} else {
+					globalb.skipNBytes(chunkSize);
+				}
+				bChunk = getNextInt(globalb);
+			}
+			globalb.close();
+			return 0;
+		}
+		globalb.close();
+		return -1;
 	}
 }

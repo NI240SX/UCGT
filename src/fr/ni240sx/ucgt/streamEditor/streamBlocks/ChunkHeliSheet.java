@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class ChunkHeliSheet implements Block {
 
@@ -46,7 +47,7 @@ public class ChunkHeliSheet implements Block {
 		buf.putInt(-1); //length for later
 		
 		out.write(buf.array());
-		Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 16), (byte)0x11);
+		Utils.makeAlignment(out, Utils.findAlignment(currentPosition+out.size(), 16), (byte)0x11);
 
 		buf = ByteBuffer.wrap(new byte[24 + sheet.length*18 + (sheet.length %2 != 0 ? 2 : 0)]);
 		buf.order(ByteOrder.LITTLE_ENDIAN);

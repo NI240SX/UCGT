@@ -1,4 +1,4 @@
-package fr.ni240sx.ucgt.geometryFile.part;
+package fr.ni240sx.ucgt.geometryFile.part.mesh;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -7,22 +7,33 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class Shaders implements Block {
 
 	@Override
-	public BlockType getBlockID() {return BlockType.Part_ShaderList;}
+	public BlockType getBlockID() {return BlockType.Part_Mesh_ShadersUsage;}
 
 	// texture binhash, usage type
 	public ArrayList<Integer> shaders = new ArrayList<>();
 	
 	public Shaders(ByteBuffer in) {
-		var blockLength = in.getInt();
-		
-		for (int i=0; i< blockLength/8; i++) {
+//		var blockLength = 
+				in.getInt();
+
+		while(in.getInt() == 0x11111111) {} // skip alignment
+		in.position(in.position()-4);
+
+		var numUsages = in.getInt();
+		for (int i=0; i< numUsages; i++) {
 			shaders.add(in.getInt());
-			in.getInt(); //0
 		}
+		
+//		System.out.print("Shaders usage");
+//		for (var s : shadersUsage) {
+//			System.out.print(", "+ShaderUsage.get(s).getName());
+//		}
+//		System.out.println();
 		
 //		for (var p : texusage) {
 //			System.out.println("Texture "+Integer.toHexString(p.getKey())+" has usage "+Usage.get(p.getValue()).getName());
@@ -35,15 +46,17 @@ public class Shaders implements Block {
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 
-		var out = ByteBuffer.wrap(new byte[shaders.size()*8 + 8]);
+		var alignment = Utils.findAlignment(currentPosition+8, 128);
+		var out = ByteBuffer.wrap(new byte[shaders.size()*4 + 12 + alignment]);
 		out.order(ByteOrder.LITTLE_ENDIAN);
 
 		out.putInt(getBlockID().getKey());
-		out.putInt(shaders.size()*8);
-
+		out.putInt(shaders.size()*4 + 4 + alignment);
+		Utils.makeAlignment(out, alignment, (byte) 0x11);
+		
+		out.putInt(shaders.size());
 		for (var s : shaders) {
 			out.putInt(s);
-			out.putInt(0);
 		}
 		
 		return out.array();	

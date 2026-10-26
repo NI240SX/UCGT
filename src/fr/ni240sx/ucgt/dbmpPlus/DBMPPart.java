@@ -2,6 +2,7 @@ package fr.ni240sx.ucgt.dbmpPlus;
 
 import java.util.ArrayList;
 
+import fr.ni240sx.ucgt.dbmpPlus.DBMPPlus.Game;
 import fr.ni240sx.ucgt.shared.Hash;
 
 public class DBMPPart {
@@ -53,31 +54,40 @@ public class DBMPPart {
 		addAttribute(new AttributeInteger("LOD_NAME_PREFIX_SELECTOR", 0));
 		addAttribute(new AttributeInteger("MAX_LOD", 4));
 		addAttribute(new AttributeString("LOD_CHARACTERS_OFFSET", "ABCDE"));
-		addAttribute(new AttributeString("NAME_OFFSET", kit.replace("KIT", "").replace("W", "")));
-		addAttribute(id = new AttributeCarPartID("PARTID_UPGRADE_GROUP", PartUndercover.get(name.replace("WIDEBODY_", "")), 0));
-		addAttribute(partName = new AttributeTwoString("PART_NAME_OFFSETS", kit, name));
+		addAttribute(new AttributeString("NAME_OFFSET", kit.replace("KIT", "").replace("KITW", "").replace("STYLE", "")));
+		addAttribute(id = new AttributeCarPartID("PARTID_UPGRADE_GROUP", PartNFS.get(name.replace("WIDEBODY_", "")).getValue(), 0));
+		addAttribute(partName = new AttributeTwoString("PART_NAME_OFFSETS", kit, name)); //TODO for carbon its just random shit
 		addAttribute(new AttributeTwoString("LOD_BASE_NAME", kit, name));
 		if (name.equals("BODY") || name.equals("WIDEBODY")) addAttribute(new AttributeKey("CV", DBMPPlus.mainDBMP.carname + "_CV"));
-
+		if (Game.get(DBMPPlus.mainDBMP.GameInt) == Game.Carbon) {
+			int kitnum = Integer.parseInt(kit.replace("KIT", "").replace("KITW", "").replace("STYLE", ""));
+			addAttribute(new AttributeInteger("KITNUMBER",kitnum));
+			if (kitnum == 0) addAttribute(new AttributeBoolean("STOCK", true));
+		}
+		
+		//FIXME probably doesnt work right for all games
+		
 		//PartID autodetect (problematic : exhausts, driver_female, brake and brakerotor, rollcage, seat, spoiler drag/lip/evo, widebody)
-		if (name.equals("WIDEBODY")) id.ID = PartUndercover.BODY;
-		else if (name.contains("BRAKEROTOR")) id.ID = PartUndercover.BRAKEROTOR;
-		else if (name.contains("BRAKE_")) id.ID = PartUndercover.BRAKE;
-		else if (name.contains("EXHAUST_TIPS_LEFT")) id.ID = PartUndercover.EXHAUST_TIPS_LEFT;
-		else if (name.contains("EXHAUST_TIPS_RIGHT")) id.ID = PartUndercover.EXHAUST_TIPS_RIGHT;
-		else if (name.contains("EXHAUST_TIPS_CENTER")) id.ID = PartUndercover.EXHAUST_TIPS_CENTER;
-		else if (name.contains("EXHAUST_")) id.ID = PartUndercover.EXHAUST;
-		else if (name.contains("MUFFLER")) id.ID = PartUndercover.EXHAUST;
-		else if (name.contains("DRIVER")) id.ID = PartUndercover.DRIVER;
-		else if (name.contains("ROLL_CAGE")) id.ID = PartUndercover.ROLL_CAGE;
-		else if (name.contains("SEAT")) id.ID = PartUndercover.SEAT;
-		else if (name.contains("SPOILER")) id.ID = PartUndercover.SPOILER;
+		if (name.equals("WIDEBODY")) id.ID = PartNFS.get("BODY").getValue();
+		else if (name.contains("BRAKE") && name.contains("ROTOR")) id.ID = PartNFS.get("BRAKEROTOR").getValue();
+		else if (name.contains("BRAKE") && (name.contains("FRONT")||name.contains("REAR"))) id.ID = PartNFS.get("BRAKE").getValue();
+		else if (name.contains("EXHAUST_TIPS_LEFT")) id.ID = PartNFS.get("EXHAUST_TIPS_LEFT").getValue();
+		else if (name.contains("EXHAUST_TIPS_RIGHT")) id.ID = PartNFS.get("EXHAUST_TIPS_RIGHT").getValue();
+		else if (name.contains("EXHAUST_TIPS_CENTER")) id.ID = PartNFS.get("EXHAUST_TIPS_CENTER").getValue();
+		else if (name.contains("EXHAUST_")) id.ID = PartNFS.get("EXHAUST").getValue();
+		else if (name.contains("MUFFLER")) id.ID = PartNFS.get("EXHAUST").getValue();
+		else if (name.contains("DRIVER")) id.ID = PartNFS.get("DRIVER").getValue();
+		else if (name.contains("ROLL_CAGE")) id.ID = PartNFS.get("ROLL_CAGE").getValue();
+		else if (name.contains("SEAT")) id.ID = PartNFS.get("SEAT").getValue();
+		else if (name.contains("SPOILER")) id.ID = PartNFS.get("SPOILER").getValue();
 		
 		//Widebody fixes for user input
 		if (kit.contains("W")) {
 			if (name.equals("BODY")) partName.value2 = "WIDEBODY";
 			else if (name.contains("BUMPER") || name.contains("DOOR") || name.contains("FENDER") || name.contains("SKIRT")) partName.value2 = "WIDEBODY_" + name;
 		}
+		
+		DBMPPlus.findNameOffset(this);
 		
 	}
 	
@@ -108,7 +118,7 @@ public class DBMPPart {
 	public void update() {
 		if (getAttribute("LOD_BASE_NAME") != null) isCarPart = true;
 		else isCarPart = false;
-		if (((AttributeCarPartID)getAttribute("PARTID_UPGRADE_GROUP"))!= null && ((AttributeCarPartID)getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.VECTORVINYL ) isVectorVinyl = true;
+		if (((AttributeCarPartID)getAttribute("PARTID_UPGRADE_GROUP"))!= null && ((AttributeCarPartID)getAttribute("PARTID_UPGRADE_GROUP")).ID == PartNFS.get("VECTORVINYL").getValue() ) isVectorVinyl = true;
 		else isVectorVinyl = false;
 		if(isCarPart) {
 			if (DBMPPlus.widebodyAutoCorrect && ((AttributeTwoString)getAttribute("PART_NAME_OFFSETS" )) != null){
@@ -134,7 +144,7 @@ public class DBMPPart {
 			String name2 = "MISSING ATTRIBUTES";
 			for (Attribute attribute : attributes) {
 				attribute.update();
-				if (Hash.getBIN(attribute.Key).equals("PART_NAME_OFFSETS")) {
+				if (attribute.Key == Hash.findBIN("PART_NAME_OFFSETS")) {
 					AttributeTwoString att2S = (AttributeTwoString)attribute;
 					name1 = att2S.value1 + "_" + att2S.value2;
 					try {
@@ -144,7 +154,7 @@ public class DBMPPart {
 						
 					}
 				}
-				if (Hash.getBIN(attribute.Key).equals("LOD_BASE_NAME")) {
+				if (attribute.Key == Hash.findBIN("LOD_BASE_NAME")) {
 					AttributeTwoString att2S = (AttributeTwoString)attribute;
 					name2 = att2S.value1 + "_" + att2S.value2;
 				}
@@ -170,7 +180,7 @@ public class DBMPPart {
 	public <T extends Attribute> T getAttribute(String a) {
 		T att = null;
 		for (Attribute attribute : attributes) {
-			if (Hash.getBIN(attribute.Key).equals(a)) {
+			if (attribute.Key == Hash.findBIN(a)) {
 				att = (T)attribute;
 			}
 		}
@@ -179,8 +189,9 @@ public class DBMPPart {
 	
 	public void removeAttribute(String a) {
 		for (Attribute attribute : attributes) {
-			if (Hash.getBIN(attribute.Key).equals(a)) {
+			if (attribute.Key == Hash.findBIN(a)) {
 				attributes.remove(attribute);
+				break;
 			}
 		}
 		update();

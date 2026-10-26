@@ -138,7 +138,7 @@ public class PartInfo extends TreeView<String>{
 							
 							var usa = new TreeItem<>("Shader");
 							mat.getChildren().add(usa);
-							usa.getChildren().add(new TreeItem<>(m.shaderUsage.getName()));
+							usa.getChildren().add(new TreeItem<>(m.shader.getName()));
 							usa.setExpanded(true);
 							
 							var sha = new TreeItem<>("Material");

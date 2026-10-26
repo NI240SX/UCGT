@@ -32,7 +32,9 @@ public class Compression {
 			}
 		}
 		ByteBuffer in = ByteBuffer.wrap(arr);
-		CompressionType compressionType = CompressionType.get(String.valueOf(new char[] {(char)(in.get()), (char)(in.get()), (char)(in.get()), (char)(in.get())}));
+		in.order(ByteOrder.LITTLE_ENDIAN);
+//		CompressionType compressionType = CompressionType.get(String.valueOf(new char[] {(char)(in.get()), (char)(in.get()), (char)(in.get()), (char)(in.get())}));
+		CompressionType compressionType = CompressionType.get(in.getInt());
 //		System.out.println("Compression type : "+compressionType);
 		
 		switch(compressionType) {
@@ -71,7 +73,8 @@ public class Compression {
 //			var bb = ByteBuffer.allocate(arr.length+16);
 			var bb = ByteBuffer.allocate(size+16);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
-			bb.put((byte) 0x52); bb.put((byte) 0x41); bb.put((byte) 0x57); bb.put((byte) 0x57);
+//			bb.put((byte) 0x52); bb.put((byte) 0x41); bb.put((byte) 0x57); bb.put((byte) 0x57);
+			bb.putInt(CompressionType.RawDecompressed.magic);
 			bb.putInt(4097);
 			bb.putInt(arr.length);
 			bb.putInt(arr.length);

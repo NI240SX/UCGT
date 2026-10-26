@@ -30,7 +30,7 @@ public class Part implements Block {
 	public PartHeader header;
 	public TexUsage texusage;
 	public Strings strings;
-	public Shaders shaderlist;
+	public MaterialLightingParams shaderlist;
 	public MPoints mpoints;
 	public Mesh mesh;
 	public AutosculptLinking asLinking;
@@ -75,8 +75,8 @@ public class Part implements Block {
 			case Part_Strings:
 				strings = (Strings) b;
 				break;
-			case Part_ShaderList:
-				shaderlist = (Shaders) b;
+			case Part_MaterialLightingList:
+				shaderlist = (MaterialLightingParams) b;
 				break;
 			case Part_MPoints:
 				mpoints = (MPoints) b;
@@ -164,7 +164,7 @@ public class Part implements Block {
 		else this.header = new PartHeader(carname+"_"+substring, plat);
 		this.texusage = new TexUsage();
 		this.strings = new Strings();
-		this.shaderlist = new Shaders();
+		this.shaderlist = new MaterialLightingParams();
 		this.mesh = new Mesh(plat);
 		
 		findKitLodPart(carname);

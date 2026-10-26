@@ -26,7 +26,7 @@ public class Mesh implements Block {
 	public Platform platform;
 	public Mesh_Info info;
 	public Materials materials;
-	public ShadersUsage shadersUsage;
+	public Shaders shaders;
 	public ArrayList<Vertices> verticesBlocks = new ArrayList<>();
 	public Triangles triangles;
 	
@@ -59,7 +59,7 @@ public class Mesh implements Block {
 		for (var b : subBlocks) {
 			switch (b.getBlockID()) {
 			case Part_Mesh_ShadersUsage:
-				shadersUsage = (ShadersUsage) b;
+				shaders = (Shaders) b;
 				break;
 			case Part_Mesh_VertsHeader:
 				break;
@@ -121,7 +121,7 @@ public class Mesh implements Block {
 //		System.out.println(info.numMaterials+" materials, "+info.numTriangles+"/"+triangles.triangles.size()+" triangles, "+info.numVertices+" vertices");
 //		System.out.println(materials.materials.size() + " materials, "+verticesBlocks.size() + " vertices blocks");
 
-		ShaderUsage previousSU = null;
+		Shader previousSU = null;
 		int j=0;
 		if (materials != null && triangles != null) for (int i=0; i<materials.materials.size(); i++) {
 			if (verticesBlocks.size() == j) {
@@ -133,18 +133,18 @@ public class Mesh implements Block {
 			case Prostreet_PC:
 			case Prostreet_X360: //PS X360
 			case Carbon_PC: //carbono
-				verticesBlocks.get(j).vertexFormat = materials.materials.get(i).shaderUsage.vertexFormat_PC;
+				verticesBlocks.get(j).vertexFormat = materials.materials.get(i).shader.vertexFormat_PC;
 				break;
 			case X360:
-				verticesBlocks.get(j).vertexFormat = materials.materials.get(i).shaderUsage.vertexFormat_X360;
+				verticesBlocks.get(j).vertexFormat = materials.materials.get(i).shader.vertexFormat_X360;
 				break;
 			case PS3:
-				verticesBlocks.get(j).vertexFormat = materials.materials.get(i).shaderUsage.vertexFormat_PS3;
+				verticesBlocks.get(j).vertexFormat = materials.materials.get(i).shader.vertexFormat_PS3;
 				break;
 			}
 			
 			if (materials.materials.get(i).singleVertexLength != 0 && materials.materials.get(i).singleVertexLength != verticesBlocks.get(j).vertexFormat.getLength()) {
-				System.err.println("WARN: mismatching vertex format length: declared %d, expected %d (shader %s)".formatted(materials.materials.get(i).singleVertexLength, verticesBlocks.get(j).vertexFormat.getLength(), materials.materials.get(i).shaderUsage.getName()));
+				System.err.println("WARN: mismatching vertex format length: declared %d, expected %d (shader %s)".formatted(materials.materials.get(i).singleVertexLength, verticesBlocks.get(j).vertexFormat.getLength(), materials.materials.get(i).shader.getName()));
 			}
 			try {
 				verticesBlocks.get(j).readVertices();
@@ -172,7 +172,7 @@ public class Mesh implements Block {
 							) {
 						k++;
 //						System.out.println("add vertices");
-						if (verticesBlocks.get(k).vertexFormat == null) verticesBlocks.get(k).vertexFormat = materials.materials.get(i).shaderUsage.vertexFormat_PC;
+						if (verticesBlocks.get(k).vertexFormat == null) verticesBlocks.get(k).vertexFormat = materials.materials.get(i).shader.vertexFormat_PC;
 						verticesBlocks.get(k).readVertices();
 						materials.materials.get(i).verticesBlock = verticesBlocks.get(k);
 					}
@@ -181,8 +181,8 @@ public class Mesh implements Block {
 
 			//added because stupid carbon
 			if (platform == Platform.Carbon_PC) {
-				if (previousSU != null && !previousSU.equals(materials.materials.get(i).shaderUsage)) j++;
-				previousSU = materials.materials.get(i).shaderUsage;
+				if (previousSU != null && !previousSU.equals(materials.materials.get(i).shader)) j++;
+				previousSU = materials.materials.get(i).shader;
 			} else 
 				j++;
 			
@@ -201,19 +201,19 @@ public class Mesh implements Block {
 		case PC:
 			this.info = new Mesh_Info_PC(platform);
 			this.materials = new Materials_PC();
-			this.shadersUsage = new ShadersUsage();
+			this.shaders = new Shaders();
 			this.triangles = new Triangles_PC();
 			break;
 		case X360:
 			this.info = new Mesh_Info_X360();
 			this.materials = new Materials_X360();
-			this.shadersUsage = new ShadersUsage();
+			this.shaders = new Shaders();
 			this.triangles = new Triangles_X360();
 			break;
 		case PS3:
 			this.info = new Mesh_Info_PS3();
 			this.materials = new Materials_PS3();
-			this.shadersUsage = new ShadersUsage();
+			this.shaders = new Shaders();
 			this.triangles = new Triangles_PS3();
 			break;
 		case Prostreet_PC:
@@ -222,7 +222,7 @@ public class Mesh implements Block {
 			this.info = new Mesh_Info_PC(platform);
 			this.materials = new LegacyMaterials();
 //			this.shadersUsage = new ShadersUsage(); //no shaders usage in proshit i think
-			this.shadersUsage = null;
+			this.shaders = null;
 			this.triangles = new LegacyTriangles();
 			break;
 		}
@@ -231,7 +231,7 @@ public class Mesh implements Block {
 	public void rebuildSubBlocks() {
 		subBlocks.clear();
 		subBlocks.add(info);
-		if (Geometry.isUC(platform)) subBlocks.add(shadersUsage);
+		if (Geometry.isUC(platform)) subBlocks.add(shaders);
 		subBlocks.add(materials);
 		for (var v : verticesBlocks) {
 			subBlocks.add(new Mesh_VertsHeader());
@@ -249,42 +249,42 @@ public class Mesh implements Block {
 			this.info = new Mesh_Info_PC(info);
 			((Mesh_Info_PC)info).updatePlatform(plat);
 			this.materials = new Materials_PC(materials);
-			this.shadersUsage = new ShadersUsage();
+			this.shaders = new Shaders();
 			this.triangles = new Triangles_PC(triangles);
 			for (var m : materials.materials) {
 //				System.out.println(m.shaderUsage.getName() + " is " + m.shaderUsage.getClass().getSimpleName());
-				m.shaderUsage = ShaderUsage.getNGOrDefault(m.shaderUsage.getName(), ShaderUsage.get("Diffuse"));
+				m.shader = Shader.getNGOrDefault(m.shader.getName(), Shader.get("Diffuse"));
 //				System.out.println("new "+m.shaderUsage.getName() + " is " + m.shaderUsage.getClass().getSimpleName());
 			}
 			for (int i=0; i< verticesBlocks.size(); i++) {
 				verticesBlocks.set(i, new Vertices_PC(verticesBlocks.get(i)));
-				verticesBlocks.get(i).vertexFormat = verticesBlocks.get(i).material.shaderUsage.vertexFormat_PC;
+				verticesBlocks.get(i).vertexFormat = verticesBlocks.get(i).material.shader.vertexFormat_PC;
 			}
 			break;
 		case X360:
 			this.info = new Mesh_Info_X360(info);
 			this.materials = new Materials_X360(materials);
-			this.shadersUsage = new ShadersUsage();
+			this.shaders = new Shaders();
 			this.triangles = new Triangles_X360(triangles);
 			for (var m : materials.materials) {
-				m.shaderUsage = ShaderUsage.getNGOrDefault(m.shaderUsage.getName(), ShaderUsage.get("Diffuse"));
+				m.shader = Shader.getNGOrDefault(m.shader.getName(), Shader.get("Diffuse"));
 			}
 			for (int i=0; i< verticesBlocks.size(); i++) {
 				verticesBlocks.set(i, new Vertices_X360(verticesBlocks.get(i)));
-				verticesBlocks.get(i).vertexFormat = verticesBlocks.get(i).material.shaderUsage.vertexFormat_X360;
+				verticesBlocks.get(i).vertexFormat = verticesBlocks.get(i).material.shader.vertexFormat_X360;
 			}
 			break;
 		case PS3:
 			this.info = new Mesh_Info_PS3(info);
 			this.materials = new Materials_PS3(materials);
-			this.shadersUsage = new ShadersUsage();
+			this.shaders = new Shaders();
 			this.triangles = new Triangles_PS3(triangles);
 			for (var m : materials.materials) {
-				m.shaderUsage = ShaderUsage.getNGOrDefault(m.shaderUsage.getName(), ShaderUsage.get("Diffuse"));
+				m.shader = Shader.getNGOrDefault(m.shader.getName(), Shader.get("Diffuse"));
 			}
 			for (int i=0; i< verticesBlocks.size(); i++) {
 				verticesBlocks.set(i, new Vertices_PS3(verticesBlocks.get(i)));
-				verticesBlocks.get(i).vertexFormat = verticesBlocks.get(i).material.shaderUsage.vertexFormat_PS3;
+				verticesBlocks.get(i).vertexFormat = verticesBlocks.get(i).material.shader.vertexFormat_PS3;
 			}
 			break;
 		case Prostreet_PC:
@@ -294,14 +294,14 @@ public class Mesh implements Block {
 			((Mesh_Info_PC)info).updatePlatform(plat);
 			this.materials = new LegacyMaterials(materials);
 //			this.shadersUsage = new ShadersUsage(); //no shaders usage in proshit i think
-			this.shadersUsage = null;
+			this.shaders = null;
 			this.triangles = new LegacyTriangles(triangles);
 			for (var m : materials.materials) {
-				m.shaderUsage = ShaderUsage.findLegacyUsage(m.shaderUsage.getName(), plat);
+				m.shader = Shader.findLegacyUsage(m.shader.getName(), plat);
 			}
 			for (int i=0; i< verticesBlocks.size(); i++) {
 				verticesBlocks.set(i, new LegacyVertices(verticesBlocks.get(i)));
-				verticesBlocks.get(i).vertexFormat = verticesBlocks.get(i).material.shaderUsage.vertexFormat_PC;
+				verticesBlocks.get(i).vertexFormat = verticesBlocks.get(i).material.shader.vertexFormat_PC;
 			}
 			break;
 		}

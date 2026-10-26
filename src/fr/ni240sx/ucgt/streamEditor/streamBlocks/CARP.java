@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.shared.Utils;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 
@@ -358,7 +358,7 @@ public class CARP{
 	public static class Name implements UData{
 		public String name;
 		public Name(ByteBuffer in) {
-			name = Block.readString(in);
+			name = Utils.readString(in);
 		}
 	}
 	

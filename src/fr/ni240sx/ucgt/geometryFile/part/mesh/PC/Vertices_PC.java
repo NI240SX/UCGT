@@ -6,8 +6,8 @@ import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertices;
-import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class Vertices_PC extends Vertices {
 
@@ -50,14 +50,14 @@ public class Vertices_PC extends Vertices {
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 
-		var alignment = Block.findAlignment(currentPosition+8, 128);
+		var alignment = Utils.findAlignment(currentPosition+8, 128);
 		var out = ByteBuffer.wrap(new byte[vertexFormat.getLength()*vertices.size() + 8 + alignment]);
 		out.order(ByteOrder.LITTLE_ENDIAN);
 
 		out.putInt(getBlockID().getKey());
 		out.putInt(vertexFormat.getLength()*vertices.size() + alignment);
 		
-		Block.makeAlignment(out, alignment, (byte) 0x11);
+		Utils.makeAlignment(out, alignment, (byte) 0x11);
 		
 		for (var v : vertices) {
 			v.save(out, vertexFormat);

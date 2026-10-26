@@ -976,7 +976,7 @@ public class VisualController {
 			textureHashes = mat.TextureHashes;
 			textureUsages = mat.textureUsages;
 			mesh = matMesh;
-			isConstant = mat.shaderUsage.key == Hash.findVLT("ar_constant");
+			isConstant = mat.shader.key == Hash.findVLT("ar_constant");
 		}
 	}
 	

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class ChunkScenery_Objects extends ArrayList<fr.ni240sx.ucgt.streamEditor.streamBlocks.ChunkScenery_Objects.Object> implements Block {
 
@@ -43,7 +44,7 @@ public class ChunkScenery_Objects extends ArrayList<fr.ni240sx.ucgt.streamEditor
 		buf.putInt(-1); //length for later
 		
 		out.write(buf.array());
-		Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 16), (byte)0x11);
+		Utils.makeAlignment(out, Utils.findAlignment(currentPosition+out.size(), 16), (byte)0x11);
 
 		for (var z : this) out.write(z.save());
 		
@@ -70,7 +71,7 @@ public class ChunkScenery_Objects extends ArrayList<fr.ni240sx.ucgt.streamEditor
 		
 		Object(ByteBuffer in){
 			var nameEnd = in.position()+24;
-			name = Block.readString(in);
+			name = Utils.readString(in);
 			in.position(nameEnd); //ignore name
 			lod[0] = in.getInt(); //A
 			lod[1] = in.getInt(); //B
@@ -101,7 +102,7 @@ public class ChunkScenery_Objects extends ArrayList<fr.ni240sx.ucgt.streamEditor
 			bb.order(ByteOrder.LITTLE_ENDIAN);
 
 			var nameEnd = bb.position()+24;
-			Block.putString(bb, name, 24);
+			Utils.putString(bb, name, 24);
 			bb.position(nameEnd);
 
 			bb.putInt(lod[0]);

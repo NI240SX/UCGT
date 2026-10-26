@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class Strings implements Block {
 
@@ -28,7 +29,7 @@ public class Strings implements Block {
 		var stringsBeginning = in.position();
 		for (int i=0; i< numStrings; i++) {
 			in.position(stringsBeginning+stringOffsets[i]);
-			strings.add(Block.readString(in));
+			strings.add(Utils.readString(in));
 		}
 		in.position(blockStart+blockLength);
 	}
@@ -41,7 +42,7 @@ public class Strings implements Block {
 		
 		//calculate size
 		var blockLength = 4 + strings.size()*4;
-		for (var s : strings) blockLength += Block.stringLengthAligned(s);
+		for (var s : strings) blockLength += Utils.stringLengthAligned(s);
 
 		var out = ByteBuffer.wrap(new byte[blockLength+8]);
 		out.order(ByteOrder.LITTLE_ENDIAN);
@@ -56,7 +57,7 @@ public class Strings implements Block {
 
 		for (int i = 0; i<strings.size(); i++) {
 			stringOffsets[i] = out.position() - blockStart - 4 - strings.size()*4;
-			Block.putString(out, strings.get(i));
+			Utils.putString(out, strings.get(i));
 		}
 		
 		out.position(blockStart+4);

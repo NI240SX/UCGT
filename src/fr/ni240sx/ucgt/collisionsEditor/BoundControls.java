@@ -13,7 +13,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -23,74 +22,74 @@ public class BoundControls extends GridPane {
 	private scgBounds bound = null;
 	
 	private Label key = new Label();
-	private TextField name = new TextField();
+	private CaretKeeperTextField name = new CaretKeeperTextField();
 	private ComboBox<BoundType> boundType = new ComboBox<>();
 	private VBox flags = new VBox();
 	private ComboBox<BoundShape> shape = new ComboBox<>();
 
-	private TextField surfaceName = new TextField();
-	private TextField attributeName = new TextField();
-//	private TextField childrenFlags = new TextField();
+	private CaretKeeperTextField surfaceName = new CaretKeeperTextField();
+	private CaretKeeperTextField attributeName = new CaretKeeperTextField();
+//	private CaretKeeperTextField childrenFlags = new CaretKeeperTextField();
 	
-	private ComboBox<BoundConstraintType> constraintType = new ComboBox<>();
+//	private ComboBox<BoundConstraintType> constraintType = new ComboBox<>();
 	private ComboBox<BoundJointType> jointType = new ComboBox<>();
-	private ComboBox<BoundNodeType> nodeType = new ComboBox<>();
+//	private ComboBox<BoundNodeType> nodeType = new ComboBox<>();
 
-	private TextField boneIndex = new TextField();
-	private TextField renderIndex = new TextField();
+	private CaretKeeperTextField boneIndex = new CaretKeeperTextField();
+	private CaretKeeperTextField renderIndex = new CaretKeeperTextField();
 	
-	private TextField posX = new TextField();
-	private TextField posY = new TextField();
-	private TextField posZ = new TextField();
+	private CaretKeeperTextField posX = new CaretKeeperTextField();
+	private CaretKeeperTextField posY = new CaretKeeperTextField();
+	private CaretKeeperTextField posZ = new CaretKeeperTextField();
 
-	private TextField orX = new TextField();
-	private TextField orY = new TextField();
-	private TextField orZ = new TextField();
-	private TextField orW = new TextField();
+	private CaretKeeperTextField orX = new CaretKeeperTextField();
+	private CaretKeeperTextField orY = new CaretKeeperTextField();
+	private CaretKeeperTextField orZ = new CaretKeeperTextField();
+	private CaretKeeperTextField orW = new CaretKeeperTextField();
 
-	private TextField dimX = new TextField();
-	private TextField dimY = new TextField();
-	private TextField dimZ = new TextField();
+	private CaretKeeperTextField dimX = new CaretKeeperTextField();
+	private CaretKeeperTextField dimY = new CaretKeeperTextField();
+	private CaretKeeperTextField dimZ = new CaretKeeperTextField();
 
-	private TextField pivotX = new TextField();
-	private TextField pivotY = new TextField();
-	private TextField pivotZ = new TextField();
+	private CaretKeeperTextField pivotX = new CaretKeeperTextField();
+	private CaretKeeperTextField pivotY = new CaretKeeperTextField();
+	private CaretKeeperTextField pivotZ = new CaretKeeperTextField();
 
-	private TextField boneOffX = new TextField();
-	private TextField boneOffY = new TextField();
-	private TextField boneOffZ = new TextField();
+	private CaretKeeperTextField boneOffX = new CaretKeeperTextField();
+	private CaretKeeperTextField boneOffY = new CaretKeeperTextField();
+	private CaretKeeperTextField boneOffZ = new CaretKeeperTextField();
 	
-	private TextField boxExtX = new TextField();
-	private TextField boxExtY = new TextField();
-	private TextField boxExtZ = new TextField();
-	private TextField boxExtW = new TextField();
+	private CaretKeeperTextField boxExtX = new CaretKeeperTextField();
+	private CaretKeeperTextField boxExtY = new CaretKeeperTextField();
+	private CaretKeeperTextField boxExtZ = new CaretKeeperTextField();
+	private CaretKeeperTextField boxExtW = new CaretKeeperTextField();
 
-	private TextField sphereRadius = new TextField();
+	private CaretKeeperTextField sphereRadius = new CaretKeeperTextField();
 	
-	private TextField translateX = new TextField();
-	private TextField translateY = new TextField();
-	private TextField translateZ = new TextField();
-	private TextField translateW = new TextField();
+	private CaretKeeperTextField translateX = new CaretKeeperTextField();
+	private CaretKeeperTextField translateY = new CaretKeeperTextField();
+	private CaretKeeperTextField translateZ = new CaretKeeperTextField();
+	private CaretKeeperTextField translateW = new CaretKeeperTextField();
 	
-	private TextField XRotateX = new TextField();
-	private TextField XRotateY = new TextField();
-	private TextField XRotateZ = new TextField();
-//	private TextField XRotateW = new TextField();
+	private CaretKeeperTextField XRotateX = new CaretKeeperTextField();
+	private CaretKeeperTextField XRotateY = new CaretKeeperTextField();
+	private CaretKeeperTextField XRotateZ = new CaretKeeperTextField();
+//	private CaretKeeperTextField XRotateW = new CaretKeeperTextField();
 	
-//	private TextField YRotateX = new TextField();
-//	private TextField YRotateY = new TextField();
-//	private TextField YRotateZ = new TextField();
-//	private TextField YRotateW = new TextField();
+//	private CaretKeeperTextField YRotateX = new CaretKeeperTextField();
+//	private CaretKeeperTextField YRotateY = new CaretKeeperTextField();
+//	private CaretKeeperTextField YRotateZ = new CaretKeeperTextField();
+//	private CaretKeeperTextField YRotateW = new CaretKeeperTextField();
 	
-//	private TextField ZRotateX = new TextField();
-//	private TextField ZRotateY = new TextField();
-//	private TextField ZRotateZ = new TextField();
-//	private TextField ZRotateW = new TextField();
+//	private CaretKeeperTextField ZRotateX = new CaretKeeperTextField();
+//	private CaretKeeperTextField ZRotateY = new CaretKeeperTextField();
+//	private CaretKeeperTextField ZRotateZ = new CaretKeeperTextField();
+//	private CaretKeeperTextField ZRotateW = new CaretKeeperTextField();
 
-	private TextField renderNodeX = new TextField();
-	private TextField renderNodeY = new TextField();
-	private TextField renderNodeZ = new TextField();
-	private TextField renderNodeW = new TextField();
+	private CaretKeeperTextField renderNodeX = new CaretKeeperTextField();
+	private CaretKeeperTextField renderNodeY = new CaretKeeperTextField();
+	private CaretKeeperTextField renderNodeZ = new CaretKeeperTextField();
+	private CaretKeeperTextField renderNodeW = new CaretKeeperTextField();
 	
 	private Gizmo boundGizmo;
 //	public WeakInvalidationListener gizmoChangeListener = new WeakInvalidationListener(o -> updateBoundFromGizmo());
@@ -100,22 +99,32 @@ public class BoundControls extends GridPane {
 		
 		boundType.getItems().addAll(BoundType.values());
 		shape.getItems().addAll(BoundShape.values());
-		constraintType.getItems().addAll(BoundConstraintType.values());
+//		constraintType.getItems().addAll(BoundConstraintType.values());
 		jointType.getItems().addAll(BoundJointType.values());
-		nodeType.getItems().addAll(BoundNodeType.values());
+//		nodeType.getItems().addAll(BoundNodeType.values());
 
 		for (int i=1; i<BoundFlags.values().length; i++) {
 			flags.getChildren().add(new CheckBox(BoundFlags.values()[i].getName()));
 		}
 		
 		this.setOnKeyReleased(e -> {
-			if (e.getCode() == KeyCode.ENTER) {
+//			if (e.getCode() == KeyCode.ENTER)
+			{
 				updateBound();
 				update();
 			}
 		});
 		
-		update();
+//		boundType.setOnAction(e -> {
+//			updateBound();
+//			update();
+//		});
+//		shape.setOnAction(boundType.getOnAction());
+//		constraintType.setOnAction(boundType.getOnAction());
+//		jointType.setOnAction(boundType.getOnAction());
+//		nodeType.setOnAction(boundType.getOnAction());
+		
+		rebuild();
 	}
 	
 	public void updateBound() {
@@ -129,22 +138,29 @@ public class BoundControls extends GridPane {
 					bound.Shape = shape.getValue();
 					switch (shape.getValue()) {
 					case KSHAPE_BOX:
-						bound.collisionShape = CollisionsEditor.mainCollisions.new hkpBoxShape(); //(bound)
+						bound.collisionShape = CollisionsEditor.mainCollisions.new hkpBoxShape(bound); //(bound)
 						break;
 					case KSHAPE_MESH:
-						bound.collisionShape = CollisionsEditor.mainCollisions.new hkpConvexVerticesShape(); //(bound)
+						bound.collisionShape = CollisionsEditor.mainCollisions.new hkpConvexVerticesShape(bound); //(bound)
 						break;
 					case KSHAPE_SPHERE:
-						bound.collisionShape = CollisionsEditor.mainCollisions.new hkpSphereShape(); //(bound)
+						bound.collisionShape = CollisionsEditor.mainCollisions.new hkpSphereShape(bound); //(bound)
 						break;
-					default:
-						bound.collisionShape = null;
+//					default:
+//						bound.collisionShape = null;
+//						break;
+					case KSHAPE_CYLINDER:
+						bound.collisionShape = CollisionsEditor.mainCollisions.new hkpCylinderShape(bound); //(bound)
+						break;
+					case KSHAPE_INVALID:
+					case KSHAPE_TYPE_COUNT:
 						break;
 					}
-					
+					//FIXME trigger ui change for shape change
 					
 				}
 				
+				try{ 
 	//			bound.Shape = shape.getValue();
 				bound.Flags = applyFlags();
 				
@@ -152,9 +168,9 @@ public class BoundControls extends GridPane {
 				bound.AttributeName = Hash.findVLT(attributeName.getText().strip());
 //				bound.ChildrenFlags = flagsFromText(childrenFlags.getText());
 	
-				bound.ConstraintType = constraintType.getValue();
+//				bound.ConstraintType = constraintType.getValue();
 				bound.JointType = jointType.getValue();
-				bound.NodeType = nodeType.getValue();
+//				bound.NodeType = nodeType.getValue();
 				
 				bound.BoneIndex = Integer.parseInt(boneIndex.getText().strip());
 				bound.RenderHierarchyIndex = (short) Integer.parseInt(renderIndex.getText().strip());
@@ -162,7 +178,7 @@ public class BoundControls extends GridPane {
 				hkpShape colShape = bound.getShape();
 				hkpShape colTransform = bound.getTransform();
 
-				try{ if (colShape != null) switch (bound.Shape) {
+				if (colShape != null) switch (bound.Shape) {
 				case KSHAPE_BOX:
 					((hkpBoxShape)colShape).HalfExtentsX = Float.parseFloat(boxExtX.getText().strip());
 					((hkpBoxShape)colShape).HalfExtentsY = Float.parseFloat(boxExtY.getText().strip());
@@ -172,9 +188,13 @@ public class BoundControls extends GridPane {
 				case KSHAPE_SPHERE:
 					((hkpSphereShape)colShape).radius = Float.parseFloat(sphereRadius.getText().strip());
 					break;
+				case KSHAPE_CYLINDER:
+					((hkpCylinderShape)colShape).radius = Float.parseFloat(sphereRadius.getText().strip());
+					break;
 				case KSHAPE_MESH:
 					break;
-				default:
+				case KSHAPE_INVALID:
+				case KSHAPE_TYPE_COUNT:
 					bound.PositionX = Float.parseFloat(posX.getText().strip());
 					bound.PositionY = Float.parseFloat(posY.getText().strip());
 					bound.PositionZ = Float.parseFloat(posZ.getText().strip());
@@ -197,14 +217,17 @@ public class BoundControls extends GridPane {
 					bound.BoneOffsetZ = Float.parseFloat(boneOffZ.getText().strip());
 					
 				}
-				} catch (@SuppressWarnings("unused") Exception shh) {} //fail to parse silently
 				
 //				if (bound.Shape == BoundShape.KSHAPE_BOX || bound.Shape == BoundShape.KSHAPE_SPHERE) {
 					
 					if (!(XRotateX.getText().isBlank() || XRotateY.getText().isBlank() || XRotateZ.getText().isBlank() 
 //							|| YRotateX.getText().isBlank() || YRotateY.getText().isBlank() || YRotateZ.getText().isBlank() || 
 //							ZRotateX.getText().isBlank() || ZRotateY.getText().isBlank() || ZRotateZ.getText().isBlank()
-							)) {
+							)
+							&&
+							!(doubleEquals(Float.parseFloat(XRotateX.getText().strip()),0) || 
+									doubleEquals(Float.parseFloat(XRotateY.getText().strip()),0) ||
+									doubleEquals(Float.parseFloat(XRotateZ.getText().strip()),0))) {
 						// need transform
 						if (colTransform == null || colTransform.getClass() != hkpConvexTransformShape.class ) {
 							if (colTransform != null && colTransform.getClass() == hkpConvexTranslateShape.class ) {
@@ -239,7 +262,11 @@ public class BoundControls extends GridPane {
 //						shapeTransform.ZRotationZ = Float.parseFloat(ZRotateZ.getText().strip());
 //						shapeTransform.ZRotationW = Float.parseFloat(ZRotateW.getText().strip());
 						
-					} else if (!(translateX.getText().isBlank() || translateY.getText().isBlank() || translateZ.getText().isBlank())) {
+					} else if (!(translateX.getText().isBlank() || translateY.getText().isBlank() || translateZ.getText().isBlank())
+							&&
+							!(doubleEquals(Float.parseFloat(translateX.getText().strip()),0) || 
+									doubleEquals(Float.parseFloat(translateY.getText().strip()),0) ||
+									doubleEquals(Float.parseFloat(translateZ.getText().strip()),0))) {
 						//need translate
 						if (colTransform == null || colTransform.getClass() != hkpConvexTranslateShape.class ) {
 							if (colTransform != null && colTransform.getClass() == hkpConvexTransformShape.class ) {
@@ -280,7 +307,8 @@ public class BoundControls extends GridPane {
 						bound.scgRenderNode.W = Float.parseFloat(renderNodeW.getText().strip());
 					}
 //				}
-				
+				} catch (@SuppressWarnings("unused") Exception shh) {} //fail to parse silently
+
 			} catch (Exception e) {
 				e.printStackTrace();
 				if (!CollisionsEditor.disableWarnings) new Alert(Alert.AlertType.ERROR, "Error refreshing bound:\n"+e.getMessage(), ButtonType.OK).show();
@@ -293,11 +321,13 @@ public class BoundControls extends GridPane {
 		BoundCell.allCells.forEach(c -> c.update(c.getItem(), false));
 	}
 	
-	public void update() {
+	public void rebuild() {
 		try {	
 			this.getChildren().clear();
-
-			this.add(new Label("Vault key"), 0, 0);
+			
+			var l = new Label("Attrib key");
+			l.setMinWidth(90);
+			this.add(l, 0, 0);
 			this.add(key, 1, 0);
 			this.add(new Label("Name"), 0, 1);
 			this.add(name, 1, 1);
@@ -321,14 +351,14 @@ public class BoundControls extends GridPane {
 			this.add(new Separator(), 0, 19);
 			this.add(new Separator(), 1, 19);
 			
-			Label l;
-			this.add(l = new Label("Constraint type"), 0, 20);
-			l.setMinWidth(90);
-			this.add(constraintType, 1, 20);
+//			Label l;
+//			this.add(l = new Label("Constraint type"), 0, 20);
+//			l.setMinWidth(90);
+//			this.add(constraintType, 1, 20);
 			this.add(new Label("Joint type"), 0, 21);
 			this.add(jointType, 1, 21);
-			this.add(new Label("Node type"), 0, 22);
-			this.add(nodeType, 1, 22);
+//			this.add(new Label("Node type"), 0, 22);
+//			this.add(nodeType, 1, 22);
 	
 			this.add(new Separator(), 0, 29);
 			this.add(new Separator(), 1, 29);
@@ -369,38 +399,9 @@ public class BoundControls extends GridPane {
 				//}
 				if (!CollisionsEditor.viewportGroup.getChildren().contains(boundGizmo)) CollisionsEditor.viewportGroup.getChildren().add(boundGizmo);
 
-				updateTextFields();
+				rebuildTextFields();
 
-				hkpShape colShape = bound.getShape();
-				hkpShape colTransform = bound.getTransform();
-				
-				if (colShape != null) switch (bound.Shape) {
-				case KSHAPE_BOX:
-					boundGizmo.setScale(((hkpBoxShape)colShape).HalfExtentsX, ((hkpBoxShape)colShape).HalfExtentsY, ((hkpBoxShape)colShape).HalfExtentsZ);
-					break;
-				case KSHAPE_SPHERE:
-					boundGizmo.setScale(((hkpSphereShape)colShape).radius, ((hkpSphereShape)colShape).radius, ((hkpSphereShape)colShape).radius);
-					break;
-				default:
-				}
-				
-				if (colTransform != null && colTransform.getClass() == hkpConvexTransformShape.class ) {
-					var shapeTransform = (hkpConvexTransformShape)colTransform;
-					boundGizmo.setPosition(-shapeTransform.TranslationX, shapeTransform.TranslationY, shapeTransform.TranslationZ);
-					
-					var angles = shapeTransform.getEulerAngles();
-					boundGizmo.setRotation(angles[0], angles[1], angles[2]);
-					
-				} else if (colTransform != null && colTransform.getClass() == hkpConvexTranslateShape.class ) {
-					var shapeTranslate = (hkpConvexTranslateShape)colTransform;
-					boundGizmo.setPosition(-shapeTranslate.TranslationX, shapeTranslate.TranslationY, shapeTranslate.TranslationZ);
-					boundGizmo.setRotation(0, 0, 0);
-				} else {
-					boundGizmo.setPosition(0, 0, 0);			
-					boundGizmo.setRotation(0, 0, 0);
-				}
-				
-				boundGizmo.setOffset(-bound.getRenderNode().Y, -bound.getRenderNode().Z, -bound.getRenderNode().X);
+				updateGizmo();
 				
 				
 			} else {
@@ -415,26 +416,26 @@ public class BoundControls extends GridPane {
 		}
 	}
 
-	public void updateTextFields() {
+	public void rebuildTextFields() {
 		key.setText("0x%08X".formatted(bound.NameHash));
-		name.setText(Hash.getVLT(bound.NameHash));
+		name.setTextKeepCaret(Hash.getVLT(bound.NameHash));
 		boundType.setValue(bound.Type);
 		shape.setValue(bound.Shape);
-//				flags.setText(flagsAsText(bound.Flags));
+//				flags.setTextKeepCaret(flagsAsText(bound.Flags));
 		readFlags(bound);
 		
-		surfaceName.setText(Hash.getVLT(bound.SurfaceName));
-		attributeName.setText(Hash.getVLT(bound.AttributeName));
-//			childrenFlags.setText(flagsAsText(bound.ChildrenFlags));
+		surfaceName.setTextKeepCaret(Hash.getVLT(bound.SurfaceName));
+		attributeName.setTextKeepCaret(Hash.getVLT(bound.AttributeName));
+//			childrenFlags.setTextKeepCaret(flagsAsText(bound.ChildrenFlags));
 		
-		constraintType.setValue(bound.ConstraintType);
+//		constraintType.setValue(bound.ConstraintType);
 		jointType.setValue(bound.JointType);
-		nodeType.setValue(bound.NodeType);
+//		nodeType.setValue(bound.NodeType);
 
-		boneIndex.setText(bound.BoneIndex+"");
-		renderIndex.setText(bound.RenderHierarchyIndex+"");
+		boneIndex.setTextKeepCaret(bound.BoneIndex+"");
+		renderIndex.setTextKeepCaret(bound.RenderHierarchyIndex+"");
 
-		updateNumericTextFields();
+		rebuildNumericTextFields();
 		
 		if (bound.scgRenderNode != null) {
 			this.add(new Separator(), 0, 59);
@@ -443,15 +444,15 @@ public class BoundControls extends GridPane {
 			var h = new HBox();
 			h.getChildren().addAll(renderNodeX, renderNodeY, renderNodeZ, renderNodeW);
 			this.add(h, 1, 60);
-			renderNodeX.setText(bound.scgRenderNode.X+"");
-			renderNodeY.setText(bound.scgRenderNode.Y+"");
-			renderNodeZ.setText(bound.scgRenderNode.Z+"");
-			renderNodeW.setText(bound.scgRenderNode.W+"");
+			renderNodeX.setTextKeepCaret(bound.scgRenderNode.X+"");
+			renderNodeY.setTextKeepCaret(bound.scgRenderNode.Y+"");
+			renderNodeZ.setTextKeepCaret(bound.scgRenderNode.Z+"");
+			renderNodeW.setTextKeepCaret(bound.scgRenderNode.W+"");
 		}
 		this.setDisable(false);
 	}
 
-	public void updateNumericTextFields() {
+	public void rebuildNumericTextFields() {
 		hkpShape colShape = bound.getShape();
 		hkpShape colTransform = bound.getTransform();
 		
@@ -463,10 +464,10 @@ public class BoundControls extends GridPane {
 			h.getChildren().addAll(boxExtX, boxExtY, boxExtZ, boxExtW);
 			this.add(h, 1, 40);
 								
-			boxExtX.setText(((hkpBoxShape)colShape).HalfExtentsX+"");
-			boxExtY.setText(((hkpBoxShape)colShape).HalfExtentsY+"");
-			boxExtZ.setText(((hkpBoxShape)colShape).HalfExtentsZ+"");
-			boxExtW.setText(((hkpBoxShape)colShape).HalfExtentsW+"");
+			boxExtX.setTextKeepCaret(((hkpBoxShape)colShape).HalfExtentsX+"");
+			boxExtY.setTextKeepCaret(((hkpBoxShape)colShape).HalfExtentsY+"");
+			boxExtZ.setTextKeepCaret(((hkpBoxShape)colShape).HalfExtentsZ+"");
+			boxExtW.setTextKeepCaret(((hkpBoxShape)colShape).HalfExtentsW+"");
 
 			this.add(new Separator(), 0, 49);
 			this.add(new Separator(), 1, 49);
@@ -477,7 +478,18 @@ public class BoundControls extends GridPane {
 			this.add(new Label("Radius"), 0, 40);
 			this.add(sphereRadius, 1, 40);
 			
-			sphereRadius.setText(((hkpSphereShape)colShape).radius+"");
+			sphereRadius.setTextKeepCaret(((hkpSphereShape)colShape).radius+"");
+			
+			this.add(new Separator(), 0, 49);
+			this.add(new Separator(), 1, 49);
+			
+			break;
+		case KSHAPE_CYLINDER:
+
+			this.add(new Label("Radius"), 0, 40);
+			this.add(sphereRadius, 1, 40);
+			
+			sphereRadius.setTextKeepCaret(((hkpCylinderShape)colShape).radius+"");
 			
 			this.add(new Separator(), 0, 49);
 			this.add(new Separator(), 1, 49);
@@ -485,7 +497,8 @@ public class BoundControls extends GridPane {
 			break;
 		case KSHAPE_MESH:
 			break;
-		default:
+		case KSHAPE_INVALID:
+		case KSHAPE_TYPE_COUNT:
 			this.add(new Label("Position"), 0, 40); //better not fuck with this
 			h = new HBox();
 			h.getChildren().addAll(posX, posY, posZ);
@@ -509,26 +522,26 @@ public class BoundControls extends GridPane {
 		}
 
 		if (bound != null) {
-			posX.setText(bound.PositionX+"");
-			posY.setText(bound.PositionY+"");
-			posZ.setText(bound.PositionZ+"");
+			posX.setTextKeepCaret(bound.PositionX+"");
+			posY.setTextKeepCaret(bound.PositionY+"");
+			posZ.setTextKeepCaret(bound.PositionZ+"");
 			
-			orX.setText(bound.OrientationX+"");
-			orY.setText(bound.OrientationY+"");
-			orZ.setText(bound.OrientationZ+"");
-			orW.setText(bound.OrientationW+"");
+			orX.setTextKeepCaret(bound.OrientationX+"");
+			orY.setTextKeepCaret(bound.OrientationY+"");
+			orZ.setTextKeepCaret(bound.OrientationZ+"");
+			orW.setTextKeepCaret(bound.OrientationW+"");
 
-			dimX.setText(bound.HalfDimensionX+"");
-			dimY.setText(bound.HalfDimensionY+"");
-			dimZ.setText(bound.HalfDimensionZ+"");
+			dimX.setTextKeepCaret(bound.HalfDimensionX+"");
+			dimY.setTextKeepCaret(bound.HalfDimensionY+"");
+			dimZ.setTextKeepCaret(bound.HalfDimensionZ+"");
 
-			pivotX.setText(bound.PivotX+"");
-			pivotY.setText(bound.PivotY+"");
-			pivotZ.setText(bound.PivotZ+"");
+			pivotX.setTextKeepCaret(bound.PivotX+"");
+			pivotY.setTextKeepCaret(bound.PivotY+"");
+			pivotZ.setTextKeepCaret(bound.PivotZ+"");
 
-			boneOffX.setText(bound.BoneOffsetX+"");
-			boneOffY.setText(bound.BoneOffsetY+"");
-			boneOffZ.setText(bound.BoneOffsetZ+"");
+			boneOffX.setTextKeepCaret(bound.BoneOffsetX+"");
+			boneOffY.setTextKeepCaret(bound.BoneOffsetY+"");
+			boneOffZ.setTextKeepCaret(bound.BoneOffsetZ+"");
 		}
 		
 		this.add(new Label("Translate"), 0, 50);
@@ -557,69 +570,225 @@ public class BoundControls extends GridPane {
 		if (colTransform != null && colTransform.getClass() == hkpConvexTransformShape.class ) {
 			var shapeTransform = (hkpConvexTransformShape)colTransform;
 			
-			translateX.setText(shapeTransform.TranslationX+"");
-			translateY.setText(shapeTransform.TranslationY+"");
-			translateZ.setText(shapeTransform.TranslationZ+"");
-			translateW.setText(shapeTransform.TranslationW+"");
+			translateX.setTextKeepCaret(shapeTransform.TranslationX+"");
+			translateY.setTextKeepCaret(shapeTransform.TranslationY+"");
+			translateZ.setTextKeepCaret(shapeTransform.TranslationZ+"");
+			translateW.setTextKeepCaret(shapeTransform.TranslationW+"");
 
 			var angles = shapeTransform.getEulerAngles();
-			XRotateX.setText(angles[0]+"");
-			XRotateY.setText(angles[1]+"");
-			XRotateZ.setText(-angles[2]+"");
+			XRotateX.setTextKeepCaret(angles[0]+"");
+			XRotateY.setTextKeepCaret(angles[1]+"");
+			XRotateZ.setTextKeepCaret(-angles[2]+"");
 
-//			XRotateX.setText(shapeTransform.XRotationX+"");
-//			XRotateY.setText(shapeTransform.XRotationY+"");
-//			XRotateZ.setText(shapeTransform.XRotationZ+"");
-//			XRotateW.setText(shapeTransform.XRotationW+"");
-//			YRotateX.setText(shapeTransform.YRotationX+"");
-//			YRotateY.setText(shapeTransform.YRotationY+"");
-//			YRotateZ.setText(shapeTransform.YRotationZ+"");
-//			YRotateW.setText(shapeTransform.YRotationW+"");
-//			ZRotateX.setText(shapeTransform.ZRotationX+"");
-//			ZRotateY.setText(shapeTransform.ZRotationY+"");
-//			ZRotateZ.setText(shapeTransform.ZRotationZ+"");
-//			ZRotateW.setText(shapeTransform.ZRotationW+"");
+//			XRotateX.setTextKeepCaret(shapeTransform.XRotationX+"");
+//			XRotateY.setTextKeepCaret(shapeTransform.XRotationY+"");
+//			XRotateZ.setTextKeepCaret(shapeTransform.XRotationZ+"");
+//			XRotateW.setTextKeepCaret(shapeTransform.XRotationW+"");
+//			YRotateX.setTextKeepCaret(shapeTransform.YRotationX+"");
+//			YRotateY.setTextKeepCaret(shapeTransform.YRotationY+"");
+//			YRotateZ.setTextKeepCaret(shapeTransform.YRotationZ+"");
+//			YRotateW.setTextKeepCaret(shapeTransform.YRotationW+"");
+//			ZRotateX.setTextKeepCaret(shapeTransform.ZRotationX+"");
+//			ZRotateY.setTextKeepCaret(shapeTransform.ZRotationY+"");
+//			ZRotateZ.setTextKeepCaret(shapeTransform.ZRotationZ+"");
+//			ZRotateW.setTextKeepCaret(shapeTransform.ZRotationW+"");
 		} else if (colTransform != null && colTransform.getClass() == hkpConvexTranslateShape.class ) {
 			var shapeTranslate = (hkpConvexTranslateShape)colTransform;
 			
-			translateX.setText(shapeTranslate.TranslationX+"");
-			translateY.setText(shapeTranslate.TranslationY+"");
-			translateZ.setText(shapeTranslate.TranslationZ+"");
-			translateW.setText(shapeTranslate.TranslationW+"");
+			translateX.setTextKeepCaret(shapeTranslate.TranslationX+"");
+			translateY.setTextKeepCaret(shapeTranslate.TranslationY+"");
+			translateZ.setTextKeepCaret(shapeTranslate.TranslationZ+"");
+			translateW.setTextKeepCaret(shapeTranslate.TranslationW+"");
 
-			XRotateX.setText("");
-			XRotateY.setText("");
-			XRotateZ.setText("");
-//			XRotateW.setText("");
-//			YRotateX.setText("");
-//			YRotateY.setText("");
-//			YRotateZ.setText("");
-//			YRotateW.setText("");
-//			ZRotateX.setText("");
-//			ZRotateY.setText("");
-//			ZRotateZ.setText("");
-//			ZRotateW.setText("");				
+			XRotateX.setTextKeepCaret("");
+			XRotateY.setTextKeepCaret("");
+			XRotateZ.setTextKeepCaret("");
+//			XRotateW.setTextKeepCaret("");
+//			YRotateX.setTextKeepCaret("");
+//			YRotateY.setTextKeepCaret("");
+//			YRotateZ.setTextKeepCaret("");
+//			YRotateW.setTextKeepCaret("");
+//			ZRotateX.setTextKeepCaret("");
+//			ZRotateY.setTextKeepCaret("");
+//			ZRotateZ.setTextKeepCaret("");
+//			ZRotateW.setTextKeepCaret("");				
 		} else {
-			translateX.setText("");
-			translateY.setText("");
-			translateZ.setText("");
-			translateW.setText("");
+			translateX.setTextKeepCaret("");
+			translateY.setTextKeepCaret("");
+			translateZ.setTextKeepCaret("");
+			translateW.setTextKeepCaret("");
 
-			XRotateX.setText("");
-			XRotateY.setText("");
-			XRotateZ.setText("");
-//			XRotateW.setText("");
-//			YRotateX.setText("");
-//			YRotateY.setText("");
-//			YRotateZ.setText("");
-//			YRotateW.setText("");
-//			ZRotateX.setText("");
-//			ZRotateY.setText("");
-//			ZRotateZ.setText("");
-//			ZRotateW.setText("");				
+			XRotateX.setTextKeepCaret("");
+			XRotateY.setTextKeepCaret("");
+			XRotateZ.setTextKeepCaret("");
+//			XRotateW.setTextKeepCaret("");
+//			YRotateX.setTextKeepCaret("");
+//			YRotateY.setTextKeepCaret("");
+//			YRotateZ.setTextKeepCaret("");
+//			YRotateW.setTextKeepCaret("");
+//			ZRotateX.setTextKeepCaret("");
+//			ZRotateY.setTextKeepCaret("");
+//			ZRotateZ.setTextKeepCaret("");
+//			ZRotateW.setTextKeepCaret("");				
 		}
 	}
-	
+
+	public void update() {
+		try {
+			if (bound != null) {
+				updateTextFields();
+				updateGizmo();
+			} else {
+				name.setText("No bound selected");
+				if (boundGizmo != null && CollisionsEditor.viewportGroup.getChildren().contains(boundGizmo)) CollisionsEditor.viewportGroup.getChildren().remove(boundGizmo);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void updateTextFields() {
+		key.setText("0x%08X".formatted(bound.NameHash));
+		name.setTextKeepCaret(Hash.getVLT(bound.NameHash));
+		boundType.setValue(bound.Type);
+		shape.setValue(bound.Shape);
+		readFlags(bound);
+		
+		surfaceName.setTextKeepCaret(Hash.getVLT(bound.SurfaceName));
+		attributeName.setTextKeepCaret(Hash.getVLT(bound.AttributeName));		
+		jointType.setValue(bound.JointType);
+		boneIndex.setTextKeepCaret(bound.BoneIndex+"");
+		renderIndex.setTextKeepCaret(bound.RenderHierarchyIndex+"");
+
+		updateNumericTextFields();
+		
+		if (bound.scgRenderNode != null) {
+			renderNodeX.setTextKeepCaret(bound.scgRenderNode.X+"");
+			renderNodeY.setTextKeepCaret(bound.scgRenderNode.Y+"");
+			renderNodeZ.setTextKeepCaret(bound.scgRenderNode.Z+"");
+			renderNodeW.setTextKeepCaret(bound.scgRenderNode.W+"");
+		}
+	}
+
+	public void updateNumericTextFields() {
+		hkpShape colShape = bound.getShape();
+		hkpShape colTransform = bound.getTransform();
+		
+		if (colShape != null) switch (bound.Shape) {
+		case KSHAPE_BOX:
+			boxExtX.setTextKeepCaret(((hkpBoxShape)colShape).HalfExtentsX+"");
+			boxExtY.setTextKeepCaret(((hkpBoxShape)colShape).HalfExtentsY+"");
+			boxExtZ.setTextKeepCaret(((hkpBoxShape)colShape).HalfExtentsZ+"");
+			boxExtW.setTextKeepCaret(((hkpBoxShape)colShape).HalfExtentsW+"");
+			break;
+		case KSHAPE_SPHERE:
+			sphereRadius.setTextKeepCaret(((hkpSphereShape)colShape).radius+"");
+			break;
+		case KSHAPE_CYLINDER:
+			sphereRadius.setTextKeepCaret(((hkpCylinderShape)colShape).radius+"");
+			break;
+		case KSHAPE_MESH:
+			break;
+		case KSHAPE_INVALID:
+		case KSHAPE_TYPE_COUNT:
+		}
+
+		if (bound != null) {
+			posX.setTextKeepCaret(bound.PositionX+"");
+			posY.setTextKeepCaret(bound.PositionY+"");
+			posZ.setTextKeepCaret(bound.PositionZ+"");
+			
+			orX.setTextKeepCaret(bound.OrientationX+"");
+			orY.setTextKeepCaret(bound.OrientationY+"");
+			orZ.setTextKeepCaret(bound.OrientationZ+"");
+			orW.setTextKeepCaret(bound.OrientationW+"");
+
+			dimX.setTextKeepCaret(bound.HalfDimensionX+"");
+			dimY.setTextKeepCaret(bound.HalfDimensionY+"");
+			dimZ.setTextKeepCaret(bound.HalfDimensionZ+"");
+
+			pivotX.setTextKeepCaret(bound.PivotX+"");
+			pivotY.setTextKeepCaret(bound.PivotY+"");
+			pivotZ.setTextKeepCaret(bound.PivotZ+"");
+
+			boneOffX.setTextKeepCaret(bound.BoneOffsetX+"");
+			boneOffY.setTextKeepCaret(bound.BoneOffsetY+"");
+			boneOffZ.setTextKeepCaret(bound.BoneOffsetZ+"");
+		}
+		
+		if (colTransform != null && colTransform.getClass() == hkpConvexTransformShape.class ) {
+			var shapeTransform = (hkpConvexTransformShape)colTransform;
+			translateX.setTextKeepCaret(shapeTransform.TranslationX+"");
+			translateY.setTextKeepCaret(shapeTransform.TranslationY+"");
+			translateZ.setTextKeepCaret(shapeTransform.TranslationZ+"");
+			translateW.setTextKeepCaret(shapeTransform.TranslationW+"");
+
+			var angles = shapeTransform.getEulerAngles();
+			XRotateX.setTextKeepCaret(angles[0]+"");
+			XRotateY.setTextKeepCaret(angles[1]+"");
+			XRotateZ.setTextKeepCaret(-angles[2]+"");
+		
+		} else if (colTransform != null && colTransform.getClass() == hkpConvexTranslateShape.class ) {
+			var shapeTranslate = (hkpConvexTranslateShape)colTransform;
+			translateX.setTextKeepCaret(shapeTranslate.TranslationX+"");
+			translateY.setTextKeepCaret(shapeTranslate.TranslationY+"");
+			translateZ.setTextKeepCaret(shapeTranslate.TranslationZ+"");
+			translateW.setTextKeepCaret(shapeTranslate.TranslationW+"");
+
+			XRotateX.setTextKeepCaret("");
+			XRotateY.setTextKeepCaret("");
+			XRotateZ.setTextKeepCaret("");
+		} else {
+			translateX.setTextKeepCaret("");
+			translateY.setTextKeepCaret("");
+			translateZ.setTextKeepCaret("");
+			translateW.setTextKeepCaret("");
+
+			XRotateX.setTextKeepCaret("");
+			XRotateY.setTextKeepCaret("");
+			XRotateZ.setTextKeepCaret("");
+		}
+	}
+
+	public void updateGizmo() {
+		hkpShape colShape = bound.getShape();
+		hkpShape colTransform = bound.getTransform();
+		
+		if (colShape != null) switch (bound.Shape) {
+		case KSHAPE_BOX:
+			boundGizmo.setScale(((hkpBoxShape)colShape).HalfExtentsX, ((hkpBoxShape)colShape).HalfExtentsY, ((hkpBoxShape)colShape).HalfExtentsZ);
+			break;
+		case KSHAPE_SPHERE:
+			boundGizmo.setScale(((hkpSphereShape)colShape).radius, ((hkpSphereShape)colShape).radius, ((hkpSphereShape)colShape).radius);
+			break;
+		case KSHAPE_CYLINDER:
+			boundGizmo.setScale(((hkpCylinderShape)colShape).radius, ((hkpCylinderShape)colShape).radius, ((hkpCylinderShape)colShape).radius);
+			break;
+		case KSHAPE_INVALID:
+		case KSHAPE_TYPE_COUNT:
+		case KSHAPE_MESH:
+			break;
+		}
+		
+		if (colTransform != null && colTransform.getClass() == hkpConvexTransformShape.class ) {
+			var shapeTransform = (hkpConvexTransformShape)colTransform;
+			boundGizmo.setPosition(-shapeTransform.TranslationX, shapeTransform.TranslationY, shapeTransform.TranslationZ);
+			
+			var angles = shapeTransform.getEulerAngles();
+			boundGizmo.setRotation(angles[0], angles[1], angles[2]);
+			
+		} else if (colTransform != null && colTransform.getClass() == hkpConvexTranslateShape.class ) {
+			var shapeTranslate = (hkpConvexTranslateShape)colTransform;
+			boundGizmo.setPosition(-shapeTranslate.TranslationX, shapeTranslate.TranslationY, shapeTranslate.TranslationZ);
+			boundGizmo.setRotation(0, 0, 0);
+		} else {
+			boundGizmo.setPosition(0, 0, 0);			
+			boundGizmo.setRotation(0, 0, 0);
+		}
+		
+		boundGizmo.setOffset(-bound.getRenderNode().Y, -bound.getRenderNode().Z, -bound.getRenderNode().X);
+	}
+
 	private void updateBoundFromGizmo() {
 		if (bound != null) {
 			try {
@@ -635,9 +804,13 @@ public class BoundControls extends GridPane {
 				case KSHAPE_SPHERE:
 					((hkpSphereShape)colShape).radius = boundGizmo.ScaleX.floatValue();
 					break;
+				case KSHAPE_CYLINDER:
+					((hkpSphereShape)colShape).radius = boundGizmo.ScaleX.floatValue();
+					break;
 				case KSHAPE_MESH:
 					break;
-				default:
+				case KSHAPE_INVALID:
+				case KSHAPE_TYPE_COUNT:
 					bound.PositionX = Float.parseFloat(posX.getText().strip());
 					bound.PositionY = Float.parseFloat(posY.getText().strip());
 					bound.PositionZ = Float.parseFloat(posZ.getText().strip());
@@ -664,7 +837,9 @@ public class BoundControls extends GridPane {
 				
 	//			if (bound.Shape == BoundShape.KSHAPE_BOX || bound.Shape == BoundShape.KSHAPE_SPHERE) {
 					
-					if (boundGizmo.RotationX.get() != 0 || boundGizmo.RotationY.get() != 0 || boundGizmo.RotationZ.get() != 0) {
+					if (!doubleEquals(boundGizmo.RotationX.get(),0) || 
+							!doubleEquals(boundGizmo.RotationY.get(),0) || 
+							!doubleEquals(boundGizmo.RotationZ.get(),0)) {
 						// need transform
 						if (colTransform == null || colTransform.getClass() != hkpConvexTransformShape.class ) {
 							if (colTransform != null && colTransform.getClass() == hkpConvexTranslateShape.class ) {
@@ -686,7 +861,9 @@ public class BoundControls extends GridPane {
 //						shapeTransform.fromTransform(boundGizmo.rotations);
 						shapeTransform.fromEulerAngles(boundGizmo.RotationX.get(), boundGizmo.RotationY.get(), boundGizmo.RotationZ.get());
 						
-					} else if (boundGizmo.PositionX.get() != 0 || boundGizmo.PositionY.get() != 0 || boundGizmo.PositionZ.get() != 0) {
+					} else if (!doubleEquals(boundGizmo.PositionX.get(),0) || 
+							!doubleEquals(boundGizmo.PositionY.get(),0) || 
+							!doubleEquals(boundGizmo.PositionZ.get(),0)) {
 						//need translate
 						if (colTransform == null || colTransform.getClass() != hkpConvexTranslateShape.class ) {
 							if (colTransform != null && colTransform.getClass() == hkpConvexTransformShape.class ) {
@@ -735,6 +912,10 @@ public class BoundControls extends GridPane {
 
 	}
 
+	private static boolean doubleEquals(double a, double b) {
+		return (int)(a*1000) == (int)(b*1000);
+	}
+
 //	private static String flagsAsText(ArrayList<BoundFlags> flags) {
 //		if (flags == null || flags.size() == 0) return "";
 //		String s = flags.get(0).getName();
@@ -762,7 +943,19 @@ public class BoundControls extends GridPane {
 	}
 	
 	public void setBound(scgBounds b) {
+		updateBound();
 		bound = b;
-		update();
+		rebuild();
+	}
+}
+
+class CaretKeeperTextField extends TextField{
+	public void setTextKeepCaret(String s) {
+		if (s.equals("-") || s.endsWith(".")) return; //fix negative numbers and decimals mid typing
+		var p = this.getCaretPosition();
+		var sel = this.getSelection();
+		setText(s);
+		if (p == sel.getStart()) this.selectRange(Math.min(sel.getEnd(), s.length()), Math.min(sel.getStart(), s.length()));
+		else this.selectRange(Math.min(sel.getStart(), s.length()), Math.min(sel.getEnd(), s.length()));
 	}
 }

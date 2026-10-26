@@ -8,8 +8,8 @@ import fr.ni240sx.ucgt.geometryFile.part.Mesh;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangle;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangles;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.PC.Triangles_PC;
-import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class LegacyTriangles extends Triangles_PC {
 
@@ -48,8 +48,8 @@ public class LegacyTriangles extends Triangles_PC {
 
 	@Override
 	public byte[] save(int currentPosition) {
-		var alignment = Block.findAlignment(currentPosition+8, 32);
-		var dataLength = triangleLength*triangles.size() + Block.findAlignment(triangleLength*triangles.size(), 4);
+		var alignment = Utils.findAlignment(currentPosition+8, 32);
+		var dataLength = triangleLength*triangles.size() + Utils.findAlignment(triangleLength*triangles.size(), 4);
 		var out = ByteBuffer.wrap(new byte[dataLength + 8 + alignment]);
 
 		out.order(ByteOrder.LITTLE_ENDIAN);
@@ -57,7 +57,7 @@ public class LegacyTriangles extends Triangles_PC {
 		out.putInt(getBlockID().getKey());
 		out.putInt(dataLength + alignment);
 		
-		Block.makeAlignment(out, alignment, (byte) 0x11);
+		Utils.makeAlignment(out, alignment, (byte) 0x11);
 		
 		if (Mesh.currentPlatform == Platform.Prostreet_X360) out.order(ByteOrder.BIG_ENDIAN);
 		for (var t : triangles) {

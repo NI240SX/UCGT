@@ -6,6 +6,7 @@ import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class TPKInfo implements Block {
 	
@@ -25,9 +26,9 @@ public class TPKInfo implements Block {
 		var blockStart = in.position();
 		
 		version = in.getInt();
-		blockname = Block.readString(in);
+		blockname = Utils.readString(in);
 		in.position(blockStart+32);
-		filename = Block.readString(in);
+		filename = Utils.readString(in);
 		in.position(blockStart+96);
 		unknownHash = in.getInt();
 		in.position(blockStart+blockLength);		
@@ -47,9 +48,9 @@ public class TPKInfo implements Block {
 		save.putInt(DataLength);
 		
 		save.putInt(version);
-		Block.putString(save, blockname, 28);
+		Utils.putString(save, blockname, 28);
 		save.position(8+32);
-		Block.putString(save, filename, 64);
+		Utils.putString(save, filename, 64);
 		save.position(8+96);
 		save.putInt(unknownHash);
 		

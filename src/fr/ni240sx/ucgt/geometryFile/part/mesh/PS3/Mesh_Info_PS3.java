@@ -5,8 +5,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Mesh_Info;
-import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class Mesh_Info_PS3 extends Mesh_Info {
 
@@ -58,7 +58,7 @@ public class Mesh_Info_PS3 extends Mesh_Info {
 
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
-		var alignment = Block.findAlignment(currentPosition+8, 16);
+		var alignment = Utils.findAlignment(currentPosition+8, 16);
 		var out = ByteBuffer.wrap(new byte[usualLength + 8 + alignment]);
 		out.order(ByteOrder.LITTLE_ENDIAN);
 
@@ -67,7 +67,7 @@ public class Mesh_Info_PS3 extends Mesh_Info {
 		
 		out.order(ByteOrder.BIG_ENDIAN);
 		
-		Block.makeAlignment(out, alignment, (byte) 0x11);
+		Utils.makeAlignment(out, alignment, (byte) 0x11);
 
 		out.putInt(0);
 		out.putInt(0);

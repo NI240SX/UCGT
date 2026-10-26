@@ -23,7 +23,7 @@ import fr.ni240sx.ucgt.geometryFile.gui.CustomProgressBar;
 import fr.ni240sx.ucgt.geometryFile.gui.SearchableListView;
 import fr.ni240sx.ucgt.shared.Hash;
 import fr.ni240sx.ucgt.shared.OrbitCameraViewport;
-import fr.ni240sx.ucgt.shared.Utils;
+import fr.ni240sx.ucgt.shared.Versions;
 import fr.ni240sx.ucgt.streamEditor.regionBlocks.eTrackPathZoneType;
 import fr.ni240sx.ucgt.streamEditor.streamBlocks.CARP;
 import fr.ni240sx.ucgt.streamEditor.streamBlocks.CARP.UDataID;
@@ -192,8 +192,8 @@ public class WorldEditorGUI extends Application {
 	}
 
 	public static void writeSettings() throws IOException {
-		Files.createDirectories(Paths.get(Utils.settingsFolder));
-		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(Utils.settingsWrldEd)));
+		Files.createDirectories(Paths.get(Versions.settingsFolder));
+		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(Versions.settingsWrldEd)));
 		writeSetting(bw, "DO NOT MANUALLY EDIT THIS FILE");
 		writeSetting(bw, lastDirectoryLoaded);
 		writeSetting(bw, lastFileLoaded);
@@ -243,7 +243,7 @@ public class WorldEditorGUI extends Application {
 	}
 	
 	public static void readSettings() throws FileNotFoundException, IOException {
-		BufferedReader br = new BufferedReader(new FileReader(new File(Utils.settingsWrldEd)));
+		BufferedReader br = new BufferedReader(new FileReader(new File(Versions.settingsWrldEd)));
 		br.readLine(); //="DO NOT MANUALLY EDIT THIS FILE"
 		lastDirectoryLoaded = br.readLine();
 		lastFileLoaded = br.readLine();
@@ -280,7 +280,7 @@ public class WorldEditorGUI extends Application {
 	
     @Override
 	public void start(Stage primaryStage) {
-        primaryStage.setTitle(Utils.worldEditor_Name);
+        primaryStage.setTitle(Versions.worldEditor_Name);
 
         VBox windowTop = new VBox();
         
@@ -414,7 +414,7 @@ public class WorldEditorGUI extends Application {
         menuTools.setAccelerator(KeyCombination.keyCombination("Alt+T"));
         
         Menu menuSettings = new Menu("Settings");
-        MenuItem settingsAbout = new MenuItem("About " + Utils.worldEditor_Name + "...");
+        MenuItem settingsAbout = new MenuItem("About " + Versions.worldEditor_Name + "...");
         MenuItem settingsUpdates = new MenuItem("Check for updates...");
         menuSettings.getItems().addAll(useDarkMode, disableWarnings, trackpadMode, settingsAbout, settingsUpdates);
         menuSettings.setAccelerator(KeyCombination.keyCombination("Alt+S"));
@@ -774,7 +774,7 @@ public class WorldEditorGUI extends Application {
 	public void showInfoWindow() {
     	Stage st = new Stage();
 		openWindows.add(st);
-		st.setTitle("About " + Utils.worldEditor_Name);
+		st.setTitle("About " + Versions.worldEditor_Name);
 		
 		var v = new VBox();
 		
@@ -790,7 +790,7 @@ public class WorldEditorGUI extends Application {
 		Label versions = new Label("""
 				%s version %s built %s
 				needeka 2026
-				""".formatted(Utils.worldEditor_Name, Utils.worldEditor_Version, Utils.geom_build));
+				""".formatted(Versions.worldEditor_Name, Versions.worldEditor_Version, Versions.geom_build));
 		l.setWrapText(true);
 		l.setTextAlignment(TextAlignment.JUSTIFY);
 

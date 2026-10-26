@@ -12,6 +12,7 @@ import static fr.ni240sx.ucgt.collisionsEditor.BoundEnums.*;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
+import fr.ni240sx.ucgt.shared.Utils;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Point3D;
@@ -90,7 +91,7 @@ public class Collisions implements Block{
 		ByteBuffer bb = ByteBuffer.wrap(arr);
 		bb.order(ByteOrder.LITTLE_ENDIAN);
 		bb.position(36);
-		cols.carname = Hash.addVltHash(Hash.addBinHash(Block.readString(bb)));
+		cols.carname = Hash.addVltHash(Hash.addBinHash(Utils.readString(bb)));
 		NumberOfBounds = bb.getInt();
 		NumberOfBoxShapes = bb.getInt();
 		NumberOfConvexTransformShapes = bb.getInt();
@@ -209,12 +210,12 @@ public class Collisions implements Block{
 		var LocalFixUps = new ArrayList<LocalFixUp>();
 		var VirtualFixUps = new ArrayList<VirtualFixUp>();
 
-		var header = ByteBuffer.wrap(new byte[8 + Block.findAlignment(currentPosition+8, 16) + 48]);
+		var header = ByteBuffer.wrap(new byte[8 + Utils.findAlignment(currentPosition+8, 16) + 48]);
 		//bChunk header
 		header.order(ByteOrder.LITTLE_ENDIAN);
 		header.putInt(BlockType.CarCollisions.getKey());
 		header.putInt(-1); //length for later
-		Block.makeAlignment(header, Block.findAlignment(currentPosition+8, 16), (byte)0x11);
+		Utils.makeAlignment(header, Utils.findAlignment(currentPosition+8, 16), (byte)0x11);
 		
 		//Havok packfile header
 		header.putInt(0x67E0E067);	//m_magic
@@ -482,10 +483,10 @@ public class Collisions implements Block{
 			//		X	Y	Z	W
 			
 //			int backup = in.position();
-			name = Block.readString(in);
+			name = Utils.readString(in);
 			carname = name;
 			Hash.findVLT(name);
-			Block.skipAlignment(in, 16);
+			Utils.skipAlignment(in, 16);
 			
 			for (int i=renderNodes.size(); i<renderNodes.count; i++) {
 				renderNodes.add(new scgRenderNode(in, LocalFixUps));
@@ -529,7 +530,7 @@ public class Collisions implements Block{
 			renderNodes.saveObject(bb, contents.size()); //pRenderNodes[]
 
 			
-			Block.putString(bb, name); //debugName
+			Utils.putString(bb, name); //debugName
 //			//renderNodes
 //			bb.position(80);
 //			bb.putFloat(X);
@@ -623,7 +624,7 @@ public class Collisions implements Block{
 		public int CRC32();
 		public void updateShape(double R, double G, double B, double A);
 		public Node getDisplayShape();
-		public hkpShape deepCopy();
+		public hkpShape deepCopy(scgBounds b);
 		public void save(ByteArrayOutputStream contents, ArrayList<LocalFixUp> localFixUps,
 				ArrayList<VirtualFixUp> virtualFixUps) throws IOException;
 	}
@@ -684,7 +685,7 @@ public class Collisions implements Block{
 				s.save(d);
 			}
 			if (size() != 0) LocalFixUps.add(fixup);
-			Block.skipAlignment(out, 16, 0);
+			Utils.skipAlignment(out, 16, 0);
 		}
 	}
 	
@@ -793,10 +794,10 @@ public class Collisions implements Block{
 		public int SurfaceName;
 		
 //		public ArrayList<BoundFlags> ChildrenFlags;
-		public BoundConstraintType ConstraintType;
+//		public BoundConstraintType ConstraintType;
 		public ArrayList<BoundFlags> Flags = new ArrayList<>();
 		public BoundJointType JointType;
-		public BoundNodeType NodeType;
+//		public BoundNodeType NodeType;
 		public BoundShape Shape;
 		public BoundType Type;
 		
@@ -920,7 +921,7 @@ public class Collisions implements Block{
 			
 			if (findLocalFixUpToOffset(pDebugName, LocalFixUps) != -1) {
 				bb.position(findLocalFixUpToOffset(pDebugName, LocalFixUps));
-				var s = Block.readString(bb);
+				var s = Utils.readString(bb);
 				if (!s.isBlank()) Hash.findVLT(s);
 			}
 			
@@ -1027,7 +1028,7 @@ public class Collisions implements Block{
 			for (int i=0; i<childBounds.size(); i++) {
 				childrenFixups.get(i).toOffset = contents.size();
 				childBounds.get(i).save(contents, localFixUps, virtualFixUps, renderNodesFixups); //pThis as parent offset
-				Block.skipAlignment(contents, 16, 0);
+				Utils.skipAlignment(contents, 16, 0);
 			}
 			localFixUps.addAll(childrenFixups);
 		}
@@ -1061,7 +1062,10 @@ public class Collisions implements Block{
 		public String toString() {
 			return "- CollisionBound [AttributeName=" + AttributeName + ", NameHash=" + NameHash + ", SurfaceName="
 					+ SurfaceName + ", Flags=" + Flags + ","
-					+ "\n ConstraintType=" + ConstraintType + " JointType=" + JointType + ", NodeType=" + NodeType + ", Shape=" + Shape + ", Type=" + Type + ",\n"
+//					+ "\n ConstraintType=" + ConstraintType 
+					+ "\n JointType=" + JointType 
+//					+ ", NodeType=" + NodeType 
+					+ ", Shape=" + Shape + ", Type=" + Type + ",\n"
 					+ " BoneIndex=" + BoneIndex + ", BoneOffsetX=" + BoneOffsetX + ", BoneOffsetY=" + BoneOffsetY
 					+ ", BoneOffsetZ=" + BoneOffsetZ + ", HalfDimensionX=" + HalfDimensionX + ", HalfDimensionY=" + HalfDimensionY + ", HalfDimensionZ=" + HalfDimensionZ + ","
 //					+ "\n NumberOfChildren=" + NumberOfChildren	
@@ -1236,14 +1240,14 @@ public class Collisions implements Block{
 			b.BoneOffsetZ = this.BoneOffsetZ;
 			this.childBounds.forEach(b2 -> b.childBounds.add(b2.deepCopy()));
 //			this.ChildrenFlags.forEach(f -> b.ChildrenFlags.add(f)); // should work for an enum ?
-			b.ConstraintType = this.ConstraintType;
+//			b.ConstraintType = this.ConstraintType;
 			this.Flags.forEach(f -> b.Flags.add(f)); // should work for an enum ?
 			b.HalfDimensionX = this.HalfDimensionX;
 			b.HalfDimensionY = this.HalfDimensionY;
 			b.HalfDimensionZ = this.HalfDimensionZ;
 			b.JointType = this.JointType;
 			b.NameHash = this.NameHash;
-			b.NodeType = this.NodeType;
+//			b.NodeType = this.NodeType;
 			b.OrientationX = this.OrientationX;
 			b.OrientationY = this.OrientationY;
 			b.OrientationZ = this.OrientationZ;
@@ -1262,15 +1266,13 @@ public class Collisions implements Block{
 			
 			switch (b.Shape) {
 			case KSHAPE_BOX:
-				b.collisionShape = collisionShape.deepCopy();
-				break;
-			case KSHAPE_MESH:
-				b.collisionShape = collisionShape.deepCopy();
-				break;
 			case KSHAPE_SPHERE:
-				b.collisionShape = collisionShape.deepCopy();
+			case KSHAPE_CYLINDER:
+			case KSHAPE_MESH:
+				b.collisionShape = collisionShape.deepCopy(b);
 				break;
-			default:
+			case KSHAPE_INVALID:
+			case KSHAPE_TYPE_COUNT:
 				break;
 			}
 			
@@ -1306,7 +1308,7 @@ public class Collisions implements Block{
 				HalfDimensionY = box.HalfExtentsY + box.radius;
 				HalfDimensionZ = box.HalfExtentsZ + box.radius;
 
-				// ! transforms
+				// ! transforms    TODO?
 				
 				break;
 				
@@ -1331,7 +1333,19 @@ public class Collisions implements Block{
 				// ! transforms
 				
 				break;
-			default:
+			case KSHAPE_CYLINDER:
+				var cylinder = (hkpCylinderShape)colShape;
+				HalfDimensionX = cylinder.radius; //FIXME wrong
+				HalfDimensionY = cylinder.radius;
+				HalfDimensionZ = cylinder.radius;
+
+				// ! transforms
+				
+				break;
+								
+			case KSHAPE_INVALID:
+			case KSHAPE_TYPE_COUNT:
+				break;
 			}
 
 			hkpShape colTransform = getTransform();
@@ -1607,7 +1621,7 @@ public class Collisions implements Block{
 			contents.write(bb.array());
 			
 			if (childShape != null) {
-				Block.skipAlignment(contents, 16, 0);
+				Utils.skipAlignment(contents, 16, 0);
 				localFixUps.add(new LocalFixUp(pChildShape, contents.size()));
 				childShape.save(contents, localFixUps, virtualFixUps);
 			}
@@ -1641,14 +1655,14 @@ public class Collisions implements Block{
 		}
 
 		@Override
-		public hkpShape deepCopy() {
+		public hkpShape deepCopy(scgBounds b) {
 			var copy = new hkpConvexTranslateShape();
 			copy.TranslationX = this.TranslationX;
 			copy.TranslationY = this.TranslationY;
 			copy.TranslationZ = this.TranslationZ;
 			copy.TranslationW = this.TranslationW;
 			copy.radius = this.radius;
-			if (this.childShape != null) copy.childShape = this.childShape.deepCopy(); 
+			if (this.childShape != null) copy.childShape = this.childShape.deepCopy(b); 
 			return copy;
 		}
 
@@ -1748,7 +1762,7 @@ public class Collisions implements Block{
 			contents.write(bb.array());
 			
 			if (childShape != null) {
-				Block.skipAlignment(contents, 16, 0);
+				Utils.skipAlignment(contents, 16, 0);
 				localFixUps.add(new LocalFixUp(pChildShape, contents.size()));
 				childShape.save(contents, localFixUps, virtualFixUps);
 			}
@@ -1888,7 +1902,7 @@ public class Collisions implements Block{
 		}
 
 		@Override
-		public hkpShape deepCopy() {
+		public hkpShape deepCopy(scgBounds b) {
 			var copy = new hkpConvexTransformShape();
 			copy.TranslationX = this.TranslationX;
 			copy.TranslationY = this.TranslationY;
@@ -1910,7 +1924,7 @@ public class Collisions implements Block{
 			copy.ZRotationZ = this.ZRotationZ;
 			copy.ZRotationW = this.ZRotationW;
 			copy.radius = this.radius;
-			if (this.childShape != null) copy.childShape = this.childShape.deepCopy(); 
+			if (this.childShape != null) copy.childShape = this.childShape.deepCopy(b); 
 			return copy;
 		}
 
@@ -1939,7 +1953,9 @@ public class Collisions implements Block{
 		public Shape3D displayShape = new Box(1,1,1);
 		//public scgBounds bound = null;
 		
-		public hkpBoxShape() {}
+		public hkpBoxShape(scgBounds bound) {
+			bound.collisionShape = this;
+		}
 
 		@Override
 		public String toString() {
@@ -2007,8 +2023,8 @@ public class Collisions implements Block{
 		}
 
 		@Override
-		public hkpShape deepCopy() {
-			var copy = new hkpBoxShape();
+		public hkpShape deepCopy(scgBounds b) {
+			var copy = new hkpBoxShape(b);
 			copy.HalfExtentsX = this.HalfExtentsX;
 			copy.HalfExtentsY = this.HalfExtentsY;
 			copy.HalfExtentsZ = this.HalfExtentsZ;
@@ -2024,7 +2040,9 @@ public class Collisions implements Block{
 		public Shape3D displayShape = new Sphere(0.5);
 //		public scgBounds bound = null;
 		
-		public hkpSphereShape() {}
+		public hkpSphereShape(scgBounds bound) {
+			bound.collisionShape = this;
+		}
 
 		public hkpSphereShape(ByteBuffer bb) {
 			bb.position(bb.position() + 0x10);
@@ -2074,8 +2092,8 @@ public class Collisions implements Block{
 		}
 
 		@Override
-		public hkpShape deepCopy() {
-			var copy = new hkpSphereShape();
+		public hkpShape deepCopy(scgBounds b) {
+			var copy = new hkpSphereShape(b);
 			copy.radius = this.radius;
 			return copy;
 		}
@@ -2117,14 +2135,16 @@ public class Collisions implements Block{
 		
 //		public hkpConvexVerticesShape() {}
 
-		public hkpConvexVerticesShape() { //scgBounds bound2
+		public hkpConvexVerticesShape(scgBounds bound) { //scgBounds bound2
 //			bound = bound2;
-			PlaneEquations.add(new PlaneEquation(this, 0.0f, 1.0f, 0.0f, 0.1f));
-			PlaneEquations.add(new PlaneEquation(this, 0.0f, -1.0f, 0.0f, 0.1f));
-			PlaneEquations.add(new PlaneEquation(this, 1.0f, 0.0f, 0.0f, 0.1f));
-			PlaneEquations.add(new PlaneEquation(this, -1.0f, 0.0f, 0.0f, 0.1f));
-			PlaneEquations.add(new PlaneEquation(this, 0.0f, 0.0f, 1.0f, 0.1f));
-			PlaneEquations.add(new PlaneEquation(this, 0.0f, 0.0f, -1.0f, 0.1f));
+			bound.collisionShape = this;
+			PlaneEquations = new hkArray<>();
+			PlaneEquations.add(new PlaneEquation(this, bound, 0.0f, 1.0f, 0.0f, 1f));
+			PlaneEquations.add(new PlaneEquation(this, bound, 0.0f, -1.0f, 0.0f, 1f));
+			PlaneEquations.add(new PlaneEquation(this, bound, 1.0f, 0.0f, 0.0f, 1f));
+			PlaneEquations.add(new PlaneEquation(this, bound, -1.0f, 0.0f, 0.0f, 1f));
+			PlaneEquations.add(new PlaneEquation(this, bound, 0.0f, 0.0f, 1.0f, 1f));
+			PlaneEquations.add(new PlaneEquation(this, bound, 0.0f, 0.0f, -1.0f, 1f));
 //			updateShape();
 		}
 
@@ -2196,7 +2216,7 @@ public class Collisions implements Block{
 				ArrayList<Vertex> valid = new ArrayList<>();
 
 				for (var v : p.containedVertices) if (v != null) {
-					var dist = center.distanceTo(v) - 0.01;
+					var dist = center.distanceTo(v) - 0.001;
 					boolean validated = true;
 					for (var p2 : this.PlaneEquations) if (!p2.equals(p)) {
 						Vertex intersect = v.findOnPlaneBetweenVertices(p2, center);
@@ -2562,9 +2582,21 @@ public class Collisions implements Block{
 		}
 
 		@Override
-		public hkpShape deepCopy() {
-			// TODO Auto-generated method stub
-			return null;
+		public hkpConvexVerticesShape deepCopy(scgBounds b) {
+			var copy = new hkpConvexVerticesShape(b);
+			copy.CenterX = this.CenterX;
+			copy.CenterY = this.CenterY;
+			copy.CenterZ = this.CenterZ;
+			copy.CenterW = this.CenterW;
+			copy.HalfExtentsX = this.HalfExtentsX;
+			copy.HalfExtentsY = this.HalfExtentsY;
+			copy.HalfExtentsZ = this.HalfExtentsZ;
+			copy.HalfExtentsW = this.HalfExtentsW;
+			copy.radius = this.radius;
+			copy.PlaneEquations.clear(); //clear default cube
+			for (var e : this.PlaneEquations) copy.PlaneEquations.add(e.deepCopy(copy, b));
+			for (var v : this.Vertices) copy.Vertices.add(v.deepCopy(copy));		
+			return copy;
 		}
 	}
 	
@@ -2623,6 +2655,15 @@ public class Collisions implements Block{
 
 		public Vertex() {}
 		
+		public Vertex deepCopy(hkpConvexVerticesShape convexVerticeShape1) {
+			var copy = new Vertex();
+			copy.x = this.x;
+			copy.y = this.y;
+			copy.z = this.z;
+			copy.convexVerticeShape = convexVerticeShape1;
+			return copy;
+		}
+
 		public Vertex(PlaneEquation p, String axis) {
 			
 			// ax + by + cz + d = 0
@@ -2690,7 +2731,6 @@ public class Collisions implements Block{
 					;
 		}
 
-
 		@Override
 		public int hashCode() {
 			final int prime = 31;
@@ -2700,7 +2740,6 @@ public class Collisions implements Block{
 			result = prime * result + Float.floatToIntBits(z);
 			return result;
 		}
-
 
 		@Override
 		public boolean equals(Object obj) {
@@ -2736,10 +2775,13 @@ public class Collisions implements Block{
 		}
 		
 		public PlaneEquation(hkpConvexVerticesShape v, float a, float b, float c, float d) {
+			this(v, v.getBound(), a, b, c, d);
+		}
+		public PlaneEquation(hkpConvexVerticesShape v, scgBounds bound, float a, float b, float c, float d) {
 			convexVerticeShape = v;
-			colorR = Collisions.randomizeColor(v.getBound().colorR, 0.4);
-			colorG = Collisions.randomizeColor(v.getBound().colorG, 0.4);
-			colorB = Collisions.randomizeColor(v.getBound().colorB, 0.4);
+			colorR = Collisions.randomizeColor(bound.colorR, 0.4);
+			colorG = Collisions.randomizeColor(bound.colorG, 0.4);
+			colorB = Collisions.randomizeColor(bound.colorB, 0.4);
 			this.a = a;
 			this.b = b;
 			this.c = c;
@@ -2823,16 +2865,16 @@ public class Collisions implements Block{
 		}
 
 
-		public PlaneEquation deepCopy(hkpConvexVerticesShape v) {
+		public PlaneEquation deepCopy(hkpConvexVerticesShape v, scgBounds bound) {
 			var copy = new PlaneEquation();
 			copy.a = this.a;
 			copy.b = this.b;
 			copy.c = this.c;
 			copy.d = this.d;
 			copy.convexVerticeShape = v;
-			copy.colorR = Collisions.randomizeColor(v.getBound().colorR, 0.4);
-			copy.colorG = Collisions.randomizeColor(v.getBound().colorG, 0.4);
-			copy.colorB = Collisions.randomizeColor(v.getBound().colorB, 0.4);
+			copy.colorR = Collisions.randomizeColor(bound.colorR, 0.4);
+			copy.colorG = Collisions.randomizeColor(bound.colorG, 0.4);
+			copy.colorB = Collisions.randomizeColor(bound.colorB, 0.4);
 			return copy;
 		}
 
@@ -2858,7 +2900,9 @@ public class Collisions implements Block{
 		public Shape3D displayShape = new javafx.scene.shape.Cylinder(0.5,1);
 		//public scgBounds bound = null;
 		
-		public hkpCylinderShape() {}
+		public hkpCylinderShape(scgBounds bound) {
+			bound.collisionShape = this;
+		}
 
 		public hkpCylinderShape(ByteBuffer bb) {
 			bb.position(bb.position() + 0x10);
@@ -2908,8 +2952,8 @@ public class Collisions implements Block{
 		}
 
 		@Override
-		public hkpShape deepCopy() {
-			var copy = new hkpCylinderShape();
+		public hkpShape deepCopy(scgBounds b) {
+			var copy = new hkpCylinderShape(b);
 			copy.radius = radius;
 			copy.cylBaseRadiusFactorForHeightFieldCollisions = this.cylBaseRadiusFactorForHeightFieldCollisions;
 			copy.cylRadius = this.cylRadius;

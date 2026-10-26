@@ -11,7 +11,7 @@ import fr.ni240sx.ucgt.geometryFile.Platform;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.shared.Hash;
 
-public class ShaderUsage {
+public class Shader {
 	
 	// the following are CAR MATERIALS
 	// provided : POSITION0=half4, NORMAL=dec4n, TANGENT0=dec4n, COLOR0=color, TEXCOORD0=half2
@@ -51,7 +51,7 @@ public class ShaderUsage {
 //	DiffuseSwatch(0xA2ABF064, "DiffuseSwatch", new String[]{"DiffuseSwatch","Swatch","car_v"}),
 //
 	
-	public static final ShaderUsage INVALID = new ShaderUsage(0xFFFFFFFF, "INVALID",new String[]{""});
+	public static final Shader INVALID = new Shader(0xFFFFFFFF, "INVALID",new String[]{""});
 //	public static final ShaderUsage Diffuse = new ShaderUsage(0xa13753eb, "Diffuse", new String[]{"Diffuse","car"});
 	
     public final int key;
@@ -62,38 +62,38 @@ public class ShaderUsage {
     public final VertexFormat vertexFormat_X360;
     public final VertexFormat vertexFormat_PS3;
 
-    public static List<ShaderUsage> values = new ArrayList<>();
-    public static List<ShaderUsage> legacyValues = new ArrayList<>();
+    public static List<Shader> values = new ArrayList<>();
+    public static List<Shader> legacyValues = new ArrayList<>();
 //    public static boolean isLoaded = false;
     
     static {
     	updateUsages();
     }
 
-    ShaderUsage(String name, String[] possibleNames) {
+    Shader(String name, String[] possibleNames) {
 //    	this(-2, name, possibleNames, VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s);
     	this(-2, name, possibleNames, null);
     }
     
-    ShaderUsage(String name, String[] possibleNames, VertexFormat vf_PC, VertexFormat vf_X360, VertexFormat vf_PS3) {
+    Shader(String name, String[] possibleNames, VertexFormat vf_PC, VertexFormat vf_X360, VertexFormat vf_PS3) {
     	this(-2, name, possibleNames, vf_PC, vf_X360, vf_PS3);
     }
     
-    ShaderUsage(int key, String name, String[] possibleNames) {
+    Shader(int key, String name, String[] possibleNames) {
 //    	this(key, name, possibleNames, VertexFormat.Pos0s10_Tex0s32_Col0_Norm0s_Tan0s);
     	this(key, name, possibleNames, null);
     }
     
 
-    ShaderUsage(int key, String name, String[] possibleNames, VertexFormat vf_PC) {
+    Shader(int key, String name, String[] possibleNames, VertexFormat vf_PC) {
     	this(key, name, possibleNames, vf_PC, null);
     }
 
-    ShaderUsage(int key, String name, String[] possibleNames, VertexFormat vf_PC, VertexFormat vf_X360){
+    Shader(int key, String name, String[] possibleNames, VertexFormat vf_PC, VertexFormat vf_X360){
     	this(key,name,possibleNames,vf_PC,vf_X360, null);
     }
     
-    ShaderUsage(int key, String name, String[] possibleNames, VertexFormat vf_PC, VertexFormat vf_X360, VertexFormat vf_PS3) {
+    Shader(int key, String name, String[] possibleNames, VertexFormat vf_PC, VertexFormat vf_X360, VertexFormat vf_PS3) {
     	if (key == -2) {
     		// compute vlt from name
     		this.key = Hash.findVLT(name);
@@ -115,40 +115,40 @@ public class ShaderUsage {
         return name;
     }
 
-    public static ShaderUsage get(int key) {
-        for (ShaderUsage c : values) {
+    public static Shader get(int key) {
+        for (Shader c : values) {
             if (c.key == key) return c;
         }
-        for (ShaderUsage c : legacyValues) {
+        for (Shader c : legacyValues) {
             if (c.key == key) return c;
         }
         System.err.println("WARNING : unknown shader "+Integer.toHexString(Integer.reverseBytes(key)));
-        ShaderUsage ret = new ShaderUsage(key, String.format("0x%08X", Integer.reverseBytes(key)), new String[] {String.format("0x%08X", Integer.reverseBytes(key))});
+        Shader ret = new Shader(key, String.format("0x%08X", Integer.reverseBytes(key)), new String[] {String.format("0x%08X", Integer.reverseBytes(key))});
 //        values.add(ret);
         return ret; // Handle invalid value
     }
 
-    public static ShaderUsage getNGOrDefault(String name, ShaderUsage def) {
-        for (ShaderUsage c : values) for (String n : c.possibleNames) {
+    public static Shader getNGOrDefault(String name, Shader def) {
+        for (Shader c : values) for (String n : c.possibleNames) {
             if (n.equals(name)) return c;
         }
         return def;
     }
     
-    public static ShaderUsage get(String name) {
-        for (ShaderUsage c : values) for (String n : c.possibleNames) {
+    public static Shader get(String name) {
+        for (Shader c : values) for (String n : c.possibleNames) {
             if (n.equals(name)) return c;
         }
         System.err.println("WARNING : unknown shader "+name);
         
         if (name.startsWith("0x") || name.startsWith("0X")) {
 			//already hashed input
-			ShaderUsage ret = new ShaderUsage(Integer.reverseBytes(Integer.parseUnsignedInt(name.substring(2,10), 16)), name, new String[] {name});
+			Shader ret = new Shader(Integer.reverseBytes(Integer.parseUnsignedInt(name.substring(2,10), 16)), name, new String[] {name});
 //			values.add(ret);
 			return ret;
 		}
         
-        ShaderUsage ret = new ShaderUsage(name, new String[] {name});
+        Shader ret = new Shader(name, new String[] {name});
 //		values.add(ret);
 		return ret;
     }
@@ -169,7 +169,7 @@ public class ShaderUsage {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		ShaderUsage other = (ShaderUsage) obj;
+		Shader other = (Shader) obj;
 		if (key != other.key)
 			return false;
 		return true;
@@ -179,39 +179,39 @@ public class ShaderUsage {
     	values.clear();
     	values.add(INVALID);
     	try {
-	    	var br = new BufferedReader(new FileReader(new File("data/shaderusages")));
+	    	var br = new BufferedReader(new FileReader(new File("data/shaders")));
 	    	String l;
 			while ((l = br.readLine())!=null){
 				parseUsage(l);
 			}
 
-	    	br = new BufferedReader(new FileReader(new File("data/shaderusages_legacy")));
+	    	br = new BufferedReader(new FileReader(new File("data/shaders_legacy")));
 	    	while ((l = br.readLine())!=null){
 				parseUsageLegacy(l);
 			}
     	} catch (Exception e) {
     		System.out.println("Warning : unable to fetch shaders from data folder !");
     		e.printStackTrace();
-    		values.add(new ShaderUsage(Hash.findVLT("car"), "Diffuse", new String[]{"Diffuse","car"}));
-    		values.add(new ShaderUsage(Hash.findVLT("car_a"), "DiffuseAlpha", new String[]{"DiffuseAlpha","Alpha","car_a"}));
-    		values.add(new ShaderUsage("car_a_nzw", new String[]{"car_a_nzw"}));
-    		values.add(new ShaderUsage(Hash.findVLT("car_nm"), "DiffuseNormal", new String[]{"DiffuseNormal","Normal","car_nm"}));
-    		values.add(new ShaderUsage(Hash.findVLT("car_nm_a"), "DiffuseNormalAlpha", new String[]{"DiffuseNormalAlpha","DiffuseAlphaNormal","AlphaNormal","NormalAlpha","car_nm_a"}));
-    		values.add(new ShaderUsage(Hash.findVLT("car_nm_v_s"), "DiffuseNormalSwatch", new String[]{"DiffuseNormalSwatch","DiffuseSwatchNormal","NormalSwatch","SwatchNormal","car_nm_v_s"}));
-    		values.add(new ShaderUsage(Hash.findVLT("car_nm_v_s_a"), "DiffuseNormalSwatchAlpha", 
+    		values.add(new Shader(Hash.findVLT("car"), "Diffuse", new String[]{"Diffuse","car"}));
+    		values.add(new Shader(Hash.findVLT("car_a"), "DiffuseAlpha", new String[]{"DiffuseAlpha","Alpha","car_a"}));
+    		values.add(new Shader("car_a_nzw", new String[]{"car_a_nzw"}));
+    		values.add(new Shader(Hash.findVLT("car_nm"), "DiffuseNormal", new String[]{"DiffuseNormal","Normal","car_nm"}));
+    		values.add(new Shader(Hash.findVLT("car_nm_a"), "DiffuseNormalAlpha", new String[]{"DiffuseNormalAlpha","DiffuseAlphaNormal","AlphaNormal","NormalAlpha","car_nm_a"}));
+    		values.add(new Shader(Hash.findVLT("car_nm_v_s"), "DiffuseNormalSwatch", new String[]{"DiffuseNormalSwatch","DiffuseSwatchNormal","NormalSwatch","SwatchNormal","car_nm_v_s"}));
+    		values.add(new Shader(Hash.findVLT("car_nm_v_s_a"), "DiffuseNormalSwatchAlpha", 
 			new String[]{"DiffuseNormalSwatchAlpha","DiffuseNormalAlphaSwatch",
 					"DiffuseAlphaNormalSwatch","DiffuseAlphaSwatchNormal",
 					"DiffuseSwatchNormalAlpha","DiffuseSwatchAlphaNormal",
 					"NormalSwatchAlpha","NormalAlphaSwatch",
 					"AlphaNormalSwatch","AlphaSwatchNormal",
 					"SwatchNormalAlpha","SwatchAlphaNormal", "car_nm_v_s_a"}));
-    		values.add(new ShaderUsage(Hash.findVLT("car_si"), "DiffuseGlow", new String[]{"DiffuseGlow","DiffuseSelfIllumination","Glow","SelfIllumination","car_si"}));
-    		values.add(new ShaderUsage(Hash.findVLT("car_si_a"), "DiffuseGlowAlpha", new String[]{"DiffuseGlowAlpha","DiffuseAlphaGlow","DiffuseSelfIlluminationAlpha","DiffuseAlphaSelfIllumination",
+    		values.add(new Shader(Hash.findVLT("car_si"), "DiffuseGlow", new String[]{"DiffuseGlow","DiffuseSelfIllumination","Glow","SelfIllumination","car_si"}));
+    		values.add(new Shader(Hash.findVLT("car_si_a"), "DiffuseGlowAlpha", new String[]{"DiffuseGlowAlpha","DiffuseAlphaGlow","DiffuseSelfIlluminationAlpha","DiffuseAlphaSelfIllumination",
     				"GlowAlpha","AlphaGlow","SelfIlluminationAlpha","AlphaSelfIllumination","car_si_a"}));
-    		values.add(new ShaderUsage(Hash.findVLT("car_t"), "TrafficDiffuse", new String[]{"TrafficDiffuse","Traffic","car_t"}));
-    		values.add(new ShaderUsage(Hash.findVLT("car_t_a"), "TrafficDiffuseAlpha", new String[]{"TrafficDiffuseAlpha","TrafficAlpha","car_t_a"}));
-    		values.add(new ShaderUsage(Hash.findVLT("car_t_nm"), "TrafficDiffuseNormal", new String[]{"TrafficDiffuseNormal","TrafficNormal","car_t_nm"}));
-    		values.add(new ShaderUsage(Hash.findVLT("car_v"), "DiffuseSwatch", new String[]{"DiffuseSwatch","Swatch","car_v"}));
+    		values.add(new Shader(Hash.findVLT("car_t"), "TrafficDiffuse", new String[]{"TrafficDiffuse","Traffic","car_t"}));
+    		values.add(new Shader(Hash.findVLT("car_t_a"), "TrafficDiffuseAlpha", new String[]{"TrafficDiffuseAlpha","TrafficAlpha","car_t_a"}));
+    		values.add(new Shader(Hash.findVLT("car_t_nm"), "TrafficDiffuseNormal", new String[]{"TrafficDiffuseNormal","TrafficNormal","car_t_nm"}));
+    		values.add(new Shader(Hash.findVLT("car_v"), "DiffuseSwatch", new String[]{"DiffuseSwatch","Swatch","car_v"}));
     	}
 //    	isLoaded = true;
     }
@@ -239,9 +239,9 @@ public class ShaderUsage {
 			}
 		}
 		if (names.size() == 1) {
-			values.add(new ShaderUsage(names.get(0), names.toArray(String[]::new), vf_PC, vf_X360, vf_PS3));
+			values.add(new Shader(names.get(0), names.toArray(String[]::new), vf_PC, vf_X360, vf_PS3));
 		} else if (names.size() != 0) { //>1
-			values.add(new ShaderUsage(Hash.findVLT(names.get(0)), names.get(1), names.toArray(String[]::new), vf_PC, vf_X360, vf_PS3));
+			values.add(new Shader(Hash.findVLT(names.get(0)), names.get(1), names.toArray(String[]::new), vf_PC, vf_X360, vf_PS3));
 		}
 	}
 
@@ -294,7 +294,7 @@ public class ShaderUsage {
 		return 0;
 	}
 	
-	public static ShaderUsage findLegacyUsage(String name, Platform platform) {
+	public static Shader findLegacyUsage(String name, Platform platform) {
 		for (var u : legacyValues) {
 			if (u.key >>> 24 == Platform.indexOf(platform)) {
 				for (var s : u.possibleNames) if (s.equals(name)) return u;
@@ -318,7 +318,7 @@ public class ShaderUsage {
 		return null;
 	}
 
-	public static class Legacy extends ShaderUsage{
+	public static class Legacy extends Shader{
 
 		public List<TextureUsage> texusages;
 		public boolean isDefault = false;

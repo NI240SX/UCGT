@@ -6,9 +6,9 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Materials;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
-import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.Shader;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class Materials_X360 extends Materials {
 
@@ -69,7 +69,7 @@ public class Materials_X360 extends Materials {
 			m.shaderUsageID = in.get(); //shaderUsageID
 			
 			in.position(matStart+232);
-			m.shaderUsage = ShaderUsage.get(in.getInt());
+			m.shader = Shader.get(in.getInt());
 			
 			in.position(matStart+materialLength);
 		}
@@ -91,14 +91,14 @@ public class Materials_X360 extends Materials {
 
 	@Override
 	public byte[] save(int currentPosition) {
-		var alignment = Block.findAlignment(currentPosition+8, 128);
+		var alignment = Utils.findAlignment(currentPosition+8, 128);
 		var out = ByteBuffer.wrap(new byte[materialLength*materials.size() + 8 + alignment]);
 		out.order(ByteOrder.LITTLE_ENDIAN);
 
 		out.putInt(getBlockID().getKey());
 		out.putInt(materialLength*materials.size() + alignment);
 		
-		Block.makeAlignment(out, alignment, (byte) 0x11);
+		Utils.makeAlignment(out, alignment, (byte) 0x11);
 		
 		
 		for (var m : materials) {
@@ -109,7 +109,7 @@ public class Materials_X360 extends Materials {
 			out.putInt(m.verticesDataLength);
 			out.put((byte) 0x00);
 			out.put((byte) 0x00);
-			out.put((byte) m.shaderUsage.vertexFormat_X360.getLength());
+			out.put((byte) m.shader.vertexFormat_X360.getLength());
 			out.put((byte) 0x80);
 			out.putInt(m.fromTriIndex);
 			out.putInt(m.toTriIndex);
@@ -127,7 +127,7 @@ public class Materials_X360 extends Materials {
 			for (int i=0; i<m.texturePriorities.size(); i++) {
 				out.putInt(m.texturePriorities.get(i));
 			}
-			Block.makeAlignment(out, 40 - 4*m.texturePriorities.size(), (byte)-1);
+			Utils.makeAlignment(out, 40 - 4*m.texturePriorities.size(), (byte)-1);
 			
 			for (var u : m.textureUsages) {
 				out.putInt(u.getKey());
@@ -144,13 +144,13 @@ public class Materials_X360 extends Materials {
 			for (int i=0; i<m.textureIDs.size(); i++) {
 				out.put(m.textureIDs.get(i));
 			}
-			Block.makeAlignment(out, 10-m.textureIDs.size(), (byte)-1);
+			Utils.makeAlignment(out, 10-m.textureIDs.size(), (byte)-1);
 //			out.position(matStart+202);
 
 			out.put(m.shaderUsageID);
 
 			out.position(matStart+232); 
-			out.putInt(m.shaderUsage.getKey());
+			out.putInt(m.shader.getKey());
 			
 			out.position(matStart+materialLength);
 		}

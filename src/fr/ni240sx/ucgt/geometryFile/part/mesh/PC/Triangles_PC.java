@@ -5,8 +5,8 @@ import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangle;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangles;
-import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class Triangles_PC extends Triangles {
 
@@ -42,15 +42,15 @@ public class Triangles_PC extends Triangles {
 	@Override
 	public byte[] save(int currentPosition) {
 
-		var alignment = Block.findAlignment(currentPosition+8, 32);
-		var dataLength = triangleLength*triangles.size() + Block.findAlignment(triangleLength*triangles.size(), 4);
+		var alignment = Utils.findAlignment(currentPosition+8, 32);
+		var dataLength = triangleLength*triangles.size() + Utils.findAlignment(triangleLength*triangles.size(), 4);
 		var out = ByteBuffer.wrap(new byte[dataLength + 8 + alignment]);
 		out.order(ByteOrder.LITTLE_ENDIAN);
 
 		out.putInt(getBlockID().getKey());
 		out.putInt(dataLength + alignment);
 		
-		Block.makeAlignment(out, alignment, (byte) 0x11);
+		Utils.makeAlignment(out, alignment, (byte) 0x11);
 		
 		for (var t : triangles) {
 			if (t.vert0 > 65535 || t.vert1 > 65535 || t.vert2 > 65535) System.out.println("[Error] Vertex index overflow; proceeding anyways !");

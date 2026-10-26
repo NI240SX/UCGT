@@ -41,7 +41,7 @@ import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
 import fr.ni240sx.ucgt.geometryFile.part.MPoint;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.Shader;
 
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 import fr.ni240sx.ucgt.geometryFile.textures.NFSTexture;
@@ -51,6 +51,7 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
 import fr.ni240sx.ucgt.shared.OrbitCameraViewport;
+import fr.ni240sx.ucgt.shared.Utils;
 import fr.ni240sx.ucgt.streamEditor.regionBlocks.TrackStreamingSections;
 import fr.ni240sx.ucgt.streamEditor.regionBlocks.TrackStreamingSections.TrackStreamingSection;
 import javafx.application.Application;
@@ -116,7 +117,7 @@ public class TestingFunctions extends Application{
 		Block.doNotRead.put(BlockType.Part_Mesh, true);
 		Block.doNotRead.put(BlockType.Part_MPoints, true);
 		Block.doNotRead.put(BlockType.Part_Padding, true);
-		Block.doNotRead.put(BlockType.Part_ShaderList, true);
+		Block.doNotRead.put(BlockType.Part_MaterialLightingList, true);
 		Block.doNotRead.put(BlockType.Part_Strings, true);
 		Block.doNotRead.put(BlockType.Part_TexUsage, true);
 		Block.doNotRead.put(BlockType.Part_Mesh_Materials_PC, true);
@@ -809,7 +810,7 @@ public class TestingFunctions extends Application{
 		
 //		Hash.addHashes(new File("data/parts"));
 //		Hash.addHashes(new File("data/gentextures"));
-//		Hash.addHashes(new File("data/shaders"));
+//		Hash.addHashes(new File("data/lighting"));
 //		Hash.addHashes(new File("data/mpoints"));
 //		Hash.addHashes(new File("data/stuff"));
 //		Hash.addHashes(new File("data/collisionshashes"));
@@ -1739,7 +1740,7 @@ public class TestingFunctions extends Application{
 						+ (has_b && has_d2 ? mat.TextureHashes.get(mat.textureUsages.indexOf(TextureUsage.BLEND)) : 0)
 						+ (has_b && has_d2 ? mat.TextureHashes.get(mat.textureUsages.indexOf(TextureUsage.DIFFUSE2)) : 0);
 				
-				var selfIlluminationMap = (has_d && (has_i || mat.shaderUsage.key == Hash.findVLT("ar_constant")) ? mat.TextureHashes.get(mat.textureUsages.indexOf(TextureUsage.DIFFUSE)) : 0)
+				var selfIlluminationMap = (has_d && (has_i || mat.shader.key == Hash.findVLT("ar_constant")) ? mat.TextureHashes.get(mat.textureUsages.indexOf(TextureUsage.DIFFUSE)) : 0)
 						+ (has_i ? mat.TextureHashes.get(mat.textureUsages.indexOf(TextureUsage.ILLUMINATE)) : 0);
 				
 				var specularMap = (has_s ? mat.TextureHashes.get(mat.textureUsages.indexOf(TextureUsage.SPECULAR)) : 0)
@@ -2551,7 +2552,7 @@ public class TestingFunctions extends Application{
 											+ (has_b && has_d2 ? mat.TextureHashes.get(mat.textureUsages.indexOf(TextureUsage.BLEND)) : 0)
 											+ (has_b && has_d2 ? mat.TextureHashes.get(mat.textureUsages.indexOf(TextureUsage.DIFFUSE2)) : 0);
 									
-									var selfIlluminationMap = (has_d && (has_i || mat.shaderUsage.key == Hash.findVLT("ar_constant")) ? mat.TextureHashes.get(mat.textureUsages.indexOf(TextureUsage.DIFFUSE)) : 0)
+									var selfIlluminationMap = (has_d && (has_i || mat.shader.key == Hash.findVLT("ar_constant")) ? mat.TextureHashes.get(mat.textureUsages.indexOf(TextureUsage.DIFFUSE)) : 0)
 											+ (has_i ? mat.TextureHashes.get(mat.textureUsages.indexOf(TextureUsage.ILLUMINATE)) : 0);
 									
 									var specularMap = (has_s ? mat.TextureHashes.get(mat.textureUsages.indexOf(TextureUsage.SPECULAR)) : 0)
@@ -2683,7 +2684,7 @@ class ChunkObject{
 	TrackStreamingSection chunk = null;
 	ChunkObject(ByteBuffer in){
 		var nameEnd = in.position()+24;
-		name = Block.readString(in);
+		name = Utils.readString(in);
 		in.position(nameEnd); //ignore name
 		lodA = in.getInt();
 		lodB = in.getInt();

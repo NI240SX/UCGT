@@ -8,6 +8,7 @@ import fr.ni240sx.ucgt.geometryFile.Platform;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Utils;
+import fr.ni240sx.ucgt.shared.Versions;
 
 public class GeomInfo implements Block {
 
@@ -16,7 +17,7 @@ public class GeomInfo implements Block {
 	public static final int usualLength = 144;
 	
 	public int const01=0, const02=3, platf=PLATF_UNDERCOVER, partsCount=0;
-	public String filename="Compiled with UCGT v"+Utils.geom_version+" | needeka", blockname="DEFAULT";
+	public String filename="Compiled with UCGT v"+Versions.geom_version+" | needeka", blockname="DEFAULT";
 	public int const1=128, const21=CONST21_UNDERCOVER, const22=CONST21_UNDERCOVER, const23=CONST23_UNDERCOVER, const24=CONST23_UNDERCOVER;
 
 	public static final int PLATF_UNDERCOVER = 30;
@@ -38,9 +39,9 @@ public class GeomInfo implements Block {
 		platf = in.getInt();
 		partsCount = in.getInt();
 		
-		filename = Block.readString(in);
+		filename = Utils.readString(in);
 		in.position(blockStart+72);
-		blockname = Block.readString(in);
+		blockname = Utils.readString(in);
 		in.position(blockStart+blockLength-32);
 		const1 = in.getInt();
 		in.getInt();
@@ -115,9 +116,9 @@ public class GeomInfo implements Block {
 		buf.putInt(platf);
 		buf.putInt(partsCount);
 		
-		Block.putString(buf, filename, 55);
+		Utils.putString(buf, filename, 55);
 		buf.position(80); //go to second string
-		Block.putString(buf, blockname, 39);
+		Utils.putString(buf, blockname, 39);
 		buf.position(120);
 
 		buf.putInt(const1);

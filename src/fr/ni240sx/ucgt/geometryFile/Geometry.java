@@ -39,7 +39,7 @@ import fr.ni240sx.ucgt.geometryFile.part.MPoint;
 import fr.ni240sx.ucgt.geometryFile.part.MPointPositionCube;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.Shader;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangle;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
@@ -54,6 +54,7 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
 import fr.ni240sx.ucgt.shared.Utils;
+import fr.ni240sx.ucgt.shared.Versions;
 import fr.ni240sx.ucgt.streamEditor.regionBlocks.TrackStreamingSections;
 import javafx.util.Pair;
 import fr.ni240sx.ucgt.geometryFile.settings.*;
@@ -450,13 +451,13 @@ public class Geometry implements Block {
 		
 		if (!carname.equals(UNDETERMINED_CARNAME)) bw.write("=== CONFIGURATION FILE FOR CAR "+carname+" ===\n");
 		else bw.write("=== CONFIGURATION FILE  ===\n");
-		bw.write("UCGT v"+Utils.geom_version+" by needeka\n"
+		bw.write("UCGT v"+Versions.geom_version+" by needeka\n"
 				+ "\n--- Settings ---\n");
 		
 		
-		if (new File(Utils.geomDefaultConfig).isFile()) { //read base settings
+		if (new File(Versions.geomDefaultConfig).isFile()) { //read base settings
 			if (!carname.equals(UNDETERMINED_CARNAME)) bw.write("SETTING	CarName="+this.carname+"\n");
-			var br = new BufferedReader(new FileReader(new File(Utils.geomDefaultConfig)));
+			var br = new BufferedReader(new FileReader(new File(Versions.geomDefaultConfig)));
 			String l;
 			while ((l=br.readLine())!=null) {
 				if (l.startsWith("SETTING")) {
@@ -1340,8 +1341,8 @@ public class Geometry implements Block {
 		return readConfig(f, null);
 	}
 	public ArrayList<Pair<String,String>> readConfig(File f, File masterConfig) throws IOException {
-		if (new File(Utils.geomDefaultConfig).isFile()) { //read base settings
-			var br = new BufferedReader(new FileReader(new File(Utils.geomDefaultConfig)));
+		if (new File(Versions.geomDefaultConfig).isFile()) { //read base settings
+			var br = new BufferedReader(new FileReader(new File(Versions.geomDefaultConfig)));
 			String l;
 			int lineNbr=0;
 			while ((l=br.readLine())!=null) {
@@ -1373,8 +1374,8 @@ public class Geometry implements Block {
 		br.close();
 		
 		
-		if (new File(Utils.geomDefaultConfig).isFile()) { //read override settings
-			br = new BufferedReader(new FileReader(new File(Utils.geomDefaultConfig)));
+		if (new File(Versions.geomDefaultConfig).isFile()) { //read override settings
+			br = new BufferedReader(new FileReader(new File(Versions.geomDefaultConfig)));
 			lineNbr=0;
 			while ((l=br.readLine())!=null) if (l.contains("override")) {
 				lineNbr++;
@@ -1601,7 +1602,7 @@ public class Geometry implements Block {
 			case "SHADERUSAGE": //define a custom shader usage in the config
 				if (SAVE_makeDataBlock) this.geomHeader.geomData.datas.put("SHADERUSAGE",l.substring(12));
 //				if (!ShaderUsage.isLoaded) ShaderUsage.updateUsages();
-				ShaderUsage.parseUsage(l.substring(12));
+				Shader.parseUsage(l.substring(12));
 				break;
 			}
 			return true;
@@ -1880,14 +1881,14 @@ public class Geometry implements Block {
 	}
 
 	public static void writeDefaultConfig() throws IOException {
-		writeDefaultConfig(new File(Utils.geomDefaultConfig));
+		writeDefaultConfig(new File(Versions.geomDefaultConfig));
 	}
 	public static void writeDefaultConfig(File f) throws IOException {
 		new File(f.getParent()).mkdirs();
 		var bw = new BufferedWriter(new FileWriter(f));
 		
 		bw.write("=== DEFAULT CONFIGURATION FILE  ===\n");
-		bw.write("UCGT v%s by needeka\n".formatted(Utils.geom_version));
+		bw.write("UCGT v%s by needeka\n".formatted(Versions.geom_version));
 		bw.write("Flags usage: \n"
 				+ " - \"always\" to always include in generated configs\n"
 				+ " - \"nondefault\" to include in generated configs if different from the value given in this file\n"
@@ -1960,7 +1961,7 @@ public class Geometry implements Block {
 		var bw = new BufferedWriter(new FileWriter(config));
 		
 		bw.write("=== CONFIGURATION FILE ===\n"
-				+ "UCGT v"+Utils.geom_version+" by needeka\n"
+				+ "UCGT v"+Versions.geom_version+" by needeka\n"
 				+ "Converted from a CTK model - please fill in what's missing and check what's already filled in !\n"
 				+ "\n--- Settings ---\n");
 		bw.write("SETTING	CarName="+carname+"\n"
@@ -2007,7 +2008,7 @@ public class Geometry implements Block {
 			
 			case "MATERIAL":
 				iterator = 0;
-				ShaderUsage usage = ShaderUsage.get("Diffuse");
+				Shader usage = Shader.get("Diffuse");
 				String mat = "MISSING";
 				String shader = "UC_PAINT";
 				String diffuse = null;
@@ -2041,94 +2042,94 @@ public class Geometry implements Block {
 					//hardcoded CTK fake shaders
 					switch(shader) {
 					case "UC_BADGING_UNIVERSAL":
-						usage = ShaderUsage.get("DiffuseAlpha");
+						usage = Shader.get("DiffuseAlpha");
 						shader = "DECAL";
 						diffuse = "BADGING_UNIVERSAL";
 						break;
 					case "UC_BRAKELIGHT":
-						usage = ShaderUsage.get("DiffuseGlow");
+						usage = Shader.get("DiffuseGlow");
 						shader = "BRAKELIGHT";
 						diffuse = "%_KIT00_BRAKELIGHT_OFF";
 						selfillumination = "%_KIT00_BRAKELIGHT_ON";
 						break;
 					case "UC_BRAKELIGHTGLASS":
-						usage = ShaderUsage.get("DiffuseGlowAlpha");
+						usage = Shader.get("DiffuseGlowAlpha");
 						shader = "BRAKELIGHTGLASS";
 						diffuse = "%_KIT00_BRAKELIGHT_GLASS_OFF";
 						selfillumination = "%_KIT00_BRAKELIGHT_GLASS_ON";
 						break;
 					case "UC_BRAKELIGHTGLASSRED":
-						usage = ShaderUsage.get("DiffuseGlowAlpha");
+						usage = Shader.get("DiffuseGlowAlpha");
 						shader = "BRAKELIGHTGLASSRED";
 						diffuse = "%_KIT00_BRAKELIGHT_GLASS_OFF";
 						selfillumination = "%_KIT00_BRAKELIGHT_GLASS_ON";
 						break;
 					case "UC_DECAL":
-						usage = ShaderUsage.get("DiffuseNormalAlpha");
+						usage = Shader.get("DiffuseNormalAlpha");
 						shader = "DECAL";
 						diffuse = "%_BADGING";
 						normalmap = "%_BADGING_N";
 						break;
 					case "UC_DEFROSTER":
-						usage = ShaderUsage.get("DiffuseAlpha");
+						usage = Shader.get("DiffuseAlpha");
 						shader = "DEFROSTER";
 						diffuse = "REAR_DEFROSTER";
 						break;			
 					case "UC_HEADLIGHTGLASS":
-						usage = ShaderUsage.get("DiffuseAlpha");
+						usage = Shader.get("DiffuseAlpha");
 						shader = "HEADLIGHTGLASS";
 						diffuse = "%_KIT00_HEADLIGHT_GLASS_ON";
 						break;		
 					case "UC_PAINT":
-						usage = ShaderUsage.get("DiffuseNormalSwatch");
+						usage = Shader.get("DiffuseNormalSwatch");
 						shader = "CARSKIN";
 						if ("METAL_SWATCH".equals(diffuse)) ambient = "METAL_SWATCH"; else ambient = "%_SKIN1";
 						diffuse = "CARBONFIBRE_PLACEHOLDER";
 						normalmap = "DAMAGE_N";
 						break;
 					case "UC_WHEEL":
-						usage = ShaderUsage.get("Diffuse");
+						usage = Shader.get("Diffuse");
 						shader = "MAGSILVER";
 						diffuse = "%_WHEEL";
 						break;
 					case "UC_WHEEL_RUBBER":
-						usage = ShaderUsage.get("DiffuseNormalAlpha");
+						usage = Shader.get("DiffuseNormalAlpha");
 						shader = "RUBBER";
 						diffuse = "TIRE_STYLE01";
 						normalmap = "TIRE_STYLE01_N";
 						break;
 					case "UC_WINDOW_FRONT":
-						usage = ShaderUsage.get("DiffuseAlpha");
+						usage = Shader.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
 						diffuse = "WINDOW_FRONT";
 						ambient = "%_SKIN1";
 						break;
 					case "UC_WINDOW_LEFT_FRONT":
-						usage = ShaderUsage.get("DiffuseAlpha");
+						usage = Shader.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
 						diffuse = "WINDOW_LEFT_FRONT";
 						ambient = "%_SKIN1";
 						break;
 					case "UC_WINDOW_RIGHT_FRONT":
-						usage = ShaderUsage.get("DiffuseAlpha");
+						usage = Shader.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
 						diffuse = "WINDOW_RIGHT_FRONT";
 						ambient = "%_SKIN1";
 						break;
 					case "UC_WINDOW_REAR":
-						usage = ShaderUsage.get("DiffuseAlpha");
+						usage = Shader.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
 						diffuse = "WINDOW_REAR";
 						ambient = "%_SKIN1";
 						break;
 					case "UC_WINDOW_LEFT_REAR":
-						usage = ShaderUsage.get("DiffuseAlpha");
+						usage = Shader.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
 						diffuse = "WINDOW_LEFT_REAR";
 						ambient = "%_SKIN1";
 						break;
 					case "UC_WINDOW_RIGHT_REAR":
-						usage = ShaderUsage.get("DiffuseAlpha");
+						usage = Shader.get("DiffuseAlpha");
 						shader = "WINDSHIELD";
 						diffuse = "WINDOW_RIGHT_REAR";
 						ambient = "%_SKIN1";
@@ -2137,44 +2138,44 @@ public class Geometry implements Block {
 				} else if (shader.startsWith("PS_")) {
 					switch(shader) {
 					case "PS_PAINT":
-						usage = ShaderUsage.findLegacyUsage("DiffuseNormalSwatchAlpha", Platform.Prostreet_PC);
+						usage = Shader.findLegacyUsage("DiffuseNormalSwatchAlpha", Platform.Prostreet_PC);
 						shader = "CARSKIN";
 						if ("METAL_SWATCH".equals(diffuse)) ambient = "METAL_SWATCH"; else ambient = "%_SKIN1";
 						diffuse = "CARBONFIBRE_PLACEHOLDER";
 						normalmap = "DAMAGE_N";
 						break;
 					case "PS_WINDOW_FRONT":
-						usage = ShaderUsage.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
+						usage = Shader.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
 						shader = "WINDSHIELD";
 						diffuse = "WINDOW_FRONT";
 						ambient = "%_SKIN1";
 						break;
 					case "PS_WINDOW_LEFT_FRONT":
-						usage = ShaderUsage.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
+						usage = Shader.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
 						shader = "WINDSHIELD";
 						diffuse = "WINDOW_LEFT_FRONT";
 						ambient = "%_SKIN1";
 						break;
 					case "PS_WINDOW_RIGHT_FRONT":
-						usage = ShaderUsage.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
+						usage = Shader.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
 						shader = "WINDSHIELD";
 						diffuse = "WINDOW_RIGHT_FRONT";
 						ambient = "%_SKIN1";
 						break;
 					case "PS_WINDOW_REAR":
-						usage = ShaderUsage.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
+						usage = Shader.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
 						shader = "WINDSHIELD";
 						diffuse = "WINDOW_REAR";
 						ambient = "%_SKIN1";
 						break;
 					case "PS_WINDOW_LEFT_REAR":
-						usage = ShaderUsage.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
+						usage = Shader.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
 						shader = "WINDSHIELD";
 						diffuse = "WINDOW_LEFT_REAR";
 						ambient = "%_SKIN1";
 						break;
 					case "PS_WINDOW_RIGHT_REAR":
-						usage = ShaderUsage.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
+						usage = Shader.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
 						shader = "WINDSHIELD";
 						diffuse = "WINDOW_RIGHT_REAR";
 						ambient = "%_SKIN1";
@@ -2184,16 +2185,16 @@ public class Geometry implements Block {
 					}
 				} else if (plat == Platform.PC) {
 					//real shader compiled with Diffuse
-					if (normalmap != null) usage = ShaderUsage.get("DiffuseNormal");
-					if (shader.equals("BRAKEDISC")) usage = ShaderUsage.get("DiffuseAlpha");
-					if (shader.equals("DOORLINE") && normalmap != null) usage = ShaderUsage.get("DiffuseNormalAlpha");
+					if (normalmap != null) usage = Shader.get("DiffuseNormal");
+					if (shader.equals("BRAKEDISC")) usage = Shader.get("DiffuseAlpha");
+					if (shader.equals("DOORLINE") && normalmap != null) usage = Shader.get("DiffuseNormalAlpha");
 					if (shader.equals("HEADLIGHTREFLECTOR")) {
-						usage = ShaderUsage.get("DiffuseGlow");
+						usage = Shader.get("DiffuseGlow");
 						selfillumination = diffuse;
 					}
 //					if (texture.equals("TIRE_STYLE01")) usage = ShaderUsage.DiffuseNormalAlpha;
-					if ("%_BADGING".equals(diffuse) && normalmap != null) usage = ShaderUsage.get("DiffuseNormalAlpha");
-					if ("DAMAGE_N".equals(normalmap)) usage = ShaderUsage.get("DiffuseNormalSwatch");
+					if ("%_BADGING".equals(diffuse) && normalmap != null) usage = Shader.get("DiffuseNormalAlpha");
+					if ("DAMAGE_N".equals(normalmap)) usage = Shader.get("DiffuseNormalSwatch");
 					//vanilla plus
 //					if (texture.equals("GRILL_02")) usage = ShaderUsage.DiffuseAlpha; 
 //					if (texture.equals("%_ENGINE")) {
@@ -2201,10 +2202,10 @@ public class Geometry implements Block {
 //						normal = "%_ENGINE_N";
 //					}
 				} else if (plat == Platform.Prostreet_PC) {
-					usage = ShaderUsage.findLegacyUsage("DiffuseAlpha", Platform.Prostreet_PC);
-					if (normalmap != null) usage = ShaderUsage.findLegacyUsage("DiffuseNormalSwatchAlpha", Platform.Prostreet_PC);
+					usage = Shader.findLegacyUsage("DiffuseAlpha", Platform.Prostreet_PC);
+					if (normalmap != null) usage = Shader.findLegacyUsage("DiffuseNormalSwatchAlpha", Platform.Prostreet_PC);
 					if ("DOORSEAM".equals(diffuse)) {
-						usage = ShaderUsage.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
+						usage = Shader.findLegacyUsage("DiffuseSwatchAlpha", Platform.Prostreet_PC);
 						ambient = "DOORSEAM";
 					}
 
@@ -2673,7 +2674,7 @@ public class Geometry implements Block {
 				Hash.addBinHash(tex);
 			}
 
-			br = new BufferedReader(new FileReader(new File("data/shaders")));
+			br = new BufferedReader(new FileReader(new File("data/lighting")));
 			while ((tex = br.readLine())!=null) if (!tex.isBlank() && !tex.startsWith("#") && !tex.startsWith("//")){
 				Hash.addBinHash(tex);
 			}
@@ -2807,7 +2808,7 @@ public class Geometry implements Block {
 		HashMap<Integer , Integer> shadersIDs = new HashMap<>();
 
 		List<TextureUsage> allTextureUsages = new ArrayList<>();
-		List<ShaderUsage> allShaderUsages = new ArrayList<>();
+		List<Shader> allShaderUsages = new ArrayList<>();
 		
 		int texi = 0;
 		int shai = 0;
@@ -2829,13 +2830,13 @@ public class Geometry implements Block {
 			case Prostreet_PC:
 			case Prostreet_X360:
 			case Carbon_PC:
-				m.verticesBlock.vertexFormat = m.shaderUsage.vertexFormat_PC;
+				m.verticesBlock.vertexFormat = m.shader.vertexFormat_PC;
 				break;
 			case X360:
-				m.verticesBlock.vertexFormat = m.shaderUsage.vertexFormat_X360;
+				m.verticesBlock.vertexFormat = m.shader.vertexFormat_X360;
 				break;
 			case PS3:
-				m.verticesBlock.vertexFormat = m.shaderUsage.vertexFormat_PS3;
+				m.verticesBlock.vertexFormat = m.shader.vertexFormat_PS3;
 				break;
 			}
 			
@@ -2878,7 +2879,7 @@ public class Geometry implements Block {
 				shadersIDs.put(m.ShaderHash, shai);
 				shai++;
 			}
-			if (!allShaderUsages.contains(m.shaderUsage)) allShaderUsages.add(m.shaderUsage);
+			if (!allShaderUsages.contains(m.shader)) allShaderUsages.add(m.shader);
 
 			//m.shaderUsage.getClass() != ShaderUsage.Legacy.class && 
 			if (!legacy && m.textureUsages.size() > 0) for (int i=0; i<m.TextureHashes.size(); i++) {
@@ -2899,7 +2900,7 @@ public class Geometry implements Block {
 			}
 
 			if (legacy && m.textureUsages.size() < m.TextureHashes.size()) {
-				System.out.print("WARNING : missing texture usages on shader "+m.shaderUsage.getName()+", shaderusages_legacy needs tweaking!"
+				System.out.print("WARNING : missing texture usages on shader "+m.shader.getName()+", shaderusages_legacy needs tweaking!"
 						+ "\nINFO : material textures : ");
 				for (int i=0; i<m.TextureHashes.size(); i++) System.out.print(Hash.getBIN(m.TextureHashes.get(i))+" ");
 				System.out.print("/ usages : ");
@@ -2973,15 +2974,15 @@ public class Geometry implements Block {
 					m.textureIDs.add((byte) texid);
 				}
 			}
-			if ((p.mesh.platform == Platform.X360)) m.verticesDataLength = m.verticesBlock.vertices.size()*m.shaderUsage.vertexFormat_X360.getLength();
-			else m.verticesDataLength = m.verticesBlock.vertices.size()*m.shaderUsage.vertexFormat_PC.getLength();
+			if ((p.mesh.platform == Platform.X360)) m.verticesDataLength = m.verticesBlock.vertices.size()*m.shader.vertexFormat_X360.getLength();
+			else m.verticesDataLength = m.verticesBlock.vertices.size()*m.shader.vertexFormat_PC.getLength();
 		}
 		
 		//--- shadersusage ---
 		//fill in the shaders usage
-		if (!legacy && p.mesh.shadersUsage != null) {
-			p.mesh.shadersUsage.shadersUsage.clear();
-			for (var s : allShaderUsages) p.mesh.shadersUsage.shadersUsage.add(s.getKey());
+		if (!legacy && p.mesh.shaders != null) {
+			p.mesh.shaders.shaders.clear();
+			for (var s : allShaderUsages) p.mesh.shaders.shaders.add(s.getKey());
 		}
 		//--- vertices (several blocks) ---
 		//normally already filled in
@@ -3411,7 +3412,7 @@ public class Geometry implements Block {
 		        		m.toTriIndex = m.fromTriIndex + m.triangles.size()*3;
 		        		m.numTriIndices = m.toTriIndex - m.fromTriIndex;
 		        		triVertI = m.toTriIndex;
-		        		m.verticesDataLength = m.verticesBlock.vertices.size()*m.shaderUsage.vertexFormat_PC.getLength();
+		        		m.verticesDataLength = m.verticesBlock.vertices.size()*m.shader.vertexFormat_PC.getLength();
 		            }
 		        	p2.rebuildSubBlocks();
 //    		        	System.out.println(p2.header.partName+" fixed : "+p2.mesh.info.numTriangles+" tris, "+p2.mesh.info.numVertices+" verts.");
@@ -3555,10 +3556,10 @@ public class Geometry implements Block {
 					if (m.TextureHashes.contains(Hash.findBIN("WINDOW_RIGHT_REAR"))) hasWindowRR = true;
 					if (m.TextureHashes.contains(Hash.findBIN("REAR_DEFROSTER"))) hasDefroster = true;
 					
-					if (m.ShaderHash == Hash.findBIN("CARSKIN") && m.shaderUsage.equals(ShaderUsage.get("DiffuseSwatch"))) 
+					if (m.ShaderHash == Hash.findBIN("CARSKIN") && m.shader.equals(Shader.get("DiffuseSwatch"))) 
 						System.out.printf("Wrong carskin material found on %s! Please use DiffuseNormalSwatch (car_nm_v_s) instead of DiffuseSwatch (car_v).\n",p.name);
 	
-					if (m.ShaderHash == Hash.findBIN("BRAKEDISC") && m.shaderUsage.equals(ShaderUsage.get("Diffuse")))
+					if (m.ShaderHash == Hash.findBIN("BRAKEDISC") && m.shader.equals(Shader.get("Diffuse")))
 						System.out.println("Opaque brake disc "+p.name+"; use DiffuseAlpha to fix.");
 					
 					if ((("D".equals(p.lod) && isUC()) //|| "E".equals(p.lod) && !isUC()
@@ -3573,8 +3574,8 @@ public class Geometry implements Block {
 							System.out.printf("%s found on %s; please use 'simple' materials for lowest LOD parts.\n", Hash.getBIN(m.ShaderHash), p.name);
 					}
 					
-					if (p.part.contains("WHEEL") && (m.shaderUsage.equals(ShaderUsage.get("DiffuseAlpha")) || 
-							m.shaderUsage.equals(ShaderUsage.get("DiffuseNormalAlpha")))) {
+					if (p.part.contains("WHEEL") && (m.shader.equals(Shader.get("DiffuseAlpha")) || 
+							m.shader.equals(Shader.get("DiffuseNormalAlpha")))) {
 						System.out.printf("Transparent shader usage found on %s; wheels do not support transparency!\n", p.name);
 					}
 				}
@@ -3668,9 +3669,9 @@ public class Geometry implements Block {
 			
 			var infoStart = bb.position() - 4; //before header
 			bb.position(infoStart+24); //skip block size and data
-			var filename = Block.readString(bb);
+			var filename = Utils.readString(bb);
 			bb.position(infoStart+80);
-			var blockname = Block.readString(bb);
+			var blockname = Utils.readString(bb);
 //			bb.position(beginning);
 //			System.out.println(blockname + " " +filename);
 			return new Pair<>(blockname, filename);
@@ -3689,9 +3690,9 @@ public class Geometry implements Block {
 
 			var infoStart = bb.position() - 4; //before header
 			bb.position(infoStart+12); //skip block size and data
-			var blockname = Block.readString(bb);
+			var blockname = Utils.readString(bb);
 			bb.position(infoStart+40);
-			var filename = Block.readString(bb);
+			var filename = Utils.readString(bb);
 //			bb.position(beginning);
 //			System.out.println(blockname + " " +filename);
 			return new Pair<>(blockname, filename);
@@ -3709,12 +3710,12 @@ public class Geometry implements Block {
 			p.mesh.changePlatform(plat);
 			
 			p.texusage.texusage.clear();
-			if (plat == Platform.PC || plat == Platform.X360) p.mesh.shadersUsage.shadersUsage.clear();
+			if (plat == Platform.PC || plat == Platform.X360) p.mesh.shaders.shaders.clear();
 	
 			for (var m : p.mesh.materials.materials) {
 				if (plat == Platform.PC || plat == Platform.X360) {
-					if (!p.mesh.shadersUsage.shadersUsage.contains(m.shaderUsage.getKey())) p.mesh.shadersUsage.shadersUsage.add(m.shaderUsage.getKey());
-					m.shaderUsageID = (byte) p.mesh.shadersUsage.shadersUsage.indexOf(m.shaderUsage.getKey());
+					if (!p.mesh.shaders.shaders.contains(m.shader.getKey())) p.mesh.shaders.shaders.add(m.shader.getKey());
+					m.shaderUsageID = (byte) p.mesh.shaders.shaders.indexOf(m.shader.getKey());
 					
 					for (int i=0; i<m.TextureHashes.size() && i<m.textureUsages.size(); i++) 
 						if (!p.texusage.texusage.contains(new Pair<>(m.TextureHashes.get(i),m.textureUsages.get(i).getKey())))
@@ -3729,14 +3730,14 @@ public class Geometry implements Block {
 
 					var oldTextureHashes = m.TextureHashes;
 					m.TextureHashes = new ArrayList<>();
-					for (int i=0; i<((ShaderUsage.Legacy)m.shaderUsage).texusages.size(); i++) m.TextureHashes.add(0);
+					for (int i=0; i<((Shader.Legacy)m.shader).texusages.size(); i++) m.TextureHashes.add(0);
 					
 					for (int i=0; i<oldTextureHashes.size() && i<m.textureUsages.size(); i++) {
-						if (((ShaderUsage.Legacy)m.shaderUsage).texusages.contains(m.textureUsages.get(i))) {
-							m.TextureHashes.set(((ShaderUsage.Legacy)m.shaderUsage).texusages.indexOf(m.textureUsages.get(i)), oldTextureHashes.get(i));
+						if (((Shader.Legacy)m.shader).texusages.contains(m.textureUsages.get(i))) {
+							m.TextureHashes.set(((Shader.Legacy)m.shader).texusages.indexOf(m.textureUsages.get(i)), oldTextureHashes.get(i));
 						}
 					}
-					m.textureUsages = new ArrayList<>(((ShaderUsage.Legacy)m.shaderUsage).texusages);
+					m.textureUsages = new ArrayList<>(((Shader.Legacy)m.shader).texusages);
 					for (int i=m.TextureHashes.size()-1; i>=0; i--) {
 						if (m.TextureHashes.get(i) == 0) {
 							m.TextureHashes.remove(i);

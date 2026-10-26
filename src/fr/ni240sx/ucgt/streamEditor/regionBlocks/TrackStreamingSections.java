@@ -7,6 +7,8 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
+
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
 public class TrackStreamingSections extends ArrayList<fr.ni240sx.ucgt.streamEditor.regionBlocks.TrackStreamingSections.TrackStreamingSection> implements Block {
@@ -89,7 +91,7 @@ public class TrackStreamingSections extends ArrayList<fr.ni240sx.ucgt.streamEdit
 		
 		public TrackStreamingSection(ByteBuffer in) {
 			var beginning = in.position();
-			SectionName = Block.readString(in);
+			SectionName = Utils.readString(in);
 			in.position(beginning+8);
 			SectionNumber = in.getShort();
 			in.get(); //WasRendered
@@ -111,7 +113,7 @@ public class TrackStreamingSections extends ArrayList<fr.ni240sx.ucgt.streamEdit
 
 		public void save(ByteBuffer bb) {
 			var beginning = bb.position();
-			Block.putString(bb, SectionName, 8);
+			Utils.putString(bb, SectionName, 8);
 			bb.position(beginning+8);
 			bb.putShort(SectionNumber);
 			bb.put((byte)0);

@@ -2,16 +2,6 @@
 BustedAlley
 BustedCity
 BustedHwy
-E115
-E165
-E116
-E013
-E060
-E124
-E230
-E283
-E288
-E290
 BustedMarker
 PB_Causeway
 PB_Spillway
@@ -39,16 +29,8 @@ PB_TruckLogs
 PB_TruckPipes
 PB_RockWall
 PB_Billboard
-E020
-E081
-E303
-E039
-E025
-E008
-E009
-E053
-E029
-E139
+IconMarker
+SCENERY_GROUP_AUDITION
 
 #simsurface (VLT)
 default

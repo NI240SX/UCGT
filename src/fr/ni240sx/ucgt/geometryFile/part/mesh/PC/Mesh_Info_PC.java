@@ -6,8 +6,8 @@ import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.geometryFile.Platform;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Mesh_Info;
-import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class Mesh_Info_PC extends Mesh_Info {
 
@@ -156,7 +156,7 @@ public class Mesh_Info_PC extends Mesh_Info {
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 
-		var alignment = Block.findAlignment(currentPosition+8, 16);
+		var alignment = Utils.findAlignment(currentPosition+8, 16);
 		
 		ByteBuffer out = null;
 		
@@ -201,7 +201,7 @@ public class Mesh_Info_PC extends Mesh_Info {
 			break;
 		}
 		
-		Block.makeAlignment(out, alignment, (byte) 0x11);
+		Utils.makeAlignment(out, alignment, (byte) 0x11);
 
 		out.putInt(const01);
 		out.putInt(const02);

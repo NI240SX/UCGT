@@ -8,9 +8,9 @@ import fr.ni240sx.ucgt.geometryFile.Platform;
 import fr.ni240sx.ucgt.geometryFile.part.Mesh;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Materials;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
-import fr.ni240sx.ucgt.shared.Block;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.Shader;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class LegacyMaterials extends Materials {
 
@@ -39,7 +39,7 @@ public class LegacyMaterials extends Materials {
 				m.fromTriIndex = 
 						in.getInt(); //not sure its still this
 				//m.toTriVertID = 
-				m.shaderUsage = ShaderUsage.get(Platform.indexOf(Mesh.currentPlatform) << 24 | in.getInt());
+				m.shader = Shader.get(Platform.indexOf(Mesh.currentPlatform) << 24 | in.getInt());
 				
 				for (int i=0; i< numtextures; i++) {
 					m.texturePriorities.add(in.getInt());
@@ -48,7 +48,7 @@ public class LegacyMaterials extends Materials {
 				in.position(matStart+28);
 				for (int i=0; i< numtextures; i++) {
 					m.textureIDs.add(in.get());
-					if (((ShaderUsage.Legacy)m.shaderUsage).texusages.size() > i) m.textureUsages.add(((ShaderUsage.Legacy)m.shaderUsage).texusages.get(i));
+					if (((Shader.Legacy)m.shader).texusages.size() > i) m.textureUsages.add(((Shader.Legacy)m.shader).texusages.get(i));
 				}
 				in.position(matStart+34);
 				//m.shaderID = 
@@ -86,7 +86,7 @@ public class LegacyMaterials extends Materials {
 						in.getInt(); //not sure its still this
 				//m.toTriVertID = 
 
-				m.shaderUsage = ShaderUsage.get(Platform.indexOf(Mesh.currentPlatform) << 24 | in.getInt());
+				m.shader = Shader.get(Platform.indexOf(Mesh.currentPlatform) << 24 | in.getInt());
 
 				m.textureHash = in.getInt();
 				in.get(m.flags);
@@ -103,7 +103,7 @@ public class LegacyMaterials extends Materials {
 				in.position(matStart+88);
 				for (int i=0; i< numtextures; i++) {
 					m.textureIDs.add(in.get());
-					if (((ShaderUsage.Legacy)m.shaderUsage).texusages.size() > i) m.textureUsages.add(((ShaderUsage.Legacy)m.shaderUsage).texusages.get(i));
+					if (((Shader.Legacy)m.shader).texusages.size() > i) m.textureUsages.add(((Shader.Legacy)m.shader).texusages.get(i));
 				}
 								
 				in.position(matStart+materialLength);
@@ -122,7 +122,7 @@ public class LegacyMaterials extends Materials {
 					
 					in.get(m.flags);
 					m.textureHash = in.getInt();
-					m.shaderUsage = ShaderUsage.get(Platform.indexOf(Mesh.currentPlatform) << 24 | in.getInt());
+					m.shader = Shader.get(Platform.indexOf(Mesh.currentPlatform) << 24 | in.getInt());
 					in.getInt();
 					for (int i=0; i<6; i++) {
 						in.getFloat(); //the fuck are floats doing here
@@ -135,7 +135,7 @@ public class LegacyMaterials extends Materials {
 					in.position(matStart+64);
 					
 					for (int i=0; i<5; i++) {
-						if (((ShaderUsage.Legacy)m.shaderUsage).texusages.size() > i) m.textureUsages.add(((ShaderUsage.Legacy)m.shaderUsage).texusages.get(i));
+						if (((Shader.Legacy)m.shader).texusages.size() > i) m.textureUsages.add(((Shader.Legacy)m.shader).texusages.get(i));
 					}
 					
 					m.numVertices = in.getInt(); //num vertices maybe
@@ -165,10 +165,10 @@ public class LegacyMaterials extends Materials {
 				
 				in.position(matStart+48);
 				
-				m.shaderUsage = ShaderUsage.get(Platform.indexOf(Mesh.currentPlatform) << 24 | in.getInt());
+				m.shader = Shader.get(Platform.indexOf(Mesh.currentPlatform) << 24 | in.getInt());
 
 				for (int i=0; i<5; i++) {
-					if (((ShaderUsage.Legacy)m.shaderUsage).texusages.size() > i) m.textureUsages.add(((ShaderUsage.Legacy)m.shaderUsage).texusages.get(i));
+					if (((Shader.Legacy)m.shader).texusages.size() > i) m.textureUsages.add(((Shader.Legacy)m.shader).texusages.get(i));
 				}
 				
 				in.getInt();
@@ -208,14 +208,14 @@ public class LegacyMaterials extends Materials {
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 
-		var alignment = Block.findAlignment(currentPosition+8, 128);
+		var alignment = Utils.findAlignment(currentPosition+8, 128);
 		var out = ByteBuffer.wrap(new byte[materialLength*materials.size() + 8 + alignment]);
 		out.order(ByteOrder.LITTLE_ENDIAN);
 
 		out.putInt(getBlockID().getKey());
 		out.putInt(materialLength*materials.size() + alignment);
 		
-		Block.makeAlignment(out, alignment, (byte) 0x11);
+		Utils.makeAlignment(out, alignment, (byte) 0x11);
 		
 		
 		for (var m : materials) {
@@ -227,17 +227,17 @@ public class LegacyMaterials extends Materials {
 			case Prostreet_PC:
 
 				out.putInt(m.fromTriIndex);
-				out.putInt(ShaderUsage.findLegacyIndex(m.shaderUsage.getName(), Mesh.currentPlatform));
+				out.putInt(Shader.findLegacyIndex(m.shader.getName(), Mesh.currentPlatform));
 				
 				for (int i=0; i<m.texturePriorities.size(); i++) {
 					out.putInt(m.texturePriorities.get(i));
 				}
-				Block.makeAlignment(out, 20 - 4*m.texturePriorities.size(), (byte)-1);
+				Utils.makeAlignment(out, 20 - 4*m.texturePriorities.size(), (byte)-1);
 				
 				for (int i=0; i<m.textureIDs.size(); i++) {
 					out.put(m.textureIDs.get(i));
 				}
-				Block.makeAlignment(out, 5-m.textureIDs.size(), (byte)-1);
+				Utils.makeAlignment(out, 5-m.textureIDs.size(), (byte)-1);
 				//normally at pos 58
 				
 				out.put((byte)m.textureIDs.size());
@@ -254,7 +254,7 @@ public class LegacyMaterials extends Materials {
 				out.putInt(m.verticesDataLength);
 				out.put((byte) 0x00);
 				out.put((byte) 0x00);
-				out.put((byte) m.shaderUsage.vertexFormat_PC.getLength());
+				out.put((byte) m.shader.vertexFormat_PC.getLength());
 				out.put((byte) 0x80);
 				break;
 				
@@ -263,12 +263,12 @@ public class LegacyMaterials extends Materials {
 				out.putInt(m.verticesDataLength);
 				out.put((byte) 0x00);
 				out.put((byte) 0x00);
-				out.put((byte) m.shaderUsage.vertexFormat_PC.getLength());
+				out.put((byte) m.shader.vertexFormat_PC.getLength());
 				out.put((byte) 0x80);
 
 				out.position(matStart+44);
 				out.putInt(m.fromTriIndex);
-				out.putInt(ShaderUsage.findLegacyIndex(m.shaderUsage.getName(), Mesh.currentPlatform));
+				out.putInt(Shader.findLegacyIndex(m.shader.getName(), Mesh.currentPlatform));
 
 				out.putInt(m.textureHash);
 				out.put(m.flags);
@@ -282,13 +282,13 @@ public class LegacyMaterials extends Materials {
 				for (int i=0; i<m.texturePriorities.size(); i++) {
 					out.putInt(m.texturePriorities.get(i));
 				}
-				Block.makeAlignment(out, 20 - 4*m.texturePriorities.size(), (byte)-1);
+				Utils.makeAlignment(out, 20 - 4*m.texturePriorities.size(), (byte)-1);
 				
 				out.position(matStart+88);
 				for (int i=0; i<m.textureIDs.size(); i++) {
 					out.put(m.textureIDs.get(i));
 				}
-				Block.makeAlignment(out, 5-m.textureIDs.size(), (byte)-1);
+				Utils.makeAlignment(out, 5-m.textureIDs.size(), (byte)-1);
 				break;
 				
 			case Carbon_PC:
@@ -299,12 +299,12 @@ public class LegacyMaterials extends Materials {
 				for (int i=0; i<m.textureIDs.size(); i++) {
 					out.put(m.textureIDs.get(i));
 				}
-				Block.makeAlignment(out, 5-m.textureIDs.size(), (byte)-1);
+				Utils.makeAlignment(out, 5-m.textureIDs.size(), (byte)-1);
 				out.putInt(m.shaderID);
 				
 				out.position(matStart+48);
 
-				out.putInt(ShaderUsage.findLegacyIndex(m.shaderUsage.getName(), Mesh.currentPlatform));
+				out.putInt(Shader.findLegacyIndex(m.shader.getName(), Mesh.currentPlatform));
 				
 				out.putInt(0);
 				out.put(m.flags);

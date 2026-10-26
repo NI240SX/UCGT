@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class MPoints implements Block {
 
@@ -83,14 +84,14 @@ public class MPoints implements Block {
 	@Override
 	public byte[] save(int currentPosition) throws IOException, InterruptedException {
 
-		var alignment = Block.findAlignment(currentPosition+8, 16);
+		var alignment = Utils.findAlignment(currentPosition+8, 16);
 		var out = ByteBuffer.wrap(new byte[mpoints.size()*80 + 8 + alignment]);
 		out.order(ByteOrder.LITTLE_ENDIAN);
 
 		out.putInt(getBlockID().getKey());
 		out.putInt(mpoints.size()*80 + alignment);
 		
-		Block.makeAlignment(out, alignment, (byte) 0x11);
+		Utils.makeAlignment(out, alignment, (byte) 0x11);
 
 		for (var mp : mpoints) {
 			out.putInt(mp.nameHash);

@@ -8,6 +8,8 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
+
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
 public class ChunkScenery_Instances extends ArrayList<fr.ni240sx.ucgt.streamEditor.streamBlocks.ChunkScenery_Instances.Instance> implements Block {
@@ -44,7 +46,7 @@ public class ChunkScenery_Instances extends ArrayList<fr.ni240sx.ucgt.streamEdit
 		buf.putInt(-1); //length for later
 		
 		out.write(buf.array());
-		Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 16), (byte)0x11);
+		Utils.makeAlignment(out, Utils.findAlignment(currentPosition+out.size(), 16), (byte)0x11);
 
 		//instances
 		for (var z : this) out.write(z.save());

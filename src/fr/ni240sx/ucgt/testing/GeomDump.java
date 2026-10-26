@@ -364,7 +364,7 @@ public class GeomDump extends Application {
 				l.add(new Hash(tex));
 			}
 
-			br = new BufferedReader(new FileReader(new File("data/shaders")));
+			br = new BufferedReader(new FileReader(new File("data/lighting")));
 			while ((tex = br.readLine())!=null){
 				l.add(new Hash(tex));
 			}

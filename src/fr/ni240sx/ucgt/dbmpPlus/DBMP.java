@@ -21,7 +21,9 @@ public class DBMP{
 	public static final int maxPartLength = 500; //200 bytes for each part should be more than enough when exporting
 	
 	public String carname;
+	public int GameInt;
 	public ArrayList<DBMPPart> dBMPParts;
+	
 	public DBMP() {
 		super();
 		this.carname = "UNKNOWN";
@@ -82,19 +84,19 @@ public class DBMP{
 		}
 		int fileLength = bb.position();
 		bb.position(0);
-		bb.putInt(Integer.reverseBytes(0x674d7042));
-		bb.putInt(fileLength-8);
-		bb.putInt(Integer.reverseBytes(0x06000000));
-		bb.putInt(Integer.reverseBytes(0xc0368c76));
-		bb.putInt(fileLength-20);
-		bb.putInt(Integer.reverseBytes(0x52415757));
-		bb.putInt(Integer.reverseBytes(0x01100000));
-		bb.putInt(fileLength-36);
-		bb.putInt(fileLength-20);
+		bb.putInt(Integer.reverseBytes(0x674d7042));	//Nikki header
+		bb.putInt(fileLength-8);						//Nikki block length
+		bb.putInt(GameInt);								//Game int
+		bb.putInt(0x768C36C0);							//DBModelParts manager bin hash
+		bb.putInt(fileLength-20);						//buffer length like binary cant read it in the compression header
+		bb.putInt(Integer.reverseBytes(0x52415757));	//RAWW compression type
+		bb.putInt(Integer.reverseBytes(0x01100000));	//RAWW flags ?
+		bb.putInt(fileLength-36);						//RAWW data length
+		bb.putInt(fileLength-20);						//RAWW total length
 		
-		Integer.reverseBytes(0);
+		//Integer.reverseBytes(0); //<- so this was there active just chilling in the code ? epic
 		
-		fos.write(Arrays.copyOfRange(bb.array(), 0, fileLength));			
+		fos.write(bb.array(), 0, fileLength);			
 		fos.close();
 		System.out.println("File saved to " + f);
 		
@@ -109,6 +111,7 @@ public class DBMP{
 		if (f==null) return null;
 		
 		DBMP loadDBMP = null;
+		var oldGameInt = DBMPPlus.mainDBMP == null ? 0 : DBMPPlus.mainDBMP.GameInt;
 		
 		//File f = new File("...");
 		try {
@@ -117,6 +120,9 @@ public class DBMP{
 			fis.read(fileToBytes);
 			fis.close();
 
+			
+			//why have this load here
+			//this tool's code is a war crime
 			ArrayList<Integer> attributesTwoString = new ArrayList<>();
 			ArrayList<Integer> attributesString = new ArrayList<>();
 			ArrayList<Integer> attributesInteger = new ArrayList<>();
@@ -124,9 +130,8 @@ public class DBMP{
 			ArrayList<Integer> attributesKey = new ArrayList<>();
 			ArrayList<Integer> attributesBoolean = new ArrayList<>();
 			ArrayList<Integer> attributesColor = new ArrayList<>();
-			
-			
-			
+			ArrayList<Integer> attributesFloating = new ArrayList<>();
+			ArrayList<Integer> attributesModelTable = new ArrayList<>();
 			
 			BufferedReader br = new BufferedReader(new FileReader(new File("data\\DBMP_Attributes")));
 			String line;
@@ -153,6 +158,13 @@ public class DBMP{
 						break;
 					case "Color":
 						attributesColor.add(Hash.findBIN(line.split("=")[0]));
+						break;
+					case "Floating":
+						attributesFloating.add(Hash.findBIN(line.split("=")[0]));
+						break;
+					case "ModelTable":
+						attributesModelTable.add(Hash.findBIN(line.split("=")[0]));
+						break;
 					}
 				}
 			}
@@ -160,8 +172,18 @@ public class DBMP{
 			
 			ByteBuffer bb = ByteBuffer.wrap(fileToBytes);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
+			if (bb.getInt() != 0x42704D67) throw new UnsupportedOperationException("The provided file is not a Binary serialized DBModelParts!"); //Nikki header
+			bb.getInt(); //size
+			//OH MY GOD WHY ISNT IT A FUCKING CONSTRUCTOR
+			var GameInt = bb.getInt(); //GameInt
+			if (bb.getInt() != 0x768C36C0) throw new UnsupportedOperationException("The provided file is not a Binary serialized DBModelParts!"); //DBModelParts manager bin hash
+			
+			//FIXME continue game int detection, check game specific attribs, add saving option and game specific CarPartID
+			
 			bb.position(36);
 			loadDBMP = new DBMP(readString(bb)); //reads the plain text car name
+			DBMPPlus.mainDBMP.GameInt = GameInt; //yeah nah i did this thing very stupidly
+			loadDBMP.GameInt = GameInt; 
 			int partsAmount = bb.getInt();
 			for (int i=0; i<partsAmount; i++) { //loop on parts
 				DBMPPart p;
@@ -170,28 +192,63 @@ public class DBMP{
 				for (int j=0; j<partAttribCount; j++) { //loop on attributes
 					int attributeHash = bb.getInt();
 					Attribute a = null;
-					for (var h : attributesTwoString) if (h == attributeHash) p.attributes.add(a = new AttributeTwoString(h, bb, useGUI));
-					for (var h : attributesString) if (h == attributeHash) p.attributes.add(a = new AttributeString(h, bb, useGUI));
-					for (var h : attributesInteger) if (h == attributeHash) p.attributes.add(a = new AttributeInteger(h, bb, useGUI));
-					for (var h : attributesCarPartID) if (h == attributeHash) p.attributes.add(a = new AttributeCarPartID(h, bb, useGUI));
-					for (var h : attributesKey) if (h == attributeHash) p.attributes.add(a = new AttributeKey(h, bb, useGUI));
-					for (var h : attributesBoolean) if (h == attributeHash) p.attributes.add(a = new AttributeBoolean(h, bb, useGUI));
-					for (var h : attributesColor) if (h == attributeHash) p.attributes.add(a = new AttributeColor(h, bb, useGUI));
+					if (DBMPPlus.debug) System.out.println("0x%08x - %s".formatted(attributeHash, Hash.getBIN(attributeHash)));
+					for (var h : attributesTwoString) if (h == attributeHash) {
+						p.attributes.add(a = new AttributeTwoString(h, bb, useGUI));
+						break;
+					}
+					for (var h : attributesString) if (h == attributeHash) {
+						p.attributes.add(a = new AttributeString(h, bb, useGUI));
+						break;
+					}
+					for (var h : attributesInteger) if (h == attributeHash) {
+						p.attributes.add(a = new AttributeInteger(h, bb, useGUI));
+						break;
+					}
+					for (var h : attributesCarPartID) if (h == attributeHash) {
+						p.attributes.add(a = new AttributeCarPartID(h, bb, useGUI));
+						break;
+					}
+					for (var h : attributesKey) if (h == attributeHash) {
+						p.attributes.add(a = new AttributeKey(h, bb, useGUI));
+						break;
+					}
+					for (var h : attributesBoolean) if (h == attributeHash) {
+						p.attributes.add(a = new AttributeBoolean(h, bb, useGUI));
+						break;
+					}
+					for (var h : attributesColor) if (h == attributeHash) {
+						p.attributes.add(a = new AttributeColor(h, bb, useGUI));
+						break;
+					}
+					for (var h : attributesFloating) if (h == attributeHash) {
+						p.attributes.add(a = new AttributeFloating(h, bb, useGUI));
+						break;
+					}
+					for (var h : attributesModelTable) if (h == attributeHash) {
+						p.attributes.add(a = new AttributeModelTable(h, bb, useGUI));
+						break;
+					}
 					assert (a != null);
-					if (DBMPPlus.debug)System.out.println("Attribute " + (j+1) + "/" + partAttribCount + " : " + a.toString());
+					if (DBMPPlus.debug) System.out.println("Attribute " + (j+1) + "/" + partAttribCount + " : " + a.toString());
 				}
 				if (useGUI) p.update();
 				if (DBMPPlus.debug)System.out.println("Part imported : "+p.displayName);
 			}			
+			
+			
+			//WHAT A HORRDENDOUS CODE
 		} catch (FileNotFoundException e) {
 			//dbmp to load not found
 			// TODO Auto-generated catch block
-			if (useGUI) new Alert(Alert.AlertType.ERROR, "File not found", ButtonType.OK).show();
+			DBMPPlus.mainDBMP.GameInt = oldGameInt;
+			if (useGUI) new Alert(Alert.AlertType.ERROR, "File not found!", ButtonType.OK).show();
 			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
-			if (useGUI) new Alert(Alert.AlertType.ERROR, "Error while loading file", ButtonType.OK).show();
+			if (useGUI) new Alert(Alert.AlertType.ERROR, "Error while loading file: %s".formatted(e.getMessage()), ButtonType.OK).show();
 			loadDBMP = null;
+			DBMPPlus.mainDBMP.GameInt = oldGameInt;
 		}
 		return loadDBMP;
 		

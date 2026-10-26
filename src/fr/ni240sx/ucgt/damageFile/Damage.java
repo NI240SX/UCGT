@@ -6,6 +6,7 @@ import java.nio.ByteOrder;
 
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class Damage implements Block {
 
@@ -33,7 +34,7 @@ public class Damage implements Block {
 		in.position(in.position() + 12); //skip AA padding
 		in.getInt(); //0
 		in.position(in.position() + 76); //skip AA padding
-		carname = Block.readString(in);
+		carname = Utils.readString(in);
 		in.position(in.position()+32-carname.length()-1);
 		in.getInt(); //000101AA
 		in.getInt(); //0
@@ -406,7 +407,7 @@ class DamageMarker{
 	
 	public DamageMarker(ByteBuffer in) {
 //		System.out.println("marker at "+(in.position()));
-		name = Block.readString(in);
+		name = Utils.readString(in);
 		//skip padding for string (length 128 with string)
 		while(in.get()==(byte)0xCC);
 		in.position(in.position()-1);
@@ -414,7 +415,7 @@ class DamageMarker{
 		childhash0 = in.getInt();
 		childAttachmentPart = in.getInt(); //vlt hash eg BUMPER_REAR, TRUNK, CAR
 		childhash2 = in.getInt();
-		childname = Block.readString(in);
+		childname = Utils.readString(in);
 		//skip padding for string (length 128 with string)
 		while(in.get()==(byte)0xCC);
 		in.position(in.position()-1);
@@ -433,7 +434,7 @@ class DamageBody{
 	String name;
 
 	public DamageBody(ByteBuffer in) {
-		name = Block.readString(in);
+		name = Utils.readString(in);
 		//skip padding for string (length 128 with string)
 		while(in.get()==0xAA);
 		in.position(in.position()-1);

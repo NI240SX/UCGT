@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.Shader;
 import fr.ni240sx.ucgt.shared.Hash;
 
 public class ZMaterial extends ZModBlock {
@@ -44,11 +44,11 @@ public class ZMaterial extends ZModBlock {
 		this.binMat = m;
 		this.name = m.uniqueName;
 
-		if (m.shaderUsage.equals(ShaderUsage.get("DiffuseAlpha")) || 
-				m.shaderUsage.equals(ShaderUsage.get("DiffuseGlowAlpha")) || 
-				m.shaderUsage.equals(ShaderUsage.get("DiffuseNormalAlpha")) || 
-				m.shaderUsage.equals(ShaderUsage.get("DiffuseNormalSwatchAlpha")) || 
-				m.shaderUsage.equals(ShaderUsage.get("TrafficDiffuseAlpha"))) {
+		if (m.shader.equals(Shader.get("DiffuseAlpha")) || 
+				m.shader.equals(Shader.get("DiffuseGlowAlpha")) || 
+				m.shader.equals(Shader.get("DiffuseNormalAlpha")) || 
+				m.shader.equals(Shader.get("DiffuseNormalSwatchAlpha")) || 
+				m.shader.equals(Shader.get("TrafficDiffuseAlpha"))) {
 			this.useAlpha = true;
 		}
 //		if (m.textureUsages.contains(TextureUsage.ALPHA)) this.useAlpha = true;

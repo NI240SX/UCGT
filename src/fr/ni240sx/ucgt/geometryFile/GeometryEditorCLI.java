@@ -29,7 +29,7 @@ import fr.ni240sx.ucgt.geometryFile.io.ZModelerZ3D;
 import fr.ni240sx.ucgt.geometryFile.textures.TPK;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
-import fr.ni240sx.ucgt.shared.Utils;
+import fr.ni240sx.ucgt.shared.Versions;
 import fr.ni240sx.ucgt.streamEditor.regionBlocks.TrackStreamingSections;
 import javafx.scene.shape.Path;
 import javafx.util.Pair;
@@ -57,7 +57,7 @@ public class GeometryEditorCLI {
 			//launching without arguments runs the command-line utility
 			
 			showHelp();
-			if (!new File(Utils.geomDefaultConfig).isFile()) {
+			if (!new File(Versions.geomDefaultConfig).isFile()) {
 				System.out.print("""
 
 						No default configuration found. Would you like to generate one and open it for editing? (Y/Yes/N/No)""");
@@ -69,7 +69,7 @@ public class GeometryEditorCLI {
 		        	l = in.readLine();
 		        	if (l.toLowerCase(Locale.ROOT).equals("yes") || l.toLowerCase(Locale.ROOT).equals("y")) {
 		        		Geometry.writeDefaultConfig();
-		        		Desktop.getDesktop().open(new File(Utils.geomDefaultConfig));
+		        		Desktop.getDesktop().open(new File(Versions.geomDefaultConfig));
 		        	}
 		        } catch (Exception e) {
 		        	e.printStackTrace();
@@ -164,8 +164,8 @@ public class GeometryEditorCLI {
 				break;
 				
 			case "config":
-				if (!new File(Utils.geomDefaultConfig).isFile()) Geometry.writeDefaultConfig();
-        		Desktop.getDesktop().open(new File(Utils.geomDefaultConfig));
+				if (!new File(Versions.geomDefaultConfig).isFile()) Geometry.writeDefaultConfig();
+        		Desktop.getDesktop().open(new File(Versions.geomDefaultConfig));
 				break;
 				
 			case "cd":
@@ -1176,6 +1176,6 @@ public class GeometryEditorCLI {
 					    
 					exit
 					    - exits the program
-				""", Utils.geom_version, Utils.geom_build);
+				""", Versions.geom_version, Versions.geom_build);
 	}
 }

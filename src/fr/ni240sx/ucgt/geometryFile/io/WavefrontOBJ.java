@@ -13,11 +13,11 @@ import fr.ni240sx.ucgt.geometryFile.Part;
 import fr.ni240sx.ucgt.geometryFile.part.MPoint;
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Material;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.Shader;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Triangle;
 import fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex;
 import fr.ni240sx.ucgt.shared.Hash;
-import fr.ni240sx.ucgt.shared.Utils;
+import fr.ni240sx.ucgt.shared.Versions;
 
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
@@ -221,7 +221,7 @@ public class WavefrontOBJ {
 
 	public static void save(Geometry geom, String f) throws IOException {
 		BufferedWriter bw = new BufferedWriter(new FileWriter(new File(f.replace(".obj", "").replace(".OBJ", "")+".obj")));
-		bw.write("#OBJ file exported with UCGT v"+Utils.geom_version+" - needeka 2026\n"
+		bw.write("#OBJ file exported with UCGT v"+Versions.geom_version+" - needeka 2026\n"
 				+ "mtllib "+f.split("\\\\")[f.split("\\\\").length-1].replace(".obj", "").replace(".OBJ", "")+".mtl\n");
 //		long iterator = 1;
 		long vl = 1;
@@ -235,12 +235,12 @@ public class WavefrontOBJ {
         		for (var v : m.verticesBlock.vertices) {
         			// vertex + vertex color
         			bw.write("v "+v.pos[X]+" "+v.pos[Y]+" "+v.pos[Z]);
-        			if (m.shaderUsage.vertexFormat(geom).hasColor()) bw.write(" "+v.color[R]+" "+v.color[G]+" "+v.color[B]);
+        			if (m.shader.vertexFormat(geom).hasColor()) bw.write(" "+v.color[R]+" "+v.color[G]+" "+v.color[B]);
         			bw.write("\n");
         			//vertex texcoord
         			bw.write("vt "+v.tex[0][U]+" "+v.tex[0][V]+"\n");
         			//vertex normal
-        			if (m.shaderUsage.vertexFormat(geom).hasNormals()) bw.write("vn "+v.norm[X]+" "+v.norm[Y]+" "+v.norm[Z]+"\n");
+        			if (m.shader.vertexFormat(geom).hasNormals()) bw.write("vn "+v.norm[X]+" "+v.norm[Y]+" "+v.norm[Z]+"\n");
         		}
         		//material
         		bw.write("usemtl "+m.uniqueName+"\n");
@@ -343,11 +343,11 @@ public class WavefrontOBJ {
         		bw.write("map_Kn "+Hash.getBIN(m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.NORMAL)))+".dds\r\n");
         		bw.write("map_norm "+Hash.getBIN(m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.NORMAL)))+".dds\r\n");
         	}
-        	if (m.shaderUsage.equals(ShaderUsage.get("DiffuseAlpha")) || 
-    				m.shaderUsage.equals(ShaderUsage.get("DiffuseGlowAlpha")) || 
-    				m.shaderUsage.equals(ShaderUsage.get("DiffuseNormalAlpha")) || 
-    				m.shaderUsage.equals(ShaderUsage.get("DiffuseNormalSwatchAlpha")) || 
-    				m.shaderUsage.equals(ShaderUsage.get("TrafficDiffuseAlpha")))
+        	if (m.shader.equals(Shader.get("DiffuseAlpha")) || 
+    				m.shader.equals(Shader.get("DiffuseGlowAlpha")) || 
+    				m.shader.equals(Shader.get("DiffuseNormalAlpha")) || 
+    				m.shader.equals(Shader.get("DiffuseNormalSwatchAlpha")) || 
+    				m.shader.equals(Shader.get("TrafficDiffuseAlpha")))
         		bw.write("map_d "+Hash.getBIN(m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.DIFFUSE)))+".dds\r\n");
         	if (m.textureUsages.contains(TextureUsage.SELFILLUMINATION)) bw.write("map_Ke "+Hash.getBIN(m.TextureHashes.get(m.textureUsages.indexOf(TextureUsage.SELFILLUMINATION)))+".dds\r\n");
         	

@@ -8,6 +8,8 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
+
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
 public class ChunksElevPolys extends ArrayList<fr.ni240sx.ucgt.streamEditor.regionBlocks.ChunksElevPolys.ElevPoly> implements Block {
@@ -45,7 +47,7 @@ public class ChunksElevPolys extends ArrayList<fr.ni240sx.ucgt.streamEditor.regi
 		out.write(buf.array());
 
 		for (var z : this) out.write(z.save());
-		Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 16), (byte)0x11);
+		Utils.makeAlignment(out, Utils.findAlignment(currentPosition+out.size(), 16), (byte)0x11);
 		
 		buf = ByteBuffer.wrap(new byte[4]);
 		buf.order(ByteOrder.LITTLE_ENDIAN);

@@ -11,7 +11,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
 import fr.ni240sx.ucgt.geometryFile.part.TextureUsage;
-import fr.ni240sx.ucgt.geometryFile.part.mesh.ShaderUsage;
+import fr.ni240sx.ucgt.geometryFile.part.mesh.Shader;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
 import javafx.application.Application;
@@ -245,7 +245,7 @@ public class GenericDump extends Application {
 		}
 
 		Hash.addBinHashes(new File("data/gentextures"));
-		Hash.addBinHashes(new File("data/shaders"));
+		Hash.addBinHashes(new File("data/lighting"));
 		Hash.addBinHashes(new File("data/mpoints"));
 		Hash.addBinHashes(new File("data/stuff"));
 		Hash.addBinHashes(new File("data/collisionshashes"));
@@ -262,7 +262,7 @@ public class GenericDump extends Application {
 		for (var b : TextureUsage.values()) {
 			Hash.findBIN(b.getName());
 		}
-		for (var b : ShaderUsage.values) {
+		for (var b : Shader.values) {
 			Hash.findBIN(b.getName());
 		}
 		

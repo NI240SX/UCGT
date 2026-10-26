@@ -1,42 +1,101 @@
 package fr.ni240sx.ucgt.shared;
 
-import java.io.File;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class Utils {
 
-	public static final String geom_version = "1.3.4";
-	public static final String geom_build = "2026.10.12";
+	public static String readStringAligned(ByteBuffer bb) {
+		var s = Utils.readString(bb);
+		while (bb.position()%4 != 0) bb.get();
+		return s;
+	}
 
-	public static final String geomGUI_Name = "UCGT Geometry Editor";
-	public static final String geomGUI_GUIVersion = "1.0.4";
-	
-	public static final String worldEditor_Name = "UCGT World Editor";
-	public static final String worldEditor_Version = "wip";
-	
-	public static final String dbmp_Name = "UCGT DBModelParts Editor";
-	public static final String dbmp_Version = "1.1.4";
-	
-	public static final String collisions_Name = "UCGT Collisions Editor";
-	public static final String collisions_Version = "1.1.0";
-	
-	public static final String settingsFolder;
+	public static String readString(ByteBuffer bb) {
+		byte[] stringBytesOversize = new byte[128];
+		byte b;
+		int i = 0;
+		while ((b=bb.get())!=0) {
+			stringBytesOversize[i] = b;
+			i++;
+		}
+		return new String(Arrays.copyOf(stringBytesOversize, i));
+	}
 
-	public static final String settingsGeomEdGui;
-	public static final String settingsColsEd;
-	public static final String settingsDbmpEd;
-	public static final String settingsWrldEd;
-	
-	public static final String geomDefaultConfig;
+	public static void putString(ByteBuffer bb, String s) {
+		Utils.putString(bb, s, Integer.MAX_VALUE);
+	}
 
-	static {
-		settingsFolder = "settings-%s-%s-%s".formatted(System.getProperty("os.name"), System.getProperty("os.arch"), System.getProperty("user.name"));
-		settingsGeomEdGui = "%s%sgeomGUI.dat".formatted(settingsFolder,File.separator);
-		settingsColsEd = "%s%scolseditor.dat".formatted(settingsFolder,File.separator);
-		settingsDbmpEd = "%s%sdbmpeditor.dat".formatted(settingsFolder,File.separator);
-		settingsWrldEd = "%s%sworldGUI.dat".formatted(settingsFolder,File.separator);
-		geomDefaultConfig = "%s%sdefaultsettings.ini".formatted(settingsFolder,File.separator);
+	public static void putString(ByteArrayOutputStream bb, String s) throws IOException {
+		Utils.putString(bb, s, Integer.MAX_VALUE);
+	}
+
+	/**
+	 * @param bb - ByteBuffer to use
+	 * @param s - String to add
+	 * @param maxSize - Maximum string length
+	 */
+	public static void putString(ByteBuffer bb, String s, int maxSize) {
 		
-		if (new File("settings").isDirectory()) new File("settings").renameTo(new File(settingsFolder)); //migrate
+		for (int i=0; i<s.length(); i++) {
+			if (i>maxSize-2) {
+				break;
+			}
+			bb.put((byte)s.charAt(i));
+		}
+		bb.put((byte)0);
+		//4-byte alignment
+		if (bb.position()%4 != 0) bb.put(new byte[4 - bb.position()%4]);
+	}
+
+	public static void putString(ByteArrayOutputStream bb, String s, int maxSize) throws IOException {
+		
+		for (int i=0; i<s.length(); i++) {
+			if (i>maxSize-1) {
+				System.out.println("[WARN] String too long !");
+				break;
+			}
+			bb.write((byte)s.charAt(i));
+		}
+		bb.write((byte)0);
+		//4-byte alignment
+		if (bb.size()%4 != 0) bb.write(new byte[4 - bb.size()%4]);
+	}
+
+	public static int stringLengthAligned(String s) {
+		if ((s.length()+1)%4 == 0) return s.length()+1;
+		return s.length() + 5 - (s.length()+1)%4;
+	}
+
+	public static void makeAlignment(ByteBuffer bb, int length, byte pattern) {
+		for (int i=0; i<length; i++) {
+			bb.put(pattern);
+		}
+	}
+
+	public static void skipAlignment(ByteBuffer bb, int alignment) {
+		while (bb.position()%alignment != 0) {
+			bb.get();
+		}
+	}
+
+	public static void skipAlignment(ByteArrayOutputStream bos, int modulo, int pattern) {
+		while (bos.size()%modulo != 0) {
+			bos.write(pattern);
+		}
+	}
+
+	public static int findAlignment(int position, int alignment) {
+		if (position%alignment == 0) return 0;
+		return alignment-position%alignment;
+	}
+
+	public static void makeAlignment(ByteArrayOutputStream out, int length, byte pattern) {
+		for (int i=0; i<length; i++) {
+		out.write(pattern);
+		}
 	}
 
 }

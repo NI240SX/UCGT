@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.NoSuchElementException;
 
 import fr.ni240sx.ucgt.shared.Hash;
-import fr.ni240sx.ucgt.shared.Utils;
+import fr.ni240sx.ucgt.shared.Versions;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.geometry.Orientation;
@@ -28,6 +28,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -79,7 +80,7 @@ public class DBMPPlus extends Application {
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 		try {
-			BufferedReader br = new BufferedReader(new FileReader(new File(Utils.settingsDbmpEd)));
+			BufferedReader br = new BufferedReader(new FileReader(new File(Versions.settingsDbmpEd)));
 			br.readLine(); //="DO NOT MANUALLY EDIT THIS FILE"
 			lastDirectoryLoaded = br.readLine();
 			lastFileLoaded = br.readLine();
@@ -101,8 +102,8 @@ public class DBMPPlus extends Application {
 		
         launch(args);
         try {
-			Files.createDirectories(Paths.get(Utils.settingsFolder));
-			BufferedWriter bw = new BufferedWriter(new FileWriter(new File(Utils.settingsDbmpEd)));
+			Files.createDirectories(Paths.get(Versions.settingsFolder));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(new File(Versions.settingsDbmpEd)));
 			bw.write("DO NOT MANUALLY EDIT THIS FILE\n" 
 					+ lastDirectoryLoaded + "\n" 
 					+ lastFileLoaded + "\n" 
@@ -121,7 +122,7 @@ public class DBMPPlus extends Application {
 	
     @Override
 	public void start(Stage primaryStage) {
-        primaryStage.setTitle(Utils.dbmp_Name + " - " + mainDBMP.carname);
+        updateWindowTitle(primaryStage);
 
         VBox windowTop = new VBox();
         
@@ -177,6 +178,7 @@ public class DBMPPlus extends Application {
         MenuItem dbSortAttributes = new MenuItem("Sort attributes");
 //        CheckMenuItem dbSortPartsByNameExport = new CheckMenuItem("Sort parts by name at export");
 //        CheckMenuItem dbSortAttributesExport = new CheckMenuItem("Sort attributes at export");
+        MenuItem dbChangeGame = new MenuItem("Change game");
         MenuItem dbChangeName = new MenuItem("Change car name");
         MenuItem dbFixNameOffsets = new MenuItem("Fix NAME_OFFSETS based on the PART_NAME_OFFSETS");
         MenuItem dbFixCVs = new MenuItem("Fix CVs for BODY parts based on the car's name");
@@ -198,6 +200,7 @@ public class DBMPPlus extends Application {
 //        dbSortAttributesExport.setOnAction(e -> {
 //        	new Alert(Alert.AlertType.WARNING, "Not implemented").show();
 //        });
+        dbChangeGame.setOnAction(e -> dbChangeGame(primaryStage));
         dbChangeName.setOnAction(e -> dbChangeName(primaryStage, e));
         dbFixNameOffsets.setOnAction(e -> {
         	dbFixNameOffsets();
@@ -209,7 +212,7 @@ public class DBMPPlus extends Application {
         });
         dbTrimToGeom.setOnAction(e -> dbTrimToGeom(e));
         
-        menuDBMP.getItems().addAll(dbOptimizeAttributes, dbSortPartsByName2, dbSortPartsByName, dbSortAttributes, dbFixNameOffsets, dbFixCVs, dbChangeName, 
+        menuDBMP.getItems().addAll(dbOptimizeAttributes, dbSortPartsByName2, dbSortPartsByName, dbSortAttributes, dbFixNameOffsets, dbFixCVs, dbChangeName, dbChangeGame, 
         		dbTrimToGeom/*, dbSortPartsByNameExport, dbSortAttributesExport*/);
         
         
@@ -244,32 +247,23 @@ public class DBMPPlus extends Application {
         
         menuAttributes.getItems().addAll(attributeAddAS, attributeRemoveAS, attributeAddCV, attributeRemoveCV, attributeSort);
         
-        Menu menuSettings = new Menu(Utils.dbmp_Name);
+        Menu menuSettings = new Menu(Versions.dbmp_Name);
         
         CheckMenuItem settingsDark = new CheckMenuItem("Dark mode");
         CheckMenuItem settingsWarnings = new CheckMenuItem("Disable warning pop-ups");
         CheckMenuItem settingsWidebodyAutoCorrect = new CheckMenuItem("Auto-correct widebody part names");
-        MenuItem settingsAbout = new MenuItem("About " + Utils.dbmp_Name + "...");
+        MenuItem settingsAbout = new MenuItem("About " + Versions.dbmp_Name + "...");
         
-        if (widebodyAutoCorrect) settingsWidebodyAutoCorrect.setSelected(true);
-        settingsWidebodyAutoCorrect.selectedProperty().addListener((obs, wasSelected, isSelected) -> {
-        	if (isSelected) widebodyAutoCorrect = true; 
-        	else widebodyAutoCorrect = false;
-        });
+        settingsWidebodyAutoCorrect.setSelected(widebodyAutoCorrect);
+        settingsWidebodyAutoCorrect.selectedProperty().addListener((obs, wasSelected, isSelected) -> widebodyAutoCorrect = isSelected);
 
-        if (disableWarnings) settingsWarnings.setSelected(true);
-        settingsWarnings.selectedProperty().addListener((obs, wasSelected, isSelected) -> {
-            if (isSelected) {
-                disableWarnings = true;
-            } else {
-            	disableWarnings= false;
-                }
-        });
+        settingsWarnings.setSelected(disableWarnings);
+        settingsWarnings.selectedProperty().addListener((obs, wasSelected, isSelected) -> disableWarnings = isSelected);
         
         settingsAbout.setOnAction(e -> {
 			Stage st = new Stage();
-			st.setTitle("About " + Utils.dbmp_Name);
-			Scene sc = new Scene(new Label(Utils.dbmp_Name + " version " + Utils.dbmp_Version + "\n\n"
+			st.setTitle("About " + Versions.dbmp_Name);
+			Scene sc = new Scene(new Label(Versions.dbmp_Name + " version " + Versions.dbmp_Version + "\n\n"
 					+ "Advanced DBModelParts editor for NFS Undercover.\n"
 					+ "Aims to make the creation of such data less of a hassle for modders.\n"
 					+ "This software has been originally created for the mod Undercover Exposed.\n\n"
@@ -433,9 +427,7 @@ public class DBMPPlus extends Application {
         scrollPaneAttrib.setFitToWidth(true);
         
         
-        for (DBMPPart p : mainDBMP.dBMPParts) {
-        	partsDisplay.getItems().add(p);
-        }
+    	partsDisplay.getItems().addAll(mainDBMP.dBMPParts);
 
 //        Label statusBar = new Label("Status: Ready");
 
@@ -460,23 +452,28 @@ public class DBMPPlus extends Application {
 			}
         });
         
+        scene.setOnDragOver(e -> {
+        	if (e.getDragboard().hasFiles()) e.acceptTransferModes(TransferMode.ANY);
+        	e.consume();
+        });
+    	scene.setOnDragDropped(e -> {
+    		try {
+	    		if (e.getDragboard().hasFiles()) loadDBFromFile(primaryStage, e.getDragboard().getFiles().get(0));
+	    		e.consume();
+    		} catch (Exception ex) {
+    			ex.printStackTrace();
+    		}
+    	});
+        
         primaryStage.show();
         
         
         //minor inconvenience
-        if (useDarkMode) {
-            scene.getRoot().setStyle("-fx-base:black");
-            settingsDark.setSelected(true);
-        }
         settingsDark.selectedProperty().addListener((obs, wasSelected, isSelected) -> {
-            if (isSelected) {
-                scene.getRoot().setStyle("-fx-base:black");
-                useDarkMode = true;
-            } else {
-                scene.getRoot().setStyle("");
-                useDarkMode = false;
-                }
+        	useDarkMode = isSelected;
+            scene.getRoot().setStyle(useDarkMode ? "-fx-base:black" : "");
         });
+        settingsDark.setSelected(useDarkMode);
     }
 
 	//---------------------------------------------------------------------------------------------------
@@ -524,9 +521,9 @@ public class DBMPPlus extends Application {
 		    	}
 		    	
 		    	// maps slotID and isWidebody to max kit
-		    	var minMax = new HashMap<Pair<PartUndercover, Boolean>, Integer>();
+		    	var minMax = new HashMap<Pair<Byte, Boolean>, Integer>();
 		    	for (var p : foundParts) {
-		    		PartUndercover id = ((AttributeCarPartID) p.getAttribute("PARTID_UPGRADE_GROUP")).ID;
+		    		var id = ((AttributeCarPartID) p.getAttribute("PARTID_UPGRADE_GROUP")).ID;
 		    		if (minMax.get(new Pair<>(id, p.isWidebody)) == null) {
 		    			minMax.put(new Pair<>(id, p.isWidebody), p.kitnumber);
 		    		} else {
@@ -538,7 +535,7 @@ public class DBMPPlus extends Application {
 		    	
 				ArrayList<DBMPPart> toRemove = new ArrayList<>();
 				for (var p : mainDBMP.dBMPParts) {
-		    		PartUndercover id = ((AttributeCarPartID) p.getAttribute("PARTID_UPGRADE_GROUP")).ID;
+		    		var id = ((AttributeCarPartID) p.getAttribute("PARTID_UPGRADE_GROUP")).ID;
 		    		if (minMax.get(new Pair<>(id, p.isWidebody)) != null) {
 		    			if (minMax.get(new Pair<>(id, p.isWidebody)) < p.kitnumber) { //value is maximum
 		    				toRemove.add(p);
@@ -567,21 +564,43 @@ public class DBMPPlus extends Application {
 
 	public static void dbFixCVs() {
 		for (DBMPPart p : mainDBMP.dBMPParts) {
-			if (((AttributeCarPartID)p.getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.BODY) {
-				if (((AttributeKey)p.getAttribute("CV")) == null) p.addAttribute(new AttributeKey("CV", DBMPPlus.mainDBMP.carname + "_CV"));
-				else ((AttributeKey)p.getAttribute("CV")).value = DBMPPlus.mainDBMP.carname + "_CV";
+			if (p.<AttributeCarPartID>getAttribute("PARTID_UPGRADE_GROUP").ID == PartNFS.get("BODY").getValue()) {
+				if (Game.get(mainDBMP.GameInt) == Game.Undercover || Game.get(mainDBMP.GameInt) == Game.Prostreet) {
+					if (((AttributeKey)p.getAttribute("CV")) == null) p.addAttribute(new AttributeKey("CV", DBMPPlus.mainDBMP.carname + "_CV"));
+					else ((AttributeKey)p.getAttribute("CV")).value = DBMPPlus.mainDBMP.carname + "_CV";
+				} else if (Game.get(mainDBMP.GameInt) == Game.Carbon){
+					//FIXME
+				}
 			}
 		}
-		if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All CVs fixed.").show();
+		if (Game.get(mainDBMP.GameInt) == Game.Undercover || Game.get(mainDBMP.GameInt) == Game.Prostreet) 
+			if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All CVs fixed.").show();
 		updateAllPartsDisplay();
 	}
 
 	public static void dbFixNameOffsets() {
 		for (DBMPPart p : mainDBMP.dBMPParts) {
-			((AttributeString)p.getAttribute("NAME_OFFSET")).value1 = ((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value1.replace("KIT", "").replace("W", "");
+			findNameOffset(p);
 		}
 		if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All name offsets fixed.").show();
 		updateAllPartsDisplay();
+	}
+
+	public static void findNameOffset(DBMPPart p) {
+		if (Game.get(mainDBMP.GameInt) == Game.Carbon) {
+
+			((AttributeString)p.getAttribute("NAME_OFFSET")).value1 = ((AttributeTwoString)p.getAttribute("LOD_BASE_NAME")).value1
+					.replace("KITW", "").replace("KIT", "").replace("STYLE", "");
+			if (p.<AttributeInteger>getAttribute("KITNUMBER") != null) {
+				p.<AttributeInteger>getAttribute("KITNUMBER").value = Integer.parseInt(p.<AttributeString>getAttribute("NAME_OFFSET").value1);
+			}
+			if ("00".equals(p.<AttributeString>getAttribute("NAME_OFFSET").value1)) {
+				p.<AttributeString>getAttribute("NAME_OFFSET").value1 = "STOCK";
+			}
+		} else {
+			((AttributeString)p.getAttribute("NAME_OFFSET")).value1 = ((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value1
+					.replace("KITW", "").replace("KIT", "").replace("STYLE", "");
+		}
 	}
 
 	@SuppressWarnings("unused")
@@ -593,88 +612,126 @@ public class DBMPPlus extends Application {
 			if (!s.isBlank()) {
 				mainDBMP.carname = s;
 				if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Car name changed.").show();
-				primaryStage.setTitle("fire - "+mainDBMP.carname);
+				updateWindowTitle(primaryStage);
 				menuDBMP.setText(mainDBMP.carname);
 				e.consume();
 			}
 		}catch (NoSuchElementException ex) {
 		}
 	}
+	
+	public static void dbChangeGame(Stage primaryStage) {
+		var gameChoice = new ChoiceDialog<Game>();
+		gameChoice.setHeaderText("Please pick game");
+		gameChoice.getItems().setAll(Game.Undercover, Game.Prostreet, Game.Carbon);
+		gameChoice.setSelectedItem(Game.get(mainDBMP.GameInt));
+		var op = gameChoice.showAndWait();
+		//TODO inner changes in dbmodelparts ???
+		if (op.isPresent()) {
+			var next = op.get().GameInt;
+			for (var p : mainDBMP.dBMPParts) for (var a : p.attributes) if (a.getClass() == AttributeCarPartID.class){
+				var cpid = (AttributeCarPartID)a;
+				cpid.ID = PartNFS.get(PartNFS.get(cpid.ID, mainDBMP.GameInt).name(), next).getValue(); //switch part id based on the name; will break between UC/PS and Carbon!
+			}
+			
+			mainDBMP.GameInt = next;
+			if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Game changed.").show();
+			updateWindowTitle(primaryStage);
+		}
+	}
+
+	public static void updateWindowTitle(Stage primaryStage) {
+		if (mainDBMP == null) primaryStage.setTitle(Versions.dbmp_Name);
+		else primaryStage.setTitle("%s - %s - %s".formatted(Versions.dbmp_Name, mainDBMP.carname, Game.get(mainDBMP.GameInt).name()));
+	}
 
 	public static void dbSortAttributes(ActionEvent e) {
-		for(DBMPPart p: mainDBMP.dBMPParts) {
-			if (p.isCarPart) {
-				int s = p.attributes.size();
-				//most wack ass sorting method but it works
-				p.addAttribute(p.getAttribute("PART_NAME_SELECTOR"));
-				p.addAttribute(p.getAttribute("LOD_NAME_PREFIX_SELECTOR"));
-				p.addAttribute(p.getAttribute("MAX_LOD"));
-				p.addAttribute(p.getAttribute("LOD_CHARACTERS_OFFSET"));
-				p.addAttribute(p.getAttribute("NAME_OFFSET"));
-				if (p.getAttribute("MORPHTARGET_NUM")!=null) p.addAttribute(p.getAttribute("MORPHTARGET_NUM"));
-				p.addAttribute(p.getAttribute("PARTID_UPGRADE_GROUP"));
-				p.addAttribute(p.getAttribute("PART_NAME_OFFSETS"));
-				p.addAttribute(p.getAttribute("LOD_BASE_NAME"));
-				if (p.getAttribute("CV")!=null) p.addAttribute(p.getAttribute("CV"));
-				for (int i=0; i<s; i++) p.attributes.remove(0);
-			}
-			if (p.isVectorVinyl) {
-				int s = p.attributes.size();
-				//attributes skipped if null
-				p.addAttribute(p.getAttribute("PARTID_UPGRADE_GROUP"));
-				p.addAttribute(p.getAttribute("PART_NAME_BASE_HASH"));
-				p.addAttribute(p.getAttribute("PART_NAME_OFFSETS"));
-				p.addAttribute(p.getAttribute("NAME_OFFSET"));
-				
-				p.addAttribute(p.getAttribute("VINYLLANGUAGEHASH"));
-				p.addAttribute(p.getAttribute("GROUPLANGUAGEHASH"));
-				
-				p.addAttribute(p.getAttribute("PART_NAME_SELECTOR"));
-				p.addAttribute(p.getAttribute("BRAND_NAME"));
-
-				p.addAttribute(p.getAttribute("FULLBODY"));
-				p.addAttribute(p.getAttribute("ISDECAL"));
-				p.addAttribute(p.getAttribute("MIRROR"));
-				p.addAttribute(p.getAttribute("SPECIFICCARNAME"));
-				
-				p.addAttribute(p.getAttribute("COLOR0ID"));
-				p.addAttribute(p.getAttribute("COLOR1ID"));
-				p.addAttribute(p.getAttribute("COLOR2ID"));
-				p.addAttribute(p.getAttribute("COLOR3ID"));
-
-				p.addAttribute(p.getAttribute("COLOR0LANGUAGEHASH"));
-				p.addAttribute(p.getAttribute("COLOR1LANGUAGEHASH"));
-				p.addAttribute(p.getAttribute("COLOR2LANGUAGEHASH"));
-				p.addAttribute(p.getAttribute("COLOR3LANGUAGEHASH"));
-
-				for (int i=0; i<s; i++) p.attributes.remove(0);
-				
-			}
+		for (DBMPPart p: mainDBMP.dBMPParts) {
+			sortPartAttributes(p);
 		}
 		updateAttributesDisplay();
 		e.consume();
 		if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All attributes sorted.").show();
 	}
 
-	@SuppressWarnings("unused")
+	public static void sortPartAttributes(DBMPPart p) {
+		p.attributes.sort((a, b) -> Integer.compareUnsigned(a.Key, b.Key));
+//		if (p.isCarPart) {
+//			int s = p.attributes.size();
+//			//most wack ass sorting method but it works
+//			p.addAttribute(p.getAttribute("PART_NAME_SELECTOR"));
+//			p.addAttribute(p.getAttribute("LOD_NAME_PREFIX_SELECTOR"));
+//			p.addAttribute(p.getAttribute("MAX_LOD"));
+//			p.addAttribute(p.getAttribute("LOD_CHARACTERS_OFFSET"));
+//			p.addAttribute(p.getAttribute("NAME_OFFSET"));
+//			if (p.getAttribute("MORPHTARGET_NUM")!=null) p.addAttribute(p.getAttribute("MORPHTARGET_NUM"));
+//			p.addAttribute(p.getAttribute("PARTID_UPGRADE_GROUP"));
+//			p.addAttribute(p.getAttribute("PART_NAME_OFFSETS"));
+//			p.addAttribute(p.getAttribute("LOD_BASE_NAME"));
+//			if (p.getAttribute("CV")!=null) p.addAttribute(p.getAttribute("CV"));
+//			for (int i=0; i<s; i++) p.attributes.remove(0);
+//		} else
+//		if (p.isVectorVinyl) {
+//			int s = p.attributes.size();
+//			//attributes skipped if null
+//			p.addAttribute(p.getAttribute("PARTID_UPGRADE_GROUP"));
+//			p.addAttribute(p.getAttribute("PART_NAME_BASE_HASH"));
+//			p.addAttribute(p.getAttribute("PART_NAME_OFFSETS"));
+//			p.addAttribute(p.getAttribute("NAME_OFFSET"));
+//			
+//			p.addAttribute(p.getAttribute("VINYLLANGUAGEHASH"));
+//			p.addAttribute(p.getAttribute("GROUPLANGUAGEHASH"));
+//			
+//			p.addAttribute(p.getAttribute("PART_NAME_SELECTOR"));
+//			p.addAttribute(p.getAttribute("BRAND_NAME"));
+//
+//			p.addAttribute(p.getAttribute("FULLBODY"));
+//			p.addAttribute(p.getAttribute("ISDECAL"));
+//			p.addAttribute(p.getAttribute("MIRROR"));
+//			p.addAttribute(p.getAttribute("SPECIFICCARNAME"));
+//			
+//			p.addAttribute(p.getAttribute("COLOR0ID"));
+//			p.addAttribute(p.getAttribute("COLOR1ID"));
+//			p.addAttribute(p.getAttribute("COLOR2ID"));
+//			p.addAttribute(p.getAttribute("COLOR3ID"));
+//
+//			p.addAttribute(p.getAttribute("COLOR0LANGUAGEHASH"));
+//			p.addAttribute(p.getAttribute("COLOR1LANGUAGEHASH"));
+//			p.addAttribute(p.getAttribute("COLOR2LANGUAGEHASH"));
+//			p.addAttribute(p.getAttribute("COLOR3LANGUAGEHASH"));
+//
+//			for (int i=0; i<s; i++) p.attributes.remove(0);				
+//		} else {
+//			var cpid = p.<AttributeCarPartID>getAttribute("PARTID_UPGRADE_GROUP");
+//			if (cpid.ID == PartNFS.get("PAINT").getValue()) {
+//				
+//			}
+//		}
+		
+	}
+
 	public static void dbOptimizeAttributes() {
 		for (DBMPPart p : mainDBMP.dBMPParts) {
 			if (p.isCarPart) {
+				//what matters for car parts is to share the most attributes with other similar parts
 				// autosculpt either missing or maxed (11) + removed for parts that forcefully don't have it
 				if (p.getAttribute("MORPHTARGET_NUM")!=null) {
-					if (p.<AttributeInteger>getAttribute("MORPHTARGET_NUM").value != 0 
-							&& p.<AttributeCarPartID>getAttribute("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST
-							&& p.<AttributeCarPartID>getAttribute("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST_TIPS_CENTER
-							&& p.<AttributeCarPartID>getAttribute("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST_TIPS_LEFT
-							&& p.<AttributeCarPartID>getAttribute("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST_TIPS_RIGHT) {
+					if (p.<AttributeInteger>getAttribute("MORPHTARGET_NUM").value != 0 && (
+						(Game.get(mainDBMP.GameInt) == Game.Undercover
+							&& p.<AttributeCarPartID>getAttribute("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST.getValue()
+							&& p.<AttributeCarPartID>getAttribute("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST_TIPS_CENTER.getValue()
+							&& p.<AttributeCarPartID>getAttribute("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST_TIPS_LEFT.getValue()
+							&& p.<AttributeCarPartID>getAttribute("PARTID_UPGRADE_GROUP").ID != PartUndercover.EXHAUST_TIPS_RIGHT.getValue())									
+									)) {
 						p.<AttributeInteger>getAttribute("MORPHTARGET_NUM").value = 11;
 					} else {
-			    		try {
+//			    		try {
 			    			p.removeAttribute("MORPHTARGET_NUM");
-			    		} catch (Exception e2) {
+//			    		} catch (Exception e2) {
 			    			// a ConcurrentModificationException occurs but this still works somehow
+			    			// YEAH NO SHIT THE ITERATOR BREAKS
 			    			//e2.printStackTrace();
-			    		}
+//			    		}
 					}
 				}
 
@@ -687,10 +744,12 @@ public class DBMPPlus extends Application {
 				p.<AttributeString>getAttribute("LOD_CHARACTERS_OFFSET").value1 = "ABCDE";
 				
 				// fixed name offsets
-				((AttributeString)p.getAttribute("NAME_OFFSET")).value1 = ((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value1.replace("KIT", "").replace("W", "");
+				((AttributeString)p.getAttribute("NAME_OFFSET")).value1 = ((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value1
+						.replace("KITW", "").replace("KIT", "").replace("STYLE", "");
 			}
 			if (p.isVectorVinyl) {
 				//VECTORVINYL OPTIMIZATION
+				//what matters for VECTORVINYL is to remove the most attributes
 				/*
 
 				VECTORVINYL common attributes
@@ -722,44 +781,44 @@ public class DBMPPlus extends Application {
 
 				if (p.getAttribute("FULLBODY")!=null) {
 					if (!p.<AttributeBoolean>getAttribute("FULLBODY").value) 
-						try {p.removeAttribute("FULLBODY");}catch(Exception e) {}
+						p.removeAttribute("FULLBODY");
 				}
 				if (p.getAttribute("ISDECAL")!=null) {
 					if (!p.<AttributeBoolean>getAttribute("ISDECAL").value) 
-						try{p.removeAttribute("ISDECAL");}catch(Exception e) {}
+						p.removeAttribute("ISDECAL");
 				}
 				if (p.getAttribute("MIRROR")!=null) {
 					if (!p.<AttributeBoolean>getAttribute("MIRROR").value) 
-						try{p.removeAttribute("MIRROR");}catch(Exception e) {}
+						p.removeAttribute("MIRROR");
 				}
 
 				if (p.getAttribute("SPECIFICCARNAME")!=null) {
 					if (p.<AttributeKey>getAttribute("SPECIFICCARNAME").value.isBlank()) 
-						try{p.removeAttribute("SPECIFICCARNAME");}catch(Exception e) {}
+						p.removeAttribute("SPECIFICCARNAME");
 				}
 
 				if (p.getAttribute("COLOR3ID")!=null) {
 					if (p.<AttributeColor>getAttribute("COLOR3ID").alpha == 0) {
-						try {p.removeAttribute("COLOR3ID");}catch(Exception e) {}
-						try{p.removeAttribute("COLOR3LANGUAGEHASH");} catch(Exception e) {}
+						p.removeAttribute("COLOR3ID");
+						p.removeAttribute("COLOR3LANGUAGEHASH");
 					}
 				}
 				if (p.getAttribute("COLOR2ID")!=null) {
 					if (p.<AttributeColor>getAttribute("COLOR2ID").alpha == 0)  {
-						try {p.removeAttribute("COLOR2ID");}catch(Exception e) {}
-						try{p.removeAttribute("COLOR2LANGUAGEHASH");} catch(Exception e) {}
+						p.removeAttribute("COLOR2ID");
+						p.removeAttribute("COLOR2LANGUAGEHASH");
 					}
 				}
 				if (p.getAttribute("COLOR1ID")!=null) {
 					if (p.<AttributeColor>getAttribute("COLOR1ID").alpha == 0)  {
-						try {p.removeAttribute("COLOR1ID");}catch(Exception e) {}
-						try{p.removeAttribute("COLOR1LANGUAGEHASH");} catch(Exception e) {}
+						p.removeAttribute("COLOR1ID");
+						p.removeAttribute("COLOR1LANGUAGEHASH");
 					}
 				}
 				if (p.getAttribute("COLOR0ID")!=null) {
 					if (p.<AttributeColor>getAttribute("COLOR0ID").alpha == 0)  {
-						try {p.removeAttribute("COLOR0ID");}catch(Exception e) {}
-						try{p.removeAttribute("COLOR0LANGUAGEHASH");} catch(Exception e) {}
+						p.removeAttribute("COLOR0ID");
+						p.removeAttribute("COLOR0LANGUAGEHASH");
 					}
 				}
 				
@@ -773,6 +832,7 @@ public class DBMPPlus extends Application {
 		if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Attributes cleaned up.").show();
 	}
 
+	//TODO isnt it just bin key sorting as usual
 	public static void dbSortPartsByName2() {
 		mainDBMP.dBMPParts.sort(new PartSorterByName2Asc());
 		if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "All parts sorted.").show();
@@ -855,7 +915,7 @@ public class DBMPPlus extends Application {
 		    			DBMPPart tp;
 		        		mainDBMP.dBMPParts.add(tp = new DBMPPart(p));
 		        		((AttributeTwoString)tp.getAttribute("PART_NAME_OFFSETS")).value1 = k;
-		        		((AttributeString)tp.getAttribute("NAME_OFFSET")).value1 = k.replace("KIT", "").replace("W", "");
+		        		((AttributeString)tp.getAttribute("NAME_OFFSET")).value1 = k.replace("KITW", "").replace("KIT", "").replace("STYLE", "");
 		        		if(toAnotherKitReference.isSelected()) {
 		            		((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = referenceKitInput.getText().trim();
 		        		}else {
@@ -909,12 +969,12 @@ public class DBMPPlus extends Application {
 		partsDisplay.getSelectionModel().select(sel);
 	}
 
-	@SuppressWarnings("unused")
 	public static void partAdd(ActionEvent e) {
 		TextInputDialog td = new TextInputDialog("KIT00_BASE");
 		td.setHeaderText("Enter a part name");
-		try {
-			String s = td.showAndWait().get().strip();
+		var opt = td.showAndWait();
+		if (opt.isPresent()) {
+			String s = opt.get().strip();
 			if (!s.isBlank()) {
 				String kit = s.split("_")[0];
 				String part = s.substring(kit.length()+1);
@@ -925,22 +985,19 @@ public class DBMPPlus extends Application {
 						mainDBMP.dBMPParts.add(new DBMPPart(kit, part.replace("LEFT", "RIGHT")));
 						mainDBMP.dBMPParts.add(new DBMPPart(kit, part.replace("FRONT", "REAR").replace("LEFT", "RIGHT")));
 					}
-				} else {
-					if(part.contains("LEFT")) {
-						mainDBMP.dBMPParts.add(new DBMPPart(kit, part));
-						mainDBMP.dBMPParts.add(new DBMPPart(kit, part.replace("LEFT", "RIGHT")));
-						if(part.contains("LIGHT")) {
-							mainDBMP.dBMPParts.add(new DBMPPart(kit, part.replace("LIGHT", "LIGHT_GLASS")));
-		    				mainDBMP.dBMPParts.add(new DBMPPart(kit, part.replace("LIGHT", "LIGHT_GLASS").replace("LEFT", "RIGHT")));	
-						}
-					} else {
-						mainDBMP.dBMPParts.add(new DBMPPart(kit, part));
+				} else if(part.contains("LEFT")) {
+					mainDBMP.dBMPParts.add(new DBMPPart(kit, part));
+					mainDBMP.dBMPParts.add(new DBMPPart(kit, part.replace("LEFT", "RIGHT")));
+					if(part.contains("LIGHT")) {
+						mainDBMP.dBMPParts.add(new DBMPPart(kit, part.replace("LIGHT", "LIGHT_GLASS")));
+	    				mainDBMP.dBMPParts.add(new DBMPPart(kit, part.replace("LIGHT", "LIGHT_GLASS").replace("LEFT", "RIGHT")));	
 					}
+				} else {
+					mainDBMP.dBMPParts.add(new DBMPPart(kit, part));
 				}
 				updateAllPartsDisplay();
 				e.consume();
-			}
-		}catch (NoSuchElementException ex) {
+			}		
 		}
 	}
 
@@ -985,8 +1042,8 @@ public class DBMPPlus extends Application {
 			int size = mainDBMP.dBMPParts.size();
 			for(int i=0; i<size; i++) {
 				if (generateKits.contains(((AttributeTwoString)mainDBMP.dBMPParts.get(i).getAttribute("PART_NAME_OFFSETS")).value1) 
-						&& (((AttributeCarPartID)mainDBMP.dBMPParts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.WHEEL
-						|| ((AttributeCarPartID)mainDBMP.dBMPParts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.WHEEL_REAR)) {
+						&& (((AttributeCarPartID)mainDBMP.dBMPParts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartNFS.get("WHEEL").getValue()
+						|| ((AttributeCarPartID)mainDBMP.dBMPParts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartNFS.get("WHEEL_REAR").getValue())) {
 				// remove conflicting preexisting
 					mainDBMP.dBMPParts.remove(i);
 					size--;
@@ -994,13 +1051,22 @@ public class DBMPPlus extends Application {
 				}
 			}
 			for (String kit : generateKits) {
-					DBMPPart tp;
+				DBMPPart tp;
+				switch(Game.get(mainDBMP.GameInt)) {
+				case Undercover:
+				case Prostreet:
 					mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, "WHEEL"));
 					((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value2 = "WHEEL_TIRE_FRONT";
 					if(autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
 					mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, "WHEEL_REAR"));
 					((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value2 = "WHEEL_TIRE_REAR";
 					if(autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
+					break;
+				case Carbon:
+					//FIXME what here
+					break;
+				default:
+				}
 			}
 			updateAllPartsDisplay();
 			partsDisplay.getSelectionModel().select(sel);
@@ -1056,7 +1122,7 @@ public class DBMPPlus extends Application {
 				int size = mainDBMP.dBMPParts.size();
 				for(int i=0; i<size; i++) {
 					if (generateKits.contains(((AttributeTwoString)mainDBMP.dBMPParts.get(i).getAttribute("PART_NAME_OFFSETS")).value1) 
-							&& ((AttributeCarPartID)mainDBMP.dBMPParts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.SPOILER) {
+							&& ((AttributeCarPartID)mainDBMP.dBMPParts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartNFS.get("SPOILER").getValue()) {
 					// remove conflicting preexisting
 						mainDBMP.dBMPParts.remove(i);
 						size--;
@@ -1122,7 +1188,7 @@ public class DBMPPlus extends Application {
 			int size = mainDBMP.dBMPParts.size();
 			for(int i=0; i<size; i++) {
 				if (generateKits.contains(((AttributeTwoString)mainDBMP.dBMPParts.get(i).getAttribute("PART_NAME_OFFSETS")).value1) 
-						&& ((AttributeCarPartID)mainDBMP.dBMPParts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartUndercover.HOOD) {
+						&& ((AttributeCarPartID)mainDBMP.dBMPParts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID == PartNFS.get("HOOD").getValue()) {
 				// remove conflicting preexisting
 					mainDBMP.dBMPParts.remove(i);
 					size--;
@@ -1181,7 +1247,7 @@ public class DBMPPlus extends Application {
 				BufferedWriter bw = new BufferedWriter(new FileWriter(fc.showSaveDialog(null)));
 				for (DBMPPart p : mainDBMP.dBMPParts) {
 					if (((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value1.equals(kit) 
-							&& !((AttributeCarPartID)p.getAttribute("PARTID_UPGRADE_GROUP")).ID.getText().contains("EXHAUST")) {
+							&& !PartNFS.get(((AttributeCarPartID)p.getAttribute("PARTID_UPGRADE_GROUP")).ID).name().contains("EXHAUST")) {
 						bw.write(((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value2);
 						if (!((AttributeTwoString)p.getAttribute("PART_NAME_OFFSETS")).value2.equals(((AttributeTwoString)p.getAttribute("LOD_BASE_NAME")).value2)) {
 							bw.write("/" + ((AttributeTwoString)p.getAttribute("LOD_BASE_NAME")).value2);
@@ -1198,6 +1264,10 @@ public class DBMPPlus extends Application {
 	}
 
 	public static void kitExhausts() {
+		if (Game.get(mainDBMP.GameInt) != Game.Undercover) {
+			if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Only supported by Undercover.").show();
+			return;
+		}
 		Stage st = new Stage();
 		st.setTitle("Kit exhausts generation");
 		
@@ -1314,7 +1384,7 @@ public class DBMPPlus extends Application {
 				int size = mainDBMP.dBMPParts.size();
 				for(int i=0; i<size; i++) {
 					if (kits.contains(((AttributeTwoString)mainDBMP.dBMPParts.get(i).getAttribute("PART_NAME_OFFSETS")).value1) 
-							&& ((AttributeCarPartID)mainDBMP.dBMPParts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID.getText().contains("EXHAUST")) {
+							&& PartNFS.get(((AttributeCarPartID)mainDBMP.dBMPParts.get(i).getAttribute("PARTID_UPGRADE_GROUP")).ID).name().contains("EXHAUST")) {
 						mainDBMP.dBMPParts.remove(i);
 						size--;
 						i--;
@@ -1322,29 +1392,29 @@ public class DBMPPlus extends Application {
 				}
 			}
 
-			for (String kit : kits) {
+			if (Game.get(mainDBMP.GameInt) == Game.Undercover) for (String kit : kits) {
 				for (String exh : exhausts) {
 					DBMPPart tp;
 					mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, mufflerInput.getText().strip() + "_" + exh));
-					((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST;
+					((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST.getValue();
 					if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 					if(autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
 					
 					if (leftTips.isSelected()) {
 						mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, leftTipsInput.getText().strip() + "_" + exh));
-						((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_LEFT;
+						((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_LEFT.getValue();
 						if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 						if (autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
 					}
 					if (rightTips.isSelected()) {
 						mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, rightTipsInput.getText().strip() + "_" + exh));
-						((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_RIGHT;
+						((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_RIGHT.getValue();
 						if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 						if (autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
 					}
 					if (centerTips.isSelected()) {
 						mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, centerTipsInput.getText().strip() + "_" + exh));
-						((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_CENTER;
+						((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_CENTER.getValue();
 						if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 						if (autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
 					}
@@ -1478,68 +1548,7 @@ public class DBMPPlus extends Application {
 		gp.add(autosculptZones, 0, 2);
 		gp.add(autosculptZonesInput, 1, 2);
 		
-		Label range = new Label("Range of exhausts to add : ");
-		TextField rangeInput = new TextField(currentExhRange);
-		Label partsToGen = new Label("Parts to generate");
-		Label muffler = new Label("Main part : ");
-		TextField mufflerInput = new TextField(currentExhMainPart);
-		CheckBox rightTips = new CheckBox("Right tips : ");
-		TextField rightTipsInput = new TextField(currentExhRightTip);
-		CheckBox leftTips = new CheckBox("Left tips : ");
-		TextField leftTipsInput = new TextField(currentExhLeftTip);
-		CheckBox centerTips = new CheckBox("Center tips : ");
-		TextField centerTipsInput = new TextField(currentExhCenterTip);
-
-		CheckBox pointToKit = new CheckBox("Point to model kit : ");
-		TextField pointToKitInput = new TextField("KIT00");
-		CheckBox autosculptZonesExhaust = new CheckBox("Add Autosculpt zones : ");
-		TextField autosculptZonesExhaustInput = new TextField(currentExhASZones);
 		CheckBox removePreExisting = new CheckBox("Remove pre-existing parts");
-
-		rightTips.setSelected(currentExhRightTipEnabled);
-		rightTips.setOnAction(evh -> {
-			if(rightTips.isSelected()) rightTipsInput.setDisable(false); else rightTipsInput.setDisable(true);
-			evh.consume();
-		});
-		leftTips.setSelected(currentExhLeftTipEnabled);
-		leftTips.setOnAction(evh -> {
-			if(leftTips.isSelected()) leftTipsInput.setDisable(false); else leftTipsInput.setDisable(true);
-			evh.consume();
-		});
-		centerTips.setSelected(currentExhCenterTipEnabled);
-		centerTips.setOnAction(evh -> {
-			if(centerTips.isSelected()) centerTipsInput.setDisable(false); else centerTipsInput.setDisable(true);
-			evh.consume();
-		});
-		pointToKitInput.setDisable(true);
-		pointToKit.setOnAction(evh -> {
-			if(pointToKit.isSelected()) pointToKitInput.setDisable(false); else pointToKitInput.setDisable(true);
-			evh.consume();
-		});
-		autosculptZonesExhaustInput.setDisable(true);
-		autosculptZonesExhaust.setOnAction(evh -> {
-			if(autosculptZonesExhaust.isSelected()) autosculptZonesExhaustInput.setDisable(false); else autosculptZonesExhaustInput.setDisable(true);
-			evh.consume();
-		});
-		GridPane gpEx = new GridPane();
-		gpEx.add(range, 0, 1);
-		gpEx.add(rangeInput, 1, 1);
-		gpEx.add(new Separator(Orientation.HORIZONTAL), 0, 2);
-		gpEx.add(partsToGen, 0, 3);
-		gpEx.add(muffler, 0, 4);
-		gpEx.add(mufflerInput, 1, 4);
-		gpEx.add(leftTips, 0, 5);
-		gpEx.add(leftTipsInput, 1, 5);
-		gpEx.add(rightTips, 0, 6);
-		gpEx.add(rightTipsInput, 1, 6);
-		gpEx.add(centerTips, 0, 7);
-		gpEx.add(centerTipsInput, 1, 7);
-		gpEx.add(new Separator(Orientation.HORIZONTAL), 0, 8);
-		gpEx.add(pointToKit, 0, 9);
-		gpEx.add(pointToKitInput, 1, 9);
-		gpEx.add(autosculptZonesExhaust, 0, 10);
-		gpEx.add(autosculptZonesExhaustInput, 1, 10);
-		
 		gp.add(removePreExisting, 0, 3);
 		
 		VBox vb = new VBox();
@@ -1548,16 +1557,88 @@ public class DBMPPlus extends Application {
 		Button ok = new Button("OK");
 
 		Label titleGeneral = new Label("General kit settings");
-		Label titleExhausts = new Label("Exhaust generation settings");
 
 		Scene sc = new Scene(vb);
 		if (useDarkMode) sc.getRoot().setStyle("-fx-base:black");
 		st.setScene(sc);
 		st.setResizable(false);
 					
-		vb.getChildren().addAll(titleGeneral, new Separator(Orientation.HORIZONTAL), gp, 
-				new Separator(Orientation.HORIZONTAL), titleExhausts, new Separator(Orientation.HORIZONTAL), gpEx,
-				new Separator(Orientation.HORIZONTAL), ok);
+
+		TextField rangeInput = new TextField(currentExhRange);
+		TextField mufflerInput = new TextField(currentExhMainPart);
+		CheckBox rightTips = new CheckBox("Right tips : ");
+		CheckBox leftTips = new CheckBox("Left tips : ");
+		CheckBox centerTips = new CheckBox("Center tips : ");
+		TextField rightTipsInput = new TextField(currentExhRightTip);
+		TextField leftTipsInput = new TextField(currentExhLeftTip);
+		TextField centerTipsInput = new TextField(currentExhCenterTip);
+		TextField pointToKitInput = new TextField("KIT00");
+		TextField autosculptZonesExhaustInput = new TextField(currentExhASZones);
+
+		CheckBox pointToKit = new CheckBox("Point to model kit : ");
+		CheckBox autosculptZonesExhaust = new CheckBox("Add Autosculpt zones : ");
+
+		if (Game.get(mainDBMP.GameInt) == Game.Undercover) {
+			Label range = new Label("Range of exhausts to add : ");
+			Label partsToGen = new Label("Parts to generate");
+			Label muffler = new Label("Main part : ");
+
+
+			rightTips.setSelected(currentExhRightTipEnabled);
+			rightTips.setOnAction(evh -> {
+				if(rightTips.isSelected()) rightTipsInput.setDisable(false); else rightTipsInput.setDisable(true);
+				evh.consume();
+			});
+			leftTips.setSelected(currentExhLeftTipEnabled);
+			leftTips.setOnAction(evh -> {
+				if(leftTips.isSelected()) leftTipsInput.setDisable(false); else leftTipsInput.setDisable(true);
+				evh.consume();
+			});
+			centerTips.setSelected(currentExhCenterTipEnabled);
+			centerTips.setOnAction(evh -> {
+				if(centerTips.isSelected()) centerTipsInput.setDisable(false); else centerTipsInput.setDisable(true);
+				evh.consume();
+			});
+			pointToKitInput.setDisable(true);
+			pointToKit.setOnAction(evh -> {
+				if(pointToKit.isSelected()) pointToKitInput.setDisable(false); else pointToKitInput.setDisable(true);
+				evh.consume();
+			});
+			autosculptZonesExhaustInput.setDisable(true);
+			autosculptZonesExhaust.setOnAction(evh -> {
+				if(autosculptZonesExhaust.isSelected()) autosculptZonesExhaustInput.setDisable(false); else autosculptZonesExhaustInput.setDisable(true);
+				evh.consume();
+			});
+			GridPane gpEx = new GridPane();
+			gpEx.add(range, 0, 1);
+			gpEx.add(rangeInput, 1, 1);
+			gpEx.add(new Separator(Orientation.HORIZONTAL), 0, 2);
+			gpEx.add(partsToGen, 0, 3);
+			gpEx.add(muffler, 0, 4);
+			gpEx.add(mufflerInput, 1, 4);
+			gpEx.add(leftTips, 0, 5);
+			gpEx.add(leftTipsInput, 1, 5);
+			gpEx.add(rightTips, 0, 6);
+			gpEx.add(rightTipsInput, 1, 6);
+			gpEx.add(centerTips, 0, 7);
+			gpEx.add(centerTipsInput, 1, 7);
+			gpEx.add(new Separator(Orientation.HORIZONTAL), 0, 8);
+			gpEx.add(pointToKit, 0, 9);
+			gpEx.add(pointToKitInput, 1, 9);
+			gpEx.add(autosculptZonesExhaust, 0, 10);
+			gpEx.add(autosculptZonesExhaustInput, 1, 10);
+
+			Label titleExhausts = new Label("Exhaust generation settings");
+			
+			vb.getChildren().addAll(titleGeneral, new Separator(Orientation.HORIZONTAL), gp, 
+					new Separator(Orientation.HORIZONTAL), titleExhausts, new Separator(Orientation.HORIZONTAL), gpEx,
+					new Separator(Orientation.HORIZONTAL), ok);
+
+		} else {
+			vb.getChildren().addAll(titleGeneral, new Separator(Orientation.HORIZONTAL), gp, 
+					new Separator(Orientation.HORIZONTAL), ok);
+		}
+
 		st.show();
 		e.consume();
 		
@@ -1650,28 +1731,28 @@ public class DBMPPlus extends Application {
 						}
 						if(autosculptZones.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesInput.getText().strip())));
 					}
-					for (String exh : exhausts) {
+					if (Game.get(mainDBMP.GameInt) == Game.Undercover) for (String exh : exhausts) {
 						DBMPPart tp;
 						mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, mufflerInput.getText().strip() + "_" + exh));
-						((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST;
+						((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST.getValue();
 						if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 						if(autosculptZonesExhaust.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesExhaustInput.getText().strip())));
 						
 						if (leftTips.isSelected()) {
 							mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, leftTipsInput.getText().strip() + "_" + exh));
-							((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_LEFT;
+							((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_LEFT.getValue();
 							if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 							if (autosculptZonesExhaust.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesExhaustInput.getText().strip())));
 						}
 						if (rightTips.isSelected()) {
 							mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, rightTipsInput.getText().strip() + "_" + exh));
-							((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_RIGHT;
+							((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_RIGHT.getValue();
 							if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 							if (autosculptZonesExhaust.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesExhaustInput.getText().strip())));
 						}
 						if (centerTips.isSelected()) {
 							mainDBMP.dBMPParts.add(tp = new DBMPPart(kit, centerTipsInput.getText().strip() + "_" + exh));
-							((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_CENTER;
+							((AttributeCarPartID)tp.getAttribute("PARTID_UPGRADE_GROUP")).ID = PartUndercover.EXHAUST_TIPS_CENTER.getValue();
 							if (pointToKit.isSelected()) ((AttributeTwoString)tp.getAttribute("LOD_BASE_NAME")).value1 = pointToKitInput.getText().strip();
 							if (autosculptZonesExhaust.isSelected()) tp.attributes.add(new AttributeInteger("MORPHTARGET_NUM", Integer.parseInt(autosculptZonesExhaustInput.getText().strip())));
 						}
@@ -1689,21 +1770,7 @@ public class DBMPPlus extends Application {
 
 	public static void attributeSort() {
 		for(DBMPPart p: partsDisplay.getSelectionModel().getSelectedItems()) {
-			if (p.isCarPart) {
-				int s = p.attributes.size();
-				//most wack ass sorting method but it works
-				p.addAttribute(p.getAttribute("PART_NAME_SELECTOR"));
-				p.addAttribute(p.getAttribute("LOD_NAME_PREFIX_SELECTOR"));
-				p.addAttribute(p.getAttribute("MAX_LOD"));
-				p.addAttribute(p.getAttribute("LOD_CHARACTERS_OFFSET"));
-				p.addAttribute(p.getAttribute("NAME_OFFSET"));
-				if (p.getAttribute("MORPHTARGET_NUM")!=null) p.addAttribute(p.getAttribute("MORPHTARGET_NUM"));
-				p.addAttribute(p.getAttribute("PARTID_UPGRADE_GROUP"));
-				p.addAttribute(p.getAttribute("PART_NAME_OFFSETS"));
-				p.addAttribute(p.getAttribute("LOD_BASE_NAME"));
-				if (p.getAttribute("CV")!=null) p.addAttribute(p.getAttribute("CV"));
-				for (int i=0; i<s; i++) p.attributes.remove(0);
-			}
+			sortPartAttributes(p);
 		}
 		updateAttributesDisplay();
 	}
@@ -1762,7 +1829,6 @@ public class DBMPPlus extends Application {
 		}
 	}
 
-	@SuppressWarnings("unused")
 	public static void fileSave(ActionEvent e) {
 		FileChooser fc = new FileChooser();
 		fc.setInitialDirectory(new File(lastDirectoryLoaded));
@@ -1779,12 +1845,12 @@ public class DBMPPlus extends Application {
 			lastFileSaved = f.getAbsolutePath().replace(lastFileLoaded, "");
 			File f_old = f;
 			f_old.renameTo(new File(f_old.getAbsolutePath() + ".bak_" + new SimpleDateFormat("yyMMdd-HHmmss").format(new Date(f_old.lastModified()))));
-//			f_old.renameTo(new File(f_old.getAbsoluteFile() + ".bak_" + DateTimeFormatter.ofPattern("uuMMdd-HHmmss").format(LocalDateTime.ofEpochSecond(f_old.lastModified(), 0, ZoneOffset.UTC))));
 			mainDBMP.saveToFile(f);
 			if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Database saved successfully.", ButtonType.OK).show();
 			e.consume();        
 		} catch (IOException e1) {
-			new Alert(Alert.AlertType.WARNING, "Error saving DBModelParts, please try again !").show();
+			new Alert(Alert.AlertType.WARNING, "Error saving DBModelParts: %s\nPlease try again !".formatted(e1.getMessage())).show();
+			e1.printStackTrace();
 		}
 	}
 
@@ -1799,21 +1865,25 @@ public class DBMPPlus extends Application {
 		        new FileChooser.ExtensionFilter("BIN files", "*.bin"),
 		        new FileChooser.ExtensionFilter("All files", "*.*"));
 			fc.setTitle("Load an existing DBModelParts");
-			DBMP loadDBMP;
 			File selected = fc.showOpenDialog(null);
 			if (selected==null) return;
-			if ((loadDBMP = DBMP.loadDBMP(selected))!=null) {
-				mainDBMP = loadDBMP;
-				lastFileLoaded = selected.getName();
-				lastDirectoryLoaded = selected.getAbsolutePath().replace(lastFileLoaded, "");
+			loadDBFromFile(primaryStage, selected);
+		}
+	}
+
+	public static void loadDBFromFile(Stage primaryStage, File selected) {
+		DBMP loadDBMP;
+		if ((loadDBMP = DBMP.loadDBMP(selected))!=null) {
+			mainDBMP = loadDBMP;
+			lastFileLoaded = selected.getName();
+			lastDirectoryLoaded = selected.getAbsolutePath().replace(lastFileLoaded, "");
 //						  System.out.println(mainDBMP);
-				updateAllPartsDisplay();
-				primaryStage.setTitle(Utils.dbmp_Name + " - " + mainDBMP.carname);
-				menuDBMP.setText(mainDBMP.carname);
-				if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Database loaded successfully.", ButtonType.OK).show();
-			} else {
+			updateAllPartsDisplay();
+			updateWindowTitle(primaryStage);
+			menuDBMP.setText(mainDBMP.carname);
+			if (!disableWarnings) new Alert(Alert.AlertType.INFORMATION, "Database loaded successfully.", ButtonType.OK).show();
+		} else {
 //						new Alert(Alert.AlertType.INFORMATION, "Nothing to load", ButtonType.OK).show();
-			}
 		}
 	}
 
@@ -1823,7 +1893,7 @@ public class DBMPPlus extends Application {
 		if (ButtonType.YES.equals(sure) || disableWarnings) {
 			mainDBMP = new DBMP();
 			updateAllPartsDisplay();
-			primaryStage.setTitle("fire - "+mainDBMP.carname);
+			updateWindowTitle(primaryStage);
 			menuDBMP.setText(mainDBMP.carname);
 		}
 	}
@@ -1837,10 +1907,7 @@ public class DBMPPlus extends Application {
     public static void updateAllPartsDisplay() { //broken for undo only for some weird reason
     	DBMPPart selected = partsDisplay.getSelectionModel().getSelectedItem();
     	mainDBMP.updateAll();
-    	partsDisplay.getItems().clear();
-    	for (DBMPPart p : mainDBMP.dBMPParts) {
-       	partsDisplay.getItems().add(p);
-    	}
+		partsDisplay.getItems().setAll(mainDBMP.dBMPParts);
     	//while we're at it
     	partsDisplay.getSelectionModel().select(selected);
     	updateAttributesDisplay();
@@ -1913,6 +1980,25 @@ public class DBMPPlus extends Application {
 		}
 		for (CarPartListCell c : DBMPPlus.carPartListCells) if(c!=null && c.getItem()!=null) c.checkBox.setSelected(DBMPPlus.partsDisplay.getSelectionModel().getSelectedItems().contains(c.getItem()));
 	}
+    
+    public static enum Game{
+    	None(0),
+    	Carbon(1),
+    	MostWanted(2),
+    	Underground2(3),
+    	Underground(4),
+    	Prostreet(5),
+    	Undercover(6);
+
+    	public int GameInt;
+		Game(int i) {
+			GameInt = i;
+		}
+		public static Game get(int i) {
+			for (var g : values()) if (g.GameInt == i) return g;
+			return None;
+		}
+    }
 }
 
 

@@ -23,6 +23,7 @@ import fr.ni240sx.ucgt.geometryFile.gui.CustomProgressBar;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class TPK implements Block {
 
@@ -276,7 +277,7 @@ public class TPK implements Block {
 		out.write(buf.array());
 		var texDataAt = out.size();
 		
-		Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 128), (byte) 0x11);
+		Utils.makeAlignment(out, Utils.findAlignment(currentPosition+out.size(), 128), (byte) 0x11);
 		
 		if (SAVE_useOffsetsTable) for (var t : textures) {
 			header.offsets.setOffset(t, out.size());
@@ -288,11 +289,11 @@ public class TPK implements Block {
 				header.offsets.setLengths(t, out.size()-length);
 			}
 			if (textures.indexOf(t) != textures.size() -1)
-			Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 128), (byte) 0x00);
+			Utils.makeAlignment(out, Utils.findAlignment(currentPosition+out.size(), 128), (byte) 0x00);
 		} else for (var t : textures) {
 			out.write(t.writeImageData());
 			if (textures.indexOf(t) != textures.size() -1)
-			Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 128), (byte) 0x00);
+			Utils.makeAlignment(out, Utils.findAlignment(currentPosition+out.size(), 128), (byte) 0x00);
 		}
 	
 		buf = ByteBuffer.wrap(out.toByteArray());

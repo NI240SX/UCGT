@@ -5,11 +5,13 @@ import java.nio.ByteBuffer;
 import fr.ni240sx.ucgt.shared.Hash;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 abstract class Attribute {
 	
@@ -249,6 +251,84 @@ class AttributeInteger extends Attribute{
 		return "Integer" + Key + ": " + value;
 	}
 }
+
+
+
+
+class AttributeFloating extends Attribute{
+//	public static String AttributeIdentifier = "Integer";
+	public float value = 0;
+	TextField valuegui;
+	public AttributeFloating(String key) {
+		super(key);
+		valuegui = new TextField();
+		initGUI();
+	}
+	public AttributeFloating(String key, float value) {
+		super(key);
+		this.value = value;
+		valuegui = new TextField();
+		initGUI();
+	}
+	public AttributeFloating(int key, ByteBuffer bb, boolean useGUI) {
+		super(key, useGUI);
+		value = bb.getFloat();
+		if (useGUI) {
+			valuegui = new TextField();
+			initGUI();
+		}
+	}
+	public AttributeFloating(AttributeFloating copyFrom) {
+		super(copyFrom);
+		this.value = copyFrom.value;
+		valuegui = new TextField();
+		initGUI();
+	}
+	@SuppressWarnings("unused")
+	public void initGUI() {
+		valuegui.setText(Float.toString(value));
+		dataHBox.getChildren().addAll(valuegui);
+		valuegui.setOnKeyTyped(e -> {
+			int caretB4Save = valuegui.getCaretPosition();
+			if (valuegui.getText().isBlank()) valuegui.setText("0");
+			new UndoAttributeChange(this);
+			try {
+				value = Float.parseFloat(valuegui.getText().strip());
+			}catch(NumberFormatException ex) {
+				new Alert(Alert.AlertType.ERROR, "Please enter a valid float", ButtonType.OK).show();
+			}
+			valuegui.setText(Float.toString(value));
+			valuegui.positionCaret(caretB4Save);
+			e.consume();
+		});
+	}
+	@Override
+	public void update() {
+		valuegui.setText(Float.toString(value));
+	}
+	@Override
+	public void revertFrom(Attribute a) {
+		this.value = ((AttributeFloating)a).value;
+		valuegui.setText(Float.toString(value));
+	}
+	@Override
+	public void writeToFile(ByteBuffer bb) {
+		super.writeToFile(bb);
+		bb.putFloat(value);
+	}
+	@Override
+	public String getAttribType() {
+		return "Floating";
+	}
+	@Override
+	public String toString() {
+		return "Floating" + Key + ": " + value;
+	}
+}
+
+
+
+
 
 class AttributeKey extends Attribute{
 //	public static String AttributeIdentifier = "Key";
@@ -557,142 +637,133 @@ class AttributeColor extends Attribute{
 
 
 
-
-enum PartUndercover {
-    BADGING_BUMPER_SET_FRONT(0x00, "BADGING_BUMPER_SET_FRONT"),
-    BADGING_BUMPER_SET_REAR(0x01, "BADGING_BUMPER_SET_REAR"),
-    BADGING_FENDER_FRONT_LEFT(0x02, "BADGING_FENDER_FRONT_LEFT"),
-    BADGING_FENDER_FRONT_RIGHT(0x03, "BADGING_FENDER_FRONT_RIGHT"),
-    BADGING_FENDER_REAR_LEFT(0x04, "BADGING_FENDER_REAR_LEFT"),
-    BADGING_FENDER_REAR_RIGHT(0x05, "BADGING_FENDER_REAR_RIGHT"),
-    BADGING_TRUNK(0x06, "BADGING_TRUNK"),
-    BASE(0x07, "BASE"),
-    BODY(0x08, "BODY"),
-    BODY_DOORLINE(0x09, "BODY_DOORLINE"),
-    BRAKE(0x0A, "BRAKE"),
-    BRAKELIGHT_GLASS_LEFT(0x0B, "BRAKELIGHT_GLASS_LEFT"),
-    BRAKELIGHT_GLASS_RIGHT(0x0C, "BRAKELIGHT_GLASS_RIGHT"),
-    BRAKELIGHT_LEFT(0x0D, "BRAKELIGHT_LEFT"),
-    BRAKELIGHT_RIGHT(0x0E, "BRAKELIGHT_RIGHT"),
-    BRAKEROTOR(0x0F, "BRAKEROTOR"),
-    BUMPER_FRONT(0x10, "BUMPER_FRONT"),
-    BUMPER_FRONT_EXTRA(0x11, "BUMPER_FRONT_EXTRA"),
-    BUMPER_REAR(0x12, "BUMPER_REAR"),
-    BUMPER_REAR_EXTRA(0x13, "BUMPER_REAR_EXTRA"),
-    CHASSIS(0x14, "CHASSIS"),
-    DAMAGE_BODY(0x15, "DAMAGE_BODY"),
-    DAMAGE_BRAKELIGHT_LEFT(0x16, "DAMAGE_BRAKELIGHT_LEFT"),
-    DAMAGE_BRAKELIGHT_RIGHT(0x17, "DAMAGE_BRAKELIGHT_RIGHT"),
-    DAMAGE_BUMPER_FRONT(0x18, "DAMAGE_BUMPER_FRONT"),
-    DAMAGE_BUMPER_REAR(0x19, "DAMAGE_BUMPER_REAR"),
-    DAMAGE_DOOR_LEFT(0x1A, "DAMAGE_DOOR_LEFT"),
-    DAMAGE_DOOR_REAR_LEFT(0x1B, "DAMAGE_DOOR_REAR_LEFT"),
-    DAMAGE_DOOR_REAR_RIGHT(0x1C, "DAMAGE_DOOR_REAR_RIGHT"),
-    DAMAGE_DOOR_RIGHT(0x1D, "DAMAGE_DOOR_RIGHT"),
-    DAMAGE_FENDER_FRONT_LEFT(0x1E, "DAMAGE_FENDER_FRONT_LEFT"),
-    DAMAGE_FENDER_FRONT_RIGHT(0x1F, "DAMAGE_FENDER_FRONT_RIGHT"),
-    DAMAGE_HEADLIGHT_LEFT(0x20, "DAMAGE_HEADLIGHT_LEFT"),
-    DAMAGE_HEADLIGHT_RIGHT(0x21, "DAMAGE_HEADLIGHT_RIGHT"),
-    DAMAGE_HOOD(0x22, "DAMAGE_HOOD"),
-    DAMAGE_SIDEMIRROR_LEFT(0x23, "DAMAGE_SIDEMIRROR_LEFT"),
-    DAMAGE_SIDEMIRROR_RIGHT(0x24, "DAMAGE_SIDEMIRROR_RIGHT"),
-    DAMAGE_TRUNK(0x25, "DAMAGE_TRUNK"),
-    DAMAGE_WINDOW_FRONT(0x26, "DAMAGE_WINDOW_FRONT"),
-    DAMAGE_WINDOW_FRONT_LEFT(0x27, "DAMAGE_WINDOW_FRONT_LEFT"),
-    DAMAGE_WINDOW_FRONT_RIGHT(0x28, "DAMAGE_WINDOW_FRONT_RIGHT"),
-    DAMAGE_WINDOW_REAR(0x29, "DAMAGE_WINDOW_REAR"),
-    DAMAGE_WINDOW_REAR_LEFT(0x2A, "DAMAGE_WINDOW_REAR_LEFT"),
-    DAMAGE_WINDOW_REAR_RIGHT(0x2B, "DAMAGE_WINDOW_REAR_RIGHT"),
-    DECAL_FRONT_WINDOW(0x2C, "DECAL_FRONT_WINDOW"),
-    DECAL_REAR_WINDOW(0x2D, "DECAL_REAR_WINDOW"),
-    DOOR_LEFT(0x2E, "DOOR_LEFT"),
-    DOOR_REAR_LEFT(0x2F, "DOOR_REAR_LEFT"),
-    DOOR_REAR_RIGHT(0x30, "DOOR_REAR_RIGHT"),
-    DOOR_RIGHT(0x31, "DOOR_RIGHT"),
-    DOORHANDLE_FRONT_LEFT(0x32, "DOORHANDLE_FRONT_LEFT"),
-    DOORHANDLE_FRONT_RIGHT(0x33, "DOORHANDLE_FRONT_RIGHT"),
-    DOORHANDLE_REAR_LEFT(0x34, "DOORHANDLE_REAR_LEFT"),
-    DOORHANDLE_REAR_RIGHT(0x35, "DOORHANDLE_REAR_RIGHT"),
-    DRIVER(0x36, "DRIVER"),
-    ENGINE(0x37, "ENGINE"),
-    EXHAUST(0x38, "EXHAUST"),
-    EXHAUST_TIPS_CENTER(0x39, "EXHAUST_TIPS_CENTER"),
-    EXHAUST_TIPS_LEFT(0x3A, "EXHAUST_TIPS_LEFT"),
-    EXHAUST_TIPS_RIGHT(0x3B, "EXHAUST_TIPS_RIGHT"),
-    FENDER_FRONT_LEFT(0x3C, "FENDER_FRONT_LEFT"),
-    FENDER_FRONT_RIGHT(0x3D, "FENDER_FRONT_RIGHT"),
-    HEADLIGHT_GLASS_LEFT(0x3E, "HEADLIGHT_GLASS_LEFT"),
-    HEADLIGHT_GLASS_RIGHT(0x3F, "HEADLIGHT_GLASS_RIGHT"),
-    HEADLIGHT_LEFT(0x40, "HEADLIGHT_LEFT"),
-    HEADLIGHT_RIGHT(0x41, "HEADLIGHT_RIGHT"),
-    HOOD(0x42, "HOOD"),
-    LIGHTBAR(0x43, "LIGHTBAR"),
-    PLATES(0x44, "PLATES"),
-    ROLL_CAGE(0x45, "ROLL_CAGE"),
-    ROOF(0x46, "ROOF"),
-    ROOF_INSIDE(0x47, "ROOF_INSIDE"),
-    ROOFSCOOP(0x48, "ROOFSCOOP"),
-    SEAT(0x49, "SEAT"),
-    SIDEMIRROR_LEFT(0x4A, "SIDEMIRROR_LEFT"),
-    SIDEMIRROR_RIGHT(0x4B, "SIDEMIRROR_RIGHT"),
-    SKIRT_LEFT(0x4C, "SKIRT_LEFT"),
-    SKIRT_RIGHT(0x4D, "SKIRT_RIGHT"),
-    SPOILER(0x4E, "SPOILER"),
-    STEERINGWHEEL(0x4F, "STEERINGWHEEL"),
-    TRUNK(0x50, "TRUNK"),
-    UNIVERSAL_SPOILER_BASE(0x51, "UNIVERSAL_SPOILER_BASE"),
-    WHEEL(0x52, "WHEEL"),
-    WHEEL_REAR(0x53, "WHEEL_REAR"),
-    WINDOW_FRONT(0x54, "WINDOW_FRONT"),
-    WINDOW_FRONT_LEFT(0x55, "WINDOW_FRONT_LEFT"),
-    WINDOW_FRONT_RIGHT(0x56, "WINDOW_FRONT_RIGHT"),
-    WINDOW_REAR(0x57, "WINDOW_REAR"),
-    WINDOW_REAR_LEFT(0x58, "WINDOW_REAR_LEFT"),
-    WINDOW_REAR_RIGHT(0x59, "WINDOW_REAR_RIGHT"),
-    BRAKE_PACKAGE(0x5A, "BRAKE_PACKAGE"),
-    DRIVETRAIN_PACKAGE(0x5B, "DRIVETRAIN_PACKAGE"),
-    ENGINE_PACKAGE(0x5C, "ENGINE_PACKAGE"),
-    FORCED_INDUCTION_PACKAGE(0x5D, "FORCED_INDUCTION_PACKAGE"),
-    INTERIOR(0x5E, "INTERIOR"),
-    LIVERY(0x5F, "LIVERY"),
-    NITROUS_PACKAGE(0x60, "NITROUS_PACKAGE"),
-    SUSPENSION_PACKAGE(0x61, "SUSPENSION_PACKAGE"),
-    TIRE(0x62, "TIRE"),
-    TIRE_PACKAGE(0x63, "TIRE_PACKAGE"),
-    VECTORVINYL(0x64, "VECTORVINYL"),
-    INVALID(0xFF, "INVALID");
-
-    private final byte value;
-    private final String name;
-
-    private PartUndercover(int value, String text) {
-        this.value = (byte) value;
-        this.name = text;
-    }
-
-    public byte getValue() {
-        return value;
-    }
-
-    public String getText() {
-        return name;
-    }
-
-    public static PartUndercover get(int value) {
-        for (PartUndercover s : values()) {
-            if (s.value == value) return s;
-        }
-        return PartUndercover.INVALID;
-    }
-
-    public static PartUndercover get(String name) {
-        for (PartUndercover s : values()) {
-            if (s.name.equals(name)) return s;
-        }
-        return PartUndercover.INVALID;
-    }
-    
+class StringData{
+	public String value;
+	public boolean exists;
+	public CheckBox existsgui;
+	public TextField valuegui;
+	public HBox hbox;
+	public StringData() {
+		exists = false;
+		initGUI();
+	}
+	public StringData(ByteBuffer in) {
+		exists = in.get() != 0;
+		if (exists) value = DBMP.readString(in);
+	}
+	public StringData(StringData other) {
+		this.exists = other.exists;
+		if (other.value!=null) this.value = new String(other.value);
+		initGUI();
+	}
+	public void initGUI() {
+		hbox = new HBox();
+		existsgui = new CheckBox();
+		valuegui = new TextField(value);
+		valuegui.setMinWidth(200);
+		existsgui.setOnAction(e -> exists = existsgui.isSelected());
+		valuegui.setOnKeyTyped(e -> value = valuegui.getText());
+		hbox.getChildren().addAll(existsgui, valuegui);
+		update();
+	}
+	public void update() {
+		existsgui.setSelected(exists);
+		valuegui.setText(value);
+	}
+	public void save(ByteBuffer bb) {
+		bb.put((byte) (exists ? 1 : 0));
+		if (exists) DBMP.writeString(value, bb);
+	}
 }
+
+
+class AttributeModelTable extends Attribute{
+//	public static final String AttributeIdentifier = "TwoString";
+	public boolean templated=false;
+	public StringData concatenator;
+	public StringData[][] models;
+
+	public CheckBox templatedgui;
+	
+	public AttributeModelTable(String key) {
+		super(key);
+		templated = false;
+		concatenator = new StringData();
+		models = new StringData[5][12];
+		for (int lod=0; lod<5; lod++) for (var model=0; model<12; model++){
+			models[lod][model] = new StringData();
+		}
+		templatedgui = new CheckBox("Templated");
+		initGUI();
+	}
+	public AttributeModelTable(int key, ByteBuffer in, boolean useGUI) {
+		super(key, useGUI);
+		templated = in.get() != 0;
+		concatenator = new StringData(in);
+		models = new StringData[5][12];
+		for (int lod=0; lod<5; lod++) for (var model=0; model<12; model++){
+			models[lod][model] = new StringData(in);
+		}
+		if (useGUI) {
+			templatedgui = new CheckBox("Templated");
+			initGUI();
+		}
+	}
+	public AttributeModelTable(AttributeModelTable copyFrom) {
+		super(copyFrom);
+		this.templated = copyFrom.templated;
+		this.concatenator = new StringData(copyFrom.concatenator);
+		for (int lod=0; lod<5; lod++) for (var model=0; model<12; model++){
+			models[lod][model] = new StringData(copyFrom.models[lod][model]);
+		}
+		initGUI();
+	}
+	public void initGUI() {
+		var vbox = new VBox();
+		templatedgui.setSelected(templated);
+		templatedgui.setOnAction(e -> templated = templatedgui.isSelected());
+		concatenator.initGUI();
+		concatenator.hbox.getChildren().add(0, new Label("Concatenator"));
+		vbox.getChildren().addAll(templatedgui, concatenator.hbox);
+		for (var model=0; model<12; model++) for (var lod=0; lod<5; lod++){
+			models[lod][model].initGUI();
+			models[lod][model].hbox.getChildren().add(0, new Label("Solid"+model+" LOD"+(char)('A'+(char)lod)));
+			vbox.getChildren().add(models[lod][model].hbox);
+		}
+		dataHBox.getChildren().add(vbox);
+	}
+	@Override
+	public void update() {
+		templatedgui.setSelected(templated);
+		concatenator.update();
+		for (var ms : models) for (var m : ms) m.update();
+	}
+	@Override
+	public void revertFrom(Attribute a) {
+		templated = ((AttributeModelTable)a).templated;
+		concatenator = ((AttributeModelTable)a).concatenator;
+		models = ((AttributeModelTable)a).models;		
+		update();
+	}
+	@Override
+	public void writeToFile(ByteBuffer bb) {
+		super.writeToFile(bb);
+		bb.put((byte) (templated ? 1 : 0));
+		concatenator.save(bb);
+		for (int lod=0; lod<5; lod++) for (var model=0; model<12; model++){
+			models[lod][model].save(bb);
+		}
+	}
+	@Override
+	public String getAttribType() {
+		return "ModelTable";
+	}
+	@Override
+	public String toString() {
+		return "ModelTable";
+	}
+}
+
 
 
 //class AttributeTextFieldInt extends TextField{

@@ -8,6 +8,8 @@ import java.util.ArrayList;
 
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
+
 import static fr.ni240sx.ucgt.geometryFile.part.mesh.Vertex.*;
 
 public class ChunkSmokeSpawners extends ArrayList<fr.ni240sx.ucgt.streamEditor.streamBlocks.ChunkSmokeSpawners.SmokeSpawner> implements Block {
@@ -53,7 +55,7 @@ public class ChunkSmokeSpawners extends ArrayList<fr.ni240sx.ucgt.streamEditor.s
 		buf.putInt(-1); //length for later
 		
 		out.write(buf.array());
-		Block.makeAlignment(out, Block.findAlignment(currentPosition+out.size(), 16), (byte)0x11);
+		Utils.makeAlignment(out, Utils.findAlignment(currentPosition+out.size(), 16), (byte)0x11);
 
 		buf = ByteBuffer.wrap(new byte[16]);
 		buf.order(ByteOrder.LITTLE_ENDIAN);

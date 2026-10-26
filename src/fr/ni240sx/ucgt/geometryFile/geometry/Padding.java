@@ -8,6 +8,7 @@ import java.nio.ByteOrder;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Utils;
+import fr.ni240sx.ucgt.shared.Versions;
 
 public class Padding implements Block {
 	
@@ -59,8 +60,8 @@ public class Padding implements Block {
 		buf.order(ByteOrder.LITTLE_ENDIAN);
 		buf.putInt(BlockType.Padding.getKey());
 		buf.putInt(paddingLength);
-		if (paddingLength>36) Block.putString(buf, "Edited with UCGT v"+Utils.geom_version+" | needeka", paddingLength);
-		else if (paddingLength>15) Block.putString(buf, "UCGT | needeka", paddingLength);
+		if (paddingLength>36) Utils.putString(buf, "Edited with UCGT v"+Versions.geom_version+" | needeka", paddingLength);
+		else if (paddingLength>15) Utils.putString(buf, "UCGT | needeka", paddingLength);
 		return buf.array();
 	}
 }

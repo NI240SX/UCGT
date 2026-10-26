@@ -8,8 +8,8 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import fr.ni240sx.ucgt.compression.Compression;
-import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.Hash;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class NFSTexture {
 
@@ -72,7 +72,7 @@ public class NFSTexture {
 				firstMipMapDataLength = in.getInt(in.limit()-188);
 				imageDataLength = in.getInt(in.limit()-188);
 				in.position(in.limit()-67);
-				name = Block.readStringAligned(in);
+				name = Utils.readStringAligned(in);
 				Hash.findBIN(name);			
 				in.position(in.limit()-32);
 				readHeaderPart2(in);
@@ -107,7 +107,7 @@ public class NFSTexture {
 			var fileStart = in.position();
 		
 			in.position(in.limit()-144);
-			name = Block.readStringAligned(in);
+			name = Utils.readStringAligned(in);
 			Hash.findBIN(name);
 			binKey = in.getInt(in.limit()-120);
 			ClassKey = in.getInt(in.limit()-116);
@@ -418,7 +418,7 @@ public class NFSTexture {
 		in.getInt(); //0
 		
 		in.get(); //name length, # = 35
-		name = Block.readStringAligned(in);
+		name = Utils.readStringAligned(in);
 		Hash.findBIN(name);
 
 	
@@ -553,11 +553,11 @@ public class NFSTexture {
 		out.putInt(0);
 
 		out.put(nameLength);
-		Block.putString(out, name, nameLength);
+		Utils.putString(out, name, nameLength);
 	}
 	
 	public byte[] writeHeaderPart1() {
-		int stringLength = Block.stringLengthAligned("#"+name);
+		int stringLength = Utils.stringLengthAligned("#"+name);
 		ByteBuffer out = ByteBuffer.wrap(new byte[88+stringLength]);
 		out.order(ByteOrder.LITTLE_ENDIAN);
 		writeHeaderPart1(out, (byte) (stringLength-1));

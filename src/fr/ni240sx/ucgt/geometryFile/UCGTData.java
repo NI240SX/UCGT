@@ -8,6 +8,7 @@ import java.util.HashMap;
 
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
+import fr.ni240sx.ucgt.shared.Utils;
 
 public class UCGTData implements Block {
 
@@ -20,7 +21,7 @@ public class UCGTData implements Block {
 		var blockStart = in.position();
 		
 		while (in.position() < blockStart+blockLength) {
-			datas.put(Block.readStringAligned(in), Block.readStringAligned(in));
+			datas.put(Utils.readStringAligned(in), Utils.readStringAligned(in));
 		}
 		
 	}
@@ -40,8 +41,8 @@ public class UCGTData implements Block {
 		out.write(buf.array());
 		
 		for (var d : datas.entrySet()) {
-			Block.putString(out, d.getKey());
-			Block.putString(out, d.getValue());
+			Utils.putString(out, d.getKey());
+			Utils.putString(out, d.getValue());
 		}
 
 		buf = ByteBuffer.wrap(new byte[4]);

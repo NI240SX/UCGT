@@ -18,7 +18,7 @@ public enum BlockType {
 	Part_Header(0x11401300),
 	Part_TexUsage(0x12401300),
 	Part_Strings(0x15401300),
-	Part_ShaderList(0x13401300),
+	Part_MaterialLightingList(0x13401300),
 	Part_MPoints(0x1A401300),
 	Part_Mesh(0x00411380),
 	Part_Mesh_Info_PC(0x00491300),

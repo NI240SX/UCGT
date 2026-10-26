@@ -39,7 +39,7 @@ public class Material {
 	public byte shaderUsageID = 0; //controls FE rendering somehow
 	public int verticesDataLength = 0;
 	
-	public ShaderUsage shaderUsage = ShaderUsage.get("Diffuse");
+	public Shader shader = Shader.get("Diffuse");
 	public ArrayList<TextureUsage> textureUsages = new ArrayList<>();
 	public ArrayList<Integer> textures = new ArrayList<>(); //apparently unused
 	public ArrayList<Integer> texturePriorities = new ArrayList<>();
@@ -64,7 +64,7 @@ public class Material {
 	
 	public Material(Material m) {
 		this.ShaderHash = m.ShaderHash;
-		this.shaderUsage = m.shaderUsage;
+		this.shader = m.shader;
 		for (var h : m.TextureHashes) this.TextureHashes.add(h);
 		for (var u : m.textureUsages) this.textureUsages.add(u);
 		this.uniqueName = m.uniqueName;
@@ -83,13 +83,13 @@ public class Material {
 			if (g.SAVE_useOffsetsTable) {
 				Material m = new Material();
 				m.ShaderHash = Hash.findBIN("DULLPLASTIC");
-				m.shaderUsage = ShaderUsage.get("Diffuse");
+				m.shader = Shader.get("Diffuse");
 				m.TextureHashes.add(Hash.findBIN("DEFAULTTEXTURE"));
 				m.textureUsages.add(TextureUsage.DIFFUSE);
 				return m;
 			}
 			Material m = new Material();
-			m.shaderUsage = ShaderUsage.get("ar_constant");
+			m.shader = Shader.get("ar_constant");
 			m.TextureHashes.add(Hash.findBIN("DEFAULTTEXTURE"));
 			m.textureUsages.add(TextureUsage.DIFFUSE);
 			return m;
@@ -98,13 +98,13 @@ public class Material {
 		if (g.SAVE_useOffsetsTable) {
 			Material m = new Material();
 			m.ShaderHash = Hash.findBIN("DULLPLASTIC");
-			m.shaderUsage = ShaderUsage.findLegacyUsage("Diffuse", g.platform);
+			m.shader = Shader.findLegacyUsage("Diffuse", g.platform);
 			m.TextureHashes.add(Hash.findBIN("DEFAULTTEXTURE"));
 			m.textureUsages.add(TextureUsage.DIFFUSE);
 			return m;
 		}
 		Material m = new Material();
-		m.shaderUsage = ShaderUsage.findLegacyUsage("Diffuse", g.platform);
+		m.shader = Shader.findLegacyUsage("Diffuse", g.platform);
 		m.TextureHashes.add(Hash.findBIN("DEFAULTTEXTURE"));
 		m.textureUsages.add(TextureUsage.DIFFUSE);
 		return m;
@@ -175,8 +175,8 @@ public class Material {
 	}
 	
 	public void tryGuessFEData(HashMap<Integer, Byte> shaderUsageIDs) {
-		if (shaderUsageIDs.containsKey(this.shaderUsage.getKey())) {
-			this.shaderUsageID = shaderUsageIDs.get(shaderUsage.getKey());
+		if (shaderUsageIDs.containsKey(this.shader.getKey())) {
+			this.shaderUsageID = shaderUsageIDs.get(shader.getKey());
 		} else {
 			// find the lowest usage possible
 			byte lowest = 0;
@@ -185,7 +185,7 @@ public class Material {
 				lowest ++;
 			}
 			this.shaderUsageID = lowest;
-			shaderUsageIDs.put(shaderUsage.getKey(), this.shaderUsageID);
+			shaderUsageIDs.put(shader.getKey(), this.shaderUsageID);
 		}
 	}
 
@@ -204,7 +204,7 @@ public class Material {
 	}
 	
 	public boolean needsTangentsLow() {
-		return shaderUsage == ShaderUsage.get("DiffuseNormalSwatch")  || shaderUsage == ShaderUsage.get("DiffuseNormalSwatchAlpha");
+		return shader == Shader.get("DiffuseNormalSwatch")  || shader == Shader.get("DiffuseNormalSwatchAlpha");
 	}
 	public boolean needsTangentsHigh() {
 //		return shaderUsage == ShaderUsage.DiffuseNormal || shaderUsage == ShaderUsage.DiffuseNormalAlpha || shaderUsage == ShaderUsage.DiffuseNormalSwatch  || shaderUsage == ShaderUsage.DiffuseNormalSwatchAlpha
@@ -215,7 +215,7 @@ public class Material {
 	public String generateName() {
 		String s;
 		if (ShaderHash != 0) s = Hash.getBIN(ShaderHash) + "_";
-		else s = shaderUsage.getName() + "_";
+		else s = shader.getName() + "_";
 		for (var t : TextureHashes) s += Hash.getBIN(t) + "_";
 		s = s.substring(0, s.length()-1);
 		return s;
@@ -226,8 +226,8 @@ public class Material {
 		String s = "";
 		s += "MATERIAL	"+uniqueName;
 //		s += " feRenderData=" + frontendRenderingData;
-		if (ShaderHash != 0) s += "	"+Hash.getBIN(ShaderHash)+"="+shaderUsage.getName();
-		else s += "	"+shaderUsage.getName();
+		if (ShaderHash != 0) s += "	"+Hash.getBIN(ShaderHash)+"="+shader.getName();
+		else s += "	"+shader.getName();
 		//+"[";
 //		if (usageSpecific1 != -1) s+=usageSpecific1;
 //		if (usageSpecific2 != -1) s+=","+usageSpecific2;
@@ -235,7 +235,7 @@ public class Material {
 //		s +="]	defTex=" + DefaultTextureHash.label+"	flags=0x"+String.format("%02X",flags[0])+String.format("%02X",flags[1])+String.format("%02X",flags[2])+String.format("%02X",flags[3]);
 		for (int i=0; i<TextureHashes.size(); i++) {
 			s += "	" + Hash.getBIN(TextureHashes.get(i)).replace(carname, "%");
-			if (shaderUsage.getClass() != ShaderUsage.Legacy.class && textureUsages.size() > i) s +=  "=" + textureUsages.get(i).getName();
+			if (shader.getClass() != Shader.Legacy.class && textureUsages.size() > i) s +=  "=" + textureUsages.get(i).getName();
 //			if (texturePriorities.size() > i && texturePriorities.get(i) != i && texturePriorities.get(i) != -1) s += "," + texturePriorities.get(i);
 		}
 		return s;
@@ -260,10 +260,10 @@ public class Material {
 					if (s2.contains("=")) {
 						//shader usage
 						ShaderHash = Hash.findBIN(s2.split("=")[0]);
-						shaderUsage = ShaderUsage.get(s2.split("=")[1]);
+						shader = Shader.get(s2.split("=")[1]);
 					} else {
 						ShaderHash = 0;
-						shaderUsage = ShaderUsage.get(s2);
+						shader = Shader.get(s2);
 					}
 					break;
 				case Prostreet_PC:
@@ -273,10 +273,10 @@ public class Material {
 					if (s2.contains("=")) {
 						//shader usage
 						ShaderHash = Hash.findBIN(s2.split("=")[0]);
-						shaderUsage = ShaderUsage.findLegacyUsage(s2.split("=")[1], g.platform);
+						shader = Shader.findLegacyUsage(s2.split("=")[1], g.platform);
 					} else {
 						ShaderHash = 0;
-						shaderUsage = ShaderUsage.findLegacyUsage(s2, g.platform);
+						shader = Shader.findLegacyUsage(s2, g.platform);
 					}
 					break;
 				}
@@ -297,8 +297,8 @@ public class Material {
 				} else if (s2.split("=").length == 1 || TextureUsage.get(s2.split("=")[1]) != TextureUsage.INVALID) {
 					// texture usage
 					if (s2.split("=").length < 2) {
-						if (shaderUsage.getClass() == ShaderUsage.Legacy.class && ((ShaderUsage.Legacy)shaderUsage).texusages.size() > TextureHashes.size()) 
-							textureUsages.add(((ShaderUsage.Legacy)shaderUsage).texusages.get(TextureHashes.size()));
+						if (shader.getClass() == Shader.Legacy.class && ((Shader.Legacy)shader).texusages.size() > TextureHashes.size()) 
+							textureUsages.add(((Shader.Legacy)shader).texusages.get(TextureHashes.size()));
 					} else {
 						textureUsages.add(TextureUsage.get(s2.split("=")[1]));
 					}
@@ -321,7 +321,7 @@ public class Material {
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(ShaderHash, TextureHashes, shaderUsage, textureUsages);
+		return Objects.hash(ShaderHash, TextureHashes, shader, textureUsages);
 	}
 
 	@Override
@@ -352,12 +352,12 @@ public class Material {
 		if (other.textureUsages.size() != textureUsages.size()) return false;
 		for (int i=0; i< textureUsages.size(); i++) if (textureUsages.get(i) != other.textureUsages.get(i)) return false;
 		if (ShaderHash == 0) {
-			if (other.ShaderHash == 0) return shaderUsage == other.shaderUsage;
+			if (other.ShaderHash == 0) return shader == other.shader;
 			return false;
 		}
 		if (other.ShaderHash == 0) return false;		
 		return ShaderHash == other.ShaderHash
-				&& shaderUsage == other.shaderUsage;
+				&& shader == other.shader;
 	}
 
 	public void createVerticesBlock(Platform p) {
@@ -392,10 +392,10 @@ public class Material {
 				//shaderUsage == ShaderUsage.get("car_si_a") ||
 				//shaderUsage == ShaderUsage.get("car_t_a") ||
 				//shaderUsage.getClass() == ShaderUsage.Legacy.class ||
-				shaderUsage.name.contains("Alpha") ||
-				shaderUsage.name.contains("opacity") ||
-				shaderUsage.name.contains("org_") ||
-				shaderUsage.name.contains("overlay");
+				shader.name.contains("Alpha") ||
+				shader.name.contains("opacity") ||
+				shader.name.contains("org_") ||
+				shader.name.contains("overlay");
 	}
 
 	
