@@ -4,7 +4,7 @@ import java.io.File;
 
 public class Versions {
 
-	public static final String geom_version = "1.3.5";
+	public static final String geom_version = "1.3.5.1";
 	public static final String geom_build = "2026.10.13";
 
 	public static final String geomGUI_Name = "UCGT Geometry Editor";
