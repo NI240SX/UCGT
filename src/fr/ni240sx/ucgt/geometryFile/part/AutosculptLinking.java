@@ -11,7 +11,7 @@ import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 import fr.ni240sx.ucgt.shared.Hash;
 
-public class AutosculptLinking implements Block {
+public class AutosculptLinking implements Block { //eMorphChild
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Part_AutosculptLinking;}
@@ -30,12 +30,12 @@ public class AutosculptLinking implements Block {
 		while(in.position() < blockStart+blockLength) {
 			var l = new AutosculptLink();
 			links.add(l);
-			l.partKey = in.getInt();
-			l.fromZone1 = in.getShort(); //usually the same as zone 4 times, not sure what this means exactly
-			l.fromZone2 = in.getShort(); //perhaps one is origin zone and the other is destination zone
-			l.toZone3 = in.getShort();
-			l.toZone4 = in.getShort();
-			in.getInt(); //0
+			l.mNameHash = in.getInt();
+			l.mParentZoneRangeStart = in.getShort(); //usually the same as zone 4 times, not sure what this means exactly
+			l.mParentZoneRangeEnd = in.getShort(); //perhaps one is origin zone and the other is destination zone
+			l.mChildZoneRangeStart = in.getShort();
+			l.mChildZoneRangeEnd = in.getShort();
+			in.getInt(); //0 eSolid* mChild
 		}
 	}
 
@@ -52,11 +52,11 @@ public class AutosculptLinking implements Block {
 		out.putInt(links.size()*linkLength);
 		
 		for (var l : links) {
-			out.putInt(l.partKey);
-			out.putShort(l.fromZone1);
-			out.putShort(l.fromZone2);
-			out.putShort(l.toZone3);
-			out.putShort(l.toZone4);
+			out.putInt(l.mNameHash);
+			out.putShort(l.mParentZoneRangeStart);
+			out.putShort(l.mParentZoneRangeEnd);
+			out.putShort(l.mChildZoneRangeStart);
+			out.putShort(l.mChildZoneRangeEnd);
 			out.putInt(0);
 		}
 		
@@ -66,8 +66,8 @@ public class AutosculptLinking implements Block {
 	public String toConfig(Geometry g, Part p) {
 		//Hash.guess(partKey, g.hashlist, String.format("0x%08X", partKey), "BIN");
 		String s = "ASLINK	"+p.header.partName.replace(g.carname+"_", "");
-		for (var l : links) s += "	" + Hash.getBIN(l.partKey).replace(g.carname+"_", "")
-				+","+l.fromZone1+","+l.fromZone2+","+l.toZone3+","+l.toZone4;
+		for (var l : links) s += "	" + Hash.getBIN(l.mNameHash).replace(g.carname+"_", "")
+				+","+l.mParentZoneRangeStart+","+l.mParentZoneRangeEnd+","+l.mChildZoneRangeStart+","+l.mChildZoneRangeEnd;
 		return s;
 	}
 }

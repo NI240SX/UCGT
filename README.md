@@ -1,7 +1,9 @@
 # UCGT - Undercover Geometry Toolsuite
 [This repo](https://github.com/NI240SX/UCGT) aims at filling gaps in NFS Undercover modding enlightened during the development of the Undercover Exposed mod.
 
-As long as you explicitly credit me, you can freely reuse portions of this code or take inspiration from it.
+As long as you explicitly credit me, you may take inspiration from this code.
+
+Even in these times of AI-powered bullshit, UCGT remains over 95% human-made. You can't beat human quality and attention to detail.
 
 
 If you wish to support my stuff, you can [buy me a coffee](https://ko-fi.com/ni240sx).

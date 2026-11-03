@@ -17,11 +17,14 @@ public class PartHeader implements Block {
 	
 	public static final int usualLengthWithoutName = 200;
 	
-	public int const01 = 4194329;
+//	public int const01 = 4194329;
 	public int binKey;
-	public int trianglesCount;
-	public short texturesCount;
-	public short shadersCount;
+	public int NumPolys;
+	//public short texturesCount;
+	//public short shadersCount;
+	public byte	NumBones, NumTextureTableEntries, NumLightMaterials, NumPositionMarkerTableEntries;
+	public byte Version;
+	public short Flags;
 	
 	public float boundsXmin, boundsXmax, boundsYmin, boundsYmax, boundsZmin, boundsZmax;
 	
@@ -40,8 +43,8 @@ public class PartHeader implements Block {
 	public static final int UNDERGROUND2 = 976256;
 	public static final int UNDERGROUND = 1243136;
 
-	public float const11 = 0;
-	public float const12 = 0;
+	public float Volume = 0;
+	public float Density = 0;
 	
 	public String partName = "CAR_PART";
 	
@@ -56,41 +59,67 @@ public class PartHeader implements Block {
 		in.getInt(); //0
 		in.getInt(); //0
 		in.getInt(); //0
-		const01 = in.getInt(); //0x19004000, flags mask ? 0x19000000 for several map models
+		//b Version
+		//b EndianSwapped
+		//s Flags
+		Version = in.get();
+		in.get(); //EndianSwapped
+		Flags = in.getShort();
+		
+//		const01 = in.getInt(); //0x19004000, flags mask ? 0x19000000 for several map models
+		//0x40 = eSolidFlags::ESOLID_ISLIT ??
 //		if (const01 != 0x00400019) System.out.println("WARNING : const01="+String.format("0x%08X", Integer.reverseBytes(const01)));
 		
 		binKey = in.getInt();
-		trianglesCount = in.getInt();
-		in.order(ByteOrder.BIG_ENDIAN);
-		texturesCount = in.getShort();
-		in.order(ByteOrder.LITTLE_ENDIAN);
-		shadersCount = in.getShort();
-		in.getInt(); //0
+		NumPolys = in.getInt(); //should be NumPolys/NumVerts both as short ?
+		
+		NumBones = in.get();
+		NumTextureTableEntries = in.get();
+		NumLightMaterials = in.get();
+		NumPositionMarkerTableEntries = in.get();
+//		in.order(ByteOrder.BIG_ENDIAN);
+//		texturesCount = in.getShort();
+//		in.order(ByteOrder.LITTLE_ENDIAN);
+//		shadersCount = in.getShort();
+		in.getInt(); //0 ReferencedFrameCounter
 
 		boundsXmin = in.getFloat();
 		boundsYmin = in.getFloat();
 		boundsZmin = in.getFloat();
-		in.getInt(); //0
+		in.getInt(); //0 pTextureTable
 		
 		boundsXmax = in.getFloat();
 		boundsYmax = in.getFloat();
 		boundsZmax = in.getFloat();
-		in.getInt(); //0
+		in.getInt(); //0 LightMaterialTable
 		
+		//PivotMatrix
 		for (int i=0; i<4; i++) for (int j=0; j<4; j++) { //i = rows, j = columns
 			matrix[i][j] = in.getFloat();
 		}
-		in.getInt(); //0
-		in.getInt(); //0
-		game = in.getInt(); //0x08740E00
+		in.getInt(); //0 ePositionMarker* PositionMarkerTable
+		in.getInt(); //0 eNormalSmoother* NormalSmoother
+		game = in.getInt(); //0x08740E00 bTList<eModel> ModelList (how is it constant for every game then ?)
 		game = in.getInt(); //0x08740E00
 
-		in.getInt(); //0
-		in.getInt(); //0
-		const11 = in.getFloat(); //might be a float
-		const12 = in.getFloat(); //might be a float
+		in.getInt(); //0 eMorphTarget* mMorphTargetList
+		in.getInt(); //0 eSelectionSet* mSelectionSetList
+		Volume = in.getFloat(); //might be a float Volume
+		Density = in.getFloat(); //might be a float Density
 		
 		if (game == UNDERCOVER) in.position(in.position()+40); //UC model
+		/*
+0xa0	0x4	eTextureTypeTable *		pTextureTypeTable	//eTextureTypeTable*
+0xa4	0x4	ePcaWeights *			PcaWeights	//ePcaWeights*
+0xa8	0x4	int						SkinUpdateFrame	//T_UINT4
+0xac	0x4	eSolid *				eOriginalSolid	//eSolid*
+0xb0	0x8	bPList<eSolid>			ClonedSolidList	//bPList<eSolid>
+0xb8	0x4	cBBFXMaterial * *		mSharedMaterialInfoTable	//cBBFXMaterial**
+0xbc	0x4	int						mNumSharedMaterialInfo	//T_UINT4
+0xc0	0x4	eMorphChild *			mMorphChildList	//eMorphChild*
+0xc4	0x1	byte					mSizeMorphChildList	//T_CHAR
+0xc6	0x2	short					mSelfIlluminationFlags	//T_USHORT
+		 */
 		else if (game == PROSTREET) in.position(in.position()+24); //PS model
 		else if (game == CARBON) {} //carbon model, do nothing
 		else if (game == WORLD) {}
@@ -139,10 +168,16 @@ public class PartHeader implements Block {
 		this.boundsZmax = header.boundsZmax;
 		this.boundsZmin = header.boundsZmin;
 		this.matrix = header.matrix;
-		this.shadersCount = header.shadersCount;
-		this.texturesCount = header.texturesCount;
-		this.trianglesCount = header.trianglesCount;
+//		this.shadersCount = header.shadersCount;
+//		this.texturesCount = header.texturesCount;
+		this.NumBones = header.NumBones;
+		this.NumLightMaterials = header.NumLightMaterials;
+		this.NumPositionMarkerTableEntries = header.NumPositionMarkerTableEntries;
+		this.NumTextureTableEntries = header.NumTextureTableEntries;
+		this.NumPolys = header.NumPolys;
 		this.game = header.game;
+		this.Version = header.Version;
+		this.Flags = header.Flags;
 	}
 	
 	public void setPlatform(Platform plat) {
@@ -180,14 +215,21 @@ public class PartHeader implements Block {
 		out.putInt(0);
 		out.putInt(0);
 		out.putInt(0);
-		out.putInt(const01); //flags mask, check it's fine with map models
+//		out.putInt(const01); //flags mask, check it's fine with map models
+		out.put(Version);
+		out.put((byte) 0);
+		out.putShort(Flags);
 		
 		out.putInt(binKey);
-		out.putInt(trianglesCount);
-		out.order(ByteOrder.BIG_ENDIAN);
-		out.putShort(texturesCount);
-		out.order(ByteOrder.LITTLE_ENDIAN);
-		out.putShort(shadersCount);
+		out.putInt(NumPolys);
+//		out.order(ByteOrder.BIG_ENDIAN);
+//		out.putShort(texturesCount);
+//		out.order(ByteOrder.LITTLE_ENDIAN);
+//		out.putShort(shadersCount);
+		out.put(NumBones);
+		out.put(NumTextureTableEntries);
+		out.put(NumLightMaterials);
+		out.put(NumPositionMarkerTableEntries);
 		out.putInt(0);
 
 		out.putFloat(boundsXmin);
@@ -211,8 +253,8 @@ public class PartHeader implements Block {
 		
 		out.putInt(0);
 		out.putInt(0);
-		out.putFloat(const11); //const11
-		out.putFloat(const12); //const12
+		out.putFloat(Volume); //const11
+		out.putFloat(Density); //const12
 		
 		if (game == UNDERCOVER) out.position(out.position()+40); //UC
 		else if (game == PROSTREET) out.position(out.position()+24); //PS

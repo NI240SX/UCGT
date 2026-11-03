@@ -34,8 +34,8 @@ public class Materials_PC extends Materials {
 
 			var numtextures = in.get(matStart+58);
 			
-			m.fromTriIndex = in.getInt();
-			m.toTriIndex = in.getInt();
+			m.IndexData = in.getInt();
+			m.ReducedIndexData = in.getInt();
 //			in.getInt(); //0 ?				// TEXTURE ORDER OR SOMETHING
 //			m.usageSpecific1 = in.getInt(); // TEXTURE ORDER OR SOMETHING - there's room for 10 textures in total
 //
@@ -43,7 +43,7 @@ public class Materials_PC extends Materials {
 //			m.usageSpecific3 = in.getInt(); //probably never used
 
 			for (int i=0; i< numtextures; i++) {
-				m.texturePriorities.add(in.getInt());
+				m.TextureParam.add(in.getInt());
 			}
 			
 			in.position(matStart+48);
@@ -51,24 +51,24 @@ public class Materials_PC extends Materials {
 				m.textureIDs.add(in.get());
 			}
 			in.position(matStart+59);
-			m.shaderID = in.get();
-			m.textureHash = in.getInt();
+			m.LightMaterialNumber = in.get();
+			m.TextureSortKey = in.getInt();
 			
-			in.get(m.flags);
-			m.numTriIndices = in.getInt();
-			m.numTriIndicesExtra = in.getInt();
+			in.get(m.MeshFlags);
+			m.NumIndices = in.getInt();
+			m.NumReducedIndices = in.getInt();
 			
 			in.position(matStart+96);
 			in.get();
-			m.shaderUsageID = in.get();
+			m.mMaterialIndex = in.get();
 			in.get();
 			in.get();
 			in.getInt();
 			in.getInt();
-			m.verticesDataLength = in.getInt();
+			m.SizeofVertexData = in.getInt();
 			in.get();
 			in.get();
-			m.singleVertexLength = in.get();
+			m.VertexBytesAndFlag = in.get();
 			in.get();
 			//vertex format ? 0x00002080 maybe more like amount of data in the vertex format or smth
 			
@@ -111,17 +111,17 @@ public class Materials_PC extends Materials {
 		
 		for (var m : materials) {
 			int matStart = out.position();
-			out.putInt(m.fromTriIndex);
-			out.putInt(m.toTriIndex);
+			out.putInt(m.IndexData);
+			out.putInt(m.ReducedIndexData);
 //			out.putInt(0);
 //			out.putInt(m.usageSpecific1);		
 //			out.putInt(m.usageSpecific2);
 //			out.putInt(m.usageSpecific3);
 
-			for (int i=0; i<m.texturePriorities.size(); i++) {
-				out.putInt(m.texturePriorities.get(i));
+			for (int i=0; i<m.TextureParam.size(); i++) {
+				out.putInt(m.TextureParam.get(i));
 			}
-			Utils.makeAlignment(out, 40 - 4*m.texturePriorities.size(), (byte)-1);
+			Utils.makeAlignment(out, 40 - 4*m.TextureParam.size(), (byte)-1);
 			//normally at 48
 			
 			for (int i=0; i<m.textureIDs.size(); i++) {
@@ -131,21 +131,21 @@ public class Materials_PC extends Materials {
 			//normally at pos 58
 			
 			out.put((byte)m.textureIDs.size());
-			out.put(m.shaderID);
-			out.putInt(m.textureHash);
+			out.put(m.LightMaterialNumber);
+			out.putInt(m.TextureSortKey);
 			
-			out.put(m.flags);
-			out.putInt(m.numTriIndices);
-			out.putInt(m.numTriIndicesExtra);
+			out.put(m.MeshFlags);
+			out.putInt(m.NumIndices);
+			out.putInt(m.NumReducedIndices);
 			
 			out.position(matStart+96);
 			out.put((byte) 0);
-			out.put(m.shaderUsageID);
+			out.put(m.mMaterialIndex);
 			out.put((byte) 0);
 			out.put((byte) 0);
 			out.putInt(0);
 			out.putInt(0);
-			out.putInt(m.verticesDataLength);
+			out.putInt(m.SizeofVertexData);
 			out.put((byte) 0x00);
 			out.put((byte) 0x00);
 			out.put((byte) m.shader.vertexFormat_PC.getLength());

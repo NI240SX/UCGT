@@ -29,10 +29,11 @@ public class MPoints implements Block {
 			mpoints.add(mp);
 			int key = in.getInt();
 			mp.nameHash = key;
-			in.getInt(); //0
-			in.getInt(); //0
-			in.getInt(); //0
+			in.getInt(); //0 iParam0
+			in.getInt(); //0 fParam0
+			in.getInt(); //0 fParam1
 
+			//actually a matrix4
 			mp.matrix[0][0] = MPoint.round(in.getFloat());
 			mp.matrix[0][1] = MPoint.round(in.getFloat());
 			mp.matrix[0][2] = MPoint.round(in.getFloat());

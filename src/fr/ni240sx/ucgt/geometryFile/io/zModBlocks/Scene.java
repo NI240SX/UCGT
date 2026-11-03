@@ -259,11 +259,11 @@ public class Scene extends ZModBlock {
 		        				}
 		        			}
 		        			
-		        			ZMMatsToBINMatsEXTRA.get(poly.materialUID).trianglesExtra.add( new Triangle(	//TRIANGLES ARE FLIPPED WITH THIS AXIS CONVENTION
+		        			ZMMatsToBINMatsEXTRA.get(poly.materialUID).trianglesReduced.add( new Triangle(	//TRIANGLES ARE FLIPPED WITH THIS AXIS CONVENTION
 		        					triVerts[2], triVerts[1], triVerts[0] ) );
 							
 		        			if (poly.vertIDs.length == 4) { //
-		        				ZMMatsToBINMatsEXTRA.get(poly.materialUID).trianglesExtra.add( new Triangle( triVerts[3], triVerts[2], triVerts[0] ) );
+		        				ZMMatsToBINMatsEXTRA.get(poly.materialUID).trianglesReduced.add( new Triangle( triVerts[3], triVerts[2], triVerts[0] ) );
 		        			} if (poly.vertIDs.length > 4) { //
 		        				System.out.println("Please triangulate the mesh for "+mn.embeddedNode.name);
 		        			}

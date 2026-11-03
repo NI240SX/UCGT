@@ -667,7 +667,7 @@ public class CollisionsEditor extends Application {
 //							menuDBMP.setText(mainCollisions.carname.label);
 
 		for (var m :visualModel.materials) {
-			if (Hash.getBIN(m.ShaderHash).contains("WINDSHIELD")) {
+			if (Hash.getBIN(m.materialLighting).contains("WINDSHIELD")) {
 				visualModelMatColors.add(Color.color(0.2, 0.2, 0.2, 0.3));
 			} else {
 				double colorR = Math.random();

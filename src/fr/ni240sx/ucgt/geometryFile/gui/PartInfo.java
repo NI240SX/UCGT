@@ -87,9 +87,10 @@ public class PartInfo extends TreeView<String>{
 						(p.header.boundsXmax+p.header.boundsXmin)/2);
 				
 				if (p.header != null) {
-					counts.getChildren().add(new FormattedTreeItem<>(p.header.shadersCount+" material shaders"));
-					counts.getChildren().add(new FormattedTreeItem<>(p.header.texturesCount+" textures"));
-					counts.getChildren().add(new FormattedTreeItem<>(p.header.trianglesCount+" triangles"));
+					counts.getChildren().add(new FormattedTreeItem<>(p.header.NumLightMaterials+" light materials"));
+					counts.getChildren().add(new FormattedTreeItem<>(p.header.NumTextureTableEntries+" textures"));
+					counts.getChildren().add(new FormattedTreeItem<>(p.header.NumPolys+" triangles"));
+					counts.getChildren().add(new FormattedTreeItem<>(p.header.NumBones+" bones"));
 				}
 				if (p.mesh != null) {
 					if (p.mesh.materials != null) {
@@ -143,7 +144,7 @@ public class PartInfo extends TreeView<String>{
 							
 							var sha = new TreeItem<>("Material");
 							mat.getChildren().add(sha);
-							sha.getChildren().add(new TreeItem<>(Hash.getBIN(m.ShaderHash)));
+							sha.getChildren().add(new TreeItem<>(Hash.getBIN(m.materialLighting)));
 							sha.setExpanded(true);
 	
 							var tex = new TreeItem<>("Textures");
@@ -182,13 +183,13 @@ public class PartInfo extends TreeView<String>{
 							}
 
 							var flags = new TreeItem<>("Flags: "+String.format("0x%08X", 
-									Byte.toUnsignedInt(m.flags[0]) << 24 | 
-									Byte.toUnsignedInt(m.flags[1]) << 16 | 
-									Byte.toUnsignedInt(m.flags[2]) << 8 | 
-									Byte.toUnsignedInt(m.flags[3]) << 0));
+									Byte.toUnsignedInt(m.MeshFlags[0]) << 24 | 
+									Byte.toUnsignedInt(m.MeshFlags[1]) << 16 | 
+									Byte.toUnsignedInt(m.MeshFlags[2]) << 8 | 
+									Byte.toUnsignedInt(m.MeshFlags[3]) << 0));
 							mat.getChildren().add(flags);
 							
-							flags = new TreeItem<>("Combined texture hash: "+Hash.getBIN(m.textureHash));
+							flags = new TreeItem<>("Combined texture hash: "+Hash.getBIN(m.TextureSortKey));
 							mat.getChildren().add(flags);
 
 						}
@@ -233,21 +234,21 @@ public class PartInfo extends TreeView<String>{
 				bounds.getChildren().add(new TreeItem<>("Z="+p.header.boundsZmin+" to Z="+p.header.boundsZmax));
 				
 				if (p.asZones != null) {
-					counts.getChildren().add(new TreeItem<>(p.asZones.zones.size()+" Autosculpt zones"));
+					counts.getChildren().add(new TreeItem<>(p.asZones.zones.size()+" morph targets"));
 					for (var z : p.asZones.zones) {
 						asZ.getChildren().add(new TreeItem<>(Hash.getBIN(z)));
 					}
 				}
 				
 				if (p.asLinking != null) {
-					counts.getChildren().add(new TreeItem<>(p.asLinking.links.size()+" Autosculpt links"));
+					counts.getChildren().add(new TreeItem<>(p.asLinking.links.size()+" morph children"));
 					for (var l : p.asLinking.links) {
-						var link = new TreeItem<>(Hash.getBIN(l.partKey));
+						var link = new TreeItem<>(Hash.getBIN(l.mNameHash));
 						asL.getChildren().add(link);
-						link.getChildren().add(new TreeItem<>("From Zone "+l.fromZone1));
-						link.getChildren().add(new TreeItem<>("From Zone "+l.fromZone2));
-						link.getChildren().add(new TreeItem<>("To Zone "+l.toZone3));
-						link.getChildren().add(new TreeItem<>("To Zone "+l.toZone4));
+						link.getChildren().add(new TreeItem<>("From Parent Zone Start "+l.mParentZoneRangeStart));
+						link.getChildren().add(new TreeItem<>("From Parent Zone End "+l.mParentZoneRangeEnd));
+						link.getChildren().add(new TreeItem<>("To Child Zone Start "+l.mChildZoneRangeStart));
+						link.getChildren().add(new TreeItem<>("To Child Zone End "+l.mChildZoneRangeEnd));
 
 					}
 				}

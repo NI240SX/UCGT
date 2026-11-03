@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class MaterialLightingParams implements Block {
+public class MaterialLightingParams implements Block { //eLightMaterialEntry
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Part_MaterialLightingList;}
@@ -20,8 +20,8 @@ public class MaterialLightingParams implements Block {
 		var blockLength = in.getInt();
 		
 		for (int i=0; i< blockLength/8; i++) {
-			shaders.add(in.getInt());
-			in.getInt(); //0
+			shaders.add(in.getInt()); //NameHash
+			in.getInt(); //0 LightMaterial
 		}
 		
 //		for (var p : texusage) {

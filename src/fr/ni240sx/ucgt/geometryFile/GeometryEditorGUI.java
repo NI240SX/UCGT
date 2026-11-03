@@ -368,12 +368,16 @@ public class GeometryEditorGUI extends Application {
         Menu menuTools = new Menu("Tools");
         MenuItem toolCarName = new MenuItem("Change car name...");
         MenuItem toolPlatform = new MenuItem("Change platform...");
+//        MenuItem toolRebuild = new MenuItem("Rebuild model");
+        MenuItem toolCleanLegacy = new MenuItem("Clean/fix legacy model");
         MenuItem toolSaving = new MenuItem("Saving settings...");
 
         menuTools.getItems().addAll(toolCarName, toolPlatform, toolSaving);
         menuTools.setAccelerator(KeyCombination.keyCombination("Alt+T"));
         toolCarName.setOnAction(handleToolCarName(primaryStage));
         toolPlatform.setOnAction(handleToolPlatform(primaryStage));
+        
+        
         toolSaving.setOnAction(e -> new Thread(() -> {
 			try {
 	        	showGeometrySettings(new File(lastDirectoryLoaded+File.separator+lastFileLoaded.replace(lastFileLoaded.split("\\.")[lastFileLoaded.split("\\.").length-1], "ini")));
@@ -381,6 +385,26 @@ public class GeometryEditorGUI extends Application {
 			} catch (InterruptedException e1) {
 				e1.printStackTrace();
 			}
+        }).start());
+//        toolRebuild.setOnAction(e -> new Thread(() -> {
+//        	try {
+//        	if (mainGeometry != null) {
+//        		mainGeometry.rebuild();
+//				postLoadUpdate(primaryStage);
+//        	}
+//        	}catch (Exception ex) {ex.printStackTrace();}
+//        }).start());
+        toolCleanLegacy.setOnAction(e -> new Thread(() -> {
+        	if (mainGeometry != null && !mainGeometry.isUC()) for (var p : mainGeometry.parts) {
+        		var allTextureUsages = new ArrayList<TextureUsage>();
+        		for (var s : p.strings.strings) {
+        			allTextureUsages.add(TextureUsage.get(s));
+        		}
+        		for (var m : p.mesh.materials.materials) {
+    				m.TextureParam.clear();
+    				for (int i=0; i<m.TextureHashes.size(); i++) m.TextureParam.add(allTextureUsages.indexOf(m.textureUsages.get(i)));
+            	}
+        	}
         }).start());
         /*
          * TODO
@@ -411,7 +435,15 @@ public class GeometryEditorGUI extends Application {
         });
                 
         menuBar.getMenus().addAll(menuFile, menuDisplay, menuRendering, menuTools, menuSettings);
-        		
+		menuBar.setOnMousePressed(e -> {
+			if (e.isAltDown()) {
+				//kinda debug mode
+		        menuTools.getItems().setAll(toolCarName, toolPlatform, toolCleanLegacy, toolSaving);
+			} else {
+		        menuTools.getItems().setAll(toolCarName, toolPlatform, toolSaving);
+			}
+		});
+
         
         //
         // SHORTCUTS BAR
@@ -784,7 +816,9 @@ public class GeometryEditorGUI extends Application {
 				case X360:
 				case PS3:
 					yield 9;
-				default:
+				case Prostreet_PC:
+				case Prostreet_X360:
+				case Carbon_PC:
 					yield 8;
 				};
 			}
@@ -827,7 +861,7 @@ public class GeometryEditorGUI extends Application {
 				p.rename(newName, p.header.partName.replace(oldName, newName));
 				if (p.asZones != null) p.asZones.zones = p.generateASZones();
 				if (p.asLinking != null) for (var l : p.asLinking.links) {
-					l.partKey = Hash.findBIN(Hash.getBIN(l.partKey).replace(oldName, newName));
+					l.mNameHash = Hash.findBIN(Hash.getBIN(l.mNameHash).replace(oldName, newName));
 				}
 				if (p.mesh != null) for (var m : p.mesh.materials.materials) {
 					for (int i=0; i<  m.TextureHashes.size(); i++) {
@@ -993,14 +1027,15 @@ public class GeometryEditorGUI extends Application {
 							try {
 								if (fc.getSelectedExtensionFilter() == TYPE_GEOM) {
 									mainGeometry.save(f, status);
-									if (mainTPK != null && importExportTextures.isSelected()) { // && mainGeometry.isImported
-										var fTex = new File(f.getParent()+File.separator+"TEXTURES.BIN");
+									if (mainTPK != null && importExportTextures.isSelected() && f.getName().contains("GEOMETRY")) { // && mainGeometry.isImported
+//										var fTex = new File(f.getParent()+File.separator+"TEXTURES.BIN");
+										var fTex = new File(f.getCanonicalPath().replace("GEOMETRY", "TEXTURES"));
 										if (fTex.isFile()) {
 											fTex.renameTo(new File(fTex.getAbsolutePath() + ".bak_" + new SimpleDateFormat("yyMMdd-HHmmss").format(new Date(fTex.lastModified()))));
 										}
 										mainTPK.defaultCompressionType = mainGeometry.defaultCompressionType;
 										mainTPK.defaultCompressionLevel = mainGeometry.defaultCompressionLevel;
-										mainTPK.save(new File(f.getParent()+File.separator+"TEXTURES.BIN"), status);
+										mainTPK.save(new File(f.getCanonicalPath().replace("GEOMETRY", "TEXTURES")), status);
 									}
 									javafx.application.Platform.runLater(() -> {
 										if (!disableWarnings.isSelected()) new Alert(Alert.AlertType.INFORMATION, "Model saved successfully.", ButtonType.OK).show();
@@ -1344,7 +1379,7 @@ public class GeometryEditorGUI extends Application {
 					int firstBlockLength = getNextInt(fis);
 					fis.close();
 					
-					if (signature == BlockType.Geometry.getKey() && firstBlockLength+8 == selected.length()){
+					if (signature == BlockType.Geometry.getKey() && firstBlockLength+8+16 >= selected.length()){ //allow for some padding
 						
 						loadGeometry(selected);
 						mainTPK = null;
@@ -1458,18 +1493,19 @@ public class GeometryEditorGUI extends Application {
 							}
 							fis.close();
 
-							if (geomOffsets.size() == 1 && geomOffsets.get(0).offset == 0) {
-								loadGeometry(selected);
-								lastFileLoaded = selected.getName();
-								lastDirectoryLoaded = selected.getAbsolutePath().replace(selected.getName(), "");
-								if (recentFiles.contains(selected.getAbsolutePath())) recentFiles.remove(selected.getAbsolutePath());
-								recentFiles.add(0, selected.getAbsolutePath());
-								
-								postLoadUpdate(primaryStage);
-//								if (!disableWarnings.isSelected()) new Alert(Alert.AlertType.INFORMATION, "Model loaded successfully.", ButtonType.OK).show();
-								return;
-
-							}
+							//commented out because it bugged me lol
+//							if (geomOffsets.size() == 1 && geomOffsets.get(0).offset == 0) {
+//								loadGeometry(selected);
+//								lastFileLoaded = selected.getName();
+//								lastDirectoryLoaded = selected.getAbsolutePath().replace(selected.getName(), "");
+//								if (recentFiles.contains(selected.getAbsolutePath())) recentFiles.remove(selected.getAbsolutePath());
+//								recentFiles.add(0, selected.getAbsolutePath());
+//								
+//								postLoadUpdate(primaryStage);
+////								if (!disableWarnings.isSelected()) new Alert(Alert.AlertType.INFORMATION, "Model loaded successfully.", ButtonType.OK).show();
+//								return;
+//
+//							}
 							
 							if (geomOffsets.size() + tpkOffsets.size() > 0) {
 								if (recentFiles.contains(selected.getAbsolutePath())) recentFiles.remove(selected.getAbsolutePath());
@@ -2043,7 +2079,7 @@ public class GeometryEditorGUI extends Application {
 			    			if (f.endsWith(".dds")) Hash.findBIN(f.replace(".dds", ""));
 			    			if (f.endsWith(".bin") || f.endsWith(".bun") || f.endsWith(".lzc"))
 								try {
-									addAllTexturesFromTPKsInFile(new File(f));
+									addAllTexturesFromTPKsInFile(new File(t + File.separator + f));
 								} catch (Exception e) {
 									e.printStackTrace();
 								}
@@ -2122,7 +2158,7 @@ public class GeometryEditorGUI extends Application {
 							}//diffuse color search
 							
 							if (diffuseMaps.get(mainGeometry.materials.indexOf(m)) == null) {
-								if (Hash.getBIN(m.ShaderHash).contains("WINDSHIELD") || Hash.getBIN(m.ShaderHash).contains("GLASS")) {
+								if (Hash.getBIN(m.materialLighting).contains("WINDSHIELD") || Hash.getBIN(m.materialLighting).contains("GLASS")) {
 									mat.setDiffuseColor(Color.color(0.2, 0.2, 0.2, 0.3));
 								} else {
 									double colorR = Math.random();
@@ -2341,7 +2377,7 @@ public class GeometryEditorGUI extends Application {
 //							
 //						}
 					} else {
-						if (Hash.getBIN(m.ShaderHash).contains("WINDSHIELD") || Hash.getBIN(m.ShaderHash).contains("GLASS")) {
+						if (Hash.getBIN(m.materialLighting).contains("WINDSHIELD") || Hash.getBIN(m.materialLighting).contains("GLASS")) {
 							mat.setDiffuseColor(Color.color(0.2, 0.2, 0.2, 0.3));
 						} else {
 							double colorR = Math.random();

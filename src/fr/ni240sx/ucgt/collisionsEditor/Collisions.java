@@ -373,9 +373,15 @@ public class Collisions implements Block{
 		while (in.getInt() == 0x11111111) {} //always 2x -> align 16?
 		in.position(in.position()-4);
 
-		
-		in.getInt(); //0x67E0E067	m_magic
-		in.getInt(); //0x20C0C020	m_magic
+		var magic1 = in.getInt();
+		var magic2 = in.getInt();
+		if (magic1 != 0x67E0E067 && magic2 != 0x20C0C020) {
+			System.err.println("Bounds: Not a Havok file! Skipping bound block.");
+			in.position(blockStart+blockLength);
+			return;
+		}
+		//in.getInt(); //0x67E0E067	m_magic
+		//in.getInt(); //0x20C0C020	m_magic
 		in.getInt(); //0			resolveAddress, should stay zero
 		in.getInt(); //16			m_fileVersion
 		//if (in.getInt() != 16) System.err.println("Bounds: Havok file is not version 16!");

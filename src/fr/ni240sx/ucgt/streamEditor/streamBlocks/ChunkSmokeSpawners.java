@@ -39,8 +39,12 @@ public class ChunkSmokeSpawners extends ArrayList<fr.ni240sx.ucgt.streamEditor.s
 		in.getInt();
 		
 //		while(in.position() < blockStart+blockLength) {
+		try {
 		for (int i=0; i<numSpawners;i++) {
 			this.add(new SmokeSpawner(in));
+		}
+		}catch (Exception ex) {
+			//ex.printStackTrace();
 		}
 		in.position(blockStart+blockLength);
 	}

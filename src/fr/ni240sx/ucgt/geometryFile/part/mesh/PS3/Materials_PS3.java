@@ -30,7 +30,7 @@ public class Materials_PS3 extends Materials {
 			in.position(matStart+24); //skip material bounds
 			var numtextures = in.getInt();
 			for (int i=0; i< numtextures; i++) {
-				m.texturePriorities.add(in.getInt());
+				m.TextureParam.add(in.getInt());
 			}
 			
 			in.position(matStart+68);
@@ -38,20 +38,20 @@ public class Materials_PS3 extends Materials {
 				m.textureIDs.add(in.get());
 			}
 			in.position(matStart+78);
-			m.shaderID = in.get();
+			m.LightMaterialNumber = in.get();
 			in.get();
 			
 			var rflags = new byte[4];
 			in.get(rflags);
-			m.flags[0] = rflags[3];
-			m.flags[1] = rflags[2];
-			m.flags[2] = rflags[1];
-			m.flags[3] = rflags[0];
+			m.MeshFlags[0] = rflags[3];
+			m.MeshFlags[1] = rflags[2];
+			m.MeshFlags[2] = rflags[1];
+			m.MeshFlags[3] = rflags[0];
 
 			in.order(ByteOrder.BIG_ENDIAN);
 			m.numVertices = in.getInt();
 			in.getInt(); //0
-			m.verticesDataLength = in.getInt();
+			m.SizeofVertexData = in.getInt();
 			in.getInt(); //0
 			in.getInt(); //5
 			in.getInt(); //24 -> vertex format?
@@ -59,14 +59,14 @@ public class Materials_PS3 extends Materials {
 
 
 			in.position(matStart+232);
-			m.numTriIndices = in.getInt(); //ok
-			m.fromTriIndex = in.getInt();
+			m.NumIndices = in.getInt(); //ok
+			m.IndexData = in.getInt();
 //			System.out.println(m.fromTriIndex);
 //			System.out.println(curTriID);
 //			m.fromTriIndex = curTriID;
 			in.getInt(); //0
 			in.order(ByteOrder.LITTLE_ENDIAN);
-			m.toTriIndex = in.getInt(); // H U H
+			m.ReducedIndexData = in.getInt(); // H U H
 //			m.toTriIndex = m.fromTriIndex + m.numTriIndices;
 //			curTriID = m.toTriIndex;
 			
@@ -82,7 +82,7 @@ public class Materials_PS3 extends Materials {
 
 			in.position(matStart+372);
 			m.shader = Shader.get(in.getInt());
-			m.shaderUsageID = (byte) in.getInt();
+			m.mMaterialIndex = (byte) in.getInt();
 			
 			
 			in.position(matStart+materialLength);

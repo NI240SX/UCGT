@@ -207,7 +207,7 @@ public class GLTF {
 										}
 									}
 									if (i1 == -1 || i2 == -1 || i0 == -1) System.out.println("problet");
-									m.trianglesExtra.add(new Triangle(i0, i1, i2));
+									m.trianglesReduced.add(new Triangle(i0, i1, i2));
 								}
 		        			}
 						});
@@ -596,7 +596,7 @@ public class GLTF {
 			mesh.put("name", p.name);
 			
 			for	(var m : p.mesh.materials.materials) if (m.verticesBlock != null) {
-				if (m.trianglesExtra.size() != 0 && !partsWithExtraTriangles.contains(p)) partsWithExtraTriangles.add(p);
+				if (m.trianglesReduced.size() != 0 && !partsWithExtraTriangles.contains(p)) partsWithExtraTriangles.add(p);
 				var primitive = new JSONObject();
 				var attributes = new JSONObject();
 				
@@ -662,7 +662,7 @@ public class GLTF {
 			var mesh = new JSONObject();
 			mesh.put("name", p.name+LOD_TRIANGLES_SUFFIX);
 			
-			for	(var m : p.mesh.materials.materials) if (m.trianglesExtra.size() != 0) {
+			for	(var m : p.mesh.materials.materials) if (m.trianglesReduced.size() != 0) {
 				var primitive = new JSONObject();
 //				var attributes = new JSONObject();
 				
@@ -676,7 +676,7 @@ public class GLTF {
 //				primitive.put("attributes", attributes);
 				primitive.put("attributes", glTF.getJSONArray("meshes").getJSONObject(geom.parts.indexOf(p)).getJSONArray("primitives").getJSONObject(p.mesh.materials.materials.indexOf(m)).getJSONObject("attributes"));
 				
-				exportTriangles(glTF, bos, m.trianglesExtra, primitive);
+				exportTriangles(glTF, bos, m.trianglesReduced, primitive);
 
 				primitive.put("material", geom.materials.indexOf(m));
 				mesh.append("primitives", primitive);

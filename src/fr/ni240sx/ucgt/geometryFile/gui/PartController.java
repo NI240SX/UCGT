@@ -251,10 +251,11 @@ public class PartController{
 	
 	private void drawMaterial(Material m) {
 		TriangleMesh matMesh = new TriangleMesh();
-		
-		if (m.verticesBlock.vertexFormat.hasNormals()) matMesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
-		
+				
 		if (m.verticesBlock != null) {
+		
+			if (m.verticesBlock.vertexFormat.hasNormals()) matMesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
+
 			for (var v : m.verticesBlock.vertices) {
 				matMesh.getPoints().addAll(v.pos[Y], v.pos[Z], v.pos[X]);
 			}
@@ -264,21 +265,22 @@ public class PartController{
 			if (m.verticesBlock.vertexFormat.getNumTexChannels() > 0) for (var v : m.verticesBlock.vertices) {
 				matMesh.getTexCoords().addAll(v.tex[0][U], 1-v.tex[0][V]);
 			}
+
+			if (m.verticesBlock.vertexFormat.hasNormals()) for (var tr : m.triangles) {
+				matMesh.getFaces().addAll(
+						// points normals   texcoords
+						tr.vert0, tr.vert0, tr.vert0, //v1
+						tr.vert1, tr.vert1, tr.vert1, //v2
+						tr.vert2, tr.vert2, tr.vert2);//v3
+			} else for (var tr : m.triangles) {
+				matMesh.getFaces().addAll(
+						// points texcoords
+						tr.vert0, tr.vert0, //v1
+						tr.vert1, tr.vert1, //v2
+						tr.vert2, tr.vert2);//v3
+			}
 		}
 		
-		if (m.verticesBlock.vertexFormat.hasNormals()) for (var tr : m.triangles) {
-			matMesh.getFaces().addAll(
-					// points normals   texcoords
-					tr.vert0, tr.vert0, tr.vert0, //v1
-					tr.vert1, tr.vert1, tr.vert1, //v2
-					tr.vert2, tr.vert2, tr.vert2);//v3
-		} else for (var tr : m.triangles) {
-			matMesh.getFaces().addAll(
-					// points texcoords
-					tr.vert0, tr.vert0, //v1
-					tr.vert1, tr.vert1, //v2
-					tr.vert2, tr.vert2);//v3
-		}
 		
 		var mv = new MeshView(matMesh);
 
@@ -309,13 +311,13 @@ public class PartController{
 				
 		
 		
-		if (m.verticesBlock.vertexFormat.hasColor()) {
+		if (m.verticesBlock != null) if (m.verticesBlock.vertexFormat.hasColor()) {
 			if (vertexColorMeshes == null) vertexColorMeshes = new ArrayList<>();
 			var vcolMesh = new TriangleMesh();
 			
 			if (m.verticesBlock.vertexFormat.hasNormals()) vcolMesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
 			
-			if (m.verticesBlock != null) {
+			{
 				for (var v : m.verticesBlock.vertices) {
 					vcolMesh.getPoints().addAll(v.pos[Y], v.pos[Z], v.pos[X]);
 				}
@@ -617,14 +619,14 @@ public class PartController{
 			
 			for (var l : part.asLinking.links) {
 				for (var pc : GeometryEditorGUI.parts) {
-					if (pc.part != null && pc.part.header.binKey == l.partKey) {
+					if (pc.part != null && pc.part.header.binKey == l.mNameHash) {
 						if (partZones.get(pc) == null) {
 							var linkedZones = new ArrayList<Double>();
 							for (int i=0; i< pc.part.asZones.zones.size(); i++) linkedZones.add(0.0);
 							partZones.put(pc, linkedZones);
 						}
 						
-						partZones.get(pc).set(l.toZone3, sliders.get(l.fromZone1));
+						partZones.get(pc).set(l.mChildZoneRangeStart, sliders.get(l.mParentZoneRangeStart));
 						break;
 					}
 				}

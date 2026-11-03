@@ -118,7 +118,7 @@ public class Mesh_Info_PC extends Mesh_Info {
 			break;
 			
 		case X360:
-		default:
+		case PS3:
 			break;
 		} else {
 			System.out.println("Mesh: Unsupported platform!");
@@ -174,7 +174,7 @@ public class Mesh_Info_PC extends Mesh_Info {
 			out = ByteBuffer.wrap(new byte[52 + 8 + alignment]);
 			break;
 		case X360:
-		default:
+		case PS3:
 			break;
 		}
 
@@ -197,7 +197,7 @@ public class Mesh_Info_PC extends Mesh_Info {
 			out.putInt(52 + alignment);
 			break;
 		case X360:
-		default:
+		case PS3:
 			break;
 		}
 		
@@ -255,7 +255,7 @@ public class Mesh_Info_PC extends Mesh_Info {
 			break;
 
 		case X360:
-		default:
+		case PS3:
 			break;
 		}
 		

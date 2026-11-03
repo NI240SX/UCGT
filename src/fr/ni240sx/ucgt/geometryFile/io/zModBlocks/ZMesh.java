@@ -81,7 +81,7 @@ public class ZMesh extends ZModBlock {
 					mat.name += Material.trianglesExtraExportSuffix;
 					matID = mat.UID;
 				}
-				for (var t : m.trianglesExtra) {
+				for (var t : m.trianglesReduced) {
 					polys.add(new Polygon(matID, off+t.vert2, off+t.vert1, off+t.vert0));
 				}
 			}

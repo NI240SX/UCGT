@@ -28,6 +28,7 @@ public class DrivableScenerySections extends ArrayList<fr.ni240sx.ucgt.streamEdi
 		while(in.position() < blockStart+blockLength) {
 			this.add(new DrivableScenerySection(in));
 		}
+		in.position(blockStart+blockLength);
 	}
 	
 	@Override

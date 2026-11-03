@@ -65,8 +65,14 @@ public class HavokCollisionMesh implements UData{ //not only a CARP block
 
 		ByteOrder endianness = in.order();
 
-		in.getInt(); //0x67E0E067	m_magic
-		in.getInt(); //0x20C0C020	m_magic
+		var magic1 = in.getInt();
+		var magic2 = in.getInt();
+		if (magic1 != 0x67E0E067 && magic2 != 0x20C0C020) {
+			System.err.println("WCollision: Not a Havok file! Skipping CARP data.");
+			return;
+		}
+		//in.getInt(); //0x67E0E067	m_magic
+		//in.getInt(); //0x20C0C020	m_magic
 		in.getInt(); //0			resolveAddress, should stay zero
 		in.getInt(); //16			m_fileVersion
 		//if (in.getInt() != 16) System.err.println("WCollision: Havok file is not version 16!");

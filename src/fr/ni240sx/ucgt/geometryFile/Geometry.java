@@ -533,8 +533,9 @@ public class Geometry implements Block {
 		File f = new File(stream);
 		FileInputStream fis = new FileInputStream(f);		
 		File region = new File(new File(stream).getParent() + File.separator + new File(stream).getName().replace("STREAM", ""));
-
-		if (region.isFile()) {
+		if (f.getCanonicalFile().equals(region.getCanonicalFile())) region = null;
+		
+		if (region != null && region.isFile()) {
 			TrackStreamingSections offsets = null;
 			{
 				//find chunk offsets in region
@@ -1092,8 +1093,8 @@ public class Geometry implements Block {
 							
 							// copy over unknown data, maybe LOD-related
 							for (var newPart : newGeom.parts) for (var oldPart : g.parts) if (newPart.header.binKey == oldPart.header.binKey) {
-								newPart.header.const11 = oldPart.header.const11;
-								newPart.header.const12 = oldPart.header.const12;
+								newPart.header.Volume = oldPart.header.Volume;
+								newPart.header.Density = oldPart.header.Density;
 							}
 							
 							newGeom.geomHeader.geomInfo.blockname = g.geomHeader.geomInfo.blockname;
@@ -1779,7 +1780,8 @@ public class Geometry implements Block {
 			case Prostreet_X360:
 				System.out.println("ProStreet support is experimental!");
 				break;
-			default:
+			case PS3:
+			case Carbon_PC:
 				System.out.println("Compiling not supported!");
 			}
 			break;
@@ -2382,7 +2384,7 @@ public class Geometry implements Block {
 						HashMap<Integer, Byte> shaderUsageIDs; //first int is either shader usage or shader hash
 						shaderUsageIDs = new HashMap<>();
 						if (p.mesh != null) {				
-							for (var m : p.mesh.materials.materials) if (m.renderingOrder!=0) shaderUsageIDs.put(m.ShaderHash , m.renderingOrder);
+							for (var m : p.mesh.materials.materials) if (m.renderingOrder!=0) shaderUsageIDs.put(m.materialLighting , m.renderingOrder);
 							for (var m : p.mesh.materials.materials) {
 								m.tryGuessFEData(shaderUsageIDs);
 								if (SAVE_optimizeMaterials) {
@@ -2399,9 +2401,9 @@ public class Geometry implements Block {
 									for (var pair : prio.values) {
 										if (m.equals(pair.getKey())) { //for some reason materials are NOT equal (materials are fucked up for some reason and have texture hashes repeated twice)
 											//HOW IS IT NOT FINDING THE FUCKING MATERIALS
-											m.texturePriorities.clear();
-											m.texturePriorities.add(0);
-											m.texturePriorities.add(pair.getValue());
+											m.TextureParam.clear();
+											m.TextureParam.add(0);
+											m.TextureParam.add(pair.getValue());
 		//									m.usageSpecific1 = pair.getValue();
 										}
 									}
@@ -2432,7 +2434,7 @@ public class Geometry implements Block {
 				HashMap<Integer, Byte> shaderUsageIDs; //first int is either shader usage or shader hash
 				shaderUsageIDs = new HashMap<>();
 				if (p.mesh != null) {				
-					for (var m : p.mesh.materials.materials) if (m.renderingOrder!=0) shaderUsageIDs.put(m.ShaderHash , m.renderingOrder);
+					for (var m : p.mesh.materials.materials) if (m.renderingOrder!=0) shaderUsageIDs.put(m.materialLighting , m.renderingOrder);
 					for (var m : p.mesh.materials.materials) {
 						m.tryGuessFEData(shaderUsageIDs);
 						if (SAVE_optimizeMaterials) {	
@@ -2449,9 +2451,9 @@ public class Geometry implements Block {
 							for (var pair : prio.values) {
 								if (m.equals(pair.getKey())) { //for some reason materials are NOT equal (materials are fucked up for some reason and have texture hashes repeated twice)
 									//HOW IS IT NOT FINDING THE FUCKING MATERIALS
-									m.texturePriorities.clear();
-									m.texturePriorities.add(0);
-									m.texturePriorities.add(pair.getValue());
+									m.TextureParam.clear();
+									m.TextureParam.add(0);
+									m.TextureParam.add(pair.getValue());
 //									m.usageSpecific1 = pair.getValue();
 								}
 							}
@@ -2622,6 +2624,10 @@ public class Geometry implements Block {
 		Part potentialUselessT0 = null;
 		//link autosculpt zones
 		for (var p2 : parts) if (p2 != p) {
+			if (p2.part == null) {
+//				System.out.println("NULL part detection on part "+p.name); //???
+				continue;
+			}
 //			System.out.println(p2.kit+" "+p2.part+" "+p2.lod);
 			if ((p2.part.substring(0, p2.part.length()-1).equals(p.part+"_T") || p2.part.substring(0, p2.part.length()-2).equals(p.part+"_T"))
 					&& p2.kit.equals(p.kit) && p2.lod.equals(p.lod)) { // as zone found
@@ -2819,8 +2825,11 @@ public class Geometry implements Block {
 		boolean legacy = switch (p.mesh.platform) {
 		case PC:
 		case X360:
+		case PS3:
 			yield false;
-		default:
+		case Carbon_PC:
+		case Prostreet_PC:
+		case Prostreet_X360:
 			yield true;
 		};
 		
@@ -2843,8 +2852,8 @@ public class Geometry implements Block {
 			p.mesh.verticesBlocks.add(m.verticesBlock);
 			p.mesh.triangles.triangles.addAll(m.triangles);
 			numTriangles += m.triangles.size();
-			p.mesh.triangles.triangles.addAll(m.trianglesExtra);
-			numTrianglesEXTRA += m.trianglesExtra.size();
+			p.mesh.triangles.triangles.addAll(m.trianglesReduced);
+			numTrianglesEXTRA += m.trianglesReduced.size();
 			
 			
 			if ((	(IMPORT_Tangents == SettingsImport_Tangents.LOW && m.needsTangentsLow()) || 
@@ -2874,9 +2883,9 @@ public class Geometry implements Block {
 //        		if (!shadersAndUsage.containsValue(new Pair<Integer,Integer>(m.ShaderHash.binHash, m.shaderUsage.getKey()))) {
 //       			shadersAndUsage.put(shadersAndUsage.size(), new Pair<Integer,Integer>(m.ShaderHash.binHash, m.shaderUsage.getKey()));
 //        		}
-			if (m.ShaderHash != 0) if (!shadersOnly.containsValue(m.ShaderHash)) {
-				shadersOnly.put(shai, m.ShaderHash);
-				shadersIDs.put(m.ShaderHash, shai);
+			if (m.materialLighting != 0) if (!shadersOnly.containsValue(m.materialLighting)) {
+				shadersOnly.put(shai, m.materialLighting);
+				shadersIDs.put(m.materialLighting, shai);
 				shai++;
 			}
 			if (!allShaderUsages.contains(m.shader)) allShaderUsages.add(m.shader);
@@ -2900,7 +2909,7 @@ public class Geometry implements Block {
 			}
 
 			if (legacy && m.textureUsages.size() < m.TextureHashes.size()) {
-				System.out.print("WARNING : missing texture usages on shader "+m.shader.getName()+", shaderusages_legacy needs tweaking!"
+				System.out.print("WARNING : missing texture usages on shader "+m.shader.getName()+", shaders_legacy needs tweaking!"
 						+ "\nINFO : material textures : ");
 				for (int i=0; i<m.TextureHashes.size(); i++) System.out.print(Hash.getBIN(m.TextureHashes.get(i))+" ");
 				System.out.print("/ usages : ");
@@ -2917,9 +2926,9 @@ public class Geometry implements Block {
 		//calculate textures count
 		//calculate shaders count
 		//calculate bounds
-		p.header.trianglesCount = p.mesh.triangles.triangles.size(); //total with EXTRA ??? or numTriangles
-		p.header.texturesCount = (short) texturesAndUsage.size();
-		p.header.shadersCount = (short) shadersOnly.size();
+		p.header.NumPolys = p.mesh.triangles.triangles.size(); //total with EXTRA ??? or numTriangles
+		p.header.NumTextureTableEntries = (byte) texturesAndUsage.size();
+		p.header.NumLightMaterials = (byte) shadersOnly.size();
 		p.computeBounds();
 		//--- texusage ---
 		//fill in the texusage pairs
@@ -2953,17 +2962,17 @@ public class Geometry implements Block {
 		//verticesDataLength
 		for (var m : p.mesh.materials.materials) {
 			
-			m.fromTriIndex = triVertI; //actually concerns triangles
-			m.toTriIndex = m.fromTriIndex + m.triangles.size()*3;
-			m.numTriIndices = m.toTriIndex - m.fromTriIndex;
-			triVertI = m.toTriIndex + m.trianglesExtra.size()*3;
-			m.numTriIndicesExtra = m.trianglesExtra.size()*3;
+			m.IndexData = triVertI; //actually concerns triangles
+			m.ReducedIndexData = m.IndexData + m.triangles.size()*3;
+			m.NumIndices = m.ReducedIndexData - m.IndexData;
+			triVertI = m.ReducedIndexData + m.trianglesReduced.size()*3;
+			m.NumReducedIndices = m.trianglesReduced.size()*3;
 			
 			
 			int shaderid;
-			if (m.ShaderHash != 0) shaderid = shadersIDs.get(m.ShaderHash);
+			if (m.materialLighting != 0) shaderid = shadersIDs.get(m.materialLighting);
 			else shaderid = -1;
-			m.shaderID = (byte) shaderid;
+			m.LightMaterialNumber = (byte) shaderid;
 			m.textureIDs.clear();
 			if (!legacy && m.textureUsages.size() > 0) for (int i=0; i<m.TextureHashes.size(); i++) {
 				int texid = texturesIDs.get(new Pair<>(m.TextureHashes.get(i), m.textureUsages.get(i).getKey()));
@@ -2974,8 +2983,12 @@ public class Geometry implements Block {
 					m.textureIDs.add((byte) texid);
 				}
 			}
-			if ((p.mesh.platform == Platform.X360)) m.verticesDataLength = m.verticesBlock.vertices.size()*m.shader.vertexFormat_X360.getLength();
-			else m.verticesDataLength = m.verticesBlock.vertices.size()*m.shader.vertexFormat_PC.getLength();
+			if (legacy) {
+				m.TextureParam.clear();
+				for (int i=0; i<m.TextureHashes.size(); i++) m.TextureParam.add(allTextureUsages.indexOf(m.textureUsages.get(i)));
+			}
+			if ((p.mesh.platform == Platform.X360)) m.SizeofVertexData = m.verticesBlock.vertices.size()*m.shader.vertexFormat_X360.getLength();
+			else m.SizeofVertexData = m.verticesBlock.vertices.size()*m.shader.vertexFormat_PC.getLength();
 		}
 		
 		//--- shadersusage ---
@@ -3402,17 +3415,17 @@ public class Geometry implements Block {
 		    			p2.mesh.verticesBlocks.add(m.verticesBlock);
 		    			p2.mesh.triangles.triangles.addAll(m.triangles);
 					}
-		        	p2.header.trianglesCount = p2.mesh.triangles.triangles.size();
+		        	p2.header.NumPolys = p2.mesh.triangles.triangles.size();
 		        	p2.mesh.info.numTriangles = p2.mesh.triangles.triangles.size();
 		        	int triVertI = 0;
 		        	p2.mesh.info.numVertices = 0;
 		        	for (var vb : p2.mesh.verticesBlocks) p2.mesh.info.numVertices += vb.vertices.size();
 		        	for (var m : p2.mesh.materials.materials) {
-		        		m.fromTriIndex = triVertI; //actually concerns triangles
-		        		m.toTriIndex = m.fromTriIndex + m.triangles.size()*3;
-		        		m.numTriIndices = m.toTriIndex - m.fromTriIndex;
-		        		triVertI = m.toTriIndex;
-		        		m.verticesDataLength = m.verticesBlock.vertices.size()*m.shader.vertexFormat_PC.getLength();
+		        		m.IndexData = triVertI; //actually concerns triangles
+		        		m.ReducedIndexData = m.IndexData + m.triangles.size()*3;
+		        		m.NumIndices = m.ReducedIndexData - m.IndexData;
+		        		triVertI = m.ReducedIndexData;
+		        		m.SizeofVertexData = m.verticesBlock.vertices.size()*m.shader.vertexFormat_PC.getLength();
 		            }
 		        	p2.rebuildSubBlocks();
 //    		        	System.out.println(p2.header.partName+" fixed : "+p2.mesh.info.numTriangles+" tris, "+p2.mesh.info.numVertices+" verts.");
@@ -3469,7 +3482,7 @@ public class Geometry implements Block {
 								(char0 == '0' && char1 == '0')) && 
 								!p.part.equals("SPOILER_LIP") && !p.part.equals("SPOILER_DRAG") && !p.part.equals("SPOILER_EVO") ){
 								lodDPartsFound++;
-								lodDTris += p.header.trianglesCount;
+								lodDTris += p.header.NumPolys;
 							}
 						}
 					}
@@ -3482,7 +3495,7 @@ public class Geometry implements Block {
 							(char0 == '0' && char1 == '0')) && 
 							!p.part.equals("SPOILER_LIP") && !p.part.equals("SPOILER_DRAG") && !p.part.equals("SPOILER_EVO") ){
 							lodDPartsFound++;
-							lodDTris += p.header.trianglesCount;
+							lodDTris += p.header.NumPolys;
 						}
 					}
 				}
@@ -3493,9 +3506,9 @@ public class Geometry implements Block {
 						(char0 == '0' && char1 == '0')) && 
 						!p.part.equals("SPOILER_LIP") && !p.part.equals("SPOILER_DRAG") && !p.part.equals("SPOILER_EVO") && !p.part.contains("WHEEL")) {
 						if (lodATris.get(p.kit) != null) {
-							lodATris.put(p.kit, lodATris.get(p.kit)+p.header.trianglesCount);
+							lodATris.put(p.kit, lodATris.get(p.kit)+p.header.NumPolys);
 						} else {
-							lodATris.put(p.kit, p.header.trianglesCount);
+							lodATris.put(p.kit, p.header.NumPolys);
 						}
 					}
 				}
@@ -3556,22 +3569,22 @@ public class Geometry implements Block {
 					if (m.TextureHashes.contains(Hash.findBIN("WINDOW_RIGHT_REAR"))) hasWindowRR = true;
 					if (m.TextureHashes.contains(Hash.findBIN("REAR_DEFROSTER"))) hasDefroster = true;
 					
-					if (m.ShaderHash == Hash.findBIN("CARSKIN") && m.shader.equals(Shader.get("DiffuseSwatch"))) 
+					if (m.materialLighting == Hash.findBIN("CARSKIN") && m.shader.equals(Shader.get("DiffuseSwatch"))) 
 						System.out.printf("Wrong carskin material found on %s! Please use DiffuseNormalSwatch (car_nm_v_s) instead of DiffuseSwatch (car_v).\n",p.name);
 	
-					if (m.ShaderHash == Hash.findBIN("BRAKEDISC") && m.shader.equals(Shader.get("Diffuse")))
+					if (m.materialLighting == Hash.findBIN("BRAKEDISC") && m.shader.equals(Shader.get("Diffuse")))
 						System.out.println("Opaque brake disc "+p.name+"; use DiffuseAlpha to fix.");
 					
 					if ((("D".equals(p.lod) && isUC()) //|| "E".equals(p.lod) && !isUC()
-							) && (m.ShaderHash == Hash.findBIN("MAGSILVER") ||
-							m.ShaderHash == Hash.findBIN("BRAKELIGHTGLASS") ||
-							m.ShaderHash == Hash.findBIN("BRAKELIGHTGLASSRED") ||
-							m.ShaderHash == Hash.findBIN("DECAL") ||
-							m.ShaderHash == Hash.findBIN("DOORLINE") ||
-							m.ShaderHash == Hash.findBIN("MAGCHROME") ||
-							m.ShaderHash == Hash.findBIN("MAGLIP") ||
-							m.ShaderHash == Hash.findBIN("REGPAINTBLACK"))) {
-							System.out.printf("%s found on %s; please use 'simple' materials for lowest LOD parts.\n", Hash.getBIN(m.ShaderHash), p.name);
+							) && (m.materialLighting == Hash.findBIN("MAGSILVER") ||
+							m.materialLighting == Hash.findBIN("BRAKELIGHTGLASS") ||
+							m.materialLighting == Hash.findBIN("BRAKELIGHTGLASSRED") ||
+							m.materialLighting == Hash.findBIN("DECAL") ||
+							m.materialLighting == Hash.findBIN("DOORLINE") ||
+							m.materialLighting == Hash.findBIN("MAGCHROME") ||
+							m.materialLighting == Hash.findBIN("MAGLIP") ||
+							m.materialLighting == Hash.findBIN("REGPAINTBLACK"))) {
+							System.out.printf("%s found on %s; please use 'simple' materials for lowest LOD parts.\n", Hash.getBIN(m.materialLighting), p.name);
 					}
 					
 					if (p.part.contains("WHEEL") && (m.shader.equals(Shader.get("DiffuseAlpha")) || 
@@ -3710,12 +3723,12 @@ public class Geometry implements Block {
 			p.mesh.changePlatform(plat);
 			
 			p.texusage.texusage.clear();
-			if (plat == Platform.PC || plat == Platform.X360) p.mesh.shaders.shaders.clear();
+			if (isUC()) p.mesh.shaders.shaders.clear();
 	
 			for (var m : p.mesh.materials.materials) {
-				if (plat == Platform.PC || plat == Platform.X360) {
+				if (isUC()) {
 					if (!p.mesh.shaders.shaders.contains(m.shader.getKey())) p.mesh.shaders.shaders.add(m.shader.getKey());
-					m.shaderUsageID = (byte) p.mesh.shaders.shaders.indexOf(m.shader.getKey());
+					m.mMaterialIndex = (byte) p.mesh.shaders.shaders.indexOf(m.shader.getKey());
 					
 					for (int i=0; i<m.TextureHashes.size() && i<m.textureUsages.size(); i++) 
 						if (!p.texusage.texusage.contains(new Pair<>(m.TextureHashes.get(i),m.textureUsages.get(i).getKey())))

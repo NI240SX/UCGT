@@ -143,14 +143,14 @@ public class Mesh implements Block {
 				break;
 			}
 			
-			if (materials.materials.get(i).singleVertexLength != 0 && materials.materials.get(i).singleVertexLength != verticesBlocks.get(j).vertexFormat.getLength()) {
-				System.err.println("WARN: mismatching vertex format length: declared %d, expected %d (shader %s)".formatted(materials.materials.get(i).singleVertexLength, verticesBlocks.get(j).vertexFormat.getLength(), materials.materials.get(i).shader.getName()));
+			if (materials.materials.get(i).VertexBytesAndFlag != 0 && materials.materials.get(i).VertexBytesAndFlag != verticesBlocks.get(j).vertexFormat.getLength()) {
+				System.err.println("WARN: mismatching vertex format length: declared %d, expected %d (shader %s)".formatted(materials.materials.get(i).VertexBytesAndFlag, verticesBlocks.get(j).vertexFormat.getLength(), materials.materials.get(i).shader.getName()));
 			}
 			try {
 				verticesBlocks.get(j).readVertices();
 			} catch (Exception e) {
 				verticesBlocks.get(j).verticesData = null;
-				System.err.println("Unable to read all vertices (%d / %d successfully read) @ in=%d".formatted(verticesBlocks.get(j).vertices.size(), materials.materials.get(i).verticesDataLength / materials.materials.get(i).singleVertexLength, in.position()));
+				System.err.println("Unable to read all vertices (%d / %d successfully read) @ in=%d".formatted(verticesBlocks.get(j).vertices.size(), materials.materials.get(i).SizeofVertexData / materials.materials.get(i).VertexBytesAndFlag, in.position()));
 				e.printStackTrace();
 			}
 				
@@ -158,9 +158,12 @@ public class Mesh implements Block {
 			materials.materials.get(i).verticesBlock = verticesBlocks.get(j);
 			
 //			System.out.println(materials.materials.get(i).generateName()+" requesting triangles from "+(materials.materials.get(i).fromTriIndex/3) + " to " + (materials.materials.get(i).toTriIndex/3));
-			materials.materials.get(i).triangles = new ArrayList<>(triangles.triangles.subList(materials.materials.get(i).fromTriIndex/3, (materials.materials.get(i).toTriIndex/3)));
-			materials.materials.get(i).trianglesExtra = new ArrayList<>(triangles.triangles.subList(materials.materials.get(i).toTriIndex/3, (materials.materials.get(i).toTriIndex/3+materials.materials.get(i).numTriIndicesExtra/3)));
-			
+//			materials.materials.get(i).triangles = new ArrayList<>(triangles.triangles.subList(materials.materials.get(i).IndexData/3, (materials.materials.get(i).ReducedIndexData/3)));
+//			materials.materials.get(i).trianglesReduced = new ArrayList<>(triangles.triangles.subList(materials.materials.get(i).ReducedIndexData/3, (materials.materials.get(i).ReducedIndexData/3+materials.materials.get(i).NumReducedIndices/3)));
+
+			materials.materials.get(i).triangles = new ArrayList<>(triangles.triangles.subList(materials.materials.get(i).IndexData/3, (materials.materials.get(i).IndexData/3+materials.materials.get(i).NumIndices/3)));
+			materials.materials.get(i).trianglesReduced = new ArrayList<>(triangles.triangles.subList(materials.materials.get(i).ReducedIndexData/3, (materials.materials.get(i).ReducedIndexData/3+materials.materials.get(i).NumReducedIndices/3)));
+
 			//workaround for carbon, doesnt fully work but might unfuck some meshes maybe
 			//stupid game has several vertices blocks which sum each other 
 			//and you have seemingly no way to know which material they will belong to (= which vertex format they have)
@@ -170,10 +173,11 @@ public class Mesh implements Block {
 					while (t.vert0 >= materials.materials.get(i).verticesBlock.vertices.size()	
 							&& verticesBlocks.size() > k+1
 							) {
-						k++;
+						j++;
 //						System.out.println("add vertices");
-						if (verticesBlocks.get(k).vertexFormat == null) verticesBlocks.get(k).vertexFormat = materials.materials.get(i).shader.vertexFormat_PC;
+						verticesBlocks.get(k).vertexFormat = materials.materials.get(i).shader.vertexFormat_PC;
 						verticesBlocks.get(k).readVertices();
+						verticesBlocks.get(k).material = materials.materials.get(i);
 						materials.materials.get(i).verticesBlock = verticesBlocks.get(k);
 					}
 				}
@@ -181,6 +185,7 @@ public class Mesh implements Block {
 
 			//added because stupid carbon
 			if (platform == Platform.Carbon_PC) {
+//				if (materials.materials.get(i).renderingOrder == 4) j++;
 				if (previousSU != null && !previousSU.equals(materials.materials.get(i).shader)) j++;
 				previousSU = materials.materials.get(i).shader;
 			} else 

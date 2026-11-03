@@ -22,11 +22,11 @@ public class TexUsage implements Block {
 		var blockStart = in.position();
 		
 		while (in.position() < blockStart+blockLength) {
-			var tex = in.getInt();
-			var us = in.getInt();
+			var tex = in.getInt(); //NameHash
+			var us = in.getInt(); //TypeHash
 			texusage.add(new Pair<>(tex, us));
 			if (us != 0) { //PS and below compatibility (it has no usage)
-				in.getInt(); //0
+				in.getInt(); //0 pTextureInfo
 			}
 		}
 

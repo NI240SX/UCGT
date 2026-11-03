@@ -342,8 +342,6 @@ public class Shader {
 		case Prostreet_X360:
 		case X360:
 			yield vertexFormat_X360;
-		default:
-			throw new IllegalArgumentException("Unexpected value: " + geom.platform);
 		};
 	}
 }

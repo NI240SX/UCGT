@@ -17,11 +17,11 @@ import fr.ni240sx.ucgt.shared.Hash;
 
 public class Material {
 	
-	public int fromTriIndex = 0;
-	public int toTriIndex = 0;
-	public int numTriIndices = 0;
+	public int IndexData = 0;
+	public int ReducedIndexData = 0;
+	public int NumIndices = 0;
 
-	public int numTriIndicesExtra = 0;
+	public int NumReducedIndices = 0;
 
 	public int numVertices = -1;
 
@@ -29,30 +29,30 @@ public class Material {
 //	public int usageSpecific2 = -1; //apparently unused
 //	public int usageSpecific3 = -1; //apparently unused
 	
-	public byte[] flags = {0, 0, 0, 0}; //apparently unused -128 81 0 0
+	public byte[] MeshFlags = {0, 0, 0, 0}; //apparently unused -128 81 0 0
 
-	public byte shaderID = 0;
+	public byte LightMaterialNumber = 0;
 	public ArrayList<Byte> textureIDs = new ArrayList<>();
 	
-	public int textureHash = 0; //apparently unused
+	public int TextureSortKey = 0; //apparently unused
 	
-	public byte shaderUsageID = 0; //controls FE rendering somehow
-	public int verticesDataLength = 0;
+	public byte mMaterialIndex = 0; //controls FE rendering somehow
+	public int SizeofVertexData = 0;
 	
 	public Shader shader = Shader.get("Diffuse");
 	public ArrayList<TextureUsage> textureUsages = new ArrayList<>();
 	public ArrayList<Integer> textures = new ArrayList<>(); //apparently unused
-	public ArrayList<Integer> texturePriorities = new ArrayList<>();
+	public ArrayList<Integer> TextureParam = new ArrayList<>();
 	
 	public Vertices verticesBlock;
 	public List<Triangle> triangles = new ArrayList<>();
-	public List<Triangle> trianglesExtra = new ArrayList<>();
+	public List<Triangle> trianglesReduced = new ArrayList<>();
 	
-	public int ShaderHash = 0;
+	public int materialLighting = 0;
 	public int DefaultTextureHash = 0;
 	public ArrayList<Integer> TextureHashes = new ArrayList<>();
 	
-	public byte singleVertexLength;
+	public byte VertexBytesAndFlag;
 	
 	public String uniqueName = "";
 	public boolean useTangents = false;
@@ -63,16 +63,16 @@ public class Material {
 	public static final String trianglesExtraExportSuffix = "-EXTRA";
 	
 	public Material(Material m) {
-		this.ShaderHash = m.ShaderHash;
+		this.materialLighting = m.materialLighting;
 		this.shader = m.shader;
 		for (var h : m.TextureHashes) this.TextureHashes.add(h);
 		for (var u : m.textureUsages) this.textureUsages.add(u);
 		this.uniqueName = m.uniqueName;
 		
-		this.shaderUsageID = m.shaderUsageID;
-		for (var d : m.texturePriorities) this.texturePriorities.add(d);
+		this.mMaterialIndex = m.mMaterialIndex;
+		for (var d : m.TextureParam) this.TextureParam.add(d);
 		this.renderingOrder = m.renderingOrder;
-		this.flags = m.flags;
+		this.MeshFlags = m.MeshFlags;
 	}
 
 	public Material() {
@@ -82,7 +82,7 @@ public class Material {
 		if (g.isUC()) {
 			if (g.SAVE_useOffsetsTable) {
 				Material m = new Material();
-				m.ShaderHash = Hash.findBIN("DULLPLASTIC");
+				m.materialLighting = Hash.findBIN("DULLPLASTIC");
 				m.shader = Shader.get("Diffuse");
 				m.TextureHashes.add(Hash.findBIN("DEFAULTTEXTURE"));
 				m.textureUsages.add(TextureUsage.DIFFUSE);
@@ -97,7 +97,7 @@ public class Material {
 		//legacy
 		if (g.SAVE_useOffsetsTable) {
 			Material m = new Material();
-			m.ShaderHash = Hash.findBIN("DULLPLASTIC");
+			m.materialLighting = Hash.findBIN("DULLPLASTIC");
 			m.shader = Shader.findLegacyUsage("Diffuse", g.platform);
 			m.TextureHashes.add(Hash.findBIN("DEFAULTTEXTURE"));
 			m.textureUsages.add(TextureUsage.DIFFUSE);
@@ -111,9 +111,9 @@ public class Material {
 	}
 
 	public void tryGuessHashes(Part p) {
-		if (ShaderHash == 0){
-			if (p.shaderlist != null && shaderID >= 0 && shaderID < p.shaderlist.shaders.size()) {
-				ShaderHash = p.shaderlist.shaders.get(shaderID);
+		if (materialLighting == 0){
+			if (p.shaderlist != null && LightMaterialNumber >= 0 && LightMaterialNumber < p.shaderlist.shaders.size()) {
+				materialLighting = p.shaderlist.shaders.get(LightMaterialNumber);
 			} else {
 //				System.out.println("Critical issue with part "+p.name+" : missing shaders ! defaulting to DULLPLASTIC");
 //				ShaderHash = new Hash("DULLPLASTIC");
@@ -131,36 +131,36 @@ public class Material {
 
 	public void tryGuessFlags(Geometry geometry) {
 		
-		if (flags[0] == 0 && flags[1] == 0 && flags[2] == 0 && flags[3] == 0) if (geometry.SAVE_useOffsetsTable) { // for a car
-			flags[0] = (byte) 0x80;
-			flags[1] = (byte) 0x51;
-			flags[2] = (byte) 0x00;
-			flags[3] = (byte) 0x00;
+		if (MeshFlags[0] == 0 && MeshFlags[1] == 0 && MeshFlags[2] == 0 && MeshFlags[3] == 0) if (geometry.SAVE_useOffsetsTable) { // for a car
+			MeshFlags[0] = (byte) 0x80;
+			MeshFlags[1] = (byte) 0x51;
+			MeshFlags[2] = (byte) 0x00;
+			MeshFlags[3] = (byte) 0x00;
 
 			//low quality rendering or smth
-			if (Hash.findBIN("PLAINNOTHING") == ShaderHash || Hash.findBIN("INTERIOR") == ShaderHash || Hash.findBIN("CHASSIS") == ShaderHash) flags[1] -= (byte) 0x01;
+			if (Hash.findBIN("PLAINNOTHING") == materialLighting || Hash.findBIN("INTERIOR") == materialLighting || Hash.findBIN("CHASSIS") == materialLighting) MeshFlags[1] -= (byte) 0x01;
 			
 			//reflections ? shadows ? METAL_SWATCH, %_MISC, REGPAINTBLACK, SIRENS, BLACK
 			if (//ShaderHash.label.equals("CARSKIN") ||
-					Hash.findBIN("CARBONFIBER") == ShaderHash || Hash.findBIN("HEADLIGHTGLASS") == ShaderHash ||
-					Hash.findBIN("BRAKELIGHTGLASS") == ShaderHash || Hash.findBIN("BRAKELIGHTGLASSRED") == ShaderHash ||				
+					Hash.findBIN("CARBONFIBER") == materialLighting || Hash.findBIN("HEADLIGHTGLASS") == materialLighting ||
+					Hash.findBIN("BRAKELIGHTGLASS") == materialLighting || Hash.findBIN("BRAKELIGHTGLASSRED") == materialLighting ||				
 					
 					Hash.findBIN("CARBONFIBRE_PLACEHOLDER") == TextureHashes.get(0) || Hash.findBIN("CARBONFIBRE") == TextureHashes.get(0) || Hash.findBIN("METAL_SWATCH") == TextureHashes.get(0) || 
 					Hash.findBIN(geometry.carname+"_MISC") == TextureHashes.get(0) || Hash.findBIN("BLACK") == TextureHashes.get(0) || 
-					Hash.findBIN("SIRENS") == TextureHashes.get(0)) flags[2] += (byte) 0x01;
+					Hash.findBIN("SIRENS") == TextureHashes.get(0)) MeshFlags[2] += (byte) 0x01;
 			
 			//normals
-			if (textureUsages.contains(TextureUsage.NORMAL)) flags[2] += (byte) 0xA2;
+			if (textureUsages.contains(TextureUsage.NORMAL)) MeshFlags[2] += (byte) 0xA2;
 			
 			//idk
-			if(!textureUsages.contains(TextureUsage.NORMAL) && textureUsages.contains(TextureUsage.AMBIENT)) flags[3] = (byte) 0x22;
-			if(textureUsages.contains(TextureUsage.NORMAL) && textureUsages.contains(TextureUsage.AMBIENT)) flags[3] = (byte) 0x02;
+			if(!textureUsages.contains(TextureUsage.NORMAL) && textureUsages.contains(TextureUsage.AMBIENT)) MeshFlags[3] = (byte) 0x22;
+			if(textureUsages.contains(TextureUsage.NORMAL) && textureUsages.contains(TextureUsage.AMBIENT)) MeshFlags[3] = (byte) 0x02;
 			
 		} else { // fallback for a generic model
-			flags[0] = (byte) 0x00;
-			flags[1] = (byte) 0x40;
-			flags[2] = (byte) 0x2a;
-			flags[3] = (byte) 0x00;
+			MeshFlags[0] = (byte) 0x00;
+			MeshFlags[1] = (byte) 0x40;
+			MeshFlags[2] = (byte) 0x2a;
+			MeshFlags[3] = (byte) 0x00;
 		}
 		
 	}
@@ -169,14 +169,14 @@ public class Material {
 		if (textures.size() == 0) for (var t : TextureHashes) {
 			textures.add(t);
 		}
-		textureHash = textures.get(0);
+		TextureSortKey = textures.get(0);
 		DefaultTextureHash = TextureHashes.get(0);
 		
 	}
 	
 	public void tryGuessFEData(HashMap<Integer, Byte> shaderUsageIDs) {
 		if (shaderUsageIDs.containsKey(this.shader.getKey())) {
-			this.shaderUsageID = shaderUsageIDs.get(shader.getKey());
+			this.mMaterialIndex = shaderUsageIDs.get(shader.getKey());
 		} else {
 			// find the lowest usage possible
 			byte lowest = 0;
@@ -184,20 +184,20 @@ public class Material {
 				if (!shaderUsageIDs.containsValue(lowest)) break;
 				lowest ++;
 			}
-			this.shaderUsageID = lowest;
-			shaderUsageIDs.put(shader.getKey(), this.shaderUsageID);
+			this.mMaterialIndex = lowest;
+			shaderUsageIDs.put(shader.getKey(), this.mMaterialIndex);
 		}
 	}
 
 	public void removeUnneeded() {
-		if (flags[0] == 80) {
+		if (MeshFlags[0] == 80) {
 			// clean up flags on car models only
-			flags[0] = (byte) 0x00;
-			flags[1] = (byte) 0x00;
-			flags[2] = (byte) 0x00;
-			flags[3] = (byte) 0x00;
+			MeshFlags[0] = (byte) 0x00;
+			MeshFlags[1] = (byte) 0x00;
+			MeshFlags[2] = (byte) 0x00;
+			MeshFlags[3] = (byte) 0x00;
 		}
-		textureHash = 0; //we apparently can not give a shit about those ???
+		TextureSortKey = 0; //we apparently can not give a shit about those ???
 		for (int i=0; i<textures.size(); i++) {
 			textures.set(i, 0);
 		}
@@ -214,7 +214,7 @@ public class Material {
 	
 	public String generateName() {
 		String s;
-		if (ShaderHash != 0) s = Hash.getBIN(ShaderHash) + "_";
+		if (materialLighting != 0) s = Hash.getBIN(materialLighting) + "_";
 		else s = shader.getName() + "_";
 		for (var t : TextureHashes) s += Hash.getBIN(t) + "_";
 		s = s.substring(0, s.length()-1);
@@ -226,7 +226,7 @@ public class Material {
 		String s = "";
 		s += "MATERIAL	"+uniqueName;
 //		s += " feRenderData=" + frontendRenderingData;
-		if (ShaderHash != 0) s += "	"+Hash.getBIN(ShaderHash)+"="+shader.getName();
+		if (materialLighting != 0) s += "	"+Hash.getBIN(materialLighting)+"="+shader.getName();
 		else s += "	"+shader.getName();
 		//+"[";
 //		if (usageSpecific1 != -1) s+=usageSpecific1;
@@ -257,25 +257,25 @@ public class Material {
 				switch(g.platform) {
 				case PC:
 				case X360:
+				case PS3:
 					if (s2.contains("=")) {
 						//shader usage
-						ShaderHash = Hash.findBIN(s2.split("=")[0]);
+						materialLighting = Hash.findBIN(s2.split("=")[0]);
 						shader = Shader.get(s2.split("=")[1]);
 					} else {
-						ShaderHash = 0;
+						materialLighting = 0;
 						shader = Shader.get(s2);
 					}
 					break;
 				case Prostreet_PC:
 				case Prostreet_X360:
 				case Carbon_PC:
-				default:
 					if (s2.contains("=")) {
 						//shader usage
-						ShaderHash = Hash.findBIN(s2.split("=")[0]);
+						materialLighting = Hash.findBIN(s2.split("=")[0]);
 						shader = Shader.findLegacyUsage(s2.split("=")[1], g.platform);
 					} else {
-						ShaderHash = 0;
+						materialLighting = 0;
 						shader = Shader.findLegacyUsage(s2, g.platform);
 					}
 					break;
@@ -303,25 +303,25 @@ public class Material {
 						textureUsages.add(TextureUsage.get(s2.split("=")[1]));
 					}
 					TextureHashes.add(Hash.findBIN(s2.split("=")[0].replace("%", g.carname)));
-					if (prio != Integer.MAX_VALUE) texturePriorities.add(prio);
-					else if (g.SAVE_optimizeMaterials && g.SAVE_useOffsetsTable && (g.platform == Platform.PC)) texturePriorities.add(texturePriorities.size()>0 ? -1 : 0);
-					else texturePriorities.add(texturePriorities.size());
+					if (prio != Integer.MAX_VALUE) TextureParam.add(prio);
+					else if (g.SAVE_optimizeMaterials && g.SAVE_useOffsetsTable && (g.platform == Platform.PC)) TextureParam.add(TextureParam.size()>0 ? -1 : 0);
+					else TextureParam.add(TextureParam.size());
 				}
 			}
 			i++;
 		}
 		if (!g.SAVE_useOffsetsTable) {
-			flags[0] = (byte) 0x00;
-			flags[1] = (byte) 0x40;
-			flags[2] = (byte) 0x2a;
-			flags[3] = (byte) 0x00;
+			MeshFlags[0] = (byte) 0x00;
+			MeshFlags[1] = (byte) 0x40;
+			MeshFlags[2] = (byte) 0x2a;
+			MeshFlags[3] = (byte) 0x00;
 		}
 //		System.out.println("Material : "+toConfig(carname));
 	}
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(ShaderHash, TextureHashes, shader, textureUsages);
+		return Objects.hash(materialLighting, TextureHashes, shader, textureUsages);
 	}
 
 	@Override
@@ -351,12 +351,12 @@ public class Material {
 //		}
 		if (other.textureUsages.size() != textureUsages.size()) return false;
 		for (int i=0; i< textureUsages.size(); i++) if (textureUsages.get(i) != other.textureUsages.get(i)) return false;
-		if (ShaderHash == 0) {
-			if (other.ShaderHash == 0) return shader == other.shader;
+		if (materialLighting == 0) {
+			if (other.materialLighting == 0) return shader == other.shader;
 			return false;
 		}
-		if (other.ShaderHash == 0) return false;		
-		return ShaderHash == other.ShaderHash
+		if (other.materialLighting == 0) return false;		
+		return materialLighting == other.materialLighting
 				&& shader == other.shader;
 	}
 

@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import fr.ni240sx.ucgt.shared.Block;
 import fr.ni240sx.ucgt.shared.BlockType;
 
-public class AutosculptZones implements Block {
+public class AutosculptZones implements Block { //eMorphTarget
 
 	@Override
 	public BlockType getBlockID() {return BlockType.Part_AutosculptZones;}
@@ -23,9 +23,9 @@ public class AutosculptZones implements Block {
 		var blockStart = in.position();
 		
 		while(in.position() < blockStart+blockLength) {
-			zones.add(in.getInt());
-			in.getInt(); //0
-			in.getInt(); //0
+			zones.add(in.getInt()); //mNameHash
+			in.getInt(); //0 eSolid* mTarget
+			in.getInt(); //0 mBlendAmount
 		}
 	}
 

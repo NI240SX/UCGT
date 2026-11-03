@@ -109,9 +109,9 @@ public class TPK implements Block {
 						dataWriter = ByteBuffer.wrap(partData);
 						dataWriter.order(ByteOrder.LITTLE_ENDIAN);
 						
-						in.position(o.offset -4); //-4 because we don't have the full file header here
+						in.position(o.offset -8+blockStart); //-4 because we don't have the full file header here
 						//loops on the one or multiple compressed blocks
-						if (version >= 8) while (in.position() < o.offset -4 + o.sizeCompressed) {
+						if (version >= 8) while (in.position() < o.offset -8+blockStart + o.sizeCompressed) {
 							CompressedData d = (CompressedData) Block.read(in);
 							if (defaultCompressionType == null) defaultCompressionType = CompressionType.get(String.valueOf(new char[] {(char)(d.data[0]), (char)(d.data[1]), (char)(d.data[2]), (char)(d.data[3])}));
 							var decomp = Compression.decompress(d.data);
@@ -128,7 +128,7 @@ public class TPK implements Block {
 						textures.add(new NFSTexture(dataWriter, version));
 					} else {
 						if (defaultCompressionType == null) defaultCompressionType = CompressionType.RawDecompressed;
-						in.position(o.offset -4);
+						in.position(o.offset -8+blockStart);
 						var limit = in.capacity();
 						in.limit(in.position() + o.sizeDecompressed);
 						textures.add(new NFSTexture(in, version));	
@@ -354,8 +354,11 @@ public class TPK implements Block {
 		this(folder, switch(geom.platform) {
 		case PC:
 		case X360:
+		case PS3:
 			yield 9;
-		default:
+		case Carbon_PC:
+		case Prostreet_PC:
+		case Prostreet_X360:
 			yield 8;
 		}, geom.defaultCompressionType, geom.defaultCompressionLevel, switch(geom.geomHeader.geomInfo.filenameType()) {
 		default:

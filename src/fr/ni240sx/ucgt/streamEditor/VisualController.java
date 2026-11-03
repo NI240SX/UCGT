@@ -262,6 +262,7 @@ public class VisualController {
 					for (var inst : collisions.CARP.collisionInstances.instances) //if (inst.groupNumber == 0) //get rid of the barrier collisions
 					{
 						var havok = inst.collisionData;
+						if (havok == null) continue;
 						if (havok.collisionShape == null) continue;
 						if (havok.collisionShape.shape == null || havok.collisionShape.shape.object2 == null ||
 								havok.collisionShape.shape.object2.subpartListed == null) {
